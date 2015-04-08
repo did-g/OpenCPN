@@ -9005,10 +9005,9 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
             delete clip_region;
 
             ocpnDC bgdc( temp_dc );
-            double r =         VPoint.rotation;
-            SetVPRotation( 0.0 );
-            pWorldBackgroundChart->RenderViewOnDC( bgdc, VPoint );
-            SetVPRotation( r );
+            ViewPort vp = VPoint;
+            vp.rotation = 0;
+            pWorldBackgroundChart->RenderViewOnDC( bgdc, vp );
         }
     } // temp_dc.IsOk();
 

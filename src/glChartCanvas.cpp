@@ -1464,8 +1464,17 @@ bool glChartCanvas::PurgeChartTextures( ChartBase *pc, bool b_purge_factory )
 #define NORM_FACTOR 16.0
 void glChartCanvas::MultMatrixViewPort(ViewPort &vp)
 {
-    wxPoint2DDouble point;
-    cc1->GetDoubleCanvasPointPixVP(vp, 0, 0, &point);
+    wxPoint2DDouble point = vp.GetDoublePixFromLL(0, 0), point1;
+
+    // sometimes (with bsb charts in single chart mode) there is a
+    // slight difference (calculated in point1).. so correct for that
+    // if we were to pass 0, 0 here like above instead (logically correct),
+    // the bsb corrected coordinats give large errors
+    cc1->GetDoubleCanvasPointPixVP(vp, vp.clat, vp.clon, &point1);
+    point1.m_x -= vp.pix_width / 2;
+    point1.m_y -= vp.pix_height / 2;
+    point += point1;
+
     glTranslatef(point.m_x, point.m_y, 0);
     
     glScalef(vp.view_scale_ppm/NORM_FACTOR, vp.view_scale_ppm/NORM_FACTOR, 1);

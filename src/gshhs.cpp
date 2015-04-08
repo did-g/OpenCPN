@@ -43,6 +43,7 @@
 #include "glChartCanvas.h"
 #endif
 
+#include "chcanv.h"
 #include "gshhs.h"
 
 #ifdef __OCPN__ANDROID__
@@ -63,6 +64,7 @@
 typedef void (GLAPIENTRY * PFNGLBINDBUFFERPROC) (GLenum target, GLuint buffer);
 
 extern wxString *pWorldMapLocation;
+extern ChartCanvas *cc1;
 
 //-------------------------------------------------------------------------
 
@@ -185,12 +187,21 @@ void GshhsPolyCell::ReadPolygonFile()
 
 wxPoint GetPixFromLL(ViewPort &vp, double lat, double lon)
 {
-    wxPoint p = vp.GetPixFromLL(lat, lon);
+    wxPoint p;
+
+    // in non-gl...  our vp here always has rotation of 0,
+    // so we check from cc1 and if we aren't rotated, then maybe
+    // we actually want the bsb corrected, otherwise we don't
+    if(cc1->GetVP().rotation)
+        p = vp.GetPixFromLL(lat, lon);
+    else
+        cc1->GetCanvasPointPixVP(vp, lat, lon, &p);
+
     p.x -= vp.rv_rect.x, p.y -= vp.rv_rect.y;
     return p;
 }
 
-wxPoint2DDouble GetDoublePixFromLL(ViewPort &vp, double lat, double lon)
+static wxPoint2DDouble GetDoublePixFromLL(ViewPort &vp, double lat, double lon)
 {
     wxPoint2DDouble p = vp.GetDoublePixFromLL(lat, lon);
     p.m_x -= vp.rv_rect.x, p.m_y -= vp.rv_rect.y;
@@ -361,7 +372,6 @@ void GshhsPolyCell::DrawPolygonFilledGL( contour_list * p, float_2Dpt **pv, int 
                 if( v == 0 || ccp != cp.at(v-1) ) {
                     GLvertex* vertex = new GLvertex();
                     g_vertexes.push_back(vertex);
-
 
                     wxPoint2DDouble q = GetDoublePixFromLL(vp,  ccp.y, ccp.x );
                     if(idl && ccp.x == 180) {

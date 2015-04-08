@@ -274,7 +274,6 @@ wxPoint2DDouble ViewPort::GetDoublePixFromLL( double lat, double lon )
     }
 
     wxPoint2DDouble r;
-    //    We definitely need a round() function here
     r.m_x = ( ( pix_width / 2 ) + dxr );
     r.m_y = ( ( pix_height / 2 ) - dyr );
 
