@@ -7355,10 +7355,16 @@ bool s52plib::ObjectRenderCheckCat( ObjRazRules *rzRules, ViewPort *vp )
         //      We shall explicitly ignore SCAMIN filtering for these types of objects.
 
         if( m_bUseSCAMIN ) {
-            if( ( DISPLAYBASE == rzRules->LUP->DISC ) || ( PRIO_GROUP1 == rzRules->LUP->DPRI ) ) b_visible =
-                    true;
-            else
-                if( vp->chart_scale > rzRules->obj->Scamin ) b_visible = false;
+            if ( PRIO_GROUP1 == rzRules->LUP->DPRI ) 
+                b_visible = true;
+            else {
+                // XXXX (inland boy and bcn are DisplayCategoryBase objects)
+                // cf CSMWG17-03.11A
+                if ( DISPLAYBASE == rzRules->LUP->DISC  && !rzRules->obj->bIsAton )
+                    b_visible = true;
+                else if( vp->chart_scale > rzRules->obj->Scamin ) 
+                    b_visible = false;
+            }
 
             //      On the other hand, $TEXTS features need not really be displayed at all scales, always
             //      To do so makes a very cluttered display
