@@ -7508,6 +7508,10 @@ void s52plib::GetPixPointSingle( int pixx, int pixy, double *plat, double *plon,
     double slat, slon;
     fromSM( d_east, d_north, vpt->clat, vpt->clon, &slat, &slon );
     
+    // XXXX
+    if (slon > 360.0)
+        slon -= 360.0;     
+
     *plat = slat;
     *plon = slon;
     
