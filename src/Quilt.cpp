@@ -968,11 +968,14 @@ int Quilt::AdjustRefOnZoom( bool b_zin, ChartFamilyEnum family,  ChartTypeEnum t
     
         
     int new_ref_dbIndex = -1;
-    
+    int smaller_scale = 20000000;    
     // Search for the largest scale chart whose scale limits contain the requested scale.
     for(size_t i=0 ; i < index_array.GetCount() ; i++){
         int a = min_scale.Item(i);
         int b = max_scale.Item(i);
+        if (a < smaller_scale) {
+            smaller_scale = a;
+        }        
 
         if( ( proposed_scale_onscreen < min_scale.Item(i) * 1.05) &&   // 5 percent leeway to allow for roundoff errors
             (proposed_scale_onscreen > max_scale.Item(i)) ) {
@@ -981,7 +984,9 @@ int Quilt::AdjustRefOnZoom( bool b_zin, ChartFamilyEnum family,  ChartTypeEnum t
         }
     }
 
-                    
+    if (new_ref_dbIndex == -1 && b_zin && proposed_scale_onscreen > smaller_scale) {
+        new_ref_dbIndex = -2;
+    }
     return new_ref_dbIndex;
 }
 
@@ -1041,8 +1046,13 @@ int Quilt::AdjustRefOnZoomIn( double proposed_scale_onscreen )
         BuildExtendedChartStackAndCandidateArray(true, m_zout_dbindex, m_vp_quilt);
     
     
-    int proposed_ref_index = AdjustRefOnZoom( true, (ChartFamilyEnum)current_family, current_type, proposed_scale_onscreen );
-
+    int proposed_ref_index;
+    proposed_ref_index = AdjustRefOnZoom( true, (ChartFamilyEnum)current_family, current_type, proposed_scale_onscreen );
+    if (proposed_ref_index == -2) {
+        // we start from an underzoom displayed chart, don't reset it
+        proposed_ref_index = m_refchart_dbIndex;
+    }
+    
     SetReferenceChart( proposed_ref_index );
     
     return proposed_ref_index;
