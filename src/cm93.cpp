@@ -4900,10 +4900,10 @@ int cm93compchart::GetCMScaleFromVP ( const ViewPort &vpt )
 void cm93compchart::SetVPParms ( const ViewPort &vpt )
 {
     // need to recompute the cm93 cell when switching quilting off
-    if((m_vpt.b_quilt && !vpt.b_quilt) || !m_pcm93chart_current) {
+//    if((m_vpt.b_quilt && !vpt.b_quilt) || !m_pcm93chart_current) {
         ViewPort vp = vpt;
         AdjustVP ( m_vpt, vp );
-    }
+//    }
 }
 
 int cm93compchart::PrepareChartScale ( const ViewPort &vpt, int cmscale, bool bOZ_protect )
