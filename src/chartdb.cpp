@@ -200,7 +200,7 @@ void ChartStack::AddChart( int db_add )
                     const ChartTableEntry &n = ChartData->GetChartTableEntry(GetDBIndex(i+1));
                     
                     
-                    if(n.GetScale() < m.GetScale())
+                    if((n.GetScale()+50)/100 < (m.GetScale()+50)/100)
                     {
                         ti = GetDBIndex(i);
                         SetDBIndex(i, GetDBIndex(i+1));
@@ -578,7 +578,7 @@ int ChartDB::BuildChartStack(ChartStack * cstk, float lat, float lon)
                   const ChartTableEntry &n = GetChartTableEntry(cstk->GetDBIndex(i+1));
 
 
-                  if(n.GetScale() < m.GetScale())
+                  if((n.GetScale()+50)/100 < (m.GetScale()+50)/100)
                   {
                         ti = cstk->GetDBIndex(i);
                         cstk->SetDBIndex(i, cstk->GetDBIndex(i+1));

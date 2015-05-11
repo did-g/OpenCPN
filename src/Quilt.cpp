@@ -348,7 +348,7 @@ ArrayOfInts Quilt::GetCandidatedbIndexArray( bool from_ref_chart, bool exclude_u
         QuiltCandidate *pqc = m_pcandidate_array->Item( ir );
         if( from_ref_chart )                     // only add entries of smaller scale than ref scale
         {
-            if( pqc->ChartScale >= m_reference_scale ) {
+            if( (pqc->ChartScale+50)/100 >= (m_reference_scale+50)/100 ) {
                 // Search the no-show array
                 if( exclude_user_hidden ) {
                     bool b_noshow = false;
@@ -830,7 +830,7 @@ int Quilt::GetNewRefChart( void )
             double skew_norm = m.GetChartSkew();
             if( skew_norm > 180. ) skew_norm -= 360.;
             
-            if( ( m.GetScale() >= m_reference_scale )
+            if( ( (m.GetScale()+50)/100 >= (m_reference_scale+50)/100 )
                     && ( m_reference_family == m.GetChartFamily() )
                     && ( m_quilt_proj == m.GetChartProjectionType() )
                     && ( m_bquiltskew || (fabs(skew_norm) < 1.0) ) ){
@@ -1592,7 +1592,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
                 }
             }
             
-            if( cte.GetScale() >= m_reference_scale ) {
+            if( (cte.GetScale()+50)/100 >= (m_reference_scale+50)/100 ) {
                 //  If this chart appears in the no-show array, then simply include it, but
                 //  don't subtract its region when determining the smaller scale charts to include.....
                 bool b_in_noshow = false;
@@ -1643,7 +1643,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
 
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( pqc->dbIndex );
             
-            if( cte.GetScale() >= m_reference_scale ) {
+            if( (cte.GetScale()+50)/100 >= (m_reference_scale+50)/100 ) {
                 bool b_in_noshow = false;
                 for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.GetCount(); ins++ ) {
                     if( g_quilt_noshow_index_array.Item( ins ) == pqc->dbIndex ) // chart is in the noshow list
@@ -1687,7 +1687,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
 
         if( !pqc->b_include ) {
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( pqc->dbIndex );
-            if( cte.GetScale() >= m_reference_scale ) {
+            if( (cte.GetScale()+50)/100 >= (m_reference_scale+50)/100 ) {
                 m_eclipsed_stack_array.Add( pqc->dbIndex );
                 pqc->b_eclipsed = true;
             }
@@ -1755,7 +1755,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
 
             if( !vpck_region.IsEmpty() ) {
                 if( add_scale ) {
-                    if( add_scale == cte.GetScale() ) pqc->b_include = true;
+                    if( (add_scale+50)/100 == (cte.GetScale()+50)/100 ) pqc->b_include = true;
                     ;
                 } else {
                     pqc->b_include = true;
