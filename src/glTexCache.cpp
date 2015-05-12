@@ -1796,7 +1796,7 @@ bool glTexFactory::LoadHeader(void)
 
         if(wxFileName::FileExists(m_CompressedCacheFilePath)) {
             
-            m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::read_write);
+            m_fs = new wxFFile(m_CompressedCacheFilePath, _T("rb+"));
             if(m_fs->IsOpened()){
             
                 CompressedCacheHeader hdr;
@@ -1814,14 +1814,14 @@ bool glTexFactory::LoadHeader(void)
                         m_fs->Close();
                         delete m_fs;
                     
-                        m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::write);
+                        m_fs = new wxFFile(m_CompressedCacheFilePath, _T("wb"));
                         n_catalog_entries = 0;
                         m_catalog_offset = 0;
                         WriteCatalogAndHeader();
                         m_fs->Close();
                         delete m_fs;
                     
-                        m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::read_write);
+                        m_fs = new wxFFile(m_CompressedCacheFilePath, _T("rb+"));
                     
                         m_hdrOK = true;
                     }
@@ -1845,14 +1845,14 @@ bool glTexFactory::LoadHeader(void)
                 delete m_fs;
                 wxRemoveFile(m_CompressedCacheFilePath);
                 
-                m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::write);
+                m_fs = new wxFFile(m_CompressedCacheFilePath, _T("wb"));
                 n_catalog_entries = 0;
                 m_catalog_offset = 0;
                 WriteCatalogAndHeader();
                 m_fs->Close();
                 delete m_fs;
                 
-                m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::read_write);
+                m_fs = new wxFFile(m_CompressedCacheFilePath, _T("rb+"));
                 
                 m_hdrOK = true;
                 ret = true;
@@ -1868,14 +1868,14 @@ bool glTexFactory::LoadHeader(void)
                 fn.Mkdir();
             
             //  Create new file, with empty catalog, and correct header
-            m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::write);
+            m_fs = new wxFFile(m_CompressedCacheFilePath, _T("wb"));
             n_catalog_entries = 0;
             m_catalog_offset = 0;
             WriteCatalogAndHeader();
             m_fs->Close();
             delete m_fs;
-            
-            m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::read_write);
+
+            m_fs = new wxFFile(m_CompressedCacheFilePath, _T("rb+"));
             ret = true;
             
         }
@@ -1982,11 +1982,11 @@ bool glTexFactory::UpdateCache(unsigned char *data, int data_size, glTextureDesc
                 fn.Mkdir();
             
             if(!fn.FileExists()){
-                wxFile new_file(m_CompressedCacheFilePath, wxFile::write);
+                wxFFile new_file(m_CompressedCacheFilePath, _T("wb"));
                 new_file.Close();
             }
             
-            m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::read_write);
+            m_fs = new wxFFile(m_CompressedCacheFilePath, _T("rb+"));
             
             WriteCatalogAndHeader();
         }
@@ -2053,11 +2053,11 @@ bool glTexFactory::UpdateCachePrecomp(unsigned char *data, int data_size, glText
                 fn.Mkdir();
             
             if(!fn.FileExists()){
-                wxFile new_file(m_CompressedCacheFilePath, wxFile::write);
+                wxFFile new_file(m_CompressedCacheFilePath, _T("wb"));
                 new_file.Close();
             }
             
-            m_fs = new wxFile(m_CompressedCacheFilePath, wxFile::read_write);
+            m_fs = new wxFFile(m_CompressedCacheFilePath, _T("rwb"));
             
             WriteCatalogAndHeader();
         }
