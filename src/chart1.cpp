@@ -7462,7 +7462,8 @@ bool GetMemoryStatus( int *mem_total, int *mem_used )
                 while ( tk.HasMoreTokens() )
                 {
                     wxString token = tk.GetNextToken();
-                    if(token == _T("VmRSS"))
+                    // VmData is more or less VmRSS + swap
+                    if(token == _T("VmData"))
                     {
                         wxStringTokenizer tkm(str, _T(" "));
                         wxString mem = tkm.GetNextToken();
