@@ -1914,7 +1914,7 @@ void ChartCanvas::StopMovement( )
     m_zoom_factor = 1;
     m_rotation_speed = 0;
     m_mustmove = 0;
-#ifndef __OCPN__ANDROID__    
+#if !defined(__WXGTK__) && !defined(__WXQT__)
     SetFocus();
     gFrame->Raise();
 #endif    
@@ -2749,7 +2749,7 @@ void ChartCanvas::DoRotateCanvas( double rotation )
     while(rotation < 0) rotation += 2*PI;
     while(rotation > 2*PI) rotation -= 2*PI;
 
-    if(rotation == VPoint.rotation || isnan(rotation))
+    if(rotation == VPoint.rotation || wxIsNaN(rotation))
         return;
 
     SetVPRotation( rotation );
