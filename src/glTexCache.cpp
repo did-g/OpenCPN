@@ -1104,12 +1104,17 @@ void glTexFactory::FreeSome( long target )
         
         if( ptd ) {
             ptd->FreeAll();
-        
+            #ifndef __LINUX__
+            // on linux don't bother with that, 
+            // freed memory is on the heap (too small 
+            // for malloc --> mmap)
+            // and rarely show in /proc/ and it's slow
             int mem_used;
             GetMemoryStatus(0, &mem_used);
         
             if(mem_used <= target)
                 break;
+            #endif
         }
     }
 }

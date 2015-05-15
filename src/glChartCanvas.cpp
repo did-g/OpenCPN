@@ -3339,28 +3339,29 @@ bool glChartCanvas::FactoryCrunch(double factor)
         if(!ptf)
             continue;
         
-        GetMemoryStatus(0, &mem_used);
-        bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor;
-        if(!bGLMemCrunch)
-            break;
-        
         if( cc1->VPoint.b_quilt )          // quilted
         {
             if( cc1->m_pQuilt && cc1->m_pQuilt->IsComposed() &&
                 !cc1->m_pQuilt->IsChartInQuilt( chart_full_path ) ) {
-                ptf->FreeSome( g_memCacheLimit * factor );
+                ptf->FreeSome( g_memCacheLimit * (factor -0.1) );
                 }
         }
         else      // not quilted
         {
             if( !Current_Ch->GetFullPath().IsSameAs(chart_full_path))
             {
-                ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * factor );
+                ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * (factor -0.1));
             }
         }
+
+        GetMemoryStatus(0, &mem_used);
+        bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor;
+        if(!bGLMemCrunch)
+            break;
+        
     }
 
-    bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor;
+    bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * (factor -0.1);
     //  Need more, so delete the oldest factory
     if(bGLMemCrunch){
         
