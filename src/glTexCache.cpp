@@ -1023,6 +1023,7 @@ glTexFactory::~glTexFactory()
     if(m_fs && m_fs->IsOpened()){
         m_fs->Close();
     }
+    delete m_fs;
 
     while(!m_catalog.IsEmpty()){
         CatalogEntry **t = m_catalog.Detach(0);
