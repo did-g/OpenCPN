@@ -125,7 +125,6 @@ GshhsPolyCell::GshhsPolyCell( FILE *fpoly_, int x0_, int y0_, PolygonFileHeader 
     fpoly = fpoly_;
     x0cell = x0_;
     y0cell = y0_;
-    prev_tab_data = -1;
 
     for(int i=0; i<6; i++)
         polyv[i] = NULL;
@@ -176,15 +175,8 @@ void GshhsPolyCell::ReadPolygonFile()
 
     tab_data = ( x0cell / header->pasx ) * ( 180 / header->pasy )
         + ( y0cell + 90 ) / header->pasy;
-    if (tab_data != prev_tab_data) {
-       fseek( fpoly, sizeof(PolygonFileHeader) + tab_data * sizeof(int), SEEK_SET );
-       fread( &pos_data, sizeof(int), 1, fpoly );
-       prev_pos_data = pos_data;
-       prev_tab_data = tab_data;
-    }
-    else {
-       pos_data = prev_pos_data;
-    }
+    fseek( fpoly, sizeof(PolygonFileHeader) + tab_data * sizeof(int), SEEK_SET );
+    fread( &pos_data, sizeof(int), 1, fpoly );
 
     fseek( fpoly, pos_data, SEEK_SET );
 

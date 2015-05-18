@@ -116,9 +116,6 @@ private:
     int x0cell, y0cell;
 
     FILE *fpoly;
-    FILE *fpoly_pos;
-    int  prev_tab_data;
-    int  prev_pos_data;
 
     std::vector<wxLineF> coasts;
     PolygonFileHeader *header;
