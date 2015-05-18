@@ -415,7 +415,8 @@ void s52plib::GenerateStateHash()
     unsigned char state_buffer[512];  // Needs to be at least this big...
     memset(state_buffer, 0, sizeof(state_buffer));
     
-    int time = ::wxGetUTCTime();
+    static int time = 0; //  = ::wxGetUTCTime();
+    time++;
     memcpy(state_buffer, &time, sizeof(int));
     
     size_t offset = sizeof(int);           // skipping the time int, first element
