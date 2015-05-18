@@ -1522,6 +1522,9 @@ ChartBaseBSB::ChartBaseBSB()
       pPixCache = NULL;
 
       pLineCache = NULL;
+      pMemBase = NULL;
+      MemBaseSize = 0;
+      MemBaseOffset = 0;
 
       m_bilinear_limit = 8;         // bilinear scaling only up to n
 
@@ -1603,13 +1606,11 @@ ChartBaseBSB::~ChartBaseBSB()
             for(int ylc = 0 ; ylc < Size_Y ; ylc++)
             {
                   pt = &pLineCache[ylc];
-                  if(pt->pPix)
-                        free (pt->pPix);
                   free( pt->pRGB );
             }
             free (pLineCache);
+            free(pMemBase);
       }
-
 
 
       delete pPixCache;
@@ -1919,7 +1920,7 @@ InitReturn ChartBaseBSB::PostInit(void)
                   pt->bValid = false;
                   pt->xstart = 0;
                   pt->xlength = 1;
-                  pt->pPix = NULL;        //(unsigned char *)malloc(1);
+                  pt->PixOffset = (size_t)-1;        //(unsigned char *)malloc(1);
                   pt->pRGB = NULL;
             }
       }
@@ -2026,12 +2027,14 @@ void ChartBaseBSB::InvalidateLineCache(void)
             for(int ylc = 0 ; ylc < Size_Y ; ylc++)
             {
                   pt = &pLineCache[ylc];
+                  MemBaseSize = 0;
+                  MemBaseOffset = 0;
+                  free(pMemBase);
                   if(pt)
                   {
-                        if(pt->pPix)
+                        if(pt->PixOffset != (size_t)-1)
                         {
-                              free (pt->pPix);
-                              pt->pPix = NULL;
+                              pt->PixOffset = (size_t)-1;
                         }
                         pt->bValid = 0;
                   }
@@ -4194,19 +4197,30 @@ int   ChartBaseBSB::BSBGetScanline( unsigned char *pLineBuf, int y, int xs, int 
       unsigned char *lp;
       unsigned char *xtemp_line;
       register int ix = xs;
+      bool inPool = false;
 
       if(bUseLineCache && pLineCache)
       {
 //    Is the requested line in the cache, and valid?
             pt = &pLineCache[y];
+            #define MEM_ALIGN_AMOUNT (2 * sizeof (size_t))
+            #define MEM_ALIGN_SIZE(SIZE) ((~(MEM_ALIGN_AMOUNT-1)) & ((SIZE) + (MEM_ALIGN_AMOUNT-1)))
+        
             if(!pt->bValid)                                 // not valid, so get it
             {
-                  if(pt->pPix)
-                        free(pt->pPix);
-                  pt->pPix = (unsigned char *)malloc(Size_X);
+                  if (pt->PixOffset == (size_t)-1) {
+                      if (MemBaseOffset +Size_X >= MemBaseSize) {
+                          MemBaseSize += 2*1024*1024;
+                          // linux use mmap for big stuff so realloc is cheap, at least
+                          // on 64bits OS
+                          pMemBase = (unsigned char*)realloc(pMemBase, MemBaseSize);
+                      }
+                      pt->PixOffset = MemBaseOffset;
+                      MemBaseOffset += MEM_ALIGN_SIZE(Size_X);
+                  }
             }
-
-            xtemp_line = pt->pPix;
+            inPool = true;
+            xtemp_line = pMemBase +pt->PixOffset;
       }
       else
             xtemp_line = (unsigned char *)malloc(Size_X);
@@ -4216,13 +4230,13 @@ int   ChartBaseBSB::BSBGetScanline( unsigned char *pLineBuf, int y, int xs, int 
       {
           if(pline_table[y] == 0)
           {
-              free (xtemp_line);
+              if (!inPool) free (xtemp_line);
               return 0;
           }
 
           if(pline_table[y+1] == 0)
           {
-              free (xtemp_line);
+              if (!inPool) free (xtemp_line);
               return 0;
           }
 
@@ -4236,14 +4250,14 @@ int   ChartBaseBSB::BSBGetScanline( unsigned char *pLineBuf, int y, int xs, int 
                 {
                     free(tmp);
                     tmp = NULL;
-                    free (xtemp_line);
+                    if (!inPool) free (xtemp_line);
                     return 0;
                 }
             }
 
             if( wxInvalidOffset == ifs_bitmap->SeekI(pline_table[y], wxFromStart))
             {
-                free (xtemp_line);
+                if (!inPool) free (xtemp_line);
                 return 0;
             }
 
@@ -4416,7 +4430,7 @@ int   ChartBaseBSB::BSBGetScanline( unsigned char *pLineBuf, int y, int xs, int 
         *prgb_last = a;
       }
 
-      if(!bUseLineCache)
+      if(!inPool)
           free (xtemp_line);
 
       return 1;
