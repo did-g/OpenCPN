@@ -4853,7 +4853,7 @@ void cm93compchart::Deactivate ( void )
       }
 }
 
-double scale_breaks[] =
+static double scale_breaks[] =
 {
       5000.,                  //G
       15000.,                 //F
@@ -4894,6 +4894,8 @@ int cm93compchart::GetCMScaleFromVP ( const ViewPort &vpt )
                         printf ( "g_cm93_zoom_factor: %2d  efactor: %6g efr:%6g, scale_breaks[i]:%6g  scale_breaks_adj[i]: %6g\n",
                                  g_cm93_zoom_factor, efactor, efr, scale_breaks[i], scale_breaks_adj[i] );
             }
+            // get Bahamas and Bermuda on the same screen...
+            scale_breaks_adj[6] *= 1.5;  
       }
 
       int cmscale_calc = 7;
@@ -4905,6 +4907,8 @@ int cm93compchart::GetCMScaleFromVP ( const ViewPort &vpt )
             cmscale_calc--;
             brk_index++;
       }
+      if ( g_bDebugCM93 )
+            printf("GetCMScaleFromVP %g\n", scale_mpp);
 
       //        Check for overzoom at the theoretically calcuolated chart scale
       //        If overzoomed possible, switch to larger scale chart if available
@@ -4937,7 +4941,7 @@ int cm93compchart::PrepareChartScale ( const ViewPort &vpt, int cmscale, bool bO
 {
 
       if ( g_bDebugCM93 )
-            printf ( "\non SetVPParms, cmscale:%d, %c\n", cmscale, ( char ) ( 'A' + cmscale -1 ) );
+            printf ( "\non SetVPParms (bOZ_ : %d), cmscale:%d, %c\n", bOZ_protect, cmscale, ( char ) ( 'A' + cmscale -1 ) );
 
       wxChar ext;
       bool cellscale_is_useable = false;
@@ -5111,13 +5115,13 @@ int cm93compchart::PrepareChartScale ( const ViewPort &vpt, int cmscale, bool bO
                     double new_zoom_factor = scale_breaks[7 - new_scale] / vpt.chart_scale ;
                     
                     //  Do not allow excessive "under-zoom", for performance reasons
-                    if( new_zoom_factor  < 1.0 ){
+                    if( new_zoom_factor  <= 1.0){
                         b_found = true;
                         new_scale = cmscale;
                         break;
                     }
                         
-                    if( new_zoom_factor < 4.0) {
+                    if( new_zoom_factor < 4.0 ) {
                         if ( NULL == m_pcm93chart_array[new_scale] ) {
                             m_pcm93chart_array[new_scale] = new cm93chart();
                             
