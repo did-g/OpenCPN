@@ -6987,21 +6987,23 @@ wxString s57chart::CreateObjDescriptions( ListOfObjRazRules* rule_list )
         //    Show LUP
         if( g_bDebugS57 ) {
             wxString index;
-            index.Printf( _T("Feature Index: %d\n"), current->obj->Index );
+            
+            classAttributes = "";
+            index.Printf( _T("Feature Index: %d<br>"), current->obj->Index );
             classAttributes << index;
 
             wxString LUPstring;
-            LUPstring.Printf( _T("LUP RCID:  %d\n"), current->LUP->RCID );
+            LUPstring.Printf( _T("LUP RCID:  %d<br>"), current->LUP->RCID );
             classAttributes << LUPstring;
 
             LUPstring = _T("    LUP ATTC: ");
             if( current->LUP->ATTCArray ) LUPstring += current->LUP->ATTCArray->Item( 0 );
-            LUPstring += _T("\n");
+            LUPstring += _T("<br>");
             classAttributes << LUPstring;
 
             LUPstring = _T("    LUP INST: ");
             if( current->LUP->INST ) LUPstring += *( current->LUP->INST );
-            LUPstring += _T("\n\n");
+            LUPstring += _T("<br><br>");
             classAttributes << LUPstring;
 
         }
@@ -7107,6 +7109,10 @@ wxString s57chart::CreateObjDescriptions( ListOfObjRazRules* rule_list )
                 objText += _T("<br>");
                 ret_val << objText;
             }
+            if( g_bDebugS57 ) {
+                ret_val << _T("<p>") << classAttributes;
+            }
+
 
         }
     } // Object for loop
