@@ -3234,8 +3234,7 @@ wxString ParseTEXTA ( wxString& val )
 
 void cm93chart::translate_colmar(const wxString &sclass, S57attVal *pattValTmp)
 {
-      int *pcur_attr = ( int * ) pattValTmp->value;
-      int cur_attr = *pcur_attr;
+      int cur_attr = pattValTmp->value.integer;
 
       wxString lstring;
 
@@ -3264,11 +3263,9 @@ void cm93chart::translate_colmar(const wxString &sclass, S57attVal *pattValTmp)
 
       if ( lstring.Len() )
       {
-            free ( pattValTmp->value );                       // free the old int pointer
-
             pattValTmp->valType = OGR_STR;
-            pattValTmp->value = ( char * ) malloc ( lstring.Len() + 1 );      // create a new Lstring attribute
-            strcpy ( ( char * ) pattValTmp->value, lstring.mb_str() );
+            pattValTmp->value.ptr = ( char * ) malloc ( lstring.Len() + 1 );      // create a new Lstring attribute
+            strcpy ( ( char * ) pattValTmp->value.ptr, lstring.mb_str() );
 
       }
 }
@@ -3379,17 +3376,13 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             {
                   case 'I':                           // never seen?
                         pi = ( int * ) aval;
-                        pAVI = ( int * ) malloc ( sizeof ( int ) );         //new int;
-                        *pAVI = *pi;
                         pattValTmp->valType = OGR_INT;
-                        pattValTmp->value   = pAVI;
+                        pattValTmp->value.integer   = *pi;
                         break;
                   case 'B':
                         pb = ( unsigned char * ) aval;
-                        pAVI = ( int * ) malloc ( sizeof ( int ) );         //new int;
-                        *pAVI = ( int ) ( *pb );
                         pattValTmp->valType = OGR_INT;
-                        pattValTmp->value   = pAVI;
+                        pattValTmp->value.integer   = ( int ) ( *pb );
                         break;
                   case 'W':                                       // aWORD10
                         pw = ( unsigned short * ) aval;
@@ -3399,14 +3392,12 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVR = ( double * ) malloc ( sizeof ( double ) );   //new double;
                         *pAVR = dival/10.;
                         pattValTmp->valType = OGR_REAL;
-                        pattValTmp->value   = pAVR;
+                        pattValTmp->value.ptr   = pAVR;
                         break;
                   case 'G':
                         pi = ( int * ) aval;
-                        pAVI = ( int * ) malloc ( sizeof ( int ) );         //new int;
-                        *pAVI = ( int ) ( *pi );
                         pattValTmp->valType = OGR_INT;
-                        pattValTmp->value   = pAVI;
+                        pattValTmp->value.integer   = *pi;
                         break;
 
                   case 'S':
@@ -3414,7 +3405,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVS = ( char * ) malloc ( nlen + 1 );          ;
                         strcpy ( pAVS, ( char * ) aval );
                         pattValTmp->valType = OGR_STR;
-                        pattValTmp->value   = pAVS;
+                        pattValTmp->value.ptr   = pAVS;
                         break;
 
                   case 'C':
@@ -3422,7 +3413,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVS = ( char * ) malloc ( nlen + 1 );          ;
                         strcpy ( pAVS, ( const char * ) &aval[3] );
                         pattValTmp->valType = OGR_STR;
-                        pattValTmp->value   = pAVS;
+                        pattValTmp->value.ptr   = pAVS;
                         break;
                   case 'L':
                   {
@@ -3442,7 +3433,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVS = ( char * ) malloc ( nlen + 1 );          ;
                         strcpy ( pAVS, val );
                         pattValTmp->valType = OGR_STR;
-                        pattValTmp->value   = pAVS;
+                        pattValTmp->value.ptr   = pAVS;
                         break;
                   }
                   case 'R':
@@ -3456,7 +3447,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         *pAVR = *pf;
 #endif
                         pattValTmp->valType = OGR_REAL;
-                        pattValTmp->value   = pAVR;
+                        pattValTmp->value.ptr   = pAVR;
                         break;
                   default:
                         sattr.Clear();               // Unknown, TODO track occasional case '?'
@@ -3475,24 +3466,24 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                   (sattr.IsSameAs ( _T ( "QUASOU" ) ) || sattr.IsSameAs ( _T ( "CATLIT" ) ))
                ) 
             {
-                  int v = *(int*)pattValTmp->value;
-                  free(pattValTmp->value);
+                  int v = pattValTmp->value.integer;
                   sprintf ( val, "%d", v );
                   int nlen = strlen ( val );
-                  pAVS = ( char * ) malloc ( nlen + 1 );          ;
+                  pAVS = ( char * ) malloc ( nlen + 1 );
                   strcpy ( pAVS, val );
                   pattValTmp->valType = OGR_STR;
-                  pattValTmp->value   = pAVS;
+                  pattValTmp->value.ptr   = pAVS;
             }
 
             //    Do CM93 $SCODE attribute substitutions
             if ( sclass.IsSameAs ( _T ( "$AREAS" ) ) && ( vtype == 'S' ) && sattr.IsSameAs ( _T ( "$SCODE" ) ) )
             {
-                  if ( !strcmp ( ( char * ) pattValTmp->value, "II25" ) )
+                  if ( !strcmp ( ( char * ) pattValTmp->value.ptr, "II25" ) )
                   {
-                        free ( pattValTmp->value );
-                        pattValTmp->value   = ( char * ) malloc ( strlen ( "BACKGROUND" ) + 1 );
-                        strcpy ( ( char * ) pattValTmp->value, "BACKGROUND" );
+                        if (pattValTmp->valType != OGR_INT)
+                              free ( pattValTmp->value.ptr );
+                        pattValTmp->value.ptr   = ( char * ) malloc ( strlen ( "BACKGROUND" ) + 1 );
+                        strcpy ( ( char * ) pattValTmp->value.ptr, "BACKGROUND" );
                   }
             }
 
@@ -3502,7 +3493,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             {
                   if ( sclass_sub.IsSameAs ( _T ( "M_COVR" ) ) && ( vtype == 'S' ) )
                   {
-                        wxString pub_date ( ( char * ) pattValTmp->value, wxConvUTF8 );
+                        wxString pub_date ( ( char * ) pattValTmp->value.ptr, wxConvUTF8 );
 
                         wxDateTime upd;
                         upd.ParseFormat ( pub_date, _T ( "%Y%m%d" ) );
@@ -3525,13 +3516,13 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             {
                   if ( sattr.IsSameAs ( _T ( "_wgsox" ) ) )
                   {
-                        tmp_transform_x = * ( double * ) pattValTmp->value;
+                        tmp_transform_x = * ( double * ) pattValTmp->value.ptr;
                         if ( fabs ( tmp_transform_x ) > 1.0 )                 // metres
                               m_CIB.b_have_offsets = true;
                   }
                   else if ( sattr.IsSameAs ( _T ( "_wgsoy" ) ) )
                   {
-                        tmp_transform_y = * ( double * ) pattValTmp->value;
+                        tmp_transform_y = * ( double * ) pattValTmp->value.ptr;
                         if ( fabs ( tmp_transform_x ) > 1.0 )
                               m_CIB.b_have_offsets = true;
                   }

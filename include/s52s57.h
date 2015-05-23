@@ -261,7 +261,10 @@ typedef enum _OGRatt_t{
 }OGRatt_t;
 
 typedef struct _S57attVal {
-    void * value;
+    union {
+        void *ptr;
+        int  integer;
+    } value;
     OGRatt_t valType;
 } S57attVal;
 

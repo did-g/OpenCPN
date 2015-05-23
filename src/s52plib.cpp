@@ -575,7 +575,7 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                             case OGR_INT: // S57 attribute type 'E' enumerated, 'I' integer
                             {
                                 int LUP_att_val = atoi( slatv );
-                                if( LUP_att_val == *(int*) ( v->value ) )
+                                if( LUP_att_val == v->value.integer)
                                     attValMatch = true;
                                 break;
                             }
@@ -588,7 +588,7 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                                 ss[40] = '\0';
                                 char *s = &ss[0];
                                 
-                                int *b = (int*) v->value;
+                                int *b = (int*) v->value.ptr;
                                 sscanf( s, "%d", &a );
                                 
                                 while( *s != '\0' ) {
@@ -604,7 +604,7 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                             }
                             case OGR_REAL: // S57 attribute type'F' float
                             {
-                                double obj_val = *(double*) ( v->value );
+                                double obj_val = *(double*) ( v->value.ptr );
                                 float att_val = atof( slatv );
                                 if( fabs( obj_val - att_val ) < 1e-6 )
                                     if( obj_val == att_val  )
@@ -617,7 +617,7 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                                 //    Strings must be exact match
                                 //    n.b. OGR_STR is used for S-57 attribute type 'L', comma-separated list
                                 
-                                wxString cs( (char *) v->value, wxConvUTF8 ); // Attribute from object
+                                wxString cs( (char *) v->value.ptr, wxConvUTF8 ); // Attribute from object
                                 if( LATTC.Mid( 6 ) == cs )
                                     attValMatch = true;
                                 break;
