@@ -141,6 +141,7 @@ static bool s_ProgressCallBack( void )
 //      S57Obj CTOR
 //----------------------------------------------------------------------------------
 
+
 S57Obj::S57Obj()
 {
     att_array = NULL;
@@ -1556,6 +1557,7 @@ void s57chart::SetLinePriorities( void )
 
 void s57chart::AssembleLineGeometry( void )
 {
+            wxString key;
             // Walk the hash tables to get the required buffer size
             
             //  Start with the edge hash table
@@ -1571,7 +1573,7 @@ void s57chart::AssembleLineGeometry( void )
             
             int ndelta = 0;
             //  Get the end node connected segments.  To do this, we
-            //  walk the Feature array and process each feature that potetially has a LINE type element
+            //  walk the Feature array and process each feature that potentially has a LINE type element
             for( int i = 0; i < PRIO_NUM; ++i ) {
                 for( int j = 0; j < LUPNAME_NUM; j++ ) {
                     ObjRazRules *top = razRules[i][j];
@@ -1613,9 +1615,7 @@ void s57chart::AssembleLineGeometry( void )
                                     n1 = pedge->pPoints[1];
                                     
                                     //      The initial node exists and connects to the start of an edge
-                                    wxString key;
-                                    key.Printf(_T("CE%d%d"), inode, venode);
-                                    
+                                    key.Printf(_T("%dCE%d"), inode, venode);
                                     if(m_connector_hash.find( key ) == m_connector_hash.end()){
                                         ndelta += 2;
                                         connector_segment *pcs = new connector_segment;
@@ -1642,8 +1642,7 @@ void s57chart::AssembleLineGeometry( void )
                                 if(ipnode){
                                     if(pedge && pedge->nCount){
                                         
-                                        wxString key;
-                                        key.Printf(_T("EC%d%d"), venode, enode);
+                                        key.Printf(_T("%dEC%d"), venode, enode);
                                         
                                         if(m_connector_hash.find( key ) == m_connector_hash.end()){
                                             ndelta += 2;
@@ -1655,9 +1654,8 @@ void s57chart::AssembleLineGeometry( void )
                                         }
                                     }
                                     else {
-                                        wxString key;
-                                        key.Printf(_T("CC%d%d"), inode, enode);
-                                        
+                                        key.Printf(_T("%dCC%d"), inode, enode);
+
                                         if(m_connector_hash.find( key ) == m_connector_hash.end()){
                                             ndelta += 2;
                                             connector_segment *pcs = new connector_segment;
@@ -1716,7 +1714,7 @@ void s57chart::AssembleLineGeometry( void )
                     connected_segment_hash::iterator itc;
                     for( itc = m_connector_hash.begin(); itc != m_connector_hash.end(); ++itc )
                     {
-                        wxString key = itc->first;
+                        //wxString key = itc->first;
                         connector_segment *pcs = itc->second;
                         
                         switch(pcs->type){
@@ -1830,8 +1828,7 @@ void s57chart::AssembleLineGeometry( void )
                                         
                                         if(pedge && pedge->nCount)
                                         {
-                                            wxString key;
-                                            key.Printf(_T("CE%d%d"), inode, venode);
+                                            key.Printf(_T("%dCE%d"), inode, venode);
                                             
                                             if(m_connector_hash.find( key ) != m_connector_hash.end()){
                                                 
@@ -1899,8 +1896,7 @@ void s57chart::AssembleLineGeometry( void )
                                         if(ipnode){
                                             if(pedge && pedge->nCount){
                                                 
-                                                wxString key;
-                                                key.Printf(_T("EC%d%d"), venode, enode);
+                                                key.Printf(_T("%dEC%d"), venode, enode);
                                                 
                                                 if(m_connector_hash.find( key ) != m_connector_hash.end()){
                                                     connector_segment *pcs = m_connector_hash[key];
@@ -1930,8 +1926,7 @@ void s57chart::AssembleLineGeometry( void )
                                                 }
                                             }
                                             else {
-                                                wxString key;
-                                                key.Printf(_T("CC%d%d"), inode, enode);
+                                                key.Printf(_T("%dCC%d"), inode, enode);
                                                 
                                                 if(m_connector_hash.find( key ) != m_connector_hash.end()){
                                                     connector_segment *pcs = m_connector_hash[key];
