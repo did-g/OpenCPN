@@ -227,6 +227,7 @@ ChartDB::ChartDB(MyFrame *parent)
       UnLockCache();
       
       m_b_busy = false;
+      m_prevMemUsed = 0;
 
       //    Report cache policy
       if(g_memCacheLimit)
@@ -1091,7 +1092,9 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                     GetMemoryStatus(0, &mem_used);
     //                  printf(" ChartdB Mem_total: %d  mem_used: %d  lock: %d\n", mem_total, mem_used, m_b_locked);
                     
-                    if((mem_used > g_memCacheLimit * 8 / 10) && !m_b_locked && (pChartCache->GetCount() > 2)) {
+                    if((mem_used > g_memCacheLimit * 8 / 10 && mem_used > m_prevMemUsed) 
+                        && !m_b_locked && (pChartCache->GetCount() > 2)) 
+                    {
                         bFree = true;
                         wxLogMessage(_T("Memory presure, Removing charts... "));
                         while (1){
@@ -1129,6 +1132,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                           else
                               break;                      // no possible delete candidate
                         }  // while
+                        m_prevMemUsed = mem_used;
                     }
                     else {
                        nFd  = wxMax(g_nCacheLimit, 200);
