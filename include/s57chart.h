@@ -85,9 +85,6 @@ class S57ObjectDesc;
 class S57Reader;
 class OGRS57DataSource;
 class S57ClassRegistrar;
-class S57Obj;
-class VE_Element;
-class VC_Element;
 class connector_segment;
 
 #include <wx/dynarray.h>
@@ -312,7 +309,6 @@ private:
 
 //  DEPCNT VALDCO array members
       int         m_nvaldco;
-      int         m_nvaldco_alloc;
       double       *m_pvaldco_array;
 
       VectorHelperHash        m_vector_helper_hash;

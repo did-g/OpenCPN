@@ -1009,7 +1009,6 @@ s57chart::s57chart()
     m_pENCDS = NULL;
 
     m_nvaldco = 0;
-    m_nvaldco_alloc = 0;
     m_pvaldco_array = NULL;
 
     m_bExtentSet = false;
@@ -1050,7 +1049,7 @@ s57chart::~s57chart()
 
     delete m_pENCDS;
 
-    free( m_pvaldco_array );
+    delete [] m_pvaldco_array;
 
     free( m_line_vertex_buffer );
     
@@ -1086,8 +1085,10 @@ s57chart::~s57chart()
     m_vc_hash.clear();
 
 #ifdef ocpnUSE_GL 
-    if(s_glDeleteBuffers && (m_LineVBO_name > 0))
+    if(s_glDeleteBuffers && (m_LineVBO_name > 0)) {
+        wxLogMessage(_T("delete VBO"));
         s_glDeleteBuffers(1, (GLuint *)&m_LineVBO_name);
+    }
 #endif
     
 }
@@ -3117,14 +3118,15 @@ InitReturn s57chart::PostInit( ChartInitFlag flags, ColorScheme cs )
     return INIT_OK;
 }
 
+// use an int for storing double because there's no default
+// hash for double!
+WX_DECLARE_HASH_SET( int, wxIntegerHash, wxIntegerEqual, Depcnt );
+
 void s57chart::BuildDepthContourArray( void )
 {
     //    Build array of contour values for later use by conditional symbology
-
-    if( 0 == m_nvaldco_alloc ) {
-        m_nvaldco_alloc = 5;
-        m_pvaldco_array = (double *) calloc( m_nvaldco_alloc, sizeof(double) );
-    }
+    //    Use a set there could be a lot of contour segments (many thousands) 
+    Depcnt contour;
 
     ObjRazRules *top;
     for( int i = 0; i < PRIO_NUM; ++i ) {
@@ -3135,23 +3137,31 @@ void s57chart::BuildDepthContourArray( void )
                 if( !strncmp( top->obj->FeatureName, "DEPCNT", 6 ) ) {
                     double valdco = 0.0;
                     if( GetDoubleAttr( top->obj, "VALDCO", valdco ) ) {
-                        m_nvaldco++;
-                        if( m_nvaldco > m_nvaldco_alloc ) {
-                            void *tr = realloc( (void *) m_pvaldco_array,
-                                    m_nvaldco_alloc * 2 * sizeof(double) );
-                            m_pvaldco_array = (double *) tr;
-                            m_nvaldco_alloc *= 2;
-                        }
-                        m_pvaldco_array[m_nvaldco - 1] = valdco;
+                        float fval =  (float)valdco;
+                        contour.insert(*(int *) (&fval)); 
                     }
                 }
-                ObjRazRules *nxx = top->next;
-                top = nxx;
+                top = top->next;
             }
         }
     }
-
+    m_nvaldco = contour.size();
+    delete [] m_pvaldco_array;
+    m_pvaldco_array = NULL;
+ 
+    if (m_nvaldco) {
+        m_pvaldco_array = new double[m_nvaldco];
+        Depcnt::iterator it;
+        m_nvaldco = 0;
+        for( it = contour.begin(); it != contour.end(); ++it )
+        {
+            int key = *it;
+            float v = *(float *)(&key);
+            m_pvaldco_array[m_nvaldco++] = (double)v;
+        }
+    }
     std::sort( m_pvaldco_array, m_pvaldco_array + m_nvaldco );
+
 }
 
 
