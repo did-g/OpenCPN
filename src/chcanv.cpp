@@ -4474,6 +4474,8 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
     int x, y;
     int mx, my;
 
+    bool bret = false;
+    
     if( s_ProgDialog )
         return(true);
 
@@ -4649,8 +4651,7 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
             Refresh( false );
         }
     }
-    
-    return false;
+    return bret; 
         
 }
 
@@ -6074,8 +6075,7 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
         }
     }
     
-    if( event.Dragging() ){
-        if( 1/*leftIsDown*/ ) {
+    if( event.Dragging() && event.LeftIsDown()){
             if( ( last_drag.x != x ) || ( last_drag.y != y ) ) {
                 m_bChartDragging = true;
                 PanCanvas( last_drag.x - x, last_drag.y - y );
@@ -6092,7 +6092,6 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
                 }
                 
             }
-        }
     }
         
         
