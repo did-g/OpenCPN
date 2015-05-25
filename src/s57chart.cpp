@@ -4512,21 +4512,19 @@ int s57chart::BuildRAZFromSENCFile( const wxString& FullPath )
     int senc_file_version = 0;
     
     //    Sanity check for existence of file
-    wxFileName SENCFileName( FullPath );
-    if( !SENCFileName.FileExists() ) {
-        wxString msg( _T("   Cannot open SENC file ") );
-        msg.Append( SENCFileName.GetFullPath() );
-        wxLogMessage( msg );
-
-        return 1;
-    }
 
     int nProg = 0;
 
     wxString ifs( FullPath );
 
-    wxFileInputStream fpx_u( ifs );
-    wxBufferedInputStream fpx( fpx_u );
+    wxFFileInputStream fpx( ifs );
+    if (!fpx.IsOk()) {
+        wxString msg( _T("   Cannot open SENC file ") );
+        msg.Append( FullPath );
+        wxLogMessage( msg );
+        return 1;
+    }
+    wxFileName SENCFileName( FullPath );
 
     int MAX_LINE = 499999;
     char *buf = (char *) malloc( MAX_LINE + 1 );
@@ -6557,12 +6555,8 @@ bool s57chart::InitFromSENCMinimal( const wxString &FullPath )
     m_FullPath = FullPath;
     m_Description = m_FullPath;
 
-    wxFileName S57FileName( FullPath );
-
-    if( !S57FileName.FileExists() ) return false;
-
     wxFile f;
-    if( f.Open( S57FileName.GetFullPath() ) ) {
+    if( f.Open( FullPath ) ) {
         if( f.Length() == 0 ) {
             f.Close();
             ret_val = false;
