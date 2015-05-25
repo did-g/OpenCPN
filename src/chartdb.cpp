@@ -349,6 +349,7 @@ void ChartDB::PurgeCacheUnusedCharts( double factor)
 
                                 //remove the cache entry
                         pChartCache->Remove(pce);
+                        delete pce;
 
                     }
                     
@@ -1060,10 +1061,11 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                     delete Ch;                                  // chart is not useable
                     if( wxMUTEX_NO_ERROR == m_cache_mutex.Lock() ){
                         pChartCache->Remove(pce);                   // so remove it
+                        delete pce;
                         m_cache_mutex.Unlock();
                     }
+                    // XXX and if there's a mutex error?
                         
-                    delete pce;
                     bInCache = false;
               }
           }
@@ -1122,6 +1124,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                                 
                                 //remove the cache entry
                             pChartCache->Remove(pce);
+                            delete pce;
                             
                             GetMemoryStatus(0, &mem_used);
                             // purge 10% more 
@@ -1169,6 +1172,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                                     
                                 //remove the cache entry
                                 pChartCache->Remove(pce);
+                                delete pce;
                                     
                                 if(--nCache <=  nFd || (pChartCache->GetCount() <= 2))
                                    break;
@@ -1421,7 +1425,8 @@ bool ChartDB::DeleteCacheChart(ChartBase *pDeleteCandidate)
 
                         //remove the cache entry
                   pChartCache->Remove(pce);
-
+                  delete pce;
+                  
                   if(pthumbwin)
                   {
                         if(pthumbwin->pThumbChart == pDeleteCandidate)
