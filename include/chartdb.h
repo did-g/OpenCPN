@@ -176,7 +176,8 @@ private:
       MyFrame           *pParent;
       bool              m_b_locked;
       bool              m_b_busy;
-
+      int		m_prevMemUsed;
+      
       wxCriticalSection m_critSect;
       wxMutex           m_cache_mutex;
 };
