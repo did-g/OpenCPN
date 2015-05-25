@@ -167,6 +167,7 @@ wxString                  glog_file;
 //wxString                  gConfig_File;
 
 int                       g_unit_test_1;
+int                       g_unit_test_2;
 bool                      g_start_fullscreen;
 bool                      g_rebuild_gl_cache;
 
@@ -814,6 +815,7 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
 {
     //    Add some OpenCPN specific command line options
     parser.AddSwitch( _T("unit_test_1") );
+    parser.AddSwitch( _T("unit_test_2") );
     parser.AddSwitch( _T("p") );
     parser.AddSwitch( _T("no_opengl") );
     parser.AddSwitch( _T("fullscreen") );
@@ -823,6 +825,7 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
 bool MyApp::OnCmdLineParsed( wxCmdLineParser& parser )
 {
     g_unit_test_1 = parser.Found( _T("unit_test_1") );
+    g_unit_test_2 = parser.Found( _T("unit_test_2") );
     g_bportable = parser.Found( _T("p") );
     g_bdisable_opengl = parser.Found( _T("no_opengl") );
     g_start_fullscreen = parser.Found( _T("fullscreen") );
@@ -5756,7 +5759,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
         return;
     }
 
-    if( g_unit_test_1 ) {
+    if( g_unit_test_1 || g_unit_test_2) {
 //            if((0 == ut_index) && GetQuiltMode())
 //                  ToggleQuiltMode();
 
@@ -5779,8 +5782,20 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
                 } else
                     SelectdbChart( ut_index );
 
-                double ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
-                ppm /= 2;
+                double ppm;
+                if (g_unit_test_1) {
+                    ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
+                    ppm /= 2;
+                }
+                else {
+                    // for full chart choose use max width or heigh
+                    //ChartBase *pc = ChartData->OpenChartFromDB( ut_index, FULL_INIT );
+                    
+                    //double scale = pc->GetNormalScaleMax( cc1->GetCanvasScaleFactor(), cc1->GetCanvasWidth() );
+                    double scale = cte->GetScale()*10;
+                    ppm =cc1->GetCanvasScaleFactor() / scale;
+
+                }
                 cc1->SetVPScale( ppm );
 
                 cc1->ReloadVP();
