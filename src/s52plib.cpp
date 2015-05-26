@@ -7553,6 +7553,7 @@ void DrawAALine( wxDC *pDC, int x0, int y0, int x1, int y1, wxColour clrLine, in
 RenderFromHPGL::RenderFromHPGL( s52plib* plibarg )
 {
     plib = plibarg;
+    
     renderToDC = false;
     renderToOpenGl = false;
     renderToGCDC = false;
@@ -7726,6 +7727,7 @@ bool RenderFromHPGL::Render( char *str, char *col, wxPoint &r, wxPoint &pivot, d
 //      double radius = 0.0;
     wxPoint lineStart;
     wxPoint lineEnd;
+    penWidth = 1.0;
 
     wxStringTokenizer commands( wxString( str, wxConvUTF8 ), _T(";") );
     while( commands.HasMoreTokens() ) {
