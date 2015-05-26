@@ -4670,10 +4670,6 @@ int s57chart::BuildRAZFromSENCFile( const wxString& FullPath )
         }               //OGRF
 
         else if( !strncmp( buf, "VETableStart", 12 ) ) {
-            //    Use a wxArray for temp storage
-            //    then transfer to a simple linear array
-            ArrayOfVE_Elements ve_array;
-
             int index = -1;
             int count;
 
@@ -4688,29 +4684,12 @@ int s57chart::BuildRAZFromSENCFile( const wxString& FullPath )
                     fpx.Read( pPoints, count * 2 * sizeof(double) );
                 }
 
-                VE_Element vee;
-                vee.index = index;
-                vee.nCount = count;
-                vee.pPoints = pPoints;
-                vee.max_priority = 0;//-99;            // Default
-
-                ve_array.Add( vee );
-
-                //    Next element
-                fpx.Read( &index, sizeof(int) );
-            }
-
-            //    Create a hash map of VE_Element pointers as a chart class member
-            int n_ve_elements = ve_array.GetCount();
-
-            for( int i = 0; i < n_ve_elements; i++ ) {
-                VE_Element ve_from_array = ve_array.Item( i );
                 VE_Element *vep = new VE_Element;
-                vep->index = ve_from_array.index;
-                vep->nCount = ve_from_array.nCount;
-                vep->pPoints = ve_from_array.pPoints;
-                vep->max_priority = 0;            // Default
-        
+                vep->index = index;
+                vep->nCount = count;
+                vep->pPoints = pPoints;
+                vep->max_priority = 0;//-99;            // Default
+
                 if(vep->nCount){
                 //  Get a bounding box for the edge
                     double east_max = -1e7; double east_min = 1e7;
@@ -4733,18 +4712,15 @@ int s57chart::BuildRAZFromSENCFile( const wxString& FullPath )
                     fromSM( east_max, north_max, ref_lat, ref_lon, &lat, &lon );
                     vep->BBox.SetMax( lon, lat);
                 }
-                
-                m_ve_hash[vep->index] = vep;
+                // XXX duplicate?                
+                m_ve_hash[index] = vep;
 
+                //    Next element
+                fpx.Read( &index, sizeof(int) );
             }
-
         }
 
         else if( !strncmp( buf, "VCTableStart", 12 ) ) {
-            //    Use a wxArray for temp storage
-            //    then transfer to a simple linear array
-            ArrayOfVC_Elements vc_array;
-
             int index = -1;
             int index_max = -1;
 
@@ -4756,28 +4732,15 @@ int s57chart::BuildRAZFromSENCFile( const wxString& FullPath )
                 pPoint = (double *) malloc( 2 * sizeof(double) );
                 fpx.Read( pPoint, 2 * sizeof(double) );
 
-                VC_Element vce;
-                vce.index = index;
-                vce.pPoint = pPoint;
-
-                vc_array.Add( vce );
+                VC_Element *vce = new VC_Element;
+                vce->index = index;
+                vce->pPoint = pPoint;
+                m_vc_hash[index] = vce;
 
                 if( index > index_max ) index_max = index;
 
                 //    Next element
                 fpx.Read( &index, sizeof(int) );
-            }
-
-            //    Create a hash map VC_Element pointers as a chart class member
-            int n_vc_elements = vc_array.GetCount();
-
-            for( int i = 0; i < n_vc_elements; i++ ) {
-                VC_Element vc_from_array = vc_array.Item( i );
-                VC_Element *vcp = new VC_Element;
-                vcp->index = vc_from_array.index;
-                vcp->pPoint = vc_from_array.pPoint;
-
-                m_vc_hash[vcp->index] = vcp;
             }
         }
 
