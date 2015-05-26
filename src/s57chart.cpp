@@ -4409,7 +4409,7 @@ int s57chart::BuildSENCFile( const wxString& FullPath000, const wxString& SENCFi
                 nProg = m_nGeoRecords - 1;
             else
                 nProg = iObj;
-            if( s_ProgDialog && nProg % 10 == 0 )
+            if( s_ProgDialog && nProg % 100 == 0 )
             {
                 sobj = wxString( objectDef->GetDefnRef()->GetName(), wxConvUTF8 );
                 sobj.Append( wxString::Format( _T("  %d/%d       "), iObj, m_nGeoRecords ) );
