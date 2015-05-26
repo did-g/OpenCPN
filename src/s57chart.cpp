@@ -2934,11 +2934,11 @@ InitReturn s57chart::FindOrCreateSenc( const wxString& name )
 
 //      Look for SENC file in the target directory
 
-    if( m_SENCFileName.FileExists() ) {
-        wxFile f;
-        if( f.Open( m_SENCFileName.GetFullPath() ) ) {
+    wxFile f;
+    if( f.Open( m_SENCFileName.GetFullPath() ) ) {
             if( f.Length() == 0 ) {
                 f.Close();
+                bbuild_new_senc = true;
                 build_ret_val = BuildSENCFile( name, m_SENCFileName.GetFullPath() );
             } else                                      // file exists, non-zero
             {                                         // so check for new updates
@@ -3043,22 +3043,17 @@ InitReturn s57chart::FindOrCreateSenc( const wxString& name )
 
                 if( force_make_senc ) bbuild_new_senc = true;
 
-                if( bbuild_new_senc ) build_ret_val = BuildSENCFile( name,
-                        m_SENCFileName.GetFullPath() );
-
             }
-        }
     }
-
-    else                    // SENC file does not exist
+    else if( !m_SENCFileName.FileExists() )                    // SENC file does not exist
     {
-        build_ret_val = BuildSENCFile( name, m_SENCFileName.GetFullPath() );
+        // XXX and if open return false?
         bbuild_new_senc = true;
     }
 
-    if( bbuild_new_senc ) m_bneed_new_thumbnail = true; // force a new thumbnail to be built in PostInit()
-
     if( bbuild_new_senc ) {
+        m_bneed_new_thumbnail = true; // force a new thumbnail to be built in PostInit()
+        build_ret_val = BuildSENCFile( name, m_SENCFileName.GetFullPath() );
         if( BUILD_SENC_NOK_PERMANENT == build_ret_val ) return INIT_FAIL_REMOVE;
         if( BUILD_SENC_NOK_RETRY == build_ret_val ) return INIT_FAIL_RETRY;
     }
