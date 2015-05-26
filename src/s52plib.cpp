@@ -4495,15 +4495,16 @@ int s52plib::DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp )
         if(!rzRules->obj->m_bcategory_mutable)
             return 0;
 
+        // but already added will not change display category        
+        if(rzRules->obj->bCS_Added ) 
+            return 0;
+
         //  Otherwise, make sure the CS, if present, has been evaluated,
         //  and then check the category again    
         //  no rules 
         if( !ObjectRenderCheckCS( rzRules, vp ) )
             return 0;
 
-        // but already added will not change display category        
-        if(rzRules->obj->bCS_Added ) 
-            return 0;
 
         rzRules->obj->CSrules = NULL;
         Rules *rules = rzRules->LUP->ruleList;
@@ -6735,15 +6736,16 @@ int s52plib::RenderAreaToGL( const wxGLContext &glcc, ObjRazRules *rzRules, View
         if(!rzRules->obj->m_bcategory_mutable)
             return 0;
 
+        // but already added will not change display category        
+        if(rzRules->obj->bCS_Added ) 
+            return 0;
+
         //  Otherwise, make sure the CS, if present, has been evaluated,
         //  and then check the category again    
         //  no rules 
         if( !ObjectRenderCheckCS( rzRules, vp ) )
             return 0;
 
-        // but already added will not change display category        
-        if(rzRules->obj->bCS_Added ) 
-            return 0;
 
         rzRules->obj->CSrules = NULL;
         Rules *rules = rzRules->LUP->ruleList;
@@ -7090,14 +7092,14 @@ int s52plib::RenderAreaToDC( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp,
         if(!rzRules->obj->m_bcategory_mutable)
             return 0;
 
+        // but already added will not change display category        
+        if(rzRules->obj->bCS_Added ) 
+            return 0;
+
         //  Otherwise, make sure the CS, if present, has been evaluated,
         //  and then check the category again    
         //  no rules 
         if( !ObjectRenderCheckCS( rzRules, vp ) )
-            return 0;
-
-        // but already added will not change display category        
-        if(rzRules->obj->bCS_Added ) 
             return 0;
 
         rzRules->obj->CSrules = NULL;
