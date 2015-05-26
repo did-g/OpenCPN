@@ -4357,6 +4357,7 @@ void MyFrame::ToggleAnchor( void )
                     old_vis = pOLE->nViz;
                     break;
                 }
+		pOLE = NULL;
             }
         }
         else if(OTHER == ps52plib->GetDisplayCategory())
