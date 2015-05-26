@@ -275,7 +275,7 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
 
     char *br;
     char szAtt[20];
-    char geoMatch[20];
+    const char *geoMatch;
 
     bool bMulti = false;
 
@@ -307,7 +307,7 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
             int prim = -1;
             int attdun = 0;
 
-            strcpy( geoMatch, "Dummy" );
+            geoMatch = "Dummy";
 
             while( !attdun ) {
                 if( hdr_len ) {
@@ -356,19 +356,19 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
                     prim = atoi( buf + 13 );
                     switch( prim ){
                         case 1: {
-                            strcpy( geoMatch, "  POIN" );
+                            geoMatch =  "  POIN";
                             break;
                         }
 
                         case 2:                            // linestring
                         {
-                            strcpy( geoMatch, "  LINE" );
+                            geoMatch = "  LINE";
                             break;
                         }
 
                         case 3:                            // area as polygon
                         {
-                            strcpy( geoMatch, "  POLY" );
+                            geoMatch = "  POLY";
                             break;
                         }
 
