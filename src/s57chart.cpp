@@ -1087,7 +1087,6 @@ s57chart::~s57chart()
 
 #ifdef ocpnUSE_GL 
     if(s_glDeleteBuffers && (m_LineVBO_name > 0)) {
-        wxLogMessage(_T("delete VBO"));
         s_glDeleteBuffers(1, (GLuint *)&m_LineVBO_name);
     }
 #endif

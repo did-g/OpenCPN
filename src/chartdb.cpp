@@ -1098,7 +1098,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                         && !m_b_locked && (pChartCache->GetCount() > 2)) 
                     {
                         bFree = true;
-                        wxLogMessage(_T("Memory presure, Removing charts... "));
+                        wxLogMessage(_T("Memory pressure, Removing charts... "));
                         while (1){
                           CacheEntry *pce = FindOldestDeleteCandidate(true);
                           if(pce){
@@ -1151,7 +1151,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                             CacheEntry *pce = FindOldestDeleteCandidate( true );
                             if(pce){
                                 ChartBase *pDeleteCandidate =  (ChartBase *)(pce->pChart);
-                                wxString msg(_T("Removing oldest chart from cache on file presure: "));
+                                wxString msg(_T("Removing oldest chart from cache on file pressure: "));
                                 msg += pDeleteCandidate->GetFullPath();
                                 wxLogMessage(msg);
                                 
