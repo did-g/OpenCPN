@@ -172,6 +172,7 @@ private:
       CacheEntry *FindOldestDeleteCandidate( bool blog );
       
       wxArrayPtrVoid    *pChartCache;
+      int		m_ticks;
 
       MyFrame           *pParent;
       bool              m_b_locked;

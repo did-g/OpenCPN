@@ -225,6 +225,7 @@ ChartDB::ChartDB(MyFrame *parent)
       
       m_b_busy = false;
       m_prevMemUsed = 0;
+      m_ticks = 0;
 
       //    Report cache policy
       if(g_memCacheLimit)
@@ -972,11 +973,12 @@ CacheEntry *ChartDB::FindOldestDeleteCandidate( bool blog)
         unsigned int nCache = pChartCache->GetCount();
         if(nCache > 1)
         {
-            wxDateTime now = wxDateTime::Now();                   // get time for LRU use
+            // don't bother with time only use a counter
+            // wxDateTime now = wxDateTime::Now();                   // get time for LRU use
             
             if(blog)
                 wxLogMessage(_T("Searching chart cache for oldest entry"));
-            int LRUTime = now.GetTicks();
+            int LRUTime = m_ticks;
             int iOldest = 0;
             for(unsigned int i=0 ; i<nCache ; i++)
             {
@@ -990,7 +992,7 @@ CacheEntry *ChartDB::FindOldestDeleteCandidate( bool blog)
                     }
                 }
             }
-            int dt = now.GetTicks() - LRUTime;
+            int dt = m_ticks - LRUTime;
 
             CacheEntry *pce = (CacheEntry *)(pChartCache->Item(iOldest));
             ChartBase *pDeleteCandidate =  (ChartBase *)(pce->pChart);
@@ -1023,9 +1025,8 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
       ChartBase *Ch = NULL;
       CacheEntry *pce;
 
-      wxDateTime now = wxDateTime::Now();                   // get time for LRU use
-
       bool bInCache = false;
+      m_ticks++;
 
 //    Search the cache
 
@@ -1051,7 +1052,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
           {
               if(Ch->IsReadyToRender())
               {
-                    pce->RecentTime = now.GetTicks();           // chart is OK
+                    pce->RecentTime = m_ticks;           // chart is OK
                     pce->b_in_use = true;
                     return Ch;
               }
@@ -1070,7 +1071,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
           }
           else                                                  // assume if in cache, the chart can do thumbnails
           {
-               pce->RecentTime = now.GetTicks();
+               pce->RecentTime = m_ticks;
                pce->b_in_use = true;
                return Ch;
           }
@@ -1338,7 +1339,7 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                               pce->pChart = Ch;
                               pce->dbIndex = dbindex;
 //                              printf("    Adding chart %d\n", dbindex);
-                              pce->RecentTime = now.GetTicks();
+                              pce->RecentTime = m_ticks;
                               pce->n_lock = 0;
 
                               if( wxMUTEX_NO_ERROR == m_cache_mutex.Lock() ){
