@@ -2909,18 +2909,16 @@ InitReturn s57chart::FindOrCreateSenc( const wxString& name )
 
 //      Look for SENC file in the target directory
 
-    wxFile f;
-    if( f.Open( m_SENCFileName.GetFullPath() ) ) {
-            if( f.Length() == 0 ) {
-                f.Close();
+    {
+        wxFFileInputStream fpx( m_SENCFileName.GetFullPath() );
+
+        if( fpx.IsOk(  ) ) {
+            if( fpx.GetSize() == 0 ) {
                 bbuild_new_senc = true;
-                build_ret_val = BuildSENCFile( name, m_SENCFileName.GetFullPath() );
             } else                                      // file exists, non-zero
             {                                         // so check for new updates
 
-                f.Seek( 0 );
-                wxFileInputStream *pfpx_u = new wxFileInputStream( f );
-                wxBufferedInputStream *pfpx = new wxBufferedInputStream( *pfpx_u );
+                fpx.SeekI( 0 );
                 int dun = 0;
                 int last_update = 0;
                 int senc_file_version = 0;
@@ -2932,7 +2930,7 @@ InitReturn s57chart::FindOrCreateSenc( const wxString& name )
                 wxString senc_base_edtn;
 
                 while( !dun ) {
-                    if( my_fgets( pbuf, 256, *pfpx ) == 0 ) {
+                    if( my_fgets( pbuf, 256, fpx ) == 0 ) {
                         dun = 1;
                         force_make_senc = 1;
                         break;
@@ -2985,9 +2983,6 @@ InitReturn s57chart::FindOrCreateSenc( const wxString& name )
                     }
                 }
 
-                delete pfpx;
-                delete pfpx_u;
-                f.Close();
 //              Anything to do?
 // force_make_senc = 1;
                 //  SENC file version has to be correct for other tests to make sense
@@ -3019,11 +3014,11 @@ InitReturn s57chart::FindOrCreateSenc( const wxString& name )
                 if( force_make_senc ) bbuild_new_senc = true;
 
             }
-    }
-    else if( !m_SENCFileName.FileExists() )                    // SENC file does not exist
-    {
-        // XXX and if open return false?
-        bbuild_new_senc = true;
+        }
+        else if( !m_SENCFileName.FileExists() )                    // SENC file does not exist
+        {
+            bbuild_new_senc = true;
+        }
     }
 
     if( bbuild_new_senc ) {
