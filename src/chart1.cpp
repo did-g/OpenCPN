@@ -6544,8 +6544,9 @@ void MyFrame::HandlePianoClick( int selected_index, int selected_dbIndex )
         }
     } else {
         if( cc1->IsChartQuiltableRef( selected_dbIndex ) ){
+#if 0
             if( ChartData ) ChartData->PurgeCache();
-
+#endif
 
             //  If the chart is a vector chart, and of very large scale,
             //  then we had better set the new scale directly to avoid excessive underzoom
