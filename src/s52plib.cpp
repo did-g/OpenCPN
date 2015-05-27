@@ -6174,7 +6174,7 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         //  Has a VBO been built for this object?
             if( 1 ) {
                  
-                 if(rzRules->obj->auxParm0 <= 0) {
+                if(rzRules->obj->auxParm0 <= 0) {
                     b_temp_vbo = (rzRules->obj->auxParm0 == -5);
                    
                     GLuint vboId;
@@ -6198,7 +6198,9 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                 }                    
              }
         }
-
+        else {
+            glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex coords array
+        }
         
 
         PolyTriGroup *ppg = rzRules->obj->pPolyTessGeo->Get_PolyTriGroup_head();
@@ -6207,7 +6209,6 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         TriPrim *p_tp = ppg->tri_prim_head;
         GLintptr vbo_offset = 0;
         
-        glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex coords array
 
         //      Set up the stride sizes for the array
         int array_data_size = sizeof(float);
@@ -6259,6 +6260,7 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         if( b_useVBO && b_temp_vbo){
             (s_glBufferData)(GL_ARRAY_BUFFER, 0, NULL, GL_STATIC_DRAW);
             s_glDeleteBuffers(1, (unsigned int *)&rzRules->obj->auxParm0);
+            // XXX ? and next time
             rzRules->obj->auxParm0 = 0;
         }
     } // if pPolyTessGeo

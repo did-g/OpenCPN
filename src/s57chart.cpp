@@ -203,7 +203,17 @@ S57Obj::~S57Obj()
         }
         free( att_array );
 
-        if( pPolyTessGeo ) delete pPolyTessGeo;
+        if( pPolyTessGeo ) {
+#ifdef ocpnUSE_GL 
+            bool b_useVBO = g_b_EnableVBO  && !auxParm1;    // VBO allowed?
+
+            PolyTriGroup *ppg_vbo = pPolyTessGeo->Get_PolyTriGroup_head();
+            if (b_useVBO && ppg_vbo && auxParm0 > 0 && ppg_vbo->single_buffer && s_glDeleteBuffers) {
+                s_glDeleteBuffers(1, (GLuint *)&auxParm0);
+            }
+#endif
+            delete pPolyTessGeo;
+        }
 
         if( pPolyTrapGeo ) delete pPolyTrapGeo;
 
@@ -279,7 +289,7 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
 
     bool bMulti = false;
 
-    char *hdr_buf = (char *) malloc( 1 );
+    char *hdr_buf = 0;
 
     strcpy( buf, first_line );
 
@@ -330,7 +340,6 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
                     if (NULL == hdr_buf)
                     {
                         free ( tmp );
-                        tmp = NULL;
                     }
                     else
                     {
@@ -1086,7 +1095,7 @@ s57chart::~s57chart()
     m_vc_hash.clear();
 
 #ifdef ocpnUSE_GL 
-    if(s_glDeleteBuffers && (m_LineVBO_name > 0)) {
+    if(s_glDeleteBuffers && m_LineVBO_name > 0) {
         s_glDeleteBuffers(1, (GLuint *)&m_LineVBO_name);
     }
 #endif
