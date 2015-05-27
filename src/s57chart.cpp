@@ -47,6 +47,7 @@
 #include "navutil.h"                            // for LogMessageOnce
 #include "ocpn_pixel.h"
 #include "ocpndc.h"
+#include "OCPNPlatform.h"
 #include "s52utils.h"
 
 #include "cpl_csv.h"
@@ -2851,8 +2852,7 @@ InitReturn s57chart::Init( const wxString& name, ChartInitFlag flags )
 
     if( fn.GetExt() == _T("000") ) {
         if( m_bbase_file_attr_known ) {
-            ::wxBeginBusyCursor();
-
+            OcpBeginBusyCursor();
             int sret = FindOrCreateSenc( name );
             if( sret != BUILD_SENC_OK ) {
                 if( sret == BUILD_SENC_NOK_RETRY ) ret_value = INIT_FAIL_RETRY;
@@ -2860,19 +2860,15 @@ InitReturn s57chart::Init( const wxString& name, ChartInitFlag flags )
                     ret_value = INIT_FAIL_REMOVE;
             } else
                 ret_value = PostInit( flags, m_global_color_scheme );
-
-            ::wxEndBusyCursor();
         }
 
     }
 
     else if( fn.GetExt() == _T("S57") ) {
-        ::wxBeginBusyCursor();
+        OcpBeginBusyCursor();
 
         m_SENCFileName = name;
         ret_value = PostInit( flags, m_global_color_scheme );
-
-        ::wxEndBusyCursor();
 
     }
 
@@ -4759,12 +4755,13 @@ int s57chart::BuildRAZFromSENCFile( const wxString& FullPath )
             nGeo1000 = nGeoFeature / 500;
 
 #ifdef __WXMSW__
-            wxBeginBusyCursor();
+
             /*
+            wxBeginBusyCursor();
              SENC_prog = new wxProgressDialog(  _("OpenCPN S57 SENC File Load"), FullPath, nGeo1000, NULL,
              wxPD_AUTO_HIDE | wxPD_CAN_ABORT | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME | wxPD_SMOOTH);
-             */
             wxEndBusyCursor();
+             */
 
 #endif
         }

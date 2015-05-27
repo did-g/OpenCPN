@@ -99,8 +99,6 @@ WX_DEFINE_OBJARRAY ( Array_Of_M_COVR_Desc_Ptr );
 WX_DEFINE_LIST ( List_Of_M_COVR_Desc );
 
 
-bool s_b_busy_shown;
-
 void appendOSDirSep ( wxString* pString )
 {
       wxChar sep = wxFileName::GetPathSeparator();
@@ -2207,10 +2205,6 @@ void cm93chart::SetVPParms ( const ViewPort &vpt )
                         loadcell_key++;
                   }
             }
-      }
-      if( s_b_busy_shown){
-          ::wxEndBusyCursor();
-          s_b_busy_shown = false;
       }
 }
 
@@ -4489,11 +4483,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
       }
 
       //    File is known to exist
-
-      if(!s_b_busy_shown) {
-          ::wxBeginBusyCursor();
-          s_b_busy_shown = true;
-      }
+      OcpBeginBusyCursor();
       
       wxString msg ( _T ( "Loading CM93 cell " ) );
       msg += file;
@@ -6809,9 +6799,8 @@ void CM93OffsetDialog::UpdateOffsets ( void )
 
             //    Closing the current cell will record the offsets in the M_COVR cache file
             //    Re-opening will then refresh the M_COVRs in the cover set
-            ::wxBeginBusyCursor();
+            OcpBeginBusyCursor();
             m_pcompchart->CloseandReopenCurrentSubchart();
-            ::wxEndBusyCursor();
 
             if ( m_pparent )
                   m_pparent->Refresh ( true );

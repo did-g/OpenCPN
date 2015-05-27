@@ -37,6 +37,9 @@
 
 #include <stdio.h>
 
+void OcpBeginBusyCursor();
+void OcpEndBusyCursor();
+
 class OCPNPlatform
 {
 public:    

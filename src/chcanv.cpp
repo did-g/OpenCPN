@@ -60,6 +60,8 @@
 #include "pluginmanager.h"
 #include "ocpn_pixel.h"
 #include "ocpndc.h"
+#include "OCPNPlatform.h"
+
 #include "undo.h"
 #include "toolbar.h"
 #include "multiplexer.h"
@@ -9403,7 +9405,7 @@ void ChartCanvas::Refresh( bool eraseBackground, const wxRect *rect )
     } else
 #endif
         wxWindow::Refresh( eraseBackground, rect );
-
+    OcpEndBusyCursor();
 }
 
 void ChartCanvas::Update()

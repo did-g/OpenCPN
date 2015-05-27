@@ -3828,6 +3828,7 @@ void glChartCanvas::Render()
     
     cc1->PaintCleanup();
     n_render++;
+    OcpEndBusyCursor();
 }
 
 
