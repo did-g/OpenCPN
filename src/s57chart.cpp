@@ -140,13 +140,16 @@ static bool s_ProgressCallBack( void )
 //----------------------------------------------------------------------------------
 //      S57Obj CTOR
 //----------------------------------------------------------------------------------
-
-
-S57Obj::S57Obj()
+void S57Obj::Init()
 {
     att_array = NULL;
     attVal = NULL;
     n_attr = 0;
+
+    auxParm0 = 0;
+    auxParm1 = 0;
+    auxParm2 = 0;
+    auxParm3 = 0;
 
     pPolyTessGeo = NULL;
     pPolyTrapGeo = NULL;
@@ -155,6 +158,7 @@ S57Obj::S57Obj()
     CSrules = NULL;
     FText = NULL;
     bFText_Added = 0;
+
     geoPtMulti = NULL;
     geoPtz = NULL;
     geoPt = NULL;
@@ -176,11 +180,6 @@ S57Obj::S57Obj()
     y_rate = 1.0;
     x_origin = 0.0;
     y_origin = 0.0;
-    
-    auxParm0 = 0;
-    auxParm1 = 0;
-    auxParm2 = 0;
-    auxParm3 = 0;
 }
 
 //----------------------------------------------------------------------------------
@@ -242,39 +241,9 @@ S57Obj::~S57Obj()
 
 S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dummy2, int senc_file_version )
 {
-    att_array = NULL;
-    attVal = NULL;
-    n_attr = 0;
-    auxParm0 = 0;
-    auxParm1 = 0;
-    auxParm2 = 0;
-    auxParm3 = 0;
     
-    pPolyTessGeo = NULL;
-    pPolyTrapGeo = NULL;
-    bCS_Added = 0;
-    CSrules = NULL;
-    FText = NULL;
-    bFText_Added = 0;
-    bIsClone = false;
-
-    geoPtMulti = NULL;
-    geoPtz = NULL;
-    geoPt = NULL;
-    Scamin = 10000000;                              // ten million enough?
-    nRef = 0;
-    bIsAton = false;
-    bIsAssociable = false;
-    m_n_lsindex = 0;
-    m_lsindex_array = NULL;
-    m_ls_list = 0;
+    Init();
     
-    //        Set default (unity) auxiliary transform coefficients
-    x_rate = 1.0;
-    y_rate = 1.0;
-    x_origin = 0.0;
-    y_origin = 0.0;
-
     if( strlen( first_line ) == 0 ) return;
 
     int FEIndex;
@@ -771,7 +740,7 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
 //      Look at a buffer, and return true or false according to a (default) definition
 //-------------------------------------------------------------------------------------------
 
-bool S57Obj::IsUsefulAttribute( char *buf )
+bool S57Obj::IsUsefulAttribute( const char *buf ) const
 {
 
     if( !strncmp( buf, "HDRLEN", 6 ) ) return false;
@@ -917,7 +886,8 @@ int S57Obj::my_bufgetl( char *ib_read, char *ib_end, char *buf, int buf_len_max 
     return nLineLen;
 }
 
-int S57Obj::GetAttributeIndex( const char *AttrSeek ) {
+int S57Obj::GetAttributeIndex( const char *AttrSeek ) const
+{
     char *patl = att_array;
     
     for(int i=0 ; i < n_attr ; i++) {
