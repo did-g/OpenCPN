@@ -733,7 +733,7 @@ bool cm93_dictionary::LoadDictionary(const wxString & dictionary_dir)
 
       if ( wxFileName::FileExists ( sfa ) )
       {
-            wxFileInputStream filea ( sfa );
+            wxFFileInputStream filea ( sfa );
 
             if ( filea.IsOk() )
             {
@@ -870,7 +870,7 @@ bool cm93_dictionary::LoadDictionary(const wxString & dictionary_dir)
 
             if ( wxFileName::FileExists ( sfa ) )
             {
-                  wxFileInputStream filea ( sfa );
+                  wxFFileInputStream filea ( sfa );
 
                   if ( filea.IsOk() )
                   {
@@ -1062,7 +1062,7 @@ void CreateDecodeTable ( void )
 }
 
 
-int   read_and_decode_bytes ( FILE *stream, void *p, int nbytes )
+static int   read_and_decode_bytes ( FILE *stream, void *p, int nbytes )
 {
       if ( 0 == nbytes )                  // declare victory if no bytes requested
             return 1;
@@ -1087,7 +1087,7 @@ int   read_and_decode_bytes ( FILE *stream, void *p, int nbytes )
 }
 
 
-int read_and_decode_double ( FILE *stream, double *p )
+static int read_and_decode_double ( FILE *stream, double *p )
 {
       double t;
       //    read into temp buffer
@@ -1113,7 +1113,7 @@ int read_and_decode_double ( FILE *stream, double *p )
       return 1;
 }
 
-int read_and_decode_int ( FILE *stream, int *p )
+static int read_and_decode_int ( FILE *stream, int *p )
 {
       int t;
       //    read into temp buffer
@@ -1139,7 +1139,7 @@ int read_and_decode_int ( FILE *stream, int *p )
       return 1;
 }
 
-int read_and_decode_ushort ( FILE *stream, unsigned short *p )
+static int read_and_decode_ushort ( FILE *stream, unsigned short *p )
 {
       unsigned short t;
       //    read into temp buffer
@@ -1315,7 +1315,7 @@ bool Is_CM93Cell_Present ( wxString &fileprefix, double lat, double lon, int sca
 }
 
 
-int get_dval ( int native_scale )
+static int get_dval ( int native_scale )
 {
       int dval;
       switch ( native_scale )
@@ -1334,7 +1334,7 @@ int get_dval ( int native_scale )
 }
 
 
-bool read_header_and_populate_cib ( FILE *stream, Cell_Info_Block *pCIB )
+static bool read_header_and_populate_cib ( FILE *stream, Cell_Info_Block *pCIB )
 {
       //    Read header, populate Cell_Info_Block
 
@@ -1428,7 +1428,7 @@ bool read_header_and_populate_cib ( FILE *stream, Cell_Info_Block *pCIB )
       return true;
 }
 
-bool read_vector_record_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
+static bool read_vector_record_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
 {
       bool brv;
 
@@ -1504,7 +1504,7 @@ bool read_vector_record_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
 }
 
 
-bool read_3dpoint_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
+static bool read_3dpoint_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
 {
       geometry_descriptor *p = pCIB->point3d_descriptor_block;
       cm93_point_3d *q = pCIB->p3dpoint_array;
@@ -1547,7 +1547,7 @@ bool read_3dpoint_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
 }
 
 
-bool read_2dpoint_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
+static bool read_2dpoint_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
 {
 
 //      int rv = read_and_decode_bytes(stream, pCIB->p2dpoint_array, count * 4);
@@ -1569,7 +1569,7 @@ bool read_2dpoint_table ( FILE *stream, int count, Cell_Info_Block *pCIB )
 }
 
 
-bool read_feature_record_table ( FILE *stream, int n_features, Cell_Info_Block *pCIB )
+static bool read_feature_record_table ( FILE *stream, int n_features, Cell_Info_Block *pCIB )
 {
       try
       {
@@ -1807,19 +1807,13 @@ bool Ingest_CM93_Cell ( const char * cell_file_name, Cell_Info_Block *pCIB )
 
             int file_length;
 
-            //    Get the file length
-            FILE *flstream = fopen ( cell_file_name, "rb" );
-            if ( !flstream )
-                  return false;
-
-            fseek ( flstream, 0, SEEK_END );
-            file_length = ftell ( flstream );
-            fclose ( flstream );
-
             //    Open the file
             FILE *stream = fopen ( cell_file_name, "rb" );
             if ( !stream )
                   return false;
+            fseek ( stream, 0, SEEK_END );
+            file_length = ftell ( stream );
+            fseek ( stream, 0, SEEK_SET );
 
             //    Validate the integrity of the cell file
 
@@ -2799,10 +2793,10 @@ Extended_Geometry *cm93chart::BuildGeom ( Object *pobject, wxFileOutputStream *p
                                     m_ncontour_alloc *= 2;
                                     int * tmp = m_pcontour_array;
                                     m_pcontour_array = ( int * ) realloc ( m_pcontour_array, m_ncontour_alloc * sizeof ( int ) );
-                                    if (NULL == tmp)
+                                    if (NULL == m_pcontour_array)
                                     {
                                         free (tmp);
-                                        tmp = NULL;
+                                        // XXX boom
                                     }
                               }
                               m_pcontour_array[ncontours] = nRingVertex;               // store the vertex count
@@ -3110,7 +3104,8 @@ unsigned char *cm93_attr_block::GetNextAttr()
 
 }
 
-
+// ************************** UNUSED *********************
+#if 0
 wxString ParseSLGTA ( wxString& val )
 {
       wxString result;
@@ -3227,7 +3222,7 @@ wxString ParseTEXTA ( wxString& val )
 
       return result;
 }
-
+#endif
 
 
 
@@ -3235,36 +3230,35 @@ void cm93chart::translate_colmar(const wxString &sclass, S57attVal *pattValTmp)
 {
       int cur_attr = pattValTmp->value.integer;
 
-      wxString lstring;
+      const char *lstring = "";
 
       switch ( cur_attr )
       {
-            case 1: lstring = _T ( "4" ); break;            // green
-            case 2: lstring = _T ( "2" ); break;            // black
-            case 3: lstring = _T ( "3" ); break;            // red
-            case 4: lstring = _T ( "6" ); break;            // yellow
-            case 5: lstring = _T ( "1" ); break;            // white
-            case 6: lstring = _T ( "11" ); break;           // orange
-            case 7: lstring = _T ( "2,6" ); break;          // black/yellow
-            case 8: lstring = _T ( "2,6,2" ); break;        // black/yellow/black
-            case 9: lstring = _T ( "6,2" ); break;           // yellow/black
-            case 10: lstring = _T ( "6,2,6" ); break;        // yellow/black/yellow
-            case 11: lstring = _T ( "3,1" ); break;          // red/white
-            case 12: lstring = _T ( "4,3,4" ); break;        // green/red/green
-            case 13: lstring = _T ( "3,4,3" ); break;        // red/green/red
-            case 14: lstring = _T ( "2,3,2" ); break;        // black/red/black
-            case 15: lstring = _T ( "6,3,6" ); break;        // yellow/red/yellow
-            case 16: lstring = _T ( "4,3" ); break;          // green/red
-            case 17: lstring = _T ( "3,4" ); break;          // red/green
-            case 18: lstring = _T ( "4,1" ); break;          // green/white
+            case 1: lstring = "4" ; break;            // green
+            case 2: lstring = "2" ; break;            // black
+            case 3: lstring = "3" ; break;            // red
+            case 4: lstring = "6" ; break;            // yellow
+            case 5: lstring = "1" ; break;            // white
+            case 6: lstring = "11" ; break;           // orange
+            case 7: lstring = "2,6" ; break;          // black/yellow
+            case 8: lstring = "2,6,2" ; break;        // black/yellow/black
+            case 9: lstring = "6,2" ; break;           // yellow/black
+            case 10: lstring = "6,2,6" ; break;        // yellow/black/yellow
+            case 11: lstring = "3,1" ; break;          // red/white
+            case 12: lstring = "4,3,4" ; break;        // green/red/green
+            case 13: lstring = "3,4,3" ; break;        // red/green/red
+            case 14: lstring = "2,3,2" ; break;        // black/red/black
+            case 15: lstring = "6,3,6" ; break;        // yellow/red/yellow
+            case 16: lstring = "4,3" ; break;          // green/red
+            case 17: lstring = "3,4" ; break;          // red/green
+            case 18: lstring = "4,1" ; break;          // green/white
             default: break;
       }
 
-      if ( lstring.Len() )
+      if ( *lstring != 0) 
       {
             pattValTmp->valType = OGR_STR;
-            pattValTmp->value.ptr = ( char * ) malloc ( lstring.Len() + 1 );      // create a new Lstring attribute
-            strcpy ( ( char * ) pattValTmp->value.ptr, lstring.mb_str() );
+            pattValTmp->value.ptr = strdup(lstring);
 
       }
 }
@@ -4550,7 +4544,6 @@ wxPoint *cm93chart::GetDrawBuffer ( int nSize )
             if (NULL == m_pDrawBuffer)
             {
                 free (tmp);
-                tmp = NULL;
             }
             else
                 m_nDrawBufferSize = nSize + 1;
