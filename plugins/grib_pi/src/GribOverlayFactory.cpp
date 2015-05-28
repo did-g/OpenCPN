@@ -1,4 +1,4 @@
-/******************************************************************************
+ /******************************************************************************
  *
  * Project:  OpenCPN
  * Purpose:  GRIB Object
@@ -302,7 +302,7 @@ GRIBOverlayFactory::GRIBOverlayFactory( GRIBUICtrlBar &dlg )
 
     for(i=0; i<14; i++)
         m_WindArrowCache[i].Finalize();
-    
+
     // Generate Single and Double arrow caches
     for(int i = 0; i<2; i++) {
         int arrowSize;
@@ -1610,7 +1610,7 @@ void GRIBOverlayFactory::RenderGribParticles( int settings, GribRecord **pGR,
         total_particles = 60000;
 
     // remove particles if needed;
-    int remove_particles = (particles.size() - total_particles) / 16;
+    int remove_particles = ((int)particles.size() - total_particles) / 16;
     for(int i = 0; i<remove_particles; i++)
         particles.pop_back();
 
@@ -1914,7 +1914,7 @@ void GRIBOverlayFactory::drawLineBuffer(LineBuffer &buffer, int x, int y, double
 
     float vertexes[40];
 
-    wxASSERT(sizeof vertexes / sizeof *vertexes >= buffer.count*4);
+    wxASSERT(sizeof vertexes / sizeof *vertexes >= (unsigned)buffer.count*4);
     for(int i=0; i < 2*buffer.count; i++) {
         float *k = buffer.lines + 2*i;
         vertexes[2*i+0] = k[0]*cox + k[1]*siy + x;

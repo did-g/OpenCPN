@@ -38,6 +38,7 @@
 #include "chart1.h"
 #include "AISTargetQueryDialog.h"
 #include "AISTargetAlertDialog.h"
+#include "AISTargetListDialog.h"
 #include "routeprop.h"
 #include "TrackPropDlg.h"
 #include "S57QueryDialog.h"
@@ -60,13 +61,14 @@ wxEvtHandler                    *s_pAndroidBTNMEAMessageConsumer;
 
 extern AISTargetAlertDialog      *g_pais_alert_dialog_active;
 extern AISTargetQueryDialog      *g_pais_query_dialog_active;
+extern AISTargetListDialog       *g_pAISTargetList;
 extern MarkInfoImpl              *pMarkPropDialog;
 extern RouteProp                 *pRoutePropDialog;
 extern TrackPropDlg              *pTrackPropDialog;
 extern MarkInfoImpl              *pMarkInfoDialog;
 extern S57QueryDialog            *g_pObjectQueryDialog;
 extern options                   *g_options;
-
+extern bool                       g_bSleep;
 androidUtilHandler              *g_androidUtilHandler;
 
 
@@ -154,6 +156,16 @@ void androidUtilHandler::onTimerEvent(wxTimerEvent &event)
                 g_options->RecalculateSize();
                 if(bshown){
                     g_options->ShowModal();
+                }
+            }
+            
+            // AIS Target List dialog
+            if(g_pAISTargetList){
+                bool bshown = g_pAISTargetList->IsShown();
+                g_pAISTargetList->Hide();
+                g_pAISTargetList->RecalculateSize();
+                if(bshown){
+                    g_pAISTargetList->Show();
                 }
             }
             
@@ -305,6 +317,50 @@ extern "C"{
         gFrame->ToggleToolbar();
             
         return 88;
+    }
+}
+
+extern "C"{
+    JNIEXPORT jint JNICALL Java_org_opencpn_OCPNNativeLib_onStop(JNIEnv *env, jobject obj)
+    {
+        qDebug() << "onStop";
+        
+//        g_bSleep = true;
+        
+        return 98;
+    }
+}
+
+extern "C"{
+    JNIEXPORT jint JNICALL Java_org_opencpn_OCPNNativeLib_onStart(JNIEnv *env, jobject obj)
+    {
+        qDebug() << "onStart";
+        
+//        g_bSleep = false;;
+        
+        return 99;
+    }
+}
+
+extern "C"{
+    JNIEXPORT jint JNICALL Java_org_opencpn_OCPNNativeLib_onPause(JNIEnv *env, jobject obj)
+    {
+        qDebug() << "onPause";
+        
+        g_bSleep = true;
+        
+        return 97;
+    }
+}
+
+extern "C"{
+    JNIEXPORT jint JNICALL Java_org_opencpn_OCPNNativeLib_onResume(JNIEnv *env, jobject obj)
+    {
+        qDebug() << "onResume";
+        
+        g_bSleep = false;
+        
+        return 96;
     }
 }
 
