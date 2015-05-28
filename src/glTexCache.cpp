@@ -1022,6 +1022,7 @@ glTexFactory::~glTexFactory()
     }
     delete m_fs;
     WX_CLEAR_ARRAY (m_catalog); 	 
+
     DeleteAllDescriptors();
  
     free( m_td_array );         // array is empty
