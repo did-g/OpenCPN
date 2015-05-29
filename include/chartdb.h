@@ -171,8 +171,8 @@ private:
       ChartBase *OpenChartUsingCache(int dbindex, ChartInitFlag init_flag);
       CacheEntry *FindOldestDeleteCandidate( bool blog );
       
-      void DeleteCacheEntry(int i, const wxString &msg = "");
-      void DeleteCacheEntry(CacheEntry *pce, const wxString &msg = "");
+      void DeleteCacheEntry(int i, bool bDelTexture = false, const wxString &msg = "");
+      void DeleteCacheEntry(CacheEntry *pce, bool bDelTexture = false, const wxString &msg = "");
       
       wxArrayPtrVoid    *pChartCache;
       int		m_ticks;

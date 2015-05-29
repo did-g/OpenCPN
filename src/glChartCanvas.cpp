@@ -314,7 +314,6 @@ bool CompressChart(wxThread *pThread, ChartBase *pchart, wxString CompressedCach
             rect.y += rect.height;
         }
 skipout:        
-        tex_fact->DeleteAllTextures();
         delete tex_fact;
     }
     return ret;
@@ -834,16 +833,10 @@ void glChartCanvas::ClearAllRasterTextures( void )
     
     //     Delete all the TexFactory instances
     ChartPathHashTexfactType::iterator itt;
+
     for( itt = m_chart_texfactory_hash.begin(); itt != m_chart_texfactory_hash.end(); ++itt ) {
-//        ChartBase *pc = (ChartBase *) itt->first;
-        wxString key = itt->first;
+        glTexFactory *ptf = itt->second;
         
-        glTexFactory *ptf = m_chart_texfactory_hash[key];
-        
-        if( ptf){
-            ptf->PurgeBackgroundCompressionPool();
-            ptf->DeleteAllTextures();
-        }
         delete ptf;
     }
     m_chart_texfactory_hash.clear();
@@ -1452,15 +1445,11 @@ bool glChartCanvas::PurgeChartTextures( ChartBase *pc, bool b_purge_factory )
     
     //    Found ?
     if( ittf != m_chart_texfactory_hash.end() ) {
-        glTexFactory *pTexFact = m_chart_texfactory_hash[pc->GetFullPath()];
+        glTexFactory *pTexFact = ittf->second;
         
         if(pTexFact){
 
             if( b_purge_factory){
-                pTexFact->PurgeBackgroundCompressionPool();
-                pTexFact->DeleteAllTextures();
-                pTexFact->DeleteAllDescriptors();
-            
                 m_chart_texfactory_hash.erase(ittf);                // This chart  becoming invalid
             
                 delete pTexFact;
@@ -3365,7 +3354,6 @@ bool glChartCanvas::FactoryCrunch(double factor)
     if( ! bGLMemCrunch )
         return false;
     
-
     ChartPathHashTexfactType::iterator it0;
     for( it0 = m_chart_texfactory_hash.begin(); it0 != m_chart_texfactory_hash.end(); ++it0 ) {
         wxString chart_full_path = it0->first;
@@ -3397,6 +3385,7 @@ bool glChartCanvas::FactoryCrunch(double factor)
 
     bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * (factor -0.1);
     //  Need more, so delete the oldest factory
+    
     if(bGLMemCrunch){
         
         //      Find the oldest unused factory
@@ -3425,10 +3414,6 @@ bool glChartCanvas::FactoryCrunch(double factor)
                     
         //      Found one?
         if(ptf_oldest){
-            ptf_oldest->PurgeBackgroundCompressionPool();
-            ptf_oldest->DeleteAllTextures();
-            ptf_oldest->DeleteAllDescriptors();
-                
             m_chart_texfactory_hash.erase(ptf_oldest->GetChartPath());                // This chart  becoming invalid
                 
             delete ptf_oldest;

@@ -971,7 +971,6 @@ glTexFactory::glTexFactory(ChartBase *chart, GLuint raster_format)
     wxDateTime ed = chart->GetEditionDate();
     m_chart_date_binary = (uint32_t)ed.GetTicks();
     
-    
     m_CompressedCacheFilePath = CompressedCachePath(chart->GetFullPath());
     m_hdrOK = false;
     m_catalogOK = false;
@@ -1017,13 +1016,15 @@ glTexFactory::glTexFactory(ChartBase *chart, GLuint raster_format)
 
 glTexFactory::~glTexFactory()
 {
+    PurgeBackgroundCompressionPool();
+    DeleteAllTextures();
+    DeleteAllDescriptors();
+
     if(m_fs && m_fs->IsOpened()){
         m_fs->Close();
     }
     delete m_fs;
     WX_CLEAR_ARRAY (m_catalog); 	 
-
-    DeleteAllDescriptors();
  
     free( m_td_array );         // array is empty
 }
