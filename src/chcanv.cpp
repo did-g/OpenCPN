@@ -1065,7 +1065,10 @@ ChartCanvas::~ChartCanvas()
 #ifdef ocpnUSE_GL
     if( !g_bdisable_opengl ) {
         delete m_glcc;
+        
+#if wxCHECK_VERSION(2, 9, 0)
         delete m_pGLcontext;
+#endif        
     }
 #endif
 
@@ -4484,6 +4487,16 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
         return(true);
 
     event.GetPosition( &x, &y );
+    
+    //  Some systems produce null drag events, where the pointer position has not changed from the previous value.
+    //  Detect this case, and abort further processing (FS#1748)
+#ifdef __WXMSW__    
+    if(event.Dragging()){
+        if((x == mouse_x) && (y == mouse_y))
+            return true;
+    }
+#endif    
+    
     mouse_x = x;
     mouse_y = y;
     mouse_leftisdown = event.LeftDown();

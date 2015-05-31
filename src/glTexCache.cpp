@@ -1035,6 +1035,7 @@ glTexFactory::~glTexFactory()
         m_fs->Close();
     }
     delete m_fs;
+
     WX_CLEAR_ARRAY (m_catalog); 	 
  
     free( m_td_array );         // array is empty
