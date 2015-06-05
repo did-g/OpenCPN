@@ -110,7 +110,7 @@ class CachedLine
 public:
       int               xstart;
       int               xlength;
-      size_t      	PixOffset;
+      unsigned char     *pPix;
       unsigned char     *pRGB;
       bool              bValid;
 };
@@ -266,9 +266,6 @@ protected:
       int         nColorSize;
       int         *pline_table;           // pointer to Line offset table
 
-      unsigned char     *pMemBase;
-      size_t		MemBaseOffset;
-      size_t		MemBaseSize;
       CachedLine  *pLineCache;
 
       wxFFileInputStream    *ifs_hdr;
