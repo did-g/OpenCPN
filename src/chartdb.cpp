@@ -832,7 +832,8 @@ bool ChartDB::IsChartInCache(int dbindex)
                 CacheEntry *pce = (CacheEntry *)(pChartCache->Item(i));
                 if(pce->dbIndex == dbindex)
                 {
-                    bInCache = true;
+                    if (pce->pChart != 0 && ((ChartBase *)pce->pChart)->IsReadyToRender())
+                        bInCache = true;
                     break;
                 }
         }
@@ -855,7 +856,8 @@ bool ChartDB::IsChartInCache(wxString path)
             CacheEntry *pce = (CacheEntry *)(pChartCache->Item(i));
             if(pce->FullPath == path)
             {
-                bInCache = true;
+                if (pce->pChart != 0 && ((ChartBase *)pce->pChart)->IsReadyToRender())
+                    bInCache = true;
                 break;
             }
         }
@@ -1063,7 +1065,10 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
               }
               else
               {
+                    if(pthumbwin && pthumbwin->pThumbChart == Ch)
+                       pthumbwin->pThumbChart = NULL;
                     delete Ch;                                  // chart is not useable
+                    
                     if( wxMUTEX_NO_ERROR == m_cache_mutex.Lock() ){
                         pChartCache->Remove(pce);                   // so remove it
                         delete pce;
@@ -1289,8 +1294,9 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                   if(INIT_OK == ir)
                   {
 
-//    Only add to cache if requesting a full init
-                        if(FULL_INIT == init_flag)
+//    always cache after a new chart has been created
+//    or it may leak CacheEntry in createthumbnail
+//                        if(FULL_INIT == init_flag)
                         {
                               pce = new CacheEntry;
                               pce->FullPath = ChartFullPath;
