@@ -32,7 +32,6 @@
 #endif
 
 
-
 #include "wx/print.h"
 #include "wx/printdlg.h"
 #include "wx/artprov.h"
@@ -3204,10 +3203,15 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
     g_pauimgr->UnInit();
     delete g_pauimgr;
     g_pauimgr = NULL;
+    
     //    Unload the PlugIns
     //      Note that we are waiting until after the canvas is destroyed,
     //      since some PlugIns may have created children of canvas.
     //      Such a PlugIn must stay intact for the canvas dtor to call DestoryChildren()
+    
+    if(ChartData)
+        ChartData->PurgeCachePlugins();
+    
     if( g_pi_manager ) {
         g_pi_manager->UnLoadAllPlugIns();
         delete g_pi_manager;
@@ -3516,10 +3520,6 @@ void MyFrame::ODoSetSize( void )
     //  Reset the options dialog size logic
     options_lastWindowSize = wxSize(0,0);
     options_lastWindowPos = wxPoint(0,0);
-
-    if( pRouteManagerDialog && pRouteManagerDialog->IsShown() ){
-        pRouteManagerDialog->Centre();
-    }
 
 }
 
@@ -3907,13 +3907,17 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
         
         case ID_MENU_ROUTE_MANAGER:
         case ID_ROUTEMANAGER: {
-            if( NULL == pRouteManagerDialog )         // There is one global instance of the Dialog
-            pRouteManagerDialog = new RouteManagerDialog( cc1 );
+            pRouteManagerDialog = RouteManagerDialog::getInstance( cc1 ); // There is one global instance of the Dialog
 
             pRouteManagerDialog->UpdateRouteListCtrl();
             pRouteManagerDialog->UpdateTrkListCtrl();
             pRouteManagerDialog->UpdateWptListCtrl();
             pRouteManagerDialog->UpdateLayListCtrl();
+            
+            if(g_bresponsive){
+                if(stats && stats->IsShown() )
+                    stats->Hide();
+            }
             pRouteManagerDialog->Show();
 
             //    Required if RMDialog is not STAY_ON_TOP
@@ -3994,6 +3998,18 @@ void MyFrame::DoSettings()
     //  The chart display options may have changed, especially on S57 ENC,
     //  So, flush the cache and redraw
     cc1->ReloadVP();
+    
+}
+
+void MyFrame::ShowChartBarIfEnabled()
+{
+    if(stats){
+        stats->Show(g_bShowChartBar);
+        if(g_bShowChartBar){
+            stats->Move(0,0);
+            stats->RePosition();
+         }
+    }
     
 }
 
@@ -4896,17 +4912,12 @@ int MyFrame::DoOptionsDialog()
 
     delete pWorkDirArray;
 
-    if(stats){
-        stats->Show(g_bShowChartBar);
-        if(g_bShowChartBar){
-            stats->Move(0,0);
-            stats->RePosition();
-            gFrame->Raise();
-            DoChartUpdate();
-            UpdateControlBar();
-            Refresh();
-        }
-    }
+    ShowChartBarIfEnabled();
+
+    gFrame->Raise();
+    DoChartUpdate();
+    UpdateControlBar();
+    Refresh();
     
     SetToolbarScale();
     RequestNewToolbar();
