@@ -64,6 +64,161 @@ typedef void (GLAPIENTRY * PFNGLBINDBUFFERPROC) (GLenum target, GLuint buffer);
 
 extern wxString *pWorldMapLocation;
 
+class gshhsPolyFile {
+public:
+     gshhsPolyFile( const wxString &f);
+     ~gshhsPolyFile();
+     
+     int ReadHeader(void *ptr, size_t size);
+     int SeekHeader(int);
+
+     int ReadData(void *ptr, size_t size);
+     int SeekData(int);
+     bool IsOk() const {return ok;};
+     
+private:
+     int buffer_pos;
+     size_t s_read;
+     int header_pos;
+     int data_pos;
+     int header_f;
+     FILE *data_f;
+     bool ok;
+     char buffer[4096];
+};
+
+gshhsPolyFile::gshhsPolyFile( const wxString &f)
+{
+   data_f = 0;
+   header_pos = 0;
+   data_pos = 0;
+   buffer_pos = -1;
+   s_read = sizeof buffer;
+   ok = false;
+   header_f = open( f.mb_str(), O_RDONLY );
+   if (header_f == -1) 
+       return;
+   data_f = fopen( f.mb_str(), "rb" );
+   if (data_f == 0) {
+       close(header_f);
+       header_f = 0;
+       return;
+   }
+   ok = true;
+}
+
+gshhsPolyFile::~gshhsPolyFile() 
+{
+   if (header_f) {
+      close(header_f);
+   }
+   if (data_f) {
+      fclose(data_f);
+   }
+}
+
+int gshhsPolyFile::SeekHeader(int pos) 
+{
+   if (ok == false)
+       return -1;
+
+   if (pos == header_pos)
+       return pos;
+
+   if ( buffer_pos != -1 && 
+       pos >= buffer_pos && pos -buffer_pos <= (int)s_read) 
+   {
+       header_pos = pos;
+       return pos;
+   }
+
+   int ret;
+   ret =  lseek( header_f, pos, SEEK_SET );
+   if (ret == -1) 
+   {
+      ok = false;
+      return ret;
+   }
+   header_pos = pos;
+   buffer_pos = -1;
+   
+   return ret;
+}
+
+int gshhsPolyFile::ReadHeader(void *ptr, size_t size)
+{
+   if (ok == false)
+       return -1;
+
+   size_t ret;
+
+   if (size > s_read) 
+   {
+       ok = false;
+       return 0;
+   }
+   if (buffer_pos != -1 && (header_pos -buffer_pos) +size <= (int)s_read) 
+   {
+       memcpy(ptr, &buffer[header_pos -buffer_pos], size);
+       header_pos += size;
+       if (header_pos -buffer_pos ==  (int)sizeof buffer)
+           buffer_pos == -1;
+       return size;
+   }
+   
+   size_t cnt;
+   
+   s_read = read(header_f, buffer, sizeof buffer);
+   if (s_read <= 0) 
+   {
+       ok = false;
+       return s_read;
+   }
+   cnt = (s_read < size)?s_read:size;
+
+   buffer_pos = header_pos;
+   memcpy(ptr, buffer, cnt);
+   header_pos += cnt;
+   return cnt;
+}
+
+// ---------
+int gshhsPolyFile::SeekData(int pos)
+{
+   if (ok == false)
+       return -1;
+
+   if (pos == data_pos)
+       return pos;
+
+   int ret;
+   ret = fseek( data_f, pos, SEEK_SET );
+   if (ret == -1) 
+   {
+      ok = false;
+      return ret;
+   }
+   data_pos = pos;
+   return ret;
+}
+
+int gshhsPolyFile::ReadData(void *ptr, size_t size)
+{
+   if (ok == false)
+       return -1;
+
+   size_t ret;
+
+   ret = fread(ptr, 1, size, data_f);
+   if (ret != size) 
+   {
+       ok = false;
+   }
+   data_pos += ret;
+   return ret;
+}
+
+
 //-------------------------------------------------------------------------
 
 GSHHSChart::GSHHSChart() {
@@ -117,7 +272,7 @@ void GSHHSChart::RenderViewOnDC( ocpnDC& dc, ViewPort& vp )
 //    reader->drawBoundaries( dc, vp );
 }
 
-GshhsPolyCell::GshhsPolyCell( FILE *fpoly_, int x0_, int y0_, PolygonFileHeader *header_ )
+GshhsPolyCell::GshhsPolyCell( gshhsPolyFile *fpoly_, int x0_, int y0_, PolygonFileHeader *header_ )
 {
     header = header_;
     fpoly = fpoly_;
@@ -147,19 +302,19 @@ void GshhsPolyCell::ReadPoly(contour_list &poly)
     contour tmp_contour;
     int32_t num_vertices, num_contours;
     poly.clear();
-    fread(&num_contours, sizeof num_contours, 1, fpoly);
+    fpoly->ReadData(&num_contours, sizeof num_contours);
     for (int c= 0; c < num_contours; c++)
     {
         int32_t value;
-        fread(&value, sizeof value, 1, fpoly); /* discarding hole value */
-        fread(&value, sizeof value, 1, fpoly);
+        fpoly->ReadData(&value, sizeof value); /* discarding hole value */
+        fpoly->ReadData(&value, sizeof value);
         num_vertices=value;
 
         tmp_contour.clear();
         for (int v= 0; v < num_vertices; v++)
         {
-            fread(&X, sizeof X, 1, fpoly);
-            fread(&Y, sizeof Y, 1, fpoly);
+            fpoly->ReadData(&X, sizeof X);
+            fpoly->ReadData(&Y, sizeof Y);
             tmp_contour.push_back(wxRealPoint(X*GSHHS_SCL,Y*GSHHS_SCL));
         }
         poly.push_back(tmp_contour);
@@ -173,10 +328,10 @@ void GshhsPolyCell::ReadPolygonFile()
 
     tab_data = ( x0cell / header->pasx ) * ( 180 / header->pasy )
         + ( y0cell + 90 ) / header->pasy;
-    fseek( fpoly, sizeof(PolygonFileHeader) + tab_data * sizeof(int), SEEK_SET );
-    fread( &pos_data, sizeof(int), 1, fpoly );
+    fpoly->SeekHeader( sizeof(PolygonFileHeader) + tab_data * sizeof(int) );
+    fpoly->ReadHeader( &pos_data, sizeof(int) );
 
-    fseek( fpoly, pos_data, SEEK_SET );
+    fpoly->SeekData( pos_data );
 
     ReadPoly( poly1 );
     ReadPoly( poly2 );
@@ -535,11 +690,11 @@ int GshhsPolyReader::ReadPolyVersion()
 {
     char txtn = 'c';
     wxString fname = GshhsReader::getFileName_Land( 0 );
-    if( fpoly ) fclose( fpoly );
-    fpoly = fopen( fname.mb_str(), "rb" );
+    if( fpoly ) delete  fpoly ;
+    fpoly = new gshhsPolyFile( fname );
 
     /* init header */
-    if( !fpoly ) return 0;
+    if( !fpoly->IsOk() ) return 0;
 
     readPolygonFileHeader( fpoly, &polyHeader );
 
@@ -553,10 +708,10 @@ void GshhsPolyReader::InitializeLoadQuality( int quality )  // 5 levels: 0=low .
 
         wxString fname = GshhsReader::getFileName_Land( quality );
 
-        if( fpoly ) fclose( fpoly );
+        if( fpoly ) delete  fpoly ;
 
-        fpoly = fopen( fname.mb_str(), "rb" );
-        if( fpoly ) readPolygonFileHeader( fpoly, &polyHeader );
+        fpoly = new gshhsPolyFile( fname );
+        if( fpoly->IsOk() ) readPolygonFileHeader( fpoly, &polyHeader );
 
         for( int i = 0; i < 360; i++ ) {
             for( int j = 0; j < 180; j++ ) {
@@ -714,10 +869,10 @@ bool GshhsPolyReader::crossing1( wxLineF trajectWorld )
     return false;
 }
 
-void GshhsPolyReader::readPolygonFileHeader( FILE *polyfile, PolygonFileHeader *header )
+void GshhsPolyReader::readPolygonFileHeader( gshhsPolyFile *polyfile, PolygonFileHeader *header )
 {
-    fseek( polyfile, 0, SEEK_SET );
-    fread( header, sizeof(PolygonFileHeader), 1, polyfile );
+    polyfile->SeekHeader( 0 );
+    polyfile->ReadHeader( header, sizeof(PolygonFileHeader));
 }
 
 //-------------------------------------------------------------------------
@@ -850,8 +1005,8 @@ int GshhsPolygon::readInt4()
 
 	unsigned char in[4];
 
-    int nb = 0;
-    nb += fread( &in, 1, 4, file );
+    int nb;
+    nb = file->ReadData( &in, 4 );
 	res.buf[3] = in[0];
 	res.buf[2] = in[1];
 	res.buf[1] = in[2];
@@ -859,13 +1014,13 @@ int GshhsPolygon::readInt4()
 
     if( nb != 4 ) {
         ok = false;
-		res.n = 0;
+	res.n = 0;
     }
 
     return res.n;
 }
 
-
+// XXX broken ?
 int GshhsPolygon::readInt2()
 {
     union {
@@ -873,8 +1028,8 @@ int GshhsPolygon::readInt2()
 		unsigned char buf[4];
 	} v;
 
-    int nb = 0;
-    nb += fread( &v.buf[0], 2, 1, file );
+    int nb;
+    nb = file->ReadData( &v.buf[0], 2 );
     if( nb != 2 ) {
         ok = false;
         v.n = 0;
@@ -883,7 +1038,7 @@ int GshhsPolygon::readInt2()
 }
 
 
-GshhsPolygon::GshhsPolygon( FILE *file_ )
+GshhsPolygon::GshhsPolygon( gshhsPolyFile *file_ )
 {
     file = file_;
     ok = true;
@@ -1094,9 +1249,9 @@ void GshhsReader::LoadQuality( int newQuality ) // 5 levels: 0=low ... 4=full
 #if 0 /* too slow to load the whole world at once */
     if( lsPoly_boundaries[quality]->size() == 0 ) {
         fname = getFileName_boundaries( quality );
-        file = fopen( fname.mb_str(), "rb" );
+        file = new gshhsPolyFile( fname);
 
-        if( file != NULL ) {
+        if( file->IsOk() ) {
             ok = true;
             while( ok ) {
                 GshhsPolygon *poly = new GshhsPolygon( file );
@@ -1108,14 +1263,14 @@ void GshhsReader::LoadQuality( int newQuality ) // 5 levels: 0=low ... 4=full
                     else delete poly;
                 else delete poly;
             }
-            fclose( file );
         }
+        delete file;
     }
 
     if( lsPoly_rivers[quality]->size() == 0 ) {
         fname = getFileName_rivers( quality );
-        file = fopen( fname.mb_str(), "rb" );
-        if( file != NULL ) {
+        file = new gshhsPolyFile( fname);
+        if( file->IsOk() ) {
             ok = true;
             while( ok ) {
                 GshhsPolygon *poly = new GshhsPolygon( file );
@@ -1125,8 +1280,8 @@ void GshhsReader::LoadQuality( int newQuality ) // 5 levels: 0=low ... 4=full
                 }
                 else delete poly;
             }
-            fclose( file );
         }
+        delete file;
     }
 #endif
     wxLogMessage( _T("Loading World Chart Q=%d in %ld ms."), quality, perftimer.Time());
