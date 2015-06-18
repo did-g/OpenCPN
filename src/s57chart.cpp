@@ -3100,6 +3100,10 @@ void s57chart::BuildDepthContourArray( void )
     Depcnt contour;
 
     ObjRazRules *top;
+    // some ENC have a lot of DEPCNT objects but they seem to store them
+    // in VALDCO order, try to take advantage of that.
+    double prev_valdco = 0.0;
+    
     for( int i = 0; i < PRIO_NUM; ++i ) {
         for( int j = 0; j < LUPNAME_NUM; j++ ) {
 
