@@ -4040,8 +4040,8 @@ void MyFrame::ToggleStats()
             stats->Show();
             gFrame->Raise();
             DoChartUpdate();
-            UpdateControlBar();
             g_bShowChartBar = true;
+            UpdateControlBar();
         }
         SendSizeEvent();
         Refresh();
@@ -6984,6 +6984,8 @@ void MyFrame::UpdateControlBar( void )
     if( !stats ) return;
 
     if( !pCurrentStack ) return;
+
+    if ( !g_bShowChartBar ) return;
 
     ArrayOfInts piano_chart_index_array;
     ArrayOfInts empty_piano_chart_index_array;
