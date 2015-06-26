@@ -3424,7 +3424,7 @@ bool glChartCanvas::FactoryCrunch(double factor)
                     !cc1->m_pQuilt->IsChartInQuilt( chart_full_path ) ) {
                     
                     wxDateTime lru = ptf->GetLRUTime();
-                    if(lru.IsEarlierThan(lru_oldest)){
+                    if(lru.IsEarlierThan(lru_oldest) && !ptf->BackgroundCompressionAsJob()){
                         lru_oldest = lru;
                         ptf_oldest = ptf;
                     }
@@ -3433,7 +3433,7 @@ bool glChartCanvas::FactoryCrunch(double factor)
             else {
                 if( !Current_Ch->GetFullPath().IsSameAs(chart_full_path)) {
                     wxDateTime lru = ptf->GetLRUTime();
-                    if(lru.IsEarlierThan(lru_oldest)){
+                    if(lru.IsEarlierThan(lru_oldest) && !ptf->BackgroundCompressionAsJob()){
                         lru_oldest = lru;
                         ptf_oldest = ptf;
                     }
