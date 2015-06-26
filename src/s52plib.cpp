@@ -4501,7 +4501,7 @@ int s52plib::DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp )
         if(!rzRules->obj->m_bcategory_mutable)
             return 0;
 
-        // but already added will not change display category        
+        // already added nothing below can change display category        
         if(rzRules->obj->bCS_Added ) 
             return 0;
 
