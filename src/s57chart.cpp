@@ -3191,6 +3191,7 @@ void s57chart::BuildDepthContourArray( void )
         }
     }
     std::sort( m_pvaldco_array, m_pvaldco_array + m_nvaldco );
+    SetSafetyContour();
 }
 
 
