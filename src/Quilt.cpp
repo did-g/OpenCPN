@@ -979,7 +979,7 @@ int Quilt::AdjustRefOnZoom( bool b_zin, ChartFamilyEnum family,  ChartTypeEnum t
     
         
     int new_ref_dbIndex = -1;
-    int smaller_scale = 20000000;    
+    int smaller_scale = 90000000;    
     // Search for the largest scale chart whose scale limits contain the requested scale.
     for(size_t i=0 ; i < index_array.GetCount() ; i++){
         int a = min_scale.Item(i);
@@ -1139,14 +1139,14 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
     EmptyCandidateArray();
     m_extended_stack_array.Clear();
 
-    int reference_scale = 1.;
+    int reference_scale = 1;
     int reference_type = -1;
     int reference_family;
     int quilt_proj = PROJECTION_UNKNOWN;
 
     if( ref_db_index >= 0 ) {
         const ChartTableEntry &cte_ref = ChartData->GetChartTableEntry( ref_db_index );
-        reference_scale = cte_ref.GetScale();
+        reference_scale = ((cte_ref.GetScale() +50)/100)*100;
         reference_type = cte_ref.GetChartType();
         quilt_proj = ChartData->GetDBChartProj( ref_db_index );
         reference_family = cte_ref.GetChartFamily();
@@ -1185,7 +1185,7 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
             && ( cte.GetChartType() != CHART_TYPE_CM93COMP ) ) {
                 QuiltCandidate *qcnew = new QuiltCandidate;
                 qcnew->dbIndex = i;
-                qcnew->ChartScale = cte.GetScale();
+                qcnew->ChartScale = ((cte.GetScale()+50)/100)*100;
 
                 m_pcandidate_array->Add( qcnew );               // auto-sorted on scale
 
@@ -1230,8 +1230,8 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
                 continue;
 
             //    Calculate zoom factor for this chart
-            double candidate_chart_scale = cte.GetScale();
-            double chart_native_ppm = m_canvas_scale_factor / candidate_chart_scale;
+            int candidate_chart_scale = ((cte.GetScale() +50)/100)*100;
+            double chart_native_ppm = m_canvas_scale_factor / (double)cte.GetScale();
             double zoom_factor = vp_in.view_scale_ppm / chart_native_ppm;
 
             //  Try to guarantee that there is one chart added with scale larger than reference scale
