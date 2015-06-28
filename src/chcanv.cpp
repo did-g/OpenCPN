@@ -6012,6 +6012,7 @@ bool ChartCanvas::MouseEventProcessObjects( wxMouseEvent& event )
     return ret;
         
 }
+static int s_in_update;
 
 bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
 {
@@ -6094,7 +6095,7 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
         }
     }
     
-    if( event.Dragging() && event.LeftIsDown()){
+    else if( !s_in_update && event.Dragging() && event.LeftIsDown()){
             if( ( last_drag.x != x ) || ( last_drag.y != y ) ) {
                 m_bChartDragging = true;
                 PanCanvas( last_drag.x - x, last_drag.y - y );
@@ -8750,7 +8751,6 @@ void ChartCanvas::WarpPointerDeferred( int x, int y )
 }
 
 int spaint;
-int s_in_update;
 void ChartCanvas::OnPaint( wxPaintEvent& event )
 {
     wxPaintDC dc( this );
