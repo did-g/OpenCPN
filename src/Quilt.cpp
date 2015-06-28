@@ -1096,7 +1096,7 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
 
     if( ref_db_index >= 0 ) {
         const ChartTableEntry &cte_ref = ChartData->GetChartTableEntry( ref_db_index );
-        reference_scale = cte_ref.GetScale();
+        reference_scale = ((cte_ref.GetScale() +50)/100)*100;
         reference_type = cte_ref.GetChartType();
         if(!m_bquiltanyproj)
             quilt_proj = ChartData->GetDBChartProj( ref_db_index );
@@ -1455,7 +1455,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
     //    Get Reference Chart parameters
     if( m_refchart_dbIndex >= 0 ) {
         const ChartTableEntry &cte_ref = ChartData->GetChartTableEntry( m_refchart_dbIndex );
-        m_reference_scale = cte_ref.GetScale();
+        m_reference_scale = ((cte_ref.GetScale() +50)/100)*100;
         m_reference_type = cte_ref.GetChartType();
         if(!m_bquiltanyproj)
             m_quilt_proj = ChartData->GetDBChartProj( m_refchart_dbIndex );
