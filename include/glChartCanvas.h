@@ -29,6 +29,7 @@
 #include "ocpn_types.h"
 #include "OCPNRegion.h"
 #include "viewport.h"
+#include "TexFont.h"
 
  #define FORMAT_BITS           GL_RGB
 
@@ -200,7 +201,7 @@ protected:
     bool        m_bgestureGuard;
     
     OCPNRegion  m_canvasregion;
-    
+    TexFont     m_gridfont;
 
     DECLARE_EVENT_TABLE()
 };
