@@ -1848,11 +1848,11 @@ void s57chart::AssembleLineGeometry( void )
                             while( top != NULL ) {
                                 S57Obj *obj = top->obj;
                                 
-                                line_segment_element *list_top = new line_segment_element;
-                                list_top->n_points = 0;
-                                list_top->next = 0;
+                                line_segment_element list_top;
+                                list_top.n_points = 0;
+                                list_top.next = 0;
                                 
-                                line_segment_element *le_current = list_top;
+                                line_segment_element *le_current = &list_top;
                                 
                                 for( int iseg = 0; iseg < obj->m_n_lsindex; iseg++ ) {
                                     int seg_index = iseg * 3;
@@ -2021,8 +2021,7 @@ void s57chart::AssembleLineGeometry( void )
                                 }  // for
                                 
                                 //  All done, so assign the list to the object
-                                obj->m_ls_list = list_top->next;    // skipping the empty first placeholder element
-                                delete list_top;
+                                obj->m_ls_list = list_top.next;    // skipping the empty first placeholder element
                                 
                                 
                                 top = top->next;
@@ -4605,10 +4604,10 @@ int s57chart::BuildRAZFromSENCFile( const wxString& FullPath )
             S57Obj *obj = new S57Obj( buf, &fpx, 0, 0, senc_file_version );
             if( obj ) {
                 wxString objnam  = obj->GetAttrValueAsString("OBJNAM");
-                wxString fe_name = wxString(obj->FeatureName, wxConvUTF8);
-                if (objnam.Len() > 0)
+                if (objnam.Len() > 0) {
+                    wxString fe_name = wxString(obj->FeatureName, wxConvUTF8);
                     g_pi_manager->SendVectorChartObjectInfo( FullPath, fe_name, objnam, obj->m_lat, obj->m_lon, scale, nativescale );
-
+                }
 //      Build/Maintain the ATON floating/rigid arrays
                 if( GEO_POINT == obj->Primitive_type ) {
 
