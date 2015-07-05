@@ -92,7 +92,8 @@ typedef struct {
     wxFont  *key;
 } TexFontCache;
 
-static TexFontCache s_txf[8];
+#define TXF_CACHE 8
+static TexFontCache s_txf[TXF_CACHE];
 
 //    Implement all lists
 #include <wx/listimpl.cpp>
@@ -1767,7 +1768,7 @@ bool s52plib::RenderText( wxDC *pdc, S52_TextC *ptext, int x, int y, wxRect *pRe
             // rebuild font if needed
             TexFont *f_cache = 0;
             unsigned int i;
-            for (i = 0; i < sizeof(s_txf); i++)
+            for (i = 0; i < TXF_CACHE; i++)
             {
                 if (s_txf[i].key == ptext->pFont) {
                     f_cache = &s_txf[i].cache;
@@ -1777,8 +1778,8 @@ bool s52plib::RenderText( wxDC *pdc, S52_TextC *ptext, int x, int y, wxRect *pRe
                     break;
                 }
             }
-            if (i == sizeof(s_txf)) {
-                i = rand() & (sizeof(s_txf) -1);
+            if (i == TXF_CACHE) {
+                i = rand() & (TXF_CACHE -1);
             }
             if (f_cache == 0) {
                 s_txf[i].key = ptext->pFont;
