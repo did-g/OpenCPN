@@ -5938,7 +5938,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
                 ut_index++;
             }
             else {
-                _exit(0);
+                // _exit(0);
             }
         }
     }
