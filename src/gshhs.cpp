@@ -683,6 +683,7 @@ GshhsPolyReader::~GshhsPolyReader()
             }
         }
     }
+    delete fpoly;
 }
 
 //-------------------------------------------------------------------------
@@ -690,7 +691,7 @@ int GshhsPolyReader::ReadPolyVersion()
 {
     char txtn = 'c';
     wxString fname = GshhsReader::getFileName_Land( 0 );
-    if( fpoly ) delete  fpoly ;
+    delete fpoly ;
     fpoly = new gshhsPolyFile( fname );
 
     /* init header */
@@ -708,7 +709,7 @@ void GshhsPolyReader::InitializeLoadQuality( int quality )  // 5 levels: 0=low .
 
         wxString fname = GshhsReader::getFileName_Land( quality );
 
-        if( fpoly ) delete  fpoly ;
+        delete fpoly ;
 
         fpoly = new gshhsPolyFile( fname );
         if( fpoly->IsOk() ) readPolygonFileHeader( fpoly, &polyHeader );
@@ -876,10 +877,10 @@ void GshhsPolyReader::readPolygonFileHeader( gshhsPolyFile *polyfile, PolygonFil
 }
 
 //-------------------------------------------------------------------------
-void GshhsPolyReader::drawGshhsPolyMapPlain( ocpnDC &pnt, ViewPort &vp, wxColor seaColor,
-                                             wxColor landColor )
+void GshhsPolyReader::drawGshhsPolyMapPlain( ocpnDC &pnt, ViewPort &vp, wxColor const &seaColor,
+                                             wxColor const &landColor )
 {
-    if( !fpoly ) return;
+    if( !fpoly || fpoly->IsOk() == false) return;
 
     pnt.SetPen( wxNullPen );
 
