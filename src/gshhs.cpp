@@ -691,7 +691,7 @@ int GshhsPolyReader::ReadPolyVersion()
 {
     char txtn = 'c';
     wxString fname = GshhsReader::getFileName_Land( 0 );
-    if( fpoly ) delete  fpoly ;
+    delete fpoly ;
     fpoly = new gshhsPolyFile( fname );
 
     /* init header */
@@ -709,7 +709,7 @@ void GshhsPolyReader::InitializeLoadQuality( int quality )  // 5 levels: 0=low .
 
         wxString fname = GshhsReader::getFileName_Land( quality );
 
-        if( fpoly ) delete  fpoly ;
+        delete fpoly ;
 
         fpoly = new gshhsPolyFile( fname );
         if( fpoly->IsOk() ) readPolygonFileHeader( fpoly, &polyHeader );
