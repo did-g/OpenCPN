@@ -55,6 +55,7 @@ public:
     {
         b_include = false;
         b_eclipsed = false;
+        b_locked = false;
     }
 
     OCPNRegion &GetCandidateVPRegion( ViewPort &vp );
@@ -63,6 +64,7 @@ public:
     int ChartScale;
     bool b_include;
     bool b_eclipsed;
+    bool b_locked;
     
 private:    
     OCPNRegion candidate_region;

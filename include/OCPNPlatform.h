@@ -39,6 +39,9 @@
 
 class MyConfig;
 
+void OcpBeginBusyCursor();
+void OcpEndBusyCursor();
+
 class OCPNPlatform
 {
 public:    

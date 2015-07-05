@@ -161,14 +161,10 @@ static void *DATCVR01(void *param)
 
 
 
-   wxString datcvr01;
-   datcvr01.Append(rule_str);
-   datcvr01.Append('\037');
+   wxString *datcvr01 = new wxString(rule_str);
+   datcvr01->Append('\037');
 
-   char *r = (char *)malloc(datcvr01.Len() + 1);
-   strcpy(r, datcvr01.mb_str());
-
-   return r;
+   return datcvr01;
 
 }
 
@@ -182,7 +178,7 @@ bool GetIntAttr(S57Obj *obj, const char *AttrName, int &val)
         S57attVal *v = obj->attVal->Item(idx);
 
         assert(v->valType == OGR_INT);
-        val = *(int*)(v->value);
+        val = v->value.integer;
         
         return true;
     }
@@ -275,7 +271,7 @@ bool GetDoubleAttr(S57Obj *obj, const char *AttrName, double &val)
 
         S57attVal *v = obj->attVal->Item(idx);
         assert(v->valType == OGR_REAL);
-        val = *(double*)(v->value);
+        val = *(double*)(v->value.ptr);
 
         return true;
     }
@@ -293,7 +289,7 @@ bool GetStringAttr(S57Obj *obj, const char *AttrName, char *pval, int nc)
         S57attVal *v = obj->attVal->Item(idx);
 
         assert(v->valType == OGR_STR);
-        char *val = (char *)(v->value);
+        char *val = (char *)(v->value.ptr);
 
         strncpy(pval, val, nc);
 
@@ -312,9 +308,25 @@ wxString *GetStringAttrWXS(S57Obj *obj, const char *AttrName)
         S57attVal *v = obj->attVal->Item(idx);
         
         assert(v->valType == OGR_STR);
-        char *val = (char *)(v->value);
+        char *val = (char *)(v->value.ptr);
         
         return new wxString(val,  wxConvUTF8);
+    }
+    else
+        return NULL;
+}
+
+// XXX dangereous return internal pointer 
+static const char *_get_string_attr(S57Obj *obj, const char *AttrName)
+{
+    int idx = obj->GetAttributeIndex(AttrName);
+    
+    if(idx >= 0) {
+        //      using idx to get the attribute value
+        S57attVal *v = obj->attVal->Item(idx);
+        
+        assert(v->valType == OGR_STR);
+        return (const char *)(v->value.ptr);
     }
     else
         return NULL;
@@ -762,9 +774,7 @@ static void *DEPARE01(void *param)
 
     rule_str.Append('\037');
 
-    char *r = (char *)malloc(rule_str.Len() + 1);
-    strcpy(r, rule_str.mb_str());
-    return r;
+    return new wxString(rule_str);
 
 }
 /*
@@ -944,6 +954,7 @@ static void *DEPCNT02 (void *param)
                         }
 
 */
+//printf("%f %f  : %f %d\n", safety_contour, next_safe_contour, depth_value, safe);
             }
       }
 
@@ -1001,9 +1012,7 @@ static void *DEPCNT02 (void *param)
 
             rule_str.Append('\037');
 
-            char *r = (char *)malloc(rule_str.Len() + 1);
-            strcpy(r, rule_str.mb_str());
-            return r;
+            return new wxString(rule_str);
 
 //            return depcnt02;
 }
@@ -1489,10 +1498,7 @@ l05_end:
 
       lights05.Append( '\037' );
 
-      char *r = (char *) malloc( lights05.Len() + 1 );
-      strcpy( r, lights05.mb_str() );
-
-      return r;
+      return new wxString(lights05);
 }
 
 
@@ -1870,13 +1876,10 @@ static void *OBSTRN04 (void *param)
 end:
     obstrn04str.Append('\037');
 
-    char *r = (char *)malloc(obstrn04str.Len() + 1);
-    strcpy(r, obstrn04str.mb_str());
-
     delete udwhaz03str;
     delete quapnt01str;
 
-    return r;
+    return new wxString(obstrn04str);
 }
 
 
@@ -1923,12 +1926,7 @@ static void *QUAPOS01(void *param)
     else
           q = CSQUAPNT01(obj);
 
-    char *r = (char *)malloc(q->Len() + 1);
-    strcpy(r, q->mb_str());
-
-    delete q;
-
-    return r;
+    return q;
 
 }
 
@@ -1945,11 +1943,8 @@ static void *QUALIN01(void *param)
     S57Obj *obj = rzRules->obj;
 
     wxString *q = CSQUALIN01(obj);
-    char *r = (char *)malloc(q->Len() + 1);
-    strcpy(r, q->mb_str());
 
-    delete q;
-    return r;
+    return q;
 }
 
 wxString *CSQUALIN01(S57Obj *obj)
@@ -2014,10 +2009,7 @@ static void *QUAPNT01(void *param)
 
     wxString *q = CSQUAPNT01(obj);
 
-    char *r = (char *)malloc(q->Len() + 1);
-    strcpy(r, q->mb_str());
-
-    return r;
+    return q;
 }
 
 wxString *CSQUAPNT01(S57Obj *obj)
@@ -2166,11 +2158,7 @@ static void *SLCONS03(void *param)
 
     slcons03.Append('\037');
 
-    char *r = (char *)malloc(slcons03.Len() + 1);
-    strcpy(r, slcons03.mb_str());
-
-
-    return r;
+    return new wxString(slcons03);
 
 
 }
@@ -2341,13 +2329,10 @@ static void *RESARE02(void *param)
 
     resare02.Append('\037');
 
-    char *r = (char *)malloc(resare02.Len() + 1);
-    strcpy(r, resare02.mb_str());
-
     delete restrnstr;
     delete catreastr;
 
-    return r;
+    return new wxString(resare02);
 }
 
 
@@ -2409,7 +2394,7 @@ static void *_RESCSP01(void *param)
 //    GString *restrnstr        = S57_getAttVal(geo, "RESTRN");
     char     restrn[LISTSIZE] = {'\0'};   // restriction list
     wxString symb;
-    char    *r = NULL;
+    wxString    *r = NULL;
 
     if ( restrnstr->Len()) {
           _parseList(restrnstr->mb_str(), restrn, sizeof(restrn));
@@ -2460,8 +2445,7 @@ static void *_RESCSP01(void *param)
         rescsp01.Append(symb);
         rescsp01.Append('\037');
 
-        r = (char *)malloc(rescsp01.Len() + 1);
-        strcpy(r, rescsp01.mb_str());
+        r = new wxString(rescsp01);
 
         delete restrnstr;
     }
@@ -2501,10 +2485,7 @@ static void *SOUNDG02(void *param)
     // Shortcut.  This CS method causes a branch to an S52plib method
     // which splits multi-point soundings into separate point objects,
     // and then calls CS(SOUNDG03) on successive points below.
-      char *r = (char *)malloc(6);
-      strcpy(r, "MP();");
-
-      return r;
+      return new wxString ( _T("MP();"));
 
 }
 
@@ -2516,12 +2497,8 @@ static void *SOUNDG03(void *param)
     ObjRazRules *rzRules = (ObjRazRules *)param;
     S57Obj *obj = rzRules->obj;
 
-    wxString s = SNDFRM02(obj, obj->z);
+    return new wxString( SNDFRM02(obj, obj->z));
 
-    char *r = (char *)malloc(s.Len() + 1);
-    strcpy(r, s.mb_str());
-
-    return r;
 }
 
 
@@ -2537,17 +2514,16 @@ wxString SNDFRM02(S57Obj *obj, double depth_value_in)
     wxString sndfrm02;
     char     temp_str[LISTSIZE] = {'\0'};
 
-    wxString symbol_prefix;
 
-    char symbol_prefix_a[200];
+    const char *symbol_prefix_a;
 
-    wxString *tecsoustr = GetStringAttrWXS(obj, "TECSOU");
+    const char *tecsoustr = _get_string_attr(obj, "TECSOU");
     char     tecsou[LISTSIZE] = {'\0'};
 
-    wxString *quasoustr = GetStringAttrWXS(obj, "QUASOU");
+    const char *quasoustr = _get_string_attr(obj, "QUASOU");
     char     quasou[LISTSIZE] = {'\0'};
 
-    wxString *statusstr = GetStringAttrWXS(obj, "STATUS");
+    const char *statusstr = _get_string_attr(obj, "STATUS");
     char     status[LISTSIZE] = {'\0'};
 
     double   leading_digit    = 0.0;
@@ -2583,15 +2559,13 @@ wxString SNDFRM02(S57Obj *obj, double depth_value_in)
     leading_digit = (int) depth_value;
 
     if (depth_value <= safety_depth)            //S52_getMarinerParam(S52_MAR_SAFETY_DEPTH)
-        symbol_prefix = _T("SOUNDS");
+        symbol_prefix_a = "SOUNDS";
     else
-        symbol_prefix = _T("SOUNDG");
-
-    strcpy(symbol_prefix_a,symbol_prefix.mb_str());
+        symbol_prefix_a = "SOUNDG";
 
     if (NULL != tecsoustr)
     {
-          _parseList(tecsoustr->mb_str(), tecsou, sizeof(tecsou));
+          _parseList(tecsoustr, tecsou, sizeof(tecsou));
         if (strpbrk(tecsou, "\006"))
         {
             snprintf(temp_str, LISTSIZE, ";SY(%sB1)", symbol_prefix_a);
@@ -2599,8 +2573,8 @@ wxString SNDFRM02(S57Obj *obj, double depth_value_in)
         }
     }
 
-    if (NULL != quasoustr) _parseList(quasoustr->mb_str(), quasou, sizeof(quasou));
-    if (NULL != statusstr) _parseList(statusstr->mb_str(), status, sizeof(status));
+    if (NULL != quasoustr) _parseList(quasoustr, quasou, sizeof(quasou));
+    if (NULL != statusstr) _parseList(statusstr, status, sizeof(status));
 
     if (strpbrk(quasou, "\003\004\005\010\011") || strpbrk(status, "\022"))
     {
@@ -2762,10 +2736,6 @@ wxString SNDFRM02(S57Obj *obj, double depth_value_in)
 return_point:
         sndfrm02.Append('\037');
 
-        delete tecsoustr;
-        delete quasoustr;
-        delete statusstr;
-
         return sndfrm02;
 }
 
@@ -2900,10 +2870,7 @@ static void *TOPMAR01 (void *param)
     topmar.Append(sy);
     topmar.Append('\037');
 
-    char *r = (char *)malloc(topmar.Len() + 1);
-    strcpy(r, topmar.mb_str());
-
-    return r;
+    return new wxString(topmar);
 }
 
 
@@ -3223,13 +3190,10 @@ static void *WRECKS02 (void *param)
 
     wrecks02str.Append('\037');
 
-    char *r = (char *)malloc(wrecks02str.Len() + 1);
-    strcpy(r, wrecks02str.mb_str());
-
     delete udwhaz03str;
     delete quapnt01str;
     delete quasoustr;
-    return r;
+    return new wxString(wrecks02str);
 }
 
 

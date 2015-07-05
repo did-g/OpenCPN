@@ -261,7 +261,10 @@ typedef enum _OGRatt_t{
 }OGRatt_t;
 
 typedef struct _S57attVal {
-    void * value;
+    union {
+        void *ptr;
+        int  integer;
+    } value;
     OGRatt_t valType;
 } S57attVal;
 
@@ -312,19 +315,22 @@ typedef struct _chart_context{
 
 class S57Obj
 {
+private:
+      void Init();
+
 public:
 
       //  Public Methods
-      S57Obj();
+      S57Obj() { Init(); };
       ~S57Obj();
       S57Obj(char *first_line, wxInputStream *fpx, double ref_lat, double ref_lon, int senc_file_version);
 
       wxString GetAttrValueAsString ( const char *attr );
-      int GetAttributeIndex( const char *AttrSeek );
+      int GetAttributeIndex( const char *AttrSeek ) const;
           
       // Private Methods
 private:
-      bool IsUsefulAttribute(char *buf);
+      bool IsUsefulAttribute(const char *buf) const;
       int my_fgets( char *buf, int buf_len_max, wxInputStream& ifs );
       int my_bufgetl( char *ib_read, char *ib_end, char *buf, int buf_len_max );
 
@@ -457,9 +463,9 @@ public:
 class VE_Element
 {
 public:
-      unsigned int index;
-      unsigned int nCount;
+//      unsigned int index;
       double      *pPoints;
+      unsigned int nCount;
       int         max_priority;
       size_t      vbo_offset;
       wxBoundingBox BBox;
@@ -468,7 +474,7 @@ public:
 class VC_Element
 {
 public:
-      unsigned int index;
+//      unsigned int index;
       double      *pPoint;
 };
 

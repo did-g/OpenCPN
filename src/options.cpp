@@ -5389,8 +5389,6 @@ void ChartGroupsUI::OnDeleteGroup( wxCommandEvent &event )
     }
 }
 
-WX_DEFINE_OBJARRAY( ChartGroupElementArray );
-WX_DEFINE_OBJARRAY( ChartGroupArray );
 
 int ChartGroupsUI::FindGroupBranch( ChartGroup *pGroup, wxTreeCtrl *ptree, wxTreeItemId item,
         wxString *pbranch_adder )

@@ -130,7 +130,7 @@ public:
 
       ChartBase *OpenChartFromStack(ChartStack *pStack, int StackEntry, ChartInitFlag iflag = FULL_INIT);
       ChartBase *OpenChartFromDB(int index, ChartInitFlag init_flag);
-      ChartBase *OpenChartFromDBAndLock(int index, ChartInitFlag init_flag );
+      ChartBase *OpenChartFromDBAndLock(int index, ChartInitFlag init_flag , bool lock = true);
       ChartBase *OpenChartFromDB(wxString chart_path, ChartInitFlag init_flag);
       
       void ApplyColorSchemeToCachedCharts(ColorScheme cs);
@@ -144,7 +144,7 @@ public:
       bool IsCacheLocked(){ return m_b_locked; }
       wxXmlDocument GetXMLDescription(int dbIndex, bool b_getGeom);
 
-      void LockCacheChart( int index );
+      bool LockCacheChart( int index );
       bool IsChartLocked( int index );
       
       void UnLockCacheChart( int index );
@@ -166,11 +166,16 @@ private:
       ChartBase *OpenChartUsingCache(int dbindex, ChartInitFlag init_flag);
       CacheEntry *FindOldestDeleteCandidate( bool blog );
       
+      void DeleteCacheEntry(int i, bool bDelTexture = false, const wxString &msg = wxEmptyString);
+      void DeleteCacheEntry(CacheEntry *pce, bool bDelTexture = false, const wxString &msg = wxEmptyString);
+      
       wxArrayPtrVoid    *pChartCache;
+      int		m_ticks;
 
       bool              m_b_locked;
       bool              m_b_busy;
-
+      int		m_prevMemUsed;
+      
       wxCriticalSection m_critSect;
       wxMutex           m_cache_mutex;
 };

@@ -53,6 +53,20 @@ struct CompressedCacheHeader
     uint32_t catalog_offset;    
 };
 
+typedef struct _CatalogEntry_key
+{
+    int         mip_level;
+    ColorScheme tcolorscheme;
+} CatalogEntryKey;
+
+typedef struct _CatalogEntry_value
+{
+    int         x;
+    int         y;
+    int         texture_offset;
+    uint32_t    compressed_size;
+} CatalogEntryValue;
+
 class CatalogEntry
 {
 public:
@@ -62,17 +76,12 @@ public:
     int GetSerialSize();
     void Serialize(unsigned char *);
     void DeSerialize(unsigned char *);
+    CatalogEntryKey k;
+    CatalogEntryValue v;
     
-    int         mip_level;
-    int         x;
-    int         y;
-    ColorScheme tcolorscheme;
-    int         texture_offset;
-    uint32_t    compressed_size;
 };
 
 WX_DEFINE_ARRAY(CatalogEntry*, ArrayOfCatalogEntries);
-
 
 class glTexFactory : public wxEvtHandler
 {
@@ -95,8 +104,8 @@ public:
     bool BackgroundCompressionAsJob() const;
     void PurgeBackgroundCompressionPool();
     void OnTimer(wxTimerEvent &event);
-    void SetLRUTime(wxDateTime time) { m_LRUtime = time; }
-    wxDateTime &GetLRUTime() { return m_LRUtime; }
+    void SetLRUTime(int lru) { m_LRUtime = lru; }
+    int	 GetLRUTime() { return m_LRUtime; }
     void FreeSome( long target );
     
     glTextureDescriptor *GetpTD( wxRect & rect );
@@ -114,9 +123,14 @@ private:
                                           ColorScheme color_scheme);
     
     void DeleteSingleTexture( glTextureDescriptor *ptd );
-    
+
+    CatalogEntryValue *GetCacheEntryValue(int level, int x, int y, ColorScheme color_scheme);
+    bool AddCacheEntryValue(const CatalogEntry &p);
+    int  ArrayIndex(int x, int y) const { return ((y / m_tex_dim) * m_stride) + (x / m_tex_dim); } 
+
     int         n_catalog_entries;
-    ArrayOfCatalogEntries       m_catalog;
+    //ArrayOfCatalogEntries       m_catalog;
+    CatalogEntryValue *m_cache[N_COLOR_SCHEMES][5];
     wxString    m_ChartPath;
     GLuint      m_raster_format;
     wxString    m_CompressedCacheFilePath;
@@ -124,6 +138,7 @@ private:
     int         m_catalog_offset;
     bool        m_hdrOK;
     bool        m_catalogOK;
+    bool        m_catalogCorrupted;
     wxFFile     *m_fs;
     uint32_t    m_chart_date_binary;
     
@@ -136,9 +151,10 @@ private:
     int         m_ny_tex;
     
     ColorScheme m_colorscheme;
+    bool	m_pending;
     wxTimer     m_timer;
     size_t      m_ticks;
-    wxDateTime  m_LRUtime;
+    int		m_LRUtime;
     
     glTextureDescriptor  **m_td_array;
     

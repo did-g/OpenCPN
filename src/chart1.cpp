@@ -146,12 +146,8 @@
 #include "crashprint.h"
 #endif
 
-WX_DECLARE_OBJARRAY(wxDialog *, MyDialogPtrArray);
-
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY( ArrayOfCDI );
-WX_DEFINE_OBJARRAY( ArrayOfRect );
-WX_DEFINE_OBJARRAY( MyDialogPtrArray );
 
 #ifdef __WXMSW__
 void RedirectIOToConsole();
@@ -166,6 +162,7 @@ OCPNPlatform              *g_Platform;
 bool                      g_bFirstRun;
 
 int                       g_unit_test_1;
+int                       g_unit_test_2;
 bool                      g_start_fullscreen;
 bool                      g_rebuild_gl_cache;
 
@@ -644,7 +641,6 @@ long                      g_toolbar_orient;
 wxRect                    g_last_tb_rect;
 float                     g_toolbar_scalefactor;
 
-MyDialogPtrArray          g_MacShowDialogArray;
 bool                      g_benable_rotate;
 
 bool                      g_bShowMag;
@@ -819,6 +815,7 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
 {
     //    Add some OpenCPN specific command line options
     parser.AddSwitch( _T("unit_test_1") );
+    parser.AddSwitch( _T("unit_test_2") );
     parser.AddSwitch( _T("p") );
     parser.AddSwitch( _T("no_opengl") );
     parser.AddSwitch( _T("fullscreen") );
@@ -828,6 +825,7 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
 bool MyApp::OnCmdLineParsed( wxCmdLineParser& parser )
 {
     g_unit_test_1 = parser.Found( _T("unit_test_1") );
+    g_unit_test_2 = parser.Found( _T("unit_test_2") );
     g_bportable = parser.Found( _T("p") );
     g_bdisable_opengl = parser.Found( _T("no_opengl") );
     g_start_fullscreen = parser.Found( _T("fullscreen") );
@@ -1567,7 +1565,7 @@ bool MyApp::OnInit()
         g_memCacheLimit = (int) ( g_mem_total * 0.5 );
     g_memCacheLimit = wxMin(g_memCacheLimit, 1024 * 1024); // math in kBytes, Max is 1 GB
 #else
-    if( 0 == g_memCacheLimit ){
+    if( 0 ==  g_nCacheLimit && 0 == g_memCacheLimit ){
         g_memCacheLimit = (int) ( (g_mem_total - g_mem_initial) * 0.5 );
         g_memCacheLimit = wxMin(g_memCacheLimit, 1024 * 1024); // Max is 1 GB if unspecified
     }
@@ -2351,7 +2349,8 @@ MyFrame::MyFrame( wxFrame *frame, const wxString& title, const wxPoint& pos, con
     Connect( wxEVT_OCPN_DATASTREAM, (wxObjectEventFunction) (wxEventFunction) &MyFrame::OnEvtOCPN_NMEA );
 
     bFirstAuto = true;
-
+    b_autofind = false;
+    
     //  Create/connect a dynamic event handler slot for OCPN_MsgEvent(s) coming from PlugIn system
     Connect( wxEVT_OCPN_MSG, (wxObjectEventFunction) (wxEventFunction) &MyFrame::OnEvtPlugInMessage );
 
@@ -4349,15 +4348,15 @@ bool MyFrame::ToggleLights( bool doToggle, bool temporary )
     OBJLElement *pOLE = NULL;
     
 #ifdef USE_S57
-    if( ps52plib ) {
-        for( unsigned int iPtr = 0; iPtr < ps52plib->pOBJLArray->GetCount(); iPtr++ ) {
+    if( !ps52plib ) 
+        return false;
+
+    for( unsigned int iPtr = 0; iPtr < ps52plib->pOBJLArray->GetCount(); iPtr++ ) {
             pOLE = (OBJLElement *) ( ps52plib->pOBJLArray->Item( iPtr ) );
             if( !strncmp( pOLE->OBJLName, "LIGHTS", 6 ) ) {
                 oldstate = pOLE->nViz != 0;
                 break;
             }
-	    pOLE = NULL;
-        }
     }
 
     oldstate &= !ps52plib->IsObjNoshow("LIGHTS");
@@ -5884,7 +5883,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
         return;
     }
 
-    if( g_unit_test_1 ) {
+    if( g_unit_test_1 || g_unit_test_2) {
 //            if((0 == ut_index) && GetQuiltMode())
 //                  ToggleQuiltMode();
 
@@ -5892,7 +5891,13 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
         if( g_toolbar ) g_toolbar->ToggleTool( ID_FOLLOW, cc1->m_bFollow );
 
         if( ChartData ) {
+            if( g_GroupIndex > 0 ) {
+                while (ut_index < ChartData->GetChartTableEntries() && !ChartData->IsChartInGroup( ut_index, g_GroupIndex ) ) {
+                    ut_index++;
+                }
+            }
             if( ut_index < ChartData->GetChartTableEntries() ) {
+                
                 const ChartTableEntry *cte = &ChartData->GetChartTableEntry( ut_index );
                 double lat = ( cte->GetLatMax() + cte->GetLatMin() ) / 2;
                 double lon = ( cte->GetLonMax() + cte->GetLonMin() ) / 2;
@@ -5907,13 +5912,33 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
                 } else
                     SelectdbChart( ut_index );
 
-                double ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
-                ppm /= 2;
+                double ppm;
+                if (g_unit_test_1) {
+                    ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
+                    ppm /= 2;
+                }
+                else {
+                    // for full chart choose use max width or heigh
+                    //ChartBase *pc = ChartData->OpenChartFromDB( ut_index, FULL_INIT );
+                    
+                    //double scale = pc->GetNormalScaleMax( cc1->GetCanvasScaleFactor(), cc1->GetCanvasWidth() );
+                    double dlat = fabs( (cte->GetLatMax() - cte->GetLatMin() ));
+                    double scale = cte->GetScale()*10;
+                    //double ppm1 = dlat
+                    double ppm1 =cc1->GetCanvasScaleFactor() / scale;
+                    //ppm = (dlat*1852.0)/**cc1->GetCanvasScaleFactor() *//;
+                    ppm = (double)cc1->GetCanvasHeight()/(dlat*1852.0*100);
+                    // printf("%f %f %d %f %f %f\n", dlat, cc1->GetCanvasScaleFactor(), cc1->GetCanvasHeight(), scale, ppm, ppm1);
+
+                }
                 cc1->SetVPScale( ppm );
 
                 cc1->ReloadVP();
 
                 ut_index++;
+            }
+            else {
+                _exit(0);
             }
         }
     }
@@ -6251,7 +6276,10 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
             bnew_view = true;
     }
 
-    FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
+    if( g_unit_test_1 || g_unit_test_2) 
+        FrameTimer1.Start( TIMER_GFRAME_1/2, wxTIMER_CONTINUOUS );
+    else
+        FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 
     if(g_bopengl) {
 #ifdef ocpnUSE_GL

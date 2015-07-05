@@ -512,6 +512,9 @@ private:
       wxTimer     *pRotDefTimer;    // This timer used to control rotaion rendering on mouse moves
       wxTimer     *m_DoubleClickTimer;
 
+      wxLongLong  m_PreviousPanTimeStamp;
+      int	  m_PreviousPanEventTimeStamp;
+      
       wxTimer     m_RolloverPopupTimer;
 
       int         m_wheelzoom_stop_oneshot;

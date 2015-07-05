@@ -203,6 +203,9 @@ protected:
     OCPNRegion  m_canvasregion;
     TexFont     m_gridfont;
 
+    
+    int		m_LRUtime;
+    
     DECLARE_EVENT_TABLE()
 };
 

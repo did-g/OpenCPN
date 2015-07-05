@@ -314,7 +314,6 @@ bool CompressChart(wxThread *pThread, ChartBase *pchart, wxString CompressedCach
             rect.y += rect.height;
         }
 skipout:        
-        tex_fact->DeleteAllTextures();
         delete tex_fact;
     }
     return ret;
@@ -803,6 +802,7 @@ glChartCanvas::glChartCanvas( wxWindow *parent ) :
 
     m_prevMemUsed = 0;    
 
+    m_LRUtime = 0;
 #ifdef __OCPN__ANDROID__    
     //  Create/connect a dynamic event handler slot for gesture events
     Connect( wxEVT_QT_PANGESTURE,
@@ -840,16 +840,10 @@ void glChartCanvas::ClearAllRasterTextures( void )
     
     //     Delete all the TexFactory instances
     ChartPathHashTexfactType::iterator itt;
+
     for( itt = m_chart_texfactory_hash.begin(); itt != m_chart_texfactory_hash.end(); ++itt ) {
-//        ChartBase *pc = (ChartBase *) itt->first;
-        wxString key = itt->first;
+        glTexFactory *ptf = itt->second;
         
-        glTexFactory *ptf = m_chart_texfactory_hash[key];
-        
-        if( ptf){
-            ptf->PurgeBackgroundCompressionPool();
-            ptf->DeleteAllTextures();
-        }
         delete ptf;
     }
     m_chart_texfactory_hash.clear();
@@ -887,6 +881,7 @@ void glChartCanvas::OnSize( wxSizeEvent& event )
 
 void glChartCanvas::MouseEvent( wxMouseEvent& event )
 {
+//    printf("gl mouse");
 #ifndef __OCPN__ANDROID__
     if(cc1->MouseEventSetup( event )) 
         return;                 // handled, no further action required
@@ -1168,6 +1163,7 @@ void glChartCanvas::SetupOpenGL()
 #ifdef __OCPN__ANDROID__
     g_b_EnableVBO = false;
 #endif
+//    g_b_EnableVBO = false;
 
     if(g_b_EnableVBO)
         wxLogMessage( _T("OpenGL-> Using Vertexbuffer Objects") );
@@ -1458,15 +1454,11 @@ bool glChartCanvas::PurgeChartTextures( ChartBase *pc, bool b_purge_factory )
     
     //    Found ?
     if( ittf != m_chart_texfactory_hash.end() ) {
-        glTexFactory *pTexFact = m_chart_texfactory_hash[pc->GetFullPath()];
+        glTexFactory *pTexFact = ittf->second;
         
         if(pTexFact){
 
             if( b_purge_factory){
-                pTexFact->PurgeBackgroundCompressionPool();
-                pTexFact->DeleteAllTextures();
-                pTexFact->DeleteAllDescriptors();
-            
                 m_chart_texfactory_hash.erase(ittf);                // This chart  becoming invalid
             
                 delete pTexFact;
@@ -1491,8 +1483,17 @@ bool glChartCanvas::PurgeChartTextures( ChartBase *pc, bool b_purge_factory )
 #define NORM_FACTOR 16.0
 void glChartCanvas::MultMatrixViewPort(ViewPort &vp)
 {
-    wxPoint2DDouble point;
-    cc1->GetDoubleCanvasPointPixVP(vp, 0, 0, &point);
+    wxPoint2DDouble point = vp.GetDoublePixFromLL(0, 0), point1;
+
+    // sometimes (with bsb charts in single chart mode) there is a
+    // slight difference (calculated in point1).. so correct for that
+    // if we were to pass 0, 0 here like above instead (logically correct),
+    // the bsb corrected coordinats give large errors
+    cc1->GetDoubleCanvasPointPixVP(vp, vp.clat, vp.clon, &point1);
+    point1.m_x -= vp.pix_width / 2;
+    point1.m_y -= vp.pix_height / 2;
+    point += point1;
+
     glTranslatef(point.m_x, point.m_y, 0);
     
     glScalef(vp.view_scale_ppm/NORM_FACTOR, vp.view_scale_ppm/NORM_FACTOR, 1);
@@ -2571,7 +2572,7 @@ void glChartCanvas::RenderRasterChartRegionGL( ChartBase *chart, ViewPort &vp, O
     }
     
     pTexFact = m_chart_texfactory_hash[key];
-    pTexFact->SetLRUTime(wxDateTime::Now());
+    pTexFact->SetLRUTime(++m_LRUtime);
     
     //    For underzoom cases, we will define the textures as having their base levels
     //    equivalent to a level "n" mipmap, where n is calculated, and is always binary
@@ -3366,7 +3367,7 @@ bool glChartCanvas::TextureCrunch(double factor)
     return true;
 }
 
-#define MAX_CACHE_FACTORY 50
+#define MAX_CACHE_FACTORY 100
 bool glChartCanvas::FactoryCrunch(double factor)
 {
     int mem_used, mem_start;
@@ -3418,10 +3419,12 @@ bool glChartCanvas::FactoryCrunch(double factor)
                     mem_used > (double)(m_prevMemUsed) * factor *hysteresis
                     )  || (m_chart_texfactory_hash.size() > MAX_CACHE_FACTORY);
     //  Need more, so delete the oldest factory
+    
     if(bGLMemCrunch){
         
         //      Find the oldest unused factory
-        wxDateTime lru_oldest = wxDateTime::Now();
+        // XXX
+        int lru_oldest = 2147483647;
         glTexFactory *ptf_oldest = NULL;
         
         for( it0 = m_chart_texfactory_hash.begin(); it0 != m_chart_texfactory_hash.end(); ++it0 ) {
@@ -3437,8 +3440,8 @@ bool glChartCanvas::FactoryCrunch(double factor)
                 if( cc1->m_pQuilt && cc1->m_pQuilt->IsComposed() &&
                     !cc1->m_pQuilt->IsChartInQuilt( chart_full_path ) ) {
                     
-                    wxDateTime lru = ptf->GetLRUTime();
-                    if(lru.IsEarlierThan(lru_oldest) && !ptf->BackgroundCompressionAsJob()){
+                    int lru = ptf->GetLRUTime();
+                    if(lru < lru_oldest && !ptf->BackgroundCompressionAsJob()){
                         lru_oldest = lru;
                         ptf_oldest = ptf;
                     }
@@ -3446,8 +3449,8 @@ bool glChartCanvas::FactoryCrunch(double factor)
             }
             else {
                 if( !Current_Ch->GetFullPath().IsSameAs(chart_full_path)) {
-                    wxDateTime lru = ptf->GetLRUTime();
-                    if(lru.IsEarlierThan(lru_oldest) && !ptf->BackgroundCompressionAsJob()){
+                    int lru = ptf->GetLRUTime();
+                    if(lru < lru_oldest && !ptf->BackgroundCompressionAsJob()){
                         lru_oldest = lru;
                         ptf_oldest = ptf;
                     }
@@ -3457,10 +3460,6 @@ bool glChartCanvas::FactoryCrunch(double factor)
                     
         //      Found one?
         if(ptf_oldest){
-            ptf_oldest->PurgeBackgroundCompressionPool();
-            ptf_oldest->DeleteAllTextures();
-            ptf_oldest->DeleteAllDescriptors();
-                
             m_chart_texfactory_hash.erase(ptf_oldest->GetChartPath());                // This chart  becoming invalid
                 
             delete ptf_oldest;
@@ -3863,6 +3862,7 @@ void glChartCanvas::Render()
     g_Platform->HideBusySpinner();
     
     n_render++;
+    OcpEndBusyCursor();
 }
 
 

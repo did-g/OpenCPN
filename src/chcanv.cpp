@@ -60,6 +60,8 @@
 #include "pluginmanager.h"
 #include "ocpn_pixel.h"
 #include "ocpndc.h"
+#include "OCPNPlatform.h"
+
 #include "undo.h"
 #include "toolbar.h"
 #include "multiplexer.h"
@@ -117,6 +119,7 @@ extern sigjmp_buf           env;                    // the context saved by sigs
 
 #include <vector>
 
+#include <time.h>
 //    Profiling support
 //#include "/usr/include/valgrind/callgrind.h"
 
@@ -1528,6 +1531,7 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
 #endif        
         
     case WXK_F11:
+    _exit(0);
         parent_frame->ToggleFullScreen();
         b_handled = true;
         break;
@@ -2393,15 +2397,17 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
 void ChartCanvas::OnCursorTrackTimerEvent( wxTimerEvent& event )
 {
 #ifdef USE_S57
-    if( s57_CheckExtendedLightSectors( mouse_x, mouse_y, VPoint, extendedSectorLegs ) ){
+    if(s57_CheckExtendedLightSectors( mouse_x, mouse_y, VPoint, extendedSectorLegs ) ){
         if(!m_bsectors_shown) {
-            ReloadVP( false );
+            //ReloadVP( false );
+            Refresh();
             m_bsectors_shown = true;
         }
     }
     else {
         if( m_bsectors_shown ) {
-            ReloadVP( false );
+            //ReloadVP( false );
+            Refresh();
             m_bsectors_shown = false;
         }
     }
@@ -2776,7 +2782,7 @@ bool ChartCanvas::PanCanvas( double dx, double dy )
     wxPoint2DDouble p;
 
     extendedSectorLegs.clear();
-
+//printf("pan canvas %f %f\n", dx, dy);
     GetDoubleCanvasPointPix( GetVP().clat, GetVP().clon, &p );
     GetCanvasPixPoint( p.m_x + dx, p.m_y + dy, dlat, dlon );
 
@@ -4301,11 +4307,17 @@ void ChartCanvas::ShowChartInfoWindow( int x, int y, int dbIndex )
             wxString s;
             ChartBase *pc = NULL;
 
+            // TOCTU race but worst case will reload chart.
+            // need to lock it or the background spooler may evict charts in 
+            // OpenChartFromDBAndLock
             if( ( ChartData->IsChartInCache( dbIndex ) ) && ChartData->IsValid() )
-                pc = ChartData->OpenChartFromDB( dbIndex, FULL_INIT );   // this must come from cache
+                pc = ChartData->OpenChartFromDBAndLock( dbIndex, FULL_INIT );   // this must come from cache
 
             int char_width, char_height;
             s = ChartData->GetFullChartInfo( pc, dbIndex, &char_width, &char_height );
+            if (pc)
+                ChartData->UnLockCacheChart(dbIndex);
+
             m_pCIWin->SetString( s );
             m_pCIWin->FitToChars( char_width, char_height );
 
@@ -4506,10 +4518,42 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
             return true;
     }
 #endif    
-    
+#if 0    
+    if(event.Dragging()){
+        wxLongLong drag_time;
+        int ts;
+
+        drag_time = wxGetUTCTimeMillis() ;
+        ts = event.GetTimestamp() - m_PreviousPanEventTimeStamp;
+        if (m_bChartDragging) {
+            if (ts > 0 &&(drag_time - m_PreviousPanTimeStamp)/ts > 100) {
+//printf("\t %lld Mouse setup %d %d left down %d Dragging %d left is down %d left up %d %d\n", drag_time, x, y, event.LeftDown(), event.Dragging(),
+//event.LeftIsDown(), event.LeftUp(), event.GetTimestamp());
+//printf(" skipped pan, bogus %lld?\n", (drag_time - m_PreviousPanTimeStamp)/ts);
+                m_PreviousPanTimeStamp = drag_time;
+                m_PreviousPanEventTimeStamp = event.GetTimestamp();
+                return true;
+            }
+            else { 
+//                printf(" get pan, %lld?\n", (drag_time - m_PreviousPanTimeStamp)/ts);
+            }
+            
+        }
+        m_PreviousPanTimeStamp = drag_time;
+        m_PreviousPanEventTimeStamp = event.GetTimestamp();
+    }
+#endif    
     mouse_x = x;
     mouse_y = y;
     mouse_leftisdown = event.LeftDown();
+#if 0
+    struct timespec tp;
+
+    clock_gettime(CLOCK_REALTIME, &tp);
+    long long c_t = (long long)(tp.tv_sec)*1000000 + (tp.tv_nsec/1000);
+    printf(" %lld Mouse setup %d %d left down %d Dragging %d left is down %d left up %d %d  %d\n", c_t, x, y, mouse_leftisdown, event.Dragging(),
+    event.LeftIsDown(), event.LeftUp(), event.GetTimestamp(), m_bChartDragging);
+#endif    
     mx = x;
     my = y;
     GetCanvasPixPoint( x, y, m_cursor_lat, m_cursor_lon );
@@ -4578,12 +4622,17 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
             m_DoubleClickTimer->Stop();
             return(true);
         }
-
-        // Save the event for later running if there is no DClick.
-        m_DoubleClickTimer->Start( 350, wxTIMER_ONE_SHOT );
-        singleClickEvent = event;
-        singleClickEventIsValid = true;
-        return(true);
+        if (!m_bChartDragging) {
+            // Save the event for later running if there is no DClick.
+            // if dragging 
+            // 1) it shouldn't be a DClick 
+            // 2) on linux under load it leads to the chart moving back
+            m_DoubleClickTimer->Start( 350, wxTIMER_ONE_SHOT );
+            singleClickEvent = event;
+            singleClickEventIsValid = true;
+//printf("skip, arm single click timer\n");
+            return(true);
+        }
     }
 
     //  This logic is necessary on MSW to handle the case where
@@ -6048,6 +6097,25 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
         
     }
     
+    if( (event.Dragging() && event.LeftIsDown()) || ( m_bChartDragging && event.LeftUp())){
+            if( ( last_drag.x != x ) || ( last_drag.y != y ) ) {
+                m_bChartDragging = true;
+                PanCanvas( last_drag.x - x, last_drag.y - y );
+                
+                last_drag.x = x;
+                last_drag.y = y;
+                
+                if( g_btouch ) {
+                    if(( m_bMeasure_Active && m_nMeasureState ) || ( parent_frame->nRoute_State )){
+                        //deactivate next LeftUp to ovoid creating an unexpected point
+                        m_DoubleClickTimer->Start();
+                        singleClickEventIsValid = false;
+                    }
+                }
+                
+            }
+    }
+        
     if( event.LeftUp() ) {
         if( 1/*leftIsDown*/ ) {  // left click for chart center
             leftIsDown = false;
@@ -6087,25 +6155,6 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
         }
     }
     
-    if( event.Dragging() && event.LeftIsDown()){
-            if( ( last_drag.x != x ) || ( last_drag.y != y ) ) {
-                m_bChartDragging = true;
-                PanCanvas( last_drag.x - x, last_drag.y - y );
-                
-                last_drag.x = x;
-                last_drag.y = y;
-                
-                if( g_btouch ) {
-                    if(( m_bMeasure_Active && m_nMeasureState ) || ( parent_frame->nRoute_State )){
-                        //deactivate next LeftUp to ovoid creating an unexpected point
-                        m_DoubleClickTimer->Start();
-                        singleClickEventIsValid = false;
-                    }
-                }
-                
-            }
-    }
-        
         
 
     return true;
@@ -6116,6 +6165,8 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
 
 void ChartCanvas::MouseEvent( wxMouseEvent& event )
 {
+//printf("chart mouse");
+
     if(MouseEventSetup( event ))
         return;                 // handled, no further action required
     
@@ -8194,7 +8245,6 @@ void pupHandler_PasteTrack() {
         newPoint->m_bIsVisible = false;
         newPoint->m_GPXTrkSegNo = 1;
 
-        wxDateTime now = wxDateTime::Now();
         newPoint->SetCreateTime(curPoint->GetCreateTime());
 
         newTrack->AddPoint( newPoint );
@@ -9031,10 +9081,9 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
             delete clip_region;
 
             ocpnDC bgdc( temp_dc );
-            double r =         VPoint.rotation;
-            SetVPRotation( 0.0 );
-            pWorldBackgroundChart->RenderViewOnDC( bgdc, VPoint );
-            SetVPRotation( r );
+            ViewPort vp = VPoint;
+            vp.rotation = 0;
+            pWorldBackgroundChart->RenderViewOnDC( bgdc, vp );
         }
     } // temp_dc.IsOk();
 
@@ -9419,7 +9468,7 @@ void ChartCanvas::Refresh( bool eraseBackground, const wxRect *rect )
     } else
 #endif
         wxWindow::Refresh( eraseBackground, rect );
-
+    OcpEndBusyCursor();
 }
 
 void ChartCanvas::Update()

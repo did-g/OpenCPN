@@ -24,7 +24,7 @@ public:
     wxBoundingBox(double xmin, double ymin, double xmax, double ymax);
     virtual ~wxBoundingBox();
 
-    bool And(wxBoundingBox*, double Marge = 0);
+    bool And(const wxBoundingBox &, double Marge = 0);
 
     void EnLarge(const double Marge);
     void Shrink(const double Marge);
@@ -49,7 +49,7 @@ public:
 
     void Reset();
 
-    void Translate( wxPoint2DDouble& );
+    void Translate( const wxPoint2DDouble& );
     void MapBbox( const wxTransformMatrix& matrix);
 
     double  GetWidth() const {return m_maxx-m_minx;};
@@ -68,7 +68,7 @@ public:
     inline  double GetMaxX() const {return m_maxx;};
     inline  double GetMaxY() const {return m_maxy;};
 
-    wxBoundingBox&  operator+( wxBoundingBox& );
+    wxBoundingBox&  operator+( const wxBoundingBox& );
     wxBoundingBox&  operator=(  const wxBoundingBox& );
 
 protected:

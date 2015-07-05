@@ -43,6 +43,7 @@
 #include "glChartCanvas.h"
 #endif
 
+#include "chcanv.h"
 #include "gshhs.h"
 
 #ifdef __OCPN__ANDROID__
@@ -63,6 +64,7 @@
 typedef void (GLAPIENTRY * PFNGLBINDBUFFERPROC) (GLenum target, GLuint buffer);
 
 extern wxString *pWorldMapLocation;
+extern ChartCanvas *cc1;
 
 class gshhsPolyFile {
 public:
@@ -342,19 +344,28 @@ void GshhsPolyCell::ReadPolygonFile()
 
 wxPoint GetPixFromLL(ViewPort &vp, double lat, double lon)
 {
-    wxPoint p = vp.GetPixFromLL(lat, lon);
+    wxPoint p;
+
+    // in non-gl...  our vp here always has rotation of 0,
+    // so we check from cc1 and if we aren't rotated, then maybe
+    // we actually want the bsb corrected, otherwise we don't
+    if(cc1->GetVP().rotation)
+        p = vp.GetPixFromLL(lat, lon);
+    else
+        cc1->GetCanvasPointPixVP(vp, lat, lon, &p);
+
     p.x -= vp.rv_rect.x, p.y -= vp.rv_rect.y;
     return p;
 }
 
-wxPoint2DDouble GetDoublePixFromLL(ViewPort &vp, double lat, double lon)
+static wxPoint2DDouble GetDoublePixFromLL(ViewPort &vp, double lat, double lon)
 {
     wxPoint2DDouble p = vp.GetDoublePixFromLL(lat, lon);
     p.m_x -= vp.rv_rect.x, p.m_y -= vp.rv_rect.y;
     return p;
 }
 
-void GshhsPolyCell::DrawPolygonFilled( ocpnDC &pnt, contour_list * p, double dx, ViewPort &vp,  wxColor color )
+void GshhsPolyCell::DrawPolygonFilled( ocpnDC &pnt, contour_list * p, double dx, ViewPort &vp,  wxColor const &color )
 {
     if( !p->size() ) /* size of 0 is very common, and setting the brush is
                         actually quite slow, so exit early */
@@ -486,7 +497,7 @@ void __CALL_CONVENTION gshhsendCallback()
 {
 }
 
-void GshhsPolyCell::DrawPolygonFilledGL( contour_list * p, float_2Dpt **pv, int *pvc, ViewPort &vp,  wxColor color, bool idl )
+void GshhsPolyCell::DrawPolygonFilledGL( contour_list * p, float_2Dpt **pv, int *pvc, ViewPort &vp,  wxColor const &color, bool idl )
 {
     if( !p->size() ) // size of 0 is very common, exit early
         return;
@@ -569,8 +580,8 @@ void GshhsPolyCell::DrawPolygonFilledGL( contour_list * p, float_2Dpt **pv, int 
 #define DRAW_POLY_FILLED(POLY,COL) if(POLY) DrawPolygonFilled(pnt,POLY,dx,vp,COL);
 #define DRAW_POLY_FILLED_GL(NUM,COL) DrawPolygonFilledGL(&poly##NUM,&polyv[NUM],&polyc[NUM],vp,COL, idl);
 
-void GshhsPolyCell::drawMapPlain( ocpnDC &pnt, double dx, ViewPort &vp, wxColor seaColor,
-                                  wxColor landColor, int cellcount, bool idl )
+void GshhsPolyCell::drawMapPlain( ocpnDC &pnt, double dx, ViewPort &vp, wxColor const &seaColor,
+                                  wxColor const &landColor, int cellcount, bool idl )
 {
 #ifdef ocpnUSE_GL        
     if(!pnt.GetDC()) { // opengl
@@ -1393,8 +1404,8 @@ void GshhsReader::GsshDrawLines( ocpnDC &pnt, std::vector<GshhsPolygon*> &lst, V
 }
 
 //-----------------------------------------------------------------------
-void GshhsReader::drawContinents( ocpnDC &pnt, ViewPort &vp, wxColor seaColor,
-        wxColor landColor )
+void GshhsReader::drawContinents( ocpnDC &pnt, ViewPort &vp, wxColor const &seaColor,
+        wxColor const &landColor )
 {
     LoadQuality( selectBestQuality( vp ) );
     gshhsPoly_reader->drawGshhsPolyMapPlain( pnt, vp, seaColor, landColor );

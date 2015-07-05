@@ -81,6 +81,19 @@ DECLARE_APP(MyApp)
 
 void appendOSDirSlash( wxString* pString );
 
+void OcpBeginBusyCursor()
+{
+    if (!::wxIsBusy()) {
+        ::wxBeginBusyCursor();
+    }
+}
+
+void OcpEndBusyCursor()
+{
+    if (::wxIsBusy()) {
+        ::wxEndBusyCursor();
+    }
+}
 
 #ifndef __WXMSW__
 struct sigaction          sa_all;
