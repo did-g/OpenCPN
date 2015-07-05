@@ -876,10 +876,10 @@ void GshhsPolyReader::readPolygonFileHeader( gshhsPolyFile *polyfile, PolygonFil
 }
 
 //-------------------------------------------------------------------------
-void GshhsPolyReader::drawGshhsPolyMapPlain( ocpnDC &pnt, ViewPort &vp, wxColor seaColor,
-                                             wxColor landColor )
+void GshhsPolyReader::drawGshhsPolyMapPlain( ocpnDC &pnt, ViewPort &vp, wxColor const &seaColor,
+                                             wxColor const &landColor )
 {
-    if( !fpoly ) return;
+    if( !fpoly || fpoly->IsOk() == false) return;
 
     pnt.SetPen( wxNullPen );
 
