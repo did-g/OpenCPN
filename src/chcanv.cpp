@@ -4624,14 +4624,14 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
         }
         if (!m_bChartDragging) {
             // Save the event for later running if there is no DClick.
-            // if dragging 
-            // 1) it shouldn't be a DClick 
+            // if dragging: 
+            // 1) it couldn't be a DClick 
             // 2) on linux under load it leads to the chart moving back
+
             m_DoubleClickTimer->Start( 350, wxTIMER_ONE_SHOT );
             singleClickEvent = event;
             singleClickEventIsValid = true;
-//printf("skip, arm single click timer\n");
-            return(true);
+            return true;
         }
     }
 
