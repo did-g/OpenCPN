@@ -876,7 +876,7 @@ void glChartCanvas::OnActivate( wxActivateEvent& event )
 void glChartCanvas::OnSize( wxSizeEvent& event )
 {
     if( !g_bopengl ) {
-        SetSize( GetSize().x, GetSize().y );
+        SetSize( cc1->GetVP().pix_width, cc1->GetVP().pix_height );
         event.Skip();
         return;
     }
@@ -887,8 +887,9 @@ void glChartCanvas::OnSize( wxSizeEvent& event )
 #endif
     
     /* expand opengl widget to fill viewport */
-    if( GetSize() != cc1->GetSize() ) {
-        SetSize( cc1->GetSize() );
+    ViewPort &VP = cc1->GetVP();
+    if( GetSize().x != VP.pix_width || GetSize().y != VP.pix_height ) {
+        SetSize( VP.pix_width, VP.pix_height );
         if( m_bsetup )
             BuildFBO();
     }
@@ -3549,12 +3550,11 @@ void glChartCanvas::Render()
 //        return;
     
     ViewPort VPoint = cc1->VPoint;
-
     ViewPort svp = VPoint;
     svp.pix_width = svp.rv_rect.width;
     svp.pix_height = svp.rv_rect.height;
 
-    OCPNRegion chart_get_region( 0, 0, VPoint.rv_rect.width, VPoint.rv_rect.height );
+    OCPNRegion chart_get_region( 0, 0, cc1->VPoint.rv_rect.width, cc1->VPoint.rv_rect.height );
 
     ocpnDC gldc( *this );
 
