@@ -1067,7 +1067,9 @@ void OCPNPlatform::HideBusySpinner( void )
 #ifdef __OCPN__ANDROID__
     androidHideBusyIcon();
 #else
-    ::wxEndBusyCursor();
+    if( ::wxIsBusy() ){
+        ::wxEndBusyCursor();
+    }
 #endif    
 }
 
