@@ -3412,6 +3412,11 @@ bool glChartCanvas::TextureCrunch(double factor)
 #define MAX_CACHE_FACTORY 100
 bool glChartCanvas::FactoryCrunch(double factor)
 {
+    if (m_chart_texfactory_hash.size() == 0) {
+        /* nothing to free */
+        return false;
+    }
+
     int mem_used, mem_start;
     GetMemoryStatus(0, &mem_used);
     double hysteresis = 0.90;
