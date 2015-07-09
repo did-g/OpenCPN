@@ -1791,7 +1791,6 @@ bool s52plib::RenderText( wxDC *pdc, S52_TextC *ptext, int x, int y, wxRect *pRe
                 f_cache = &s_txf[i].cache;                
                 f_cache->Build(*ptext->pFont);
             }
-            //printf("%p\n", ptext->pFont);
 
             int w, h;
             f_cache->GetTextExtent(ptext->frmtd, &w, &h);
