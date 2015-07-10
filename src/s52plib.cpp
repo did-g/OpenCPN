@@ -5943,7 +5943,7 @@ void s52plib::RenderToBufferFilledPolygon( ObjRazRules *rzRules, S57Obj *obj, S5
                 //      Get and convert the points
                 wxPoint *pr = ptp;
 
-                if(ppg->data_type == DATA_TYPE_DOUBLE){
+                if(ppg->bfloat_type == false /*DATA_TYPE_DOUBLE*/){
                     double *pvert_list = p_tp->p_vertex;
 
                     for( int iv = 0; iv < p_tp->nVert; iv++ ) {
@@ -6118,15 +6118,57 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         if( !rzRules->obj->pPolyTessGeo->IsOk() ) 
             rzRules->obj->pPolyTessGeo->BuildDeferredTess();
 
+        PolyTriGroup *ppg = rzRules->obj->pPolyTessGeo->Get_PolyTriGroup_head();
+
+        wxBoundingBox tp_box;
+        TriPrim *p_tp = ppg->tri_prim_head;
+        GLintptr vbo_offset = 0;
+
+        //      Set up the stride sizes for the array
+        int array_data_size = sizeof(float);
+        GLint array_gl_type = GL_FLOAT;
+        
+        if(ppg->bfloat_type == false/*DATA_TYPE_DOUBLE*/){
+            array_data_size = sizeof(double);
+            array_gl_type = GL_DOUBLE;
+        }
+
+        bool draw = false;
+        while( p_tp ) {
+            tp_box.SetMin(p_tp->minx, p_tp->miny);
+            tp_box.SetMax(p_tp->maxx, p_tp->maxy);
+            
+            bool b_greenwich = false;
+            if( BBView.GetMaxX() > 360. ) {
+                wxBoundingBox bbRight( 0., vp->GetBBox().GetMinY(), vp->GetBBox().GetMaxX() - 360.,
+                        vp->GetBBox().GetMaxY() );
+                
+                
+                if( bbRight.Intersect( tp_box, margin ) != _OUT )
+                    b_greenwich = true;
+            }
+
+            if( b_greenwich || !BBView.IntersectOut( tp_box ) ) {
+                draw = true;
+                break;
+            }
+            
+            vbo_offset += p_tp->nVert * 2 * array_data_size;
+            p_tp = p_tp->p_next; // pick up the next in chain
+            
+        } // while
+
+        if (draw == false) 
+            return 1;
+
         //  Get the vertex data
         PolyTriGroup *ppg_vbo = rzRules->obj->pPolyTessGeo->Get_PolyTriGroup_head();
             
             //  Has the input vertex buffer been converted to "single_alloc float" model?
             //  and is it allowed?
         if(!ppg_vbo->bsingle_alloc && (rzRules->obj->auxParm1 >= 0) ){
-                
+
                 int data_size = sizeof(float);
-                
                 //  First calculate the required total byte size
                     int total_byte_size = 0;
                     TriPrim *p_tp = ppg_vbo->tri_prim_head;
@@ -6138,7 +6180,7 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                     float *vbuf = (float *)malloc(total_byte_size);
                     p_tp = ppg_vbo->tri_prim_head;
                     
-                    if( ppg_vbo->data_type == DATA_TYPE_DOUBLE){  //DOUBLE to FLOAT
+                    if( ppg_vbo->bfloat_type == false/*DATA_TYPE_DOUBLE*/){  //DOUBLE to FLOAT
                             float *p_run = vbuf;
                             while( p_tp ) {
                                 float *pfbuf = p_run;
@@ -6171,7 +6213,7 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                     ppg_vbo->bsingle_alloc = true;
                     ppg_vbo->single_buffer = (unsigned char *)vbuf;
                     ppg_vbo->single_buffer_size = total_byte_size;
-                    ppg_vbo->data_type = DATA_TYPE_FLOAT;
+                    ppg_vbo->bfloat_type = true; /*DATA_TYPE_FLOAT*/;
                     
         }
         
@@ -6212,17 +6254,17 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
             
         bool b_useVBO = g_b_EnableVBO  && !rzRules->obj->auxParm1;    // VBO allowed?
 
-        if( b_useVBO ){        
+        if(b_useVBO  ){
         //  Has a VBO been built for this object?
-            if( 1 ) {
+            if( 0 || p_tp->nVert >= 16 ) {
                  
-                 if(rzRules->obj->auxParm0 <= 0) {
+                if(rzRules->obj->auxParm0 <= 0) {
                     b_temp_vbo = (rzRules->obj->auxParm0 == -5);
                    
                     GLuint vboId;
                     // generate a new VBO and get the associated ID
                     (s_glGenBuffers)(1, &vboId);
-                    
+//printf("%d\n", p_tp->nVert);
                     rzRules->obj->auxParm0 = vboId;
                     
                     // bind VBO in order to use
@@ -6238,30 +6280,33 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                     (s_glBindBuffer)(GL_ARRAY_BUFFER, rzRules->obj->auxParm0);
                     glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex coords array
                 }                    
-             }
+            }
+            else {
+                 glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex coords array
+                 vbo_offset  += (int ) ppg_vbo->single_buffer;
+            }
         }
         else {
             glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex coords array
         }
         
-
-        PolyTriGroup *ppg = rzRules->obj->pPolyTessGeo->Get_PolyTriGroup_head();
-
-        wxBoundingBox tp_box;
-        TriPrim *p_tp = ppg->tri_prim_head;
-        GLintptr vbo_offset = 0;
-        
-
-        //      Set up the stride sizes for the array
-        int array_data_size = sizeof(float);
-        GLint array_gl_type = GL_FLOAT;
-        
-        if(ppg->data_type == DATA_TYPE_DOUBLE){
-            array_data_size = sizeof(double);
-            array_gl_type = GL_DOUBLE;
-        }
-        bool draw = false;
         while( p_tp ) {
+            if (draw == true) 
+            {
+                if( b_useVBO ){
+                    glVertexPointer(2, array_gl_type, 2 * array_data_size, (GLvoid *)(vbo_offset));
+                }
+                else{
+                    glVertexPointer(2, array_gl_type, 2 * array_data_size, p_tp->p_vertex);
+                }
+                glDrawArrays(p_tp->type, 0, p_tp->nVert);
+            }
+            
+            vbo_offset += p_tp->nVert * 2 * array_data_size;
+            p_tp = p_tp->p_next; // pick up the next in chain
+            if (!p_tp)
+                break;
+
             tp_box.SetMin(p_tp->minx, p_tp->miny);
             tp_box.SetMax(p_tp->maxx, p_tp->maxy);
             
@@ -6275,24 +6320,14 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                     b_greenwich = true;
             }
 
-            if( b_greenwich || !BBView.IntersectOut( tp_box ) ) {
+            if( b_greenwich || !BBView.IntersectOut( tp_box ) ) 
                 draw = true;
-                if(b_useVBO){
-                    glVertexPointer(2, array_gl_type, 2 * array_data_size, (GLvoid *)(vbo_offset));
-                    glDrawArrays(p_tp->type, 0, p_tp->nVert);
-                }
-                else{
-                    glVertexPointer(2, array_gl_type, 2 * array_data_size, p_tp->p_vertex);
-                    glDrawArrays(p_tp->type, 0, p_tp->nVert);
-                }
-            }
-            
-            vbo_offset += p_tp->nVert * 2 * array_data_size;
-            p_tp = p_tp->p_next; // pick up the next in chain
-            
+            else
+                draw = false;
+                        
         } // while
-        //if (draw == false) printf("1\n");
-        if(b_useVBO)
+
+        if( b_useVBO && rzRules->obj->auxParm0 > 0)
             (s_glBindBuffer)(GL_ARRAY_BUFFER_ARB, 0);
         
         glDisableClientState(GL_VERTEX_ARRAY);            // deactivate vertex array
@@ -6318,6 +6353,9 @@ int s52plib::RenderToGLAP( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     if( rules->razRule == NULL )
         return 0;
 
+    if( rzRules->obj->pPolyTessGeo == 0) 
+        return 0;
+        
     int obj_xmin = 10000;
     int obj_xmax = -10000;
     int obj_ymin = 10000;
@@ -6334,14 +6372,41 @@ int s52plib::RenderToGLAP( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     double margin = BBView.GetWidth() * .05;
 
     wxPoint *ptp;
-    if( rzRules->obj->pPolyTessGeo ) {
-        if( !rzRules->obj->pPolyTessGeo->IsOk() ) // perform deferred tesselation
+    if( !rzRules->obj->pPolyTessGeo->IsOk() ) // perform deferred tesselation
             rzRules->obj->pPolyTessGeo->BuildDeferredTess();
 
-        ptp = (wxPoint *) malloc(
+    bool draw = false;
+    PolyTriGroup *ppg = rzRules->obj->pPolyTessGeo->Get_PolyTriGroup_head();
+
+    wxBoundingBox tp_box;
+    TriPrim *p_tp = ppg->tri_prim_head;
+
+    while( p_tp ) {
+            
+        tp_box.SetMin(p_tp->minx, p_tp->miny);
+        tp_box.SetMax(p_tp->maxx, p_tp->maxy);
+            
+        bool b_greenwich = false;
+        if( BBView.GetMaxX() > 360. ) {
+                wxBoundingBox bbRight( 0., vp->GetBBox().GetMinY(), vp->GetBBox().GetMaxX() - 360.,
+                        vp->GetBBox().GetMaxY() );
+                
+                if( bbRight.Intersect( tp_box, margin ) != _OUT )
+                    b_greenwich = true;
+        }
+
+        if( b_greenwich || ( BBView.Intersect( tp_box, margin ) != _OUT ) ) {
+            draw = true;
+            break;
+        }
+        p_tp = p_tp->p_next; // pick up the next in chain
+    } // while
+
+    if (draw == false) {
+        return 0;    
+    }
+    ptp = (wxPoint *) malloc(
                 ( rzRules->obj->pPolyTessGeo->GetnVertexMax() + 1 ) * sizeof(wxPoint) );
-    } else
-        return 0;
 
     if( glChartCanvas::s_b_useStencilAP ) {
         glPushAttrib( GL_STENCIL_BUFFER_BIT );          // See comment below
@@ -6389,30 +6454,13 @@ int s52plib::RenderToGLAP( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         }
 #endif
 
-        PolyTriGroup *ppg = rzRules->obj->pPolyTessGeo->Get_PolyTriGroup_head();
-
-        wxBoundingBox tp_box;
-        TriPrim *p_tp = ppg->tri_prim_head;
-        while( p_tp ) {
+    while( p_tp ) {
             
-            tp_box.SetMin(p_tp->minx, p_tp->miny);
-            tp_box.SetMax(p_tp->maxx, p_tp->maxy);
-            
-            bool b_greenwich = false;
-            if( BBView.GetMaxX() > 360. ) {
-                wxBoundingBox bbRight( 0., vp->GetBBox().GetMinY(), vp->GetBBox().GetMaxX() - 360.,
-                        vp->GetBBox().GetMaxY() );
-                
-                if( bbRight.Intersect( tp_box, margin ) != _OUT )
-                    b_greenwich = true;
-            }
-
-            if( b_greenwich || ( BBView.Intersect( tp_box, margin ) != _OUT ) ) {
-
-                //      Get and convert the points
-
+            //      Get and convert the points
+            if (draw) {
                 wxPoint *pr = ptp;
-                if( ppg->data_type == DATA_TYPE_FLOAT ){
+                draw = true;
+                if( ppg->bfloat_type == true /*DATA_TYPE_FLOAT*/ ){
                     float *pvert_list = (float *)p_tp->p_vertex;
 
                     for( int iv = 0; iv < p_tp->nVert; iv++ ) {
@@ -6483,6 +6531,24 @@ int s52plib::RenderToGLAP( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                 }
             } // if bbox
             p_tp = p_tp->p_next; // pick up the next in chain
+            if (p_tp == 0)
+                break;
+            tp_box.SetMin(p_tp->minx, p_tp->miny);
+            tp_box.SetMax(p_tp->maxx, p_tp->maxy);
+            
+            bool b_greenwich = false;
+            if( BBView.GetMaxX() > 360. ) {
+                wxBoundingBox bbRight( 0., vp->GetBBox().GetMinY(), vp->GetBBox().GetMaxX() - 360.,
+                        vp->GetBBox().GetMaxY() );
+                
+                if( bbRight.Intersect( tp_box, margin ) != _OUT )
+                    b_greenwich = true;
+            }
+
+            if( b_greenwich || ( BBView.Intersect( tp_box, margin ) != _OUT ) ) 
+                draw = true;
+            else
+                draw = false;
         } // while
 
 //        obj_xmin = 0;
@@ -6581,10 +6647,10 @@ int s52plib::RenderToGLAP( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                 yr += ppatt_spec->height;
                 yc++;
             }
-        }
+    }
 
-        glDisable( GL_TEXTURE_2D );
-        glDisable( GL_BLEND );
+    glDisable( GL_TEXTURE_2D );
+    glDisable( GL_BLEND );
 
 #if 0
         //    If using overall DepthBuffer clipping, we need to
@@ -6631,17 +6697,17 @@ int s52plib::RenderToGLAP( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         }
 
 #endif
-        //    Restore the previous state
+    //    Restore the previous state
         
-         if( glChartCanvas::s_b_useStencilAP ){
+    if( glChartCanvas::s_b_useStencilAP ){
              //  Theoretically, it should be sufficient to simply reset the StencilFunc()...
              //  But I found one platform where this does not work, and we need to save and restore
              //  the entire STENCIL state.  I suspect bad GL drivers here, but we do what must needs...
              //glStencilFunc( GL_EQUAL, 1, 1 );
              
              glPopAttrib();
-         }
-         else
+    }
+    else
              glChartCanvas::SetClipRegion( *vp, m_last_clip_region);
 
     free( ptp );
@@ -6687,7 +6753,7 @@ void s52plib::RenderPolytessGL(ObjRazRules *rzRules, ViewPort *vp, double z_clip
             //      Get and convert the points
             
             wxPoint *pr = ptp;
-            if( ppg->data_type == DATA_TYPE_FLOAT ){
+            if( ppg->bfloat_type == true /*DATA_TYPE_FLOAT*/ ){
                 float *pvert_list = (float *)p_tp->p_vertex;
                 
                 for( int iv = 0; iv < p_tp->nVert; iv++ ) {

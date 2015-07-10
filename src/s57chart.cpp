@@ -1909,11 +1909,10 @@ void s57chart::AssembleLineGeometry( void )
                                         {
                                             // key.Printf(_T("%dCE%d"), inode, venode);
                                             key.set(TYPE_CE, inode, venode);
-                                            
-                                            if(m_connector_hash.find( key ) != m_connector_hash.end()){
-                                                
-                                                connector_segment *pcs = m_connector_hash[key];
-                                                
+
+                                            connected_segment_hash::iterator itcsc = m_connector_hash.find( key );
+                                            if( itcsc != m_connector_hash.end()){
+                                                connector_segment *pcs = itcsc->second;
                                                 line_segment_element *pls = new line_segment_element;
                                                 pls->next = 0;
                                                 pls->vbo_offset = pcs->vbo_offset;
@@ -1978,9 +1977,10 @@ void s57chart::AssembleLineGeometry( void )
                                                 
                                                 //key.Printf(_T("%dEC%d"), venode, enode);
                                                 key.set(TYPE_EC, venode, enode);
-                                                
-                                                if(m_connector_hash.find( key ) != m_connector_hash.end()){
-                                                    connector_segment *pcs = m_connector_hash[key];
+
+                                                connected_segment_hash::iterator itcsc = m_connector_hash.find( key );
+                                                if( itcsc != m_connector_hash.end()){
+                                                    connector_segment *pcs = itcsc->second;
                                                     
                                                     line_segment_element *pls = new line_segment_element;
                                                     pls->next = 0;
@@ -2009,9 +2009,10 @@ void s57chart::AssembleLineGeometry( void )
                                             else {
                                                 //key.Printf(_T("%dCC%d"), inode, enode);
                                                 key.set(TYPE_CC, inode, enode);
-                                                
-                                                if(m_connector_hash.find( key ) != m_connector_hash.end()){
-                                                    connector_segment *pcs = m_connector_hash[key];
+
+                                                connected_segment_hash::iterator itcsc = m_connector_hash.find( key );
+                                                if( itcsc != m_connector_hash.end()){
+                                                    connector_segment *pcs = itcsc->second;
                                                     
                                                     line_segment_element *pls = new line_segment_element;
                                                     pls->next = 0;
@@ -6307,7 +6308,7 @@ bool s57chart::IsPointInObjArea( float lat, float lon, float select_radius, S57O
 
             if( tp_box.PointInBox( lon, lat, 0 ) ) {
                 
-                if(ppg->data_type == DATA_TYPE_DOUBLE) {
+                if(ppg->bfloat_type == false /*DATA_TYPE_DOUBLE*/) {
                     double *p_vertex = pTP->p_vertex;
 
                     switch( pTP->type ){

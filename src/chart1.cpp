@@ -1571,7 +1571,8 @@ bool MyApp::OnInit()
         g_memCacheLimit = wxMin(g_memCacheLimit, 1024 * 1024); // Max is 1 GB if unspecified
     }
 #endif
-
+    if( 0 ==  g_nCacheLimit)
+        g_nCacheLimit = CACHE_N_LIMIT_DEFAULT;
 #ifdef __OCPN__ANDROID__
     g_memCacheLimit = 100 * 1024;
 #endif
@@ -5967,7 +5968,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
                 ut_index++;
             }
             else {
-                // _exit(0);
+                 _exit(0);
             }
         }
     }
@@ -6306,7 +6307,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
     }
 
     if( g_unit_test_1 || g_unit_test_2) 
-        FrameTimer1.Start( TIMER_GFRAME_1/2, wxTIMER_CONTINUOUS );
+        FrameTimer1.Start( TIMER_GFRAME_1 /2, wxTIMER_CONTINUOUS );
     else
         FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 

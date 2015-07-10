@@ -33,6 +33,7 @@
 
 ConnectionParams::ConnectionParams(const wxString &configStr )
 {
+    b_IsSetup = false;
     Deserialize( configStr );
 }
 

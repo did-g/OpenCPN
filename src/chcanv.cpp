@@ -1532,7 +1532,7 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
 #endif        
         
     case WXK_F11:
-    //_exit(0);
+    _exit(0);
         parent_frame->ToggleFullScreen();
         b_handled = true;
         break;

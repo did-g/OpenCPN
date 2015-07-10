@@ -1178,7 +1178,7 @@ void glChartCanvas::SetupOpenGL()
 #ifdef __OCPN__ANDROID__
     g_b_EnableVBO = false;
 #endif
-//    g_b_EnableVBO = false;
+    // g_b_EnableVBO = false;
 
     if(g_b_EnableVBO)
         wxLogMessage( _T("OpenGL-> Using Vertexbuffer Objects") );
@@ -3378,7 +3378,6 @@ bool glChartCanvas::TextureCrunch(double factor)
     if( ! bGLMemCrunch )
         return false;
     
-    
     ChartPathHashTexfactType::iterator it0;
     for( it0 = m_chart_texfactory_hash.begin(); it0 != m_chart_texfactory_hash.end(); ++it0 ) {
         wxString chart_full_path = it0->first;
@@ -3409,7 +3408,7 @@ bool glChartCanvas::TextureCrunch(double factor)
     return true;
 }
 
-#define MAX_CACHE_FACTORY 100
+#define MAX_CACHE_FACTORY 50
 bool glChartCanvas::FactoryCrunch(double factor)
 {
     if (m_chart_texfactory_hash.size() == 0) {
@@ -3425,7 +3424,7 @@ bool glChartCanvas::FactoryCrunch(double factor)
     bool bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor && mem_used > (double)(m_prevMemUsed) *factor;
     if( ! bGLMemCrunch && (m_chart_texfactory_hash.size() <= MAX_CACHE_FACTORY))
         return false;
-    
+
     ChartPathHashTexfactType::iterator it0;
     if( bGLMemCrunch) {
         for( it0 = m_chart_texfactory_hash.begin(); it0 != m_chart_texfactory_hash.end(); ++it0 ) {
@@ -3462,8 +3461,8 @@ bool glChartCanvas::FactoryCrunch(double factor)
         }
     }
 
-    bGLMemCrunch = (mem_used > (double)(g_memCacheLimit) * factor *hysteresis && 
-                    mem_used > (double)(m_prevMemUsed) * factor *hysteresis
+    bGLMemCrunch = (mem_used > (double)(g_memCacheLimit) * factor && 
+                    mem_used >= m_prevMemUsed
                     )  || (m_chart_texfactory_hash.size() > MAX_CACHE_FACTORY);
     //  Need more, so delete the oldest factory
     
@@ -3513,8 +3512,6 @@ bool glChartCanvas::FactoryCrunch(double factor)
                 
 //            int mem_now;
 //            GetMemoryStatus(0, &mem_now);
-//            printf("-------------FactoryDelete\n");
-                
        }                
     }
     
@@ -3906,10 +3903,15 @@ void glChartCanvas::Render()
     FactoryCrunch(0.6);
     
     cc1->PaintCleanup();
+#if 0
+    // doesn't seem to wait
+    if( ::wxIsBusy() ){
+        glFinish();
+    }
+#endif
     g_Platform->HideBusySpinner();
     
     n_render++;
-    OcpEndBusyCursor();
 }
 
 

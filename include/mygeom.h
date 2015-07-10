@@ -126,15 +126,15 @@ public:
         ~PolyTriGroup();
 
         int             nContours;
+        bool            m_bSMSENC;
+        bool            bsingle_alloc;
+        bool            bfloat_type;              //  p_vertex in TriPrim chain is FLOAT or DOUBLE
         int             *pn_vertex;             // pointer to array of poly vertex counts
         float           *pgroup_geom;           // pointer to Raw geometry, used for contour line drawing
 
         TriPrim         *tri_prim_head;         // head of linked list of TriPrims
-        bool            m_bSMSENC;
-        bool            bsingle_alloc;
         unsigned char   *single_buffer;
         int             single_buffer_size;
-        int             data_type;              //  p_vertex in TriPrim chain is FLOAT or DOUBLE
         
     private:
         int my_bufgets( char *buf, int buf_len_max );

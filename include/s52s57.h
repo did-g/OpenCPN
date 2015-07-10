@@ -213,6 +213,8 @@ public:
       ~S52_TextC(){ free(m_pRGBA); }
 
     wxString   frmtd;       // formated text string
+    bool        bnat;           // frmtd is National text, UTF-8 encoded
+    bool        bspecial_char;  // frmtd has special ASCII characters, i.e. > 127
     char       hjust;
     char       vjust;
     char       space;
@@ -231,8 +233,6 @@ public:
     int           RGBA_height;
     int           rendered_char_height;
     wxRect      rText;          // rectangle of the text as currently rendered, used for declutter
-    bool        bnat;           // frmtd is National text, UTF-8 encoded
-    bool        bspecial_char;  // frmtd has special ASCII characters, i.e. > 127
 };
 
 
@@ -360,20 +360,22 @@ public:
       wxBoundingBox           BBObj;                  // lat/lon BBox of the rendered object
       double                  m_lat;                  // The lat/lon of the object's "reference" point
       double                  m_lon;
-      bool                    bBBObj_valid;           // set after the BBObj has been calculated once.
 
       Rules                   *CSrules;               // per object conditional symbology
-      int                     bCS_Added;
+      bool                    bBBObj_valid;           // set after the BBObj has been calculated once.
+      bool                     bCS_Added;
+      bool                     bFText_Added;
 
       S52_TextC                *FText;
-      int                     bFText_Added;
       wxRect                  rText;
 
       int                     Scamin;                 // SCAMIN attribute decoded during load
-      bool                    bIsClone;
       int                     nRef;                   // Reference counter, to signal OK for deletion
       bool                    bIsAton;                // This object is an aid-to-navigation
       bool                    bIsAssociable;          // This object is DRGARE or DEPARE
+      bool                    m_bcategory_mutable;    //  CS procedure may move this object to a higher category.
+      bool                    bIsClone;
+                                                      //  Used as a hint to rendering filter logic
 
       int                     m_n_lsindex;
       int                     *m_lsindex_array;
@@ -383,8 +385,6 @@ public:
       DisCat                  m_DisplayCat;
       int                     m_DPRI;                 // display priority, assigned from initial LUP
                                                       // May be adjusted by CS
-      bool                    m_bcategory_mutable;    //  CS procedure may move this object to a higher category.
-                                                      //  Used as a hint to rendering filter logic
 
                                                       // This transform converts from object geometry
                                                       // to SM coordinates.
