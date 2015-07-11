@@ -3655,6 +3655,7 @@ bool glChartCanvas::FactoryCrunch(double factor)
                 
 //            int mem_now;
 //            GetMemoryStatus(0, &mem_now);
+//            printf("-------------FactoryDelete\n");
        }                
     }
     

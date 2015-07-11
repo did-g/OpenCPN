@@ -1058,11 +1058,14 @@ glTexFactory::glTexFactory(ChartBase *chart, GLuint raster_format)
 
 glTexFactory::~glTexFactory()
 {
-    PurgeBackgroundCompressionPool();
+    delete m_fs;
+
+    if (wxThread::IsMain()) {
+        PurgeBackgroundCompressionPool();
+    }
     DeleteAllTextures();
     DeleteAllDescriptors();
 
-    delete m_fs;
     for (int i = 0; i < N_COLOR_SCHEMES; i++) {
         for (int j = 0; j < 5; j++) {
             CatalogEntryValue *v = m_cache[i][j];
