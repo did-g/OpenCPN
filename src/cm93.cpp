@@ -4488,7 +4488,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
       }
 
       //    File is known to exist
-      OcpBeginBusyCursor();
+      g_Platform->ShowBusySpinner();
       
       wxString msg ( _T ( "Loading CM93 cell " ) );
       msg += file;
@@ -6808,7 +6808,7 @@ void CM93OffsetDialog::UpdateOffsets ( void )
 
             //    Closing the current cell will record the offsets in the M_COVR cache file
             //    Re-opening will then refresh the M_COVRs in the cover set
-            OcpBeginBusyCursor();
+            g_Platform->ShowBusySpinner();
             m_pcompchart->CloseandReopenCurrentSubchart();
 
             if ( m_pparent )

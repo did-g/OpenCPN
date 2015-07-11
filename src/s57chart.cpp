@@ -108,6 +108,7 @@ extern MyFrame*          gFrame;
 extern PlugInManager     *g_pi_manager;
 extern bool              g_b_overzoom_x;
 extern bool              g_b_EnableVBO;
+extern OCPNPlatform      *g_Platform;
 
 extern wxProgressDialog *s_ProgDialog;
 
@@ -2950,7 +2951,7 @@ InitReturn s57chart::Init( const wxString& name, ChartInitFlag flags )
 
     if( fn.GetExt() == _T("000") ) {
         if( m_bbase_file_attr_known ) {
-            OcpBeginBusyCursor();
+            g_Platform->ShowBusySpinner();
             int sret = FindOrCreateSenc( name );
             if( sret != BUILD_SENC_OK ) {
                 if( sret == BUILD_SENC_NOK_RETRY ) ret_value = INIT_FAIL_RETRY;
@@ -2963,7 +2964,7 @@ InitReturn s57chart::Init( const wxString& name, ChartInitFlag flags )
     }
 
     else if( fn.GetExt() == _T("S57") ) {
-        OcpBeginBusyCursor();
+        g_Platform->ShowBusySpinner();
 
         m_SENCFileName = name;
         ret_value = PostInit( flags, m_global_color_scheme );

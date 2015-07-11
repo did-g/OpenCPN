@@ -129,6 +129,7 @@ extern sigjmp_buf           env;                    // the context saved by sigs
 extern bool G_FloatPtInPolygon ( MyFlPoint *rgpts, int wnumpts, float x, float y ) ;
 extern void catch_signals(int signo);
 
+extern OCPNPlatform     *g_Platform;
 extern ChartBase        *Current_Vector_Ch;
 extern ChartBase        *Current_Ch;
 extern double           g_ChartNotRenderScaleFactor;
@@ -9524,7 +9525,7 @@ void ChartCanvas::Refresh( bool eraseBackground, const wxRect *rect )
     } else
 #endif
         wxWindow::Refresh( eraseBackground, rect );
-    OcpEndBusyCursor();
+    g_Platform->HideBusySpinner();
 }
 
 void ChartCanvas::Update()

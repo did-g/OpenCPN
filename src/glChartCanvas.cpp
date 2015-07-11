@@ -4052,7 +4052,6 @@ void glChartCanvas::Render()
         glFinish();
     }
 #endif
-    g_Platform->HideBusySpinner();
     
     n_render++;
 }
