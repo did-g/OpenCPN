@@ -267,7 +267,7 @@ void ChartDB::DeleteCacheEntry(CacheEntry *pce, bool bDelTexture, const wxString
      ChartBase *ch = (ChartBase *)pce->pChart;
 
      if (msg != wxEmptyString) {
-         wxLogMessage(_T("%d: %s%s"), pChartCache->GetCount(), msg.c_str(), Ch->GetFullPath().c_str());
+         wxLogMessage(_T("%d: %s%s"), pChartCache->GetCount(), msg.c_str(), ch->GetFullPath().c_str());
      }
 
      // If this chart should happen to be in the thumbnail window....
@@ -376,7 +376,7 @@ void ChartDB::PurgeCacheUnusedCharts( double factor)
                          break;
                       }
                     
-                      CacheEntry *pce = FindOldestDeleteCandidate( /*false*/true );
+                      CacheEntry *pce = FindOldestDeleteCandidate( false );
                       if (pce == 0)
                           break;
                       // don't purge background spooler
@@ -1165,16 +1165,16 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                     unsigned int nCache = pChartCache->GetCount();
                     
                     if((nCache > nFd)){
+                        wxString msg(_T("Removing oldest chart from cache on file pressure: "));
                         while (1){
                             CacheEntry *pce = FindOldestDeleteCandidate( true );
                             if (pce == 0)
                                 break;                      // no possible delete candidate
-                            wxString msg(_T("Removing oldest chart from cache on file pressure: "));
+
                             DeleteCacheEntry(pce, /*false*/ true, msg);
                                     
                             if(--nCache <=  nFd || (pChartCache->GetCount() <= 2))
                                break;
-                            }
                         }
                     }
                 }
