@@ -1441,50 +1441,44 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
         ptd = p;
         m_pending = true;
     }
-    else if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching) {
-        //  Now is a good time to update the cache, syncronously
-        if( ptd->nCache_Color != color_scheme ){
-            if( IsCompressedArrayComplete( 0, ptd) ){
-                int level;
-                for(level = 0; level < g_mipmap_max_level + 1; level++ ) {
-                    if (GetCacheEntryValue(level, rect.x, rect.y, color_scheme) == 0) {
-                        spinner = true;
-                        g_Platform->ShowBusySpinner();
-                        break;
+    else {
+        if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching) {
+            //  Now is a good time to update the cache, syncronously
+            if( ptd->nCache_Color != color_scheme ){
+                if( IsCompressedArrayComplete( 0, ptd) ){
+                    int level;
+                    for(level = 0; level < g_mipmap_max_level + 1; level++ ) {
+                        if (GetCacheEntryValue(level, rect.x, rect.y, color_scheme) == 0) {
+                            spinner = true;
+                            g_Platform->ShowBusySpinner();
+                            break;
+                        }
                     }
-                }
-                for(;level < g_mipmap_max_level + 1; level++ )
-                    UpdateCacheLevel( rect, level, color_scheme );
+                    for(;level < g_mipmap_max_level + 1; level++ )
+                        UpdateCacheLevel( rect, level, color_scheme );
                 
-                //      We can free all the ptd memory completely
-                //      and the texture will be reloaded from disk cache    
-                ptd->FreeAll();
-                ptd_free = true;                
-                ptd->nCache_Color = color_scheme;               // mark this TD as cached.
-                    
+                    //      We can free all the ptd memory completely
+                    //      and the texture will be reloaded from disk cache    
+                    ptd->FreeAll();
+                    ptd_free = true;                
+                    ptd->nCache_Color = color_scheme;               // mark this TD as cached.
+                }
+            }
+        }
+        //  If we are not compressing/caching, We can do some housekeeping here, to recover some memory
+        //   Free bitmap memory that has already been uploaded to the GPU
+        if(!g_GLOptions.m_bTextureCompression) {
+            for(int level = 0; level < g_mipmap_max_level+1; level++ ) {
+                if(ptd->miplevel_upload[level]){
+                    ptd->FreeAll();
+                    ptd_free = true;
+                    break;
+                }
             }
         }
     }
     
 
-    /* Some non-compliant OpenGL drivers need the complete mipmap set when using compressed textures */
-    if( glChartCanvas::s_b_UploadFullMipmaps )
-        base_level = 0;
-
-        
-    //  If we are not compressing/caching, We can do some housekeeping here, to recover some memory
-    //   Free bitmap memory that has already been uploaded to the GPU
-    if(!g_GLOptions.m_bTextureCompression) {
-        for(int level = 0; level < g_mipmap_max_level+1; level++ ) {
-            if(ptd->miplevel_upload[level]){
-                ptd->FreeAll();
-                ptd_free = true;
-                break;
-            }
-        }
-    }
-    
-    
     //    If the GPU does not know about this texture, create it
     if( ptd->tex_name == 0 ) {
         glGenTextures( 1, &ptd->tex_name );
@@ -1512,6 +1506,10 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
     glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
     
         
+    /* Some non-compliant OpenGL drivers need the complete mipmap set when using compressed textures */
+    if( glChartCanvas::s_b_UploadFullMipmaps )
+        base_level = 0;
+
     //  Texture requested has already been physically uploaded to the GPU
     //  so we are done
     if(base_level >= ptd->level_min){
@@ -1546,6 +1544,11 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
     
     
     bool b_need_compress = false;
+    if(!m_catalogOK && !spinner) {
+        spinner = true;
+        g_Platform->ShowBusySpinner();
+    }
+
     for(int level = 0; level < g_mipmap_max_level+1; level++ ) {
         //    Upload to GPU?
         if( level >= base_level ) {
