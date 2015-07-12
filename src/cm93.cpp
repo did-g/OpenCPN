@@ -3256,8 +3256,8 @@ void cm93chart::translate_colmar(const wxString &sclass, S57attVal *pattValTmp)
 
       if ( *lstring != 0) 
       {
-            pattValTmp->valType = OGR_STR;
-            pattValTmp->value.ptr = strdup(lstring);
+            pattValTmp->valType = OGR_CONST_STR;
+            pattValTmp->value.str = lstring;
 
       }
 }
@@ -3473,10 +3473,10 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             {
                   if ( !strcmp ( ( char * ) pattValTmp->value.ptr, "II25" ) )
                   {
-                        if (pattValTmp->valType != OGR_INT)
+                        if (pattValTmp->valType != OGR_INT && pattValTmp->valType != OGR_CONST_STR)
                               free ( pattValTmp->value.ptr );
-                        pattValTmp->value.ptr   = ( char * ) malloc ( strlen ( "BACKGROUND" ) + 1 );
-                        strcpy ( ( char * ) pattValTmp->value.ptr, "BACKGROUND" );
+                        pattValTmp->valType = OGR_CONST_STR;
+                        pattValTmp->value.str = "BACKGROUND";
                   }
             }
 

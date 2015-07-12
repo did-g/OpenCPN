@@ -288,7 +288,7 @@ bool GetStringAttr(S57Obj *obj, const char *AttrName, char *pval, int nc)
         //      using idx to get the attribute value
         S57attVal *v = obj->attVal->Item(idx);
 
-        assert(v->valType == OGR_STR);
+        assert(v->valType == OGR_STR || v->valType == OGR_CONST_STR);
         char *val = (char *)(v->value.ptr);
 
         strncpy(pval, val, nc);
@@ -307,7 +307,7 @@ wxString *GetStringAttrWXS(S57Obj *obj, const char *AttrName)
         //      using idx to get the attribute value
         S57attVal *v = obj->attVal->Item(idx);
         
-        assert(v->valType == OGR_STR);
+        assert(v->valType == OGR_STR || v->valType == OGR_CONST_STR);
         char *val = (char *)(v->value.ptr);
         
         return new wxString(val,  wxConvUTF8);
@@ -325,7 +325,7 @@ static const char *_get_string_attr(S57Obj *obj, const char *AttrName)
         //      using idx to get the attribute value
         S57attVal *v = obj->attVal->Item(idx);
         
-        assert(v->valType == OGR_STR);
+        assert(v->valType == OGR_STR || v->valType == OGR_CONST_STR);
         return (const char *)(v->value.ptr);
     }
     else

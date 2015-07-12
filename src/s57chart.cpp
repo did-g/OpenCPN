@@ -252,7 +252,7 @@ S57Obj::~S57Obj()
             for( unsigned int iv = 0; iv < attVal->GetCount(); iv++ ) {
                 S57attVal *vv = attVal->Item( iv );
                 void *v2 = vv->value.ptr;
-                if (vv->valType != OGR_INT)
+                if (vv->valType != OGR_INT && vv->valType != OGR_CONST_STR)
                     free( v2 );
                 delete vv;
             }
@@ -986,6 +986,10 @@ wxString S57Obj::GetAttrValueAsString( const char *AttrName )
         S57attVal *v = attVal->Item( idx );
 
         switch( v->valType ){
+            case OGR_CONST_STR: {
+                str.Append( wxString( v->value.str, wxConvUTF8 ) );
+                break;
+            }
             case OGR_STR: {
                 char *val = (char *) ( v->value.ptr );
                 str.Append( wxString( val, wxConvUTF8 ) );
@@ -6676,6 +6680,7 @@ wxString s57chart::GetObjectAttributeValueAsString( S57Obj *obj, int iatt, wxStr
 
     pval = obj->attVal->Item( iatt );
     switch( pval->valType ){
+        case OGR_CONST_STR:
         case OGR_STR: {
             if( pval->value.ptr ) {
                 wxString val_str( (char *) ( pval->value.ptr ), wxConvUTF8 );
@@ -6815,6 +6820,7 @@ wxString s57chart::GetAttributeValueAsString( S57attVal *pAttrVal, wxString Attr
 {
     wxString value;
     switch( pAttrVal->valType ){
+        case OGR_CONST_STR: 
         case OGR_STR: {
             if( pAttrVal->value.ptr ) {
                 wxString val_str( (char *) ( pAttrVal->value.ptr ), wxConvUTF8 );
