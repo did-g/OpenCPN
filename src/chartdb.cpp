@@ -379,8 +379,8 @@ void ChartDB::PurgeCacheUnusedCharts( double factor)
                       CacheEntry *pce = FindOldestDeleteCandidate( false );
                       if (pce == 0)
                           break;
-                      // don't purge background spooler
-                      DeleteCacheEntry(pce, false /*true*/, msg);
+                      // purge background spooler
+                      DeleteCacheEntry(pce, /*false*/true, msg);
                     
                       GetMemoryStatus(0, &mem_used);
                       m_prevMemUsed = mem_used;
