@@ -368,6 +368,9 @@ void ChartDB::PurgeCacheUnusedCharts( double factor)
 
                 int nl = pChartCache->GetCount();       // max loop count, by definition
                 if ( mem_used > mem_limit && mem_used > m_prevMemUsed * factor && nl > 0 ) {
+                   bool purge = false;
+                   if (mem_used > g_memCacheLimit)
+                      purge = true;
                    wxString msg = _T("Purging unused chart from cache: ");
                    while( (mem_used > mem_limit) && (nl>0) )
                    {
@@ -380,7 +383,7 @@ void ChartDB::PurgeCacheUnusedCharts( double factor)
                       if (pce == 0)
                           break;
                       // purge background spooler
-                      DeleteCacheEntry(pce, /*false*/true, msg);
+                      DeleteCacheEntry(pce, purge, msg);
                     
                       GetMemoryStatus(0, &mem_used);
                       m_prevMemUsed = mem_used;
