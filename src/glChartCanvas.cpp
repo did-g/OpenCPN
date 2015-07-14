@@ -3614,7 +3614,9 @@ bool glChartCanvas::FactoryCrunch(double factor)
         //      Find the oldest unused factory
         // XXX
         int lru_oldest = 2147483647;
+        int lru_oldest1 = 2147483647;
         glTexFactory *ptf_oldest = NULL;
+        glTexFactory *ptf_oldest1 = NULL;
         
         for( it0 = m_chart_texfactory_hash.begin(); it0 != m_chart_texfactory_hash.end(); ++it0 ) {
             wxString chart_full_path = it0->first;
@@ -3630,9 +3632,15 @@ bool glChartCanvas::FactoryCrunch(double factor)
                     !cc1->m_pQuilt->IsChartInQuilt( chart_full_path ) ) {
                     
                     int lru = ptf->GetLRUTime();
+                    // oldest chart without running job
                     if(lru < lru_oldest && !ptf->BackgroundCompressionAsJob()){
                         lru_oldest = lru;
                         ptf_oldest = ptf;
+                    }
+                    // oldest chart 
+                    if(lru < lru_oldest1 ){
+                        lru_oldest1 = lru;
+                        ptf_oldest1 = ptf;
                     }
                 }
             }
@@ -3642,6 +3650,10 @@ bool glChartCanvas::FactoryCrunch(double factor)
                     if(lru < lru_oldest && !ptf->BackgroundCompressionAsJob()){
                         lru_oldest = lru;
                         ptf_oldest = ptf;
+                    }
+                    if(lru < lru_oldest1 ){
+                        lru_oldest1 = lru;
+                        ptf_oldest1 = ptf;
                     }
                 }
             }
@@ -3656,7 +3668,14 @@ bool glChartCanvas::FactoryCrunch(double factor)
 //            int mem_now;
 //            GetMemoryStatus(0, &mem_now);
 //            printf("-------------FactoryDelete\n");
-       }                
+       }
+       else if (ptf_oldest1){
+           // no chart whithout background job running
+           // waste jobs but delete factory
+            m_chart_texfactory_hash.erase(ptf_oldest1->GetChartPath());                // This chart  becoming invalid
+                
+            delete ptf_oldest1;
+       }
     }
     
 //    int mem_now;

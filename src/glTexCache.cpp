@@ -615,10 +615,9 @@ SendEvtAndReturn:
         Nevent.SetTicket(m_pticket);
         
         m_pMessageTarget->AddPendingEvent(Nevent);
+        // from here m_pticket may be invalide (delete in event handler)
     }
 
-    m_pticket->b_isaborted = true;
-    
     return 0;
 
     }           // try
@@ -659,10 +658,11 @@ CompressionWorkerPool::CompressionWorkerPool()
     m_max_jobs =  nCPU;
 
     bthread_debug = false;;
+    bthread_debug = true;;
 
     if(bthread_debug)
         printf(" nCPU: %d    m_max_jobs :%d\n", nCPU, m_max_jobs);
-    
+
     //  Create/connect a dynamic event handler slot for messages from the worker threads
     Connect( wxEVT_OCPN_COMPRESSIONTHREAD,
              (wxObjectEventFunction) (wxEventFunction) &CompressionWorkerPool::OnEvtThread );
@@ -678,8 +678,6 @@ void CompressionWorkerPool::OnEvtThread( OCPN_CompressionThreadEvent & event )
     JobTicket *ticket = event.GetTicket();
     
     if(ticket->b_abort){
-        running_list.DeleteObject(ticket);
-        m_njobs_running--;
 
         for(int i=0 ; i < g_mipmap_max_level+1 ; i++){
             free(ticket->comp_bits_array[i]);
@@ -699,6 +697,9 @@ void CompressionWorkerPool::OnEvtThread( OCPN_CompressionThreadEvent & event )
             printf( "    Abort job: %08X  Jobs running: %d             Job count: %lu   \n",
                     ticket->ident, m_njobs_running, (unsigned long)todo_list.GetCount());
 
+        running_list.DeleteObject(ticket);
+        delete ticket;
+        m_njobs_running--;
         StartTopJob();
         return;
     }
@@ -723,12 +724,14 @@ void CompressionWorkerPool::OnEvtThread( OCPN_CompressionThreadEvent & event )
         }
     }
     
-    running_list.DeleteObject(ticket);
     m_njobs_running--;
     
     if(bthread_debug)
         printf( "    Finished job: %08X  Jobs running: %d             Job count: %lu   \n",
                 ticket->ident, m_njobs_running, (unsigned long)todo_list.GetCount());
+
+    running_list.DeleteObject(ticket);
+    delete ticket;
 
 //    int mem_used;
 //    GetMemoryStatus(0, &mem_used);
@@ -892,6 +895,7 @@ void CompressionWorkerPool::PurgeJobList( wxString chart_path )
                 if(bthread_debug)
                     printf("Pool:  Purge pending job for purged chart\n");
                 todo_list.DeleteNode(tnode);
+                delete ticket;
                 tnode = todo_list.GetFirst();  // restart the list
             }
             else{
@@ -913,9 +917,15 @@ void CompressionWorkerPool::PurgeJobList( wxString chart_path )
             printf("Pool:  Purge, todo count: %lu\n", (long unsigned)todo_list.GetCount());
     }
     else {
+        wxJobListNode *node = todo_list.GetFirst();
+        while(node){
+            JobTicket *ticket = node->GetData();
+            delete ticket;
+            node = node->GetNext();
+        }
         todo_list.Clear();
         //  Mark all running tasks for "abort"
-        wxJobListNode *node = running_list.GetFirst();
+        node = running_list.GetFirst();
         while(node){
             JobTicket *ticket = node->GetData();
             ticket->b_isaborted = false;
@@ -1361,7 +1371,7 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
     
     // Once every minute, do more extensive garbage collection
     if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching) {
-        if((m_ticks % 120)){
+        if((m_ticks % 120) == 0){
             
             int mem_used;
             GetMemoryStatus(0, &mem_used);
@@ -1673,7 +1683,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
     //   so there is no reason to save the bits forever.
     //   Of course, this means that if the texture is deleted elsewhere, then the bits will need to be
     //   regenerated.  The price to pay for memory limits....
-    if (!ptd_free && spinner) {    
+    if (0 ||(!ptd_free && spinner)) {    
         int mem_used;
         GetMemoryStatus(0, &mem_used);
 //    	qDebug() << mem_used;
