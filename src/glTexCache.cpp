@@ -812,6 +812,8 @@ bool CompressionWorkerPool::StartTopJob()
             JobTicket *ticket = node->GetData();
             todo_list.DeleteNode(node);
             m_njobs_running ++;
+            if (m_njobs_running < m_max_jobs)
+                ticket->b_throttle = false;
             running_list.Append(ticket);
             DoThreadJob(ticket);
             
@@ -1359,7 +1361,7 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
     
     // Once every minute, do more extensive garbage collection
     if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching) {
-        if((m_ticks % 120) == 0 && m_pending){
+        if((m_ticks % 120)){
             
             int mem_used;
             GetMemoryStatus(0, &mem_used);
