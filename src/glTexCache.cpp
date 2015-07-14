@@ -1166,7 +1166,7 @@ void glTexFactory::DeleteAllDescriptors( void )
         delete ptd;
         m_td_array[i] = 0;
     }
-    
+    m_pending = false;
 }
 
 bool glTexFactory::BackgroundCompressionAsJob() const
@@ -1299,9 +1299,9 @@ void glTexFactory::DoImmediateFullCompress(const wxRect &rect)
         p->y = rect.y;
         p->level_min = g_mipmap_max_level + 1;  // default, nothing loaded
         m_td_array[array_index] = p;
-        m_pending = true;
         ptd = p;
     }
+    m_pending = true;
     
     if(g_CompressorPool){
         for(int level = 0; level < g_mipmap_max_level + 1; level++ ) {
@@ -1324,6 +1324,7 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                 glTextureDescriptor *ptd = m_td_array[i];
             
                 if( ptd && ptd->nCache_Color != m_colorscheme ){
+                    more = true;
                     if( IsCompressedArrayComplete( 0, ptd) ){
                         for(int level = 0; level < g_mipmap_max_level + 1; level++ )
                             UpdateCacheLevel( wxRect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension),
@@ -1333,7 +1334,6 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                         //      and the texture will be reloaded from disk cache    
                         ptd->FreeAll();
                         ptd->nCache_Color = m_colorscheme;               // mark this TD as cached.
-                        more = true;
                         break;
                     }
                 }
@@ -1359,7 +1359,7 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
     
     // Once every minute, do more extensive garbage collection
     if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching) {
-        if((m_ticks % 120) == 0){
+        if((m_ticks % 120) == 0 && m_pending){
             
             int mem_used;
             GetMemoryStatus(0, &mem_used);
