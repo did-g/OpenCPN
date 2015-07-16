@@ -193,6 +193,7 @@ PFNGLDELETEBUFFERSPROC              s_glDeleteBuffers;
 
 GLuint g_raster_format = GL_RGB;
 long g_tex_mem_used;
+int  g_tex_count;
 
 bool            b_timeGL;
 wxStopWatch     g_glstopwatch;
@@ -268,6 +269,7 @@ bool CompressChart(wxThread *pThread, ChartBase *pchart, wxString CompressedCach
         for( int y = 0; y < ny_tex; y++ ) {
             rect.height = tex_dim;
             rect.x = 0;
+            bool b_compressed = false;
             for( int x = 0; x < nx_tex; x++ ) {
                 rect.width = tex_dim;
       
@@ -280,6 +282,7 @@ bool CompressChart(wxThread *pThread, ChartBase *pchart, wxString CompressedCach
                 }
                 
                 if(b_needCompress){
+                    b_compressed = true;
                     tex_fact->DoImmediateFullCompress(rect);
                     for(int level = 0; level < g_mipmap_max_level + 1; level++ ) {
                         tex_fact->UpdateCacheLevel( rect, level, global_color_scheme );
@@ -298,15 +301,15 @@ bool CompressChart(wxThread *pThread, ChartBase *pchart, wxString CompressedCach
                 nd++;
                 rect.x += rect.width;
                 
-                if( pThread )
+                if( pThread && thread == 0)
                     pThread->Sleep(1);
             }
 
             
             
-            if(pMessageTarget){
+            if(pMessageTarget && (b_compressed || y == 0)){
                 wxString m1;
-                m1.Printf(_T("%04d/%04d \n"), nd, nt);
+                m1.Printf(_T("%04d/%04d \n"), b_compressed?nd:0, nt);
                 m1 += msg;
                 
                 std::string stlstring = std::string(m1.mb_str());
@@ -3518,34 +3521,49 @@ bool glChartCanvas::TextureCrunch(double factor)
     double hysteresis = 0.90;
 
     bool bGLMemCrunch = g_tex_mem_used > (double)(g_GLOptions.m_iTextureMemorySize * 1024 * 1024) * factor;
-    if( ! bGLMemCrunch )
+    bool bGLTexCount  = g_tex_count > 8192;
+    
+    if( ! bGLMemCrunch && ! bGLTexCount)
         return false;
     
     ChartPathHashTexfactType::iterator it0;
     for( it0 = m_chart_texfactory_hash.begin(); it0 != m_chart_texfactory_hash.end(); ++it0 ) {
         wxString chart_full_path = it0->first;
         glTexFactory *ptf = it0->second;
+        bool	found = false;
+
         if(!ptf)
             continue;
-        
-        bGLMemCrunch = g_tex_mem_used > (double)(g_GLOptions.m_iTextureMemorySize * 1024 * 1024) * factor *hysteresis;
-        if(!bGLMemCrunch)
-            break;
         
         if( cc1->VPoint.b_quilt )          // quilted
         {
                 if( cc1->m_pQuilt && cc1->m_pQuilt->IsComposed() &&
-                    !cc1->m_pQuilt->IsChartInQuilt( chart_full_path ) ) {
-                    ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * factor *hysteresis);
-                    }
+                    !cc1->m_pQuilt->IsChartInQuilt( chart_full_path ) ) 
+                {
+                    found = true;
+                }
         }
         else      // not quilted
         {
                 if( !Current_Ch->GetFullPath().IsSameAs(chart_full_path))
                 {
-                    ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * factor  *hysteresis);
+                    found = true;
                 }
         }
+        if (found)
+        {
+            if (bGLMemCrunch)
+                ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * factor *hysteresis);
+            bGLTexCount  = g_tex_count > 8192;
+            if (bGLTexCount)
+                ptf->DeleteSomeTextures();
+        }
+
+        bGLMemCrunch = g_tex_mem_used > (double)(g_GLOptions.m_iTextureMemorySize * 1024 * 1024) * factor *hysteresis;
+        bGLTexCount  = g_tex_count > 8192;
+    
+        if( ! bGLMemCrunch && ! bGLTexCount)
+            break;
     }
     
     return true;
@@ -3563,17 +3581,20 @@ bool glChartCanvas::FactoryCrunch(double factor)
     GetMemoryStatus(0, &mem_used);
     double hysteresis = 0.90;
     mem_start = mem_used;
-    
     bool bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor && mem_used > (double)(m_prevMemUsed) *factor;
-    if( ! bGLMemCrunch && (m_chart_texfactory_hash.size() <= MAX_CACHE_FACTORY))
+    bool bGLTexCount  = g_tex_count > 8192;
+
+    if( ! bGLMemCrunch && (m_chart_texfactory_hash.size() <= MAX_CACHE_FACTORY) && ! bGLTexCount)
         return false;
+printf("************ mem %ld cnt %d %d\n", g_tex_mem_used, g_tex_count, m_chart_texfactory_hash.size());
 
     ChartPathHashTexfactType::iterator it0;
-    if( bGLMemCrunch) {
+    if( bGLMemCrunch || bGLTexCount) {
         for( it0 = m_chart_texfactory_hash.begin(); it0 != m_chart_texfactory_hash.end(); ++it0 ) {
             wxString chart_full_path = it0->first;
             glTexFactory *ptf = it0->second;
-            bool mem_freed = false;
+            bool found = false;
+
             if(!ptf)
                 continue;
         
@@ -3582,31 +3603,38 @@ bool glChartCanvas::FactoryCrunch(double factor)
                 if( cc1->m_pQuilt && cc1->m_pQuilt->IsComposed() &&
                     !cc1->m_pQuilt->IsChartInQuilt( chart_full_path ) ) 
                 {
-                    ptf->FreeSome( g_memCacheLimit * factor * hysteresis);
-                    mem_freed = true;
+                    found = true;
                 }
             }
             else      // not quilted
             {
                 if( !Current_Ch->GetFullPath().IsSameAs(chart_full_path))
                 {
-                    ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * factor * hysteresis);
-                    mem_freed = true;
+                    found = true;
                 }
             }
-            if (mem_freed) {
+            if (found) 
+            {
+                if (bGLMemCrunch)
+                    ptf->FreeSome( g_memCacheLimit * factor * hysteresis);
+                else
+                    ptf->DeleteSomeTextures();
+            }
+            if (found) {
                 GetMemoryStatus(0, &mem_used);
                 bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor * hysteresis;
                 m_prevMemUsed = mem_used;
-                if(!bGLMemCrunch)
+                bGLTexCount  = g_tex_count > 8192;
+                if( !bGLMemCrunch && ! bGLTexCount)
                     break;
             }
         }
     }
 
-    bGLMemCrunch = (mem_used > (double)(g_memCacheLimit) * factor && 
-                    mem_used >= m_prevMemUsed
-                    )  || (m_chart_texfactory_hash.size() > MAX_CACHE_FACTORY);
+    bGLMemCrunch = (mem_used > (double)(g_memCacheLimit) * factor &&  mem_used >= m_prevMemUsed)  
+                    || (m_chart_texfactory_hash.size() > MAX_CACHE_FACTORY)
+                    || (g_tex_count >= 8192);
+                    
     //  Need more, so delete the oldest factory
     
     if(bGLMemCrunch){
@@ -3672,9 +3700,11 @@ bool glChartCanvas::FactoryCrunch(double factor)
        else if (ptf_oldest1){
            // no chart whithout background job running
            // waste jobs but delete factory
+#if 0
             m_chart_texfactory_hash.erase(ptf_oldest1->GetChartPath());                // This chart  becoming invalid
                 
             delete ptf_oldest1;
+#endif
        }
     }
     

@@ -100,6 +100,7 @@ public:
     void DeleteTexture(const wxRect &rect);
     void DeleteAllTextures( void );
     void DeleteSomeTextures( long target );
+    void DeleteSomeTextures( );
     void DeleteAllDescriptors( void );
     bool BackgroundCompressionAsJob() const;
     void PurgeBackgroundCompressionPool();
@@ -111,6 +112,7 @@ public:
     glTextureDescriptor *GetpTD( wxRect & rect );
     GLuint GetRasterFormat() { return m_raster_format; }
     
+    bool CompressUnCacheEntry();
     
 private:
     bool LoadCatalog(void);
@@ -150,6 +152,7 @@ private:
     int         m_nx_tex;
     int         m_ny_tex;
     
+    int		m_index;
     ColorScheme m_colorscheme;
     bool	m_pending;
     wxTimer     m_timer;

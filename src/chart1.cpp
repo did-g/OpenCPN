@@ -6307,7 +6307,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
     }
 
     if( g_unit_test_1 || g_unit_test_2) 
-        FrameTimer1.Start( TIMER_GFRAME_1 /2, wxTIMER_CONTINUOUS );
+        FrameTimer1.Start( TIMER_GFRAME_1 /*/2*/, wxTIMER_CONTINUOUS );
     else
         FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 

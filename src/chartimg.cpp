@@ -1511,6 +1511,7 @@ ChartBaseBSB::ChartBaseBSB()
 #ifdef __OCPN__ANDROID__
       bUseLineCache = false;
 #else
+      bUseLineCache = false;//true;
       bUseLineCache = true;
 #endif
 
