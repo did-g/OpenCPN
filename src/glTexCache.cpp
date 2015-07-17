@@ -825,8 +825,6 @@ bool CompressionWorkerPool::StartTopJob()
             JobTicket *ticket = node->GetData();
             todo_list.DeleteNode(node);
             m_njobs_running ++;
-            if (m_njobs_running < m_max_jobs)
-                ticket->b_throttle = false;
             running_list.Append(ticket);
             DoThreadJob(ticket);
             
@@ -1163,6 +1161,7 @@ void glTexFactory::DeleteSomeTextures( long target )
     }
 }
 
+#define MAX_TEXTURES 16384
 void glTexFactory::DeleteSomeTextures(  )
 {
     // iterate over all the textures presently loaded
@@ -1181,7 +1180,7 @@ void glTexFactory::DeleteSomeTextures(  )
                 DeleteSingleTexture( ptd);
         }
         
-        if(g_tex_count <= 8192)
+        if(g_tex_count <= MAX_TEXTURES)
             break;
     }
 }
