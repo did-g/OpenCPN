@@ -1575,6 +1575,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
                 }
             }
         }
+    
         //  If we are not compressing/caching, We can do some housekeeping here, to recover some memory
         //   Free bitmap memory that has already been uploaded to the GPU
         if(!g_GLOptions.m_bTextureCompression) {
@@ -1589,6 +1590,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
     }
     
 
+    
     //    If the GPU does not know about this texture, create it
     if( ptd->tex_name == 0 ) {
         glGenTextures( 1, &ptd->tex_name );
@@ -1620,6 +1622,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
     /* Some non-compliant OpenGL drivers need the complete mipmap set when using compressed textures */
     if( glChartCanvas::s_b_UploadFullMipmaps )
         base_level = 0;
+
 
     //  Texture requested has already been physically uploaded to the GPU
     //  so we are done

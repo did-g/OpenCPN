@@ -1431,9 +1431,8 @@ char *_parseTEXT( ObjRazRules *rzRules, S52_TextC *text, char *str0 )
     char buf[MAXL]; // output string
 
     char *str = str0;
-    // XXX really need?
-    memset(buf, 0, 4);
     if( text ) {
+        memset(buf, 0, 4);
         str = _getParamVal( rzRules, str, &text->hjust, MAXL ); // HJUST
         str = _getParamVal( rzRules, str, &text->vjust, MAXL ); // VJUST
         str = _getParamVal( rzRules, str, &text->space, MAXL ); // SPACE

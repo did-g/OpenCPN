@@ -634,6 +634,7 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
                         else
                             buft = (unsigned char *) buf;
                         // unsigned char buft[ sb_len ];
+
                         pfpx->Read( buft, sb_len );
 
                         npt = *( (int *) ( buft + 5 ) );
@@ -743,6 +744,7 @@ S57Obj::S57Obj( char *first_line, wxInputStream *pfpx, double dummy, double dumm
                             else
                                 polybuf = (unsigned char *)buf;
                             // unsigned char polybuf [nrecl + 1];
+
                             pfpx->Read( polybuf, nrecl );
                             polybuf[nrecl] = 0;                     // endit
                             PolyTessGeo *ppg = new PolyTessGeo( polybuf, nrecl, FEIndex, senc_file_version );
