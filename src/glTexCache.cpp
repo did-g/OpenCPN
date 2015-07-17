@@ -1774,6 +1774,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
          if( (GL_COMPRESSED_RGBA_S3TC_DXT1_EXT == g_raster_format) ||
             (GL_COMPRESSED_RGB_S3TC_DXT1_EXT == g_raster_format) ||
             (GL_ETC1_RGB8_OES == g_raster_format) ){
+                m_pending = true;
                 if(g_CompressorPool)
                     g_CompressorPool->ScheduleJob( this, rect, 0, b_throttle_thread, false, true);   // with postZip
         }
@@ -1784,7 +1785,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
     //   so there is no reason to save the bits forever.
     //   Of course, this means that if the texture is deleted elsewhere, then the bits will need to be
     //   regenerated.  The price to pay for memory limits....
-    if (1 ||(!ptd_free && spinner)) {    
+    if (0 ||(!ptd_free && spinner)) {    
         int mem_used;
         GetMemoryStatus(0, &mem_used);
 //    	qDebug() << mem_used;
