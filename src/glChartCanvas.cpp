@@ -3515,13 +3515,14 @@ void glChartCanvas::SetColorScheme(ColorScheme cs)
     m_currentTex = 0;
 }
 
+#define MAX_TEXTURES 16384
 bool glChartCanvas::TextureCrunch(double factor)
 {
     
     double hysteresis = 0.90;
 
     bool bGLMemCrunch = g_tex_mem_used > (double)(g_GLOptions.m_iTextureMemorySize * 1024 * 1024) * factor;
-    bool bGLTexCount  = g_tex_count > 8192;
+    bool bGLTexCount  = g_tex_count > MAX_TEXTURES;
     
     if( ! bGLMemCrunch && ! bGLTexCount)
         return false;
@@ -3554,13 +3555,13 @@ bool glChartCanvas::TextureCrunch(double factor)
         {
             if (bGLMemCrunch)
                 ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * factor *hysteresis);
-            bGLTexCount  = g_tex_count > 8192;
+            bGLTexCount  = g_tex_count > MAX_TEXTURES;
             if (bGLTexCount)
                 ptf->DeleteSomeTextures();
         }
 
         bGLMemCrunch = g_tex_mem_used > (double)(g_GLOptions.m_iTextureMemorySize * 1024 * 1024) * factor *hysteresis;
-        bGLTexCount  = g_tex_count > 8192;
+        bGLTexCount  = g_tex_count > MAX_TEXTURES;
     
         if( ! bGLMemCrunch && ! bGLTexCount)
             break;
@@ -3582,7 +3583,7 @@ bool glChartCanvas::FactoryCrunch(double factor)
     double hysteresis = 0.90;
     mem_start = mem_used;
     bool bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor && mem_used > (double)(m_prevMemUsed) *factor;
-    bool bGLTexCount  = g_tex_count > 8192;
+    bool bGLTexCount  = g_tex_count > MAX_TEXTURES;
 
     if( ! bGLMemCrunch && (m_chart_texfactory_hash.size() <= MAX_CACHE_FACTORY) && ! bGLTexCount)
         return false;
@@ -3624,7 +3625,7 @@ printf("************ mem %ld cnt %d %d\n", g_tex_mem_used, g_tex_count, m_chart_
                 GetMemoryStatus(0, &mem_used);
                 bGLMemCrunch = mem_used > (double)(g_memCacheLimit) * factor * hysteresis;
                 m_prevMemUsed = mem_used;
-                bGLTexCount  = g_tex_count > 8192;
+                bGLTexCount  = g_tex_count > MAX_TEXTURES;
                 if( !bGLMemCrunch && ! bGLTexCount)
                     break;
             }
@@ -3633,7 +3634,7 @@ printf("************ mem %ld cnt %d %d\n", g_tex_mem_used, g_tex_count, m_chart_
 
     bGLMemCrunch = (mem_used > (double)(g_memCacheLimit) * factor &&  mem_used >= m_prevMemUsed)  
                     || (m_chart_texfactory_hash.size() > MAX_CACHE_FACTORY)
-                    || (g_tex_count >= 8192);
+                    || (g_tex_count >= MAX_TEXTURES);
                     
     //  Need more, so delete the oldest factory
     
