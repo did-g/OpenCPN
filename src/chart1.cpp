@@ -1201,7 +1201,7 @@ bool MyApp::OnInit()
 
 
 // Set up default FONT encoding, which should have been done by wxWidgets some time before this......
-    wxFont temp_font( 10, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxString( _T("") ),
+    wxFont temp_font( 10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, FALSE, wxString( _T("") ),
             wxFONTENCODING_SYSTEM );
     temp_font.SetDefaultEncoding( wxFONTENCODING_SYSTEM );
 
@@ -3177,7 +3177,10 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
 //      or that call GUI methods
 
 #ifdef USE_S57
-    if( g_pCM93OffsetDialog ) g_pCM93OffsetDialog->Destroy();
+    if( g_pCM93OffsetDialog ) {
+        g_pCM93OffsetDialog->Destroy();
+        g_pCM93OffsetDialog = NULL;
+    }
 #endif
 
     if(g_FloatingToolbarDialog)

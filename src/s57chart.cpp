@@ -49,6 +49,7 @@
 #include "ocpndc.h"
 #include "OCPNPlatform.h"
 #include "s52utils.h"
+#include "wx28compat.h"
 
 #include "cpl_csv.h"
 #include "setjmp.h"
@@ -7528,7 +7529,7 @@ void s57_DrawExtendedLightSectors( ocpnDC& dc, ViewPort& viewport, std::vector<s
             rangePx = rangePx * rangeScale;
 
             int legOpacity;
-            wxPen *arcpen = wxThePenList->FindOrCreatePen( sectorlegs[i].color, 12, wxSOLID );
+            wxPen *arcpen = wxThePenList->FindOrCreatePen( sectorlegs[i].color, 12, wxPENSTYLE_SOLID );
             arcpen->SetCap( wxCAP_BUTT );
             dc.SetPen( *arcpen );
 
@@ -7556,7 +7557,7 @@ void s57_DrawExtendedLightSectors( ocpnDC& dc, ViewPort& viewport, std::vector<s
                 yellowCone[0] = lightPos;
                 yellowCone[1] = end1;
                 yellowCone[2] = end2;
-                arcpen = wxThePenList->FindOrCreatePen( wxColor( 0,0,0,0 ), 1, wxSOLID );
+                arcpen = wxThePenList->FindOrCreatePen( wxColor( 0,0,0,0 ), 1, wxPENSTYLE_SOLID );
                 dc.SetPen( *arcpen );
                 wxColor c = sectorlegs[i].color;
                 c.Set( c.Red(), c.Green(), c.Blue(), 0.6*c.Alpha() );
@@ -7575,7 +7576,7 @@ void s57_DrawExtendedLightSectors( ocpnDC& dc, ViewPort& viewport, std::vector<s
                 legOpacity = 128;
             }
 
-            arcpen = wxThePenList->FindOrCreatePen( wxColor( 0,0,0,legOpacity ), 1, wxSOLID );
+            arcpen = wxThePenList->FindOrCreatePen( wxColor( 0,0,0,legOpacity ), 1, wxPENSTYLE_SOLID );
             dc.SetPen( *arcpen );
 
             // Only draw each leg line once.

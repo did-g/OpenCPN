@@ -49,6 +49,7 @@
 #include "ocpndc.h"
 #include "pluginmanager.h"  // for PlugInManager
 #include "OCPNPlatform.h"
+#include "wx28compat.h"
 
 #include <stdio.h>
 
@@ -65,6 +66,8 @@
 #define new DEBUG_NEW
 #endif
 
+extern ChartCanvas               *cc1;
+extern CM93OffsetDialog          *g_pCM93OffsetDialog;
 extern OCPNPlatform     *g_Platform;
 extern wxString         g_SENCPrefix;
 extern s52plib          *ps52plib;
@@ -4686,7 +4689,6 @@ cm93compchart::cm93compchart()
       m_pDummyBM = NULL;
 
       SetSpecialOutlineCellIndex ( 0, 0, 0 );
-      m_pOffsetDialog = NULL;
       m_last_cell_adjustvp = NULL;
 
       m_pcm93mgr = new cm93manager();
@@ -4697,8 +4699,8 @@ cm93compchart::cm93compchart()
 
 cm93compchart::~cm93compchart()
 {
-    if( m_pOffsetDialog ){
-        m_pOffsetDialog->Hide();
+    if( g_pCM93OffsetDialog ){
+        g_pCM93OffsetDialog->Hide();
     }
        
       for ( int i = 0 ; i < 8 ; i++ )
@@ -5319,8 +5321,8 @@ bool cm93compchart::RenderRegionViewOnGL(const wxGLContext &glc, const ViewPort&
 {
       SetVPParms ( VPoint );
 
-      if ( m_pOffsetDialog && m_pOffsetDialog->IsShown() )
-            m_pOffsetDialog->UpdateMCOVRList ( VPoint );
+      if ( g_pCM93OffsetDialog && g_pCM93OffsetDialog->IsShown() )
+            g_pCM93OffsetDialog->UpdateMCOVRList ( VPoint );
 
       return DoRenderRegionViewOnGL ( glc, VPoint, Region );
 
@@ -5538,7 +5540,7 @@ bool cm93compchart::DoRenderRegionViewOnGL (const wxGLContext &glc, const ViewPo
                                     wxDash dash1[2];
                                     dash1[0] = 4; // Long dash
                                     dash1[1] = 4; // Short gap
-                                    pen.SetStyle(wxUSER_DASH);
+                                    pen.SetStyle(wxPENSTYLE_USER_DASH);
                                     pen.SetDashes( 2, dash1 );
 
                                     dc.SetPen ( pen );
@@ -5574,8 +5576,8 @@ bool cm93compchart::RenderRegionViewOnDC ( wxMemoryDC& dc, const ViewPort& VPoin
 {
       SetVPParms ( VPoint );
 
-      if ( m_pOffsetDialog && m_pOffsetDialog->IsShown() )
-            m_pOffsetDialog->UpdateMCOVRList ( VPoint );
+      if ( g_pCM93OffsetDialog && g_pCM93OffsetDialog->IsShown() )
+            g_pCM93OffsetDialog->UpdateMCOVRList ( VPoint );
 
       return DoRenderRegionViewOnDC ( dc, VPoint, Region );
 }
@@ -5856,7 +5858,7 @@ bool cm93compchart::DoRenderRegionViewOnDC ( wxMemoryDC& dc, const ViewPort& VPo
                               */
                               if ( btest )
                               {
-                                    dc.SetPen ( wxPen ( wxTheColourDatabase->Find ( _T ( "YELLOW" ) ), 4, wxLONG_DASH ) );
+                                    dc.SetPen ( wxPen ( wxTheColourDatabase->Find ( _T ( "YELLOW" ) ), 4, wxPENSTYLE_LONG_DASH ) );
 
                                     for ( int iseg=0 ; iseg < pmcd->m_nvertices-1 ; iseg++ )
                                     {
@@ -6783,8 +6785,6 @@ void CM93OffsetDialog::OnOK ( wxCommandEvent& event )
 void CM93OffsetDialog::SetCM93Chart( cm93compchart *pchart )
 { 
     m_pcompchart = pchart;
-    if ( m_pcompchart )
-        m_pcompchart->SetOffsetDialog ( this );
 }
 
 void CM93OffsetDialog::OnOffSetSet ( wxCommandEvent& event )
@@ -6808,8 +6808,10 @@ void CM93OffsetDialog::UpdateOffsets ( void )
             g_Platform->ShowBusySpinner();
             m_pcompchart->CloseandReopenCurrentSubchart();
 
-            if ( m_pparent )
+            if ( m_pparent ) {
                   m_pparent->Refresh ( true );
+                  cc1->InvalidateGL();
+            }
       }
 }
 
