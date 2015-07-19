@@ -1065,8 +1065,9 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
       ChartFamilyEnum chart_family = (ChartFamilyEnum)cte.GetChartFamily();
       
       ChartBase *Ch = NULL;
-      CacheEntry *pce;
+      CacheEntry *pce = NULL;
       int old_lock = 0;
+
 
       bool bInCache = false;
       m_ticks++;
@@ -1095,8 +1096,10 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
           {
               if(Ch->IsReadyToRender())
               {
-                    pce->RecentTime = m_ticks;           // chart is OK
-                    pce->b_in_use = true;
+                    if(pce){
+                        pce->RecentTime = m_ticks;           // chart is OK
+                        pce->b_in_use = true;
+                    }
                     return Ch;
               }
               else
@@ -1118,8 +1121,10 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
           }
           else                                                  // assume if in cache, the chart can do thumbnails
           {
-               pce->RecentTime = m_ticks;
-               pce->b_in_use = true;
+               if(pce){
+                   pce->RecentTime = m_ticks;
+                   pce->b_in_use = true;
+               }
                return Ch;
           }
       }
