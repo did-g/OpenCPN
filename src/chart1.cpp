@@ -3276,31 +3276,41 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
     // This way the main window is already invisible and to the user
     // it appears to have finished rather than hanging for several seconds
     // while the compression threads exit
-    if(g_bopengl && g_CompressorPool && g_CompressorPool->GetRunningJobCount()){
+    if(g_bopengl && g_CompressorPool) {
+        wxString fmsg;
+        if (g_CompressorPool->GetRunningJobCount()){
         
-        wxLogMessage(_T("Starting compressor pool drain"));
-        wxDateTime now = wxDateTime::Now();
-        time_t stall = now.GetTicks();
-        time_t end = stall + THREAD_WAIT_SECONDS;
+            wxLogMessage(_T("Starting compressor pool drain"));
+            wxDateTime now = wxDateTime::Now();
+            time_t stall = now.GetTicks();
+            time_t end = stall + THREAD_WAIT_SECONDS;
 
-        int n_comploop = 0;
-        while(stall < end ) {
-            wxDateTime later = wxDateTime::Now();
-            stall = later.GetTicks();
+            int n_comploop = 0;
+            while(stall < end ) {
+                wxDateTime later = wxDateTime::Now();
+                stall = later.GetTicks();
 
-            wxString msg;
-            msg.Printf(_T("Time: %d  Job Count: %d"), n_comploop, g_CompressorPool->GetRunningJobCount());
-            wxLogMessage(msg);
-            if(!g_CompressorPool->GetRunningJobCount())
-                break;
-            wxYield();
-            wxSleep(1);
+                wxString msg;
+                msg.Printf(_T("Time: %d  Job Count: %d"), n_comploop, g_CompressorPool->GetRunningJobCount());
+                wxLogMessage(msg);
+                if(!g_CompressorPool->GetRunningJobCount())
+                    break;
+                wxYield();
+                wxSleep(1);
+            }
+            fmsg.Printf(_T("Finished compressor pool drain..Time: %d  Job Count: %d"),
+                    n_comploop, g_CompressorPool->GetRunningJobCount());
+            wxLogMessage(fmsg);
         }
     
-        wxString fmsg;
-        fmsg.Printf(_T("Finished compressor pool drain..Time: %d  Job Count: %d"),
-                    n_comploop, g_CompressorPool->GetRunningJobCount());
+        fmsg.Printf(_T("Compressor Jobs started %d, queue full %d, purged %d, aborted %d" ), 
+                g_CompressorPool->GetStartedJobCount(),
+                g_CompressorPool->GetRefusedJobCount(),
+                g_CompressorPool->GetPurgedJobCount(),
+                g_CompressorPool->GetAbortedJobCount()
+            );
         wxLogMessage(fmsg);
+        
     }
      
 #endif

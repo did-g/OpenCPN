@@ -57,12 +57,12 @@ typedef struct _CatalogEntry_key
 {
     int         mip_level;
     ColorScheme tcolorscheme;
+    int         x;
+    int         y;
 } CatalogEntryKey;
 
 typedef struct _CatalogEntry_value
 {
-    int         x;
-    int         y;
     int         texture_offset;
     uint32_t    compressed_size;
 } CatalogEntryValue;
@@ -129,6 +129,7 @@ private:
     CatalogEntryValue *GetCacheEntryValue(int level, int x, int y, ColorScheme color_scheme);
     bool AddCacheEntryValue(const CatalogEntry &p);
     int  ArrayIndex(int x, int y) const { return ((y / m_tex_dim) * m_stride) + (x / m_tex_dim); } 
+    void  ArrayXY(wxRect *r, int index) const;
 
     int         n_catalog_entries;
     //ArrayOfCatalogEntries       m_catalog;
@@ -198,11 +199,16 @@ public:
     bool ScheduleJob( glTexFactory *client, const wxRect &rect, int level_min,
                       bool b_throttle_thread, bool b_immediate, bool b_postZip);
     void OnEvtThread( OCPN_CompressionThreadEvent & event );
-    int GetRunningJobCount(){ return m_njobs_running; }
+    int GetRunningJobCount(){ return m_njobs_running; };
     bool AsJob( wxString const &chart_path ) const;
     void PurgeJobList( wxString chart_path = wxEmptyString );
     
     unsigned int m_raster_format;
+
+    int GetStartedJobCount(){ return m_jobs_started; };
+    int GetAbortedJobCount(){ return m_jobs_aborted; };
+    int GetRefusedJobCount(){ return m_jobs_refused; };
+    int GetPurgedJobCount(){ return m_jobs_purged; };
     
 private:
     
@@ -215,7 +221,10 @@ private:
     int                 m_njobs_running;
     int                 m_max_jobs;
     
-    
+    int		m_jobs_started;
+    int		m_jobs_purged;
+    int		m_jobs_aborted;
+    int		m_jobs_refused;
     
 };
 

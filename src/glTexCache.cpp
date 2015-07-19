@@ -661,7 +661,11 @@ CompressionWorkerPool::CompressionWorkerPool()
     m_max_jobs =  nCPU;
 
     bthread_debug = false;;
-    // bthread_debug = true;
+    bthread_debug = true;
+    m_jobs_started = 0;
+    m_jobs_aborted = 0;
+    m_jobs_purged = 0;
+    m_jobs_refused = 0;
 
     if(bthread_debug)
         printf(" nCPU: %d    m_max_jobs :%d\n", nCPU, m_max_jobs);
@@ -696,13 +700,14 @@ void CompressionWorkerPool::OnEvtThread( OCPN_CompressionThreadEvent & event )
             free( ticket->compcomp_bits_array );
         }
         
+        m_jobs_aborted++;
+        m_njobs_running--;
         if(bthread_debug)
             printf( "    Abort job: %08X  Jobs running: %d             Job count: %lu   \n",
                     ticket->ident, m_njobs_running, (unsigned long)todo_list.GetCount());
 
         running_list.DeleteObject(ticket);
         delete ticket;
-        m_njobs_running--;
         StartTopJob();
         return;
     }
@@ -728,7 +733,6 @@ void CompressionWorkerPool::OnEvtThread( OCPN_CompressionThreadEvent & event )
     }
     
     m_njobs_running--;
-    
     if(bthread_debug)
         printf( "    Finished job: %08X  Jobs running: %d             Job count: %lu   \n",
                 ticket->ident, m_njobs_running, (unsigned long)todo_list.GetCount());
@@ -740,13 +744,15 @@ void CompressionWorkerPool::OnEvtThread( OCPN_CompressionThreadEvent & event )
     
 ///    qDebug() << "Finished" << m_njobs_running <<  (unsigned long)todo_list.GetCount() << mem_used << g_tex_mem_used;
     
-    if (StartTopJob() == false) {
+    if (StartTopJob() == false && m_njobs_running < m_max_jobs) {
         wxString  chart_path = ticket->m_ChartPath; 
         glTexFactory *pFact = ticket->pFact; 
         wxJobListNode *node = todo_list.GetFirst();
         if(!node && pFact != 0){
-            /* push a new one*/
-            pFact->CompressUnCacheEntry();
+            int i = m_njobs_running;
+            /* repopulate the queue with new jobs up to max_jobs */
+            while (i < m_max_jobs && pFact->CompressUnCacheEntry() == true )
+                i++;
         }
     }
     delete ticket;
@@ -761,17 +767,27 @@ bool CompressionWorkerPool::ScheduleJob(glTexFactory* client, const wxRect &rect
         
 ///        qDebug() << "Could not add, count now" << (unsigned long)todo_list.GetCount() << mem_used << g_tex_mem_used;
         
-        return false;;
+        m_jobs_refused++;
+        return false;
     }
     
     wxString chart_path = client->GetChartPath();
 
     //  Avoid adding duplicate jobs, i.e. the same chart_path, and the same rectangle
+    //  also don't queue more than max / nbe CPU
+    //  
     wxJobListNode *node = todo_list.GetFirst();
+    int maxj = 100 /m_max_jobs;
+    int curj = 0;    
     while(node){
         JobTicket *ticket = node->GetData();
-        if( (ticket->m_ChartPath == chart_path) && (ticket->rect == rect)){
-            return false;
+        if( ticket->m_ChartPath == chart_path) {
+            if ( ticket->rect == rect )
+                return false;
+            if ( curj++ >= maxj) {
+                m_jobs_refused++;
+                return false;
+            }
         }
         
         node = node->GetNext();
@@ -794,6 +810,7 @@ bool CompressionWorkerPool::ScheduleJob(glTexFactory* client, const wxRect &rect
 
     if(!b_immediate){
         todo_list.Append(pt);
+        m_jobs_started++;
         if(bthread_debug){
             int mem_used;
             GetMemoryStatus(0, &mem_used);
@@ -904,6 +921,7 @@ void CompressionWorkerPool::PurgeJobList( wxString chart_path )
                     printf("Pool:  Purge pending job for purged chart\n");
                 todo_list.DeleteNode(tnode);
                 delete ticket;
+                m_jobs_purged++;
                 tnode = todo_list.GetFirst();  // restart the list
             }
             else{
@@ -929,6 +947,7 @@ void CompressionWorkerPool::PurgeJobList( wxString chart_path )
         while(node){
             JobTicket *ticket = node->GetData();
             delete ticket;
+            m_jobs_purged++;
             node = node->GetNext();
         }
         todo_list.Clear();
@@ -957,8 +976,8 @@ CatalogEntry::~CatalogEntry()
 CatalogEntry::CatalogEntry(int level, int x0, int y0, ColorScheme colorscheme)
 {
     k.mip_level = level;
-    v.x = x0;
-    v.y = y0;
+    k.x = x0;
+    k.y = y0;
     k.tcolorscheme = colorscheme;
 }
 
@@ -972,8 +991,8 @@ void CatalogEntry::Serialize( unsigned char *t)
     uint32_t *p = (uint32_t *)t;
     
     *p++ = k.mip_level;
-    *p++ = v.x;
-    *p++ = v.y;
+    *p++ = k.x;
+    *p++ = k.y;
     *p++ = k.tcolorscheme;
     *p++ = v.texture_offset;
     *p++ = v.compressed_size;
@@ -986,8 +1005,8 @@ void CatalogEntry::DeSerialize( unsigned char *t)
     uint32_t *p = (uint32_t *)t;
     
      k.mip_level = *p++;
-     v.x = *p++;
-     v.y = *p++;
+     k.x = *p++;
+     k.y = *p++;
      k.tcolorscheme = (ColorScheme)*p++;
      v.texture_offset = *p++;
      v.compressed_size = *p++;
@@ -1293,6 +1312,12 @@ bool glTexFactory::IsCompressedArrayComplete( int base_level, glTextureDescripto
     return b_all_cmm_built;
 }
 
+void  glTexFactory::ArrayXY(wxRect *r, int index) const
+{
+    r->y = (index / m_stride)*m_tex_dim;
+    r->x = (index -((r->y/m_tex_dim)*m_stride)) *m_tex_dim;
+}
+
 bool glTexFactory::CompressUnCacheEntry()
 {
     if(bthread_debug)
@@ -1317,8 +1342,7 @@ bool glTexFactory::CompressUnCacheEntry()
         CatalogEntryValue *r = &v[m_index];
         if (r->compressed_size == 0) 
         {
-            rect.y = (m_index / m_stride)*m_tex_dim;
-            rect.x = (m_index -((rect.y/m_tex_dim)*m_stride)) *m_tex_dim;
+            ArrayXY(&rect, m_index);
 
             int array_index = ArrayIndex(rect.x, rect.y);
             if (array_index != m_index) 
@@ -1339,7 +1363,9 @@ bool glTexFactory::CompressUnCacheEntry()
             m_pending = true;
             if(bthread_debug)
                 printf("ok %d %d %d %d %d\n", m_tex_dim, m_stride, m_index, rect.x, rect.y);
+            
             g_CompressorPool->ScheduleJob( this, rect, level, true, false, true);  // background, postZip
+            m_index++;
             return true;
         }
     }
@@ -1433,6 +1459,8 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                 glTextureDescriptor *ptd = m_td_array[i];
             
                 if( ptd && ptd->nCache_Color != m_colorscheme ){
+                    // XXX play safe as it's unable to find if there's uncompressed tex
+                    // without job pending
                     more = true;
                     if( IsCompressedArrayComplete( 0, ptd) ){
                         for(int level = 0; level < g_mipmap_max_level + 1; level++ )
@@ -2064,7 +2092,7 @@ bool glTexFactory::AddCacheEntryValue(const CatalogEntry &p)
     if (p.k.mip_level < 0 || p.k.mip_level >= 5) 
         return false;
 
-    int array_index = ArrayIndex(p.v.x, p.v.y);
+    int array_index = ArrayIndex(p.k.x, p.k.y);
     if (array_index < 0 || array_index >= m_ntex) 
         return false;
 
@@ -2118,9 +2146,10 @@ bool glTexFactory::WriteCatalogAndHeader()
         
         CatalogEntry ps;
         int buf_size =  ps.GetSerialSize();
-        unsigned char *buf = (unsigned char *)malloc(buf_size);
+        unsigned char buf[buf_size];
         int new_n_catalog_entries = 0;
         CatalogEntry p;
+        wxRect rect;
         for (int i = 0; i < N_COLOR_SCHEMES; i++) {
             p.k.tcolorscheme = (ColorScheme)i;
             for (int j = 0; j < 5; j++) {
@@ -2129,6 +2158,10 @@ bool glTexFactory::WriteCatalogAndHeader()
                     continue;
                 p.k.mip_level = j;
                 for (int k = 0; k < m_ntex; k++) {
+                    // XXX
+                    ArrayXY(&rect, k);
+                    p.k.y = rect.y;
+                    p.k.x = rect.x;
                     CatalogEntryValue *r = &v[k];
                     if (r->compressed_size == 0)
                         continue;
@@ -2148,7 +2181,6 @@ bool glTexFactory::WriteCatalogAndHeader()
             m_fs->Write( buf, buf_size);
         }
 #endif        
-        free(buf);
         n_catalog_entries = new_n_catalog_entries;
         //   Write header at file end
         CompressedCacheHeader hdr;
