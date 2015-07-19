@@ -1463,10 +1463,15 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                     // without job pending
                     more = true;
                     if( IsCompressedArrayComplete( 0, ptd) ){
+                        bool b_cat = false;
                         for(int level = 0; level < g_mipmap_max_level + 1; level++ )
-                            UpdateCacheLevel( wxRect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension),
-                                          level, m_colorscheme );
+                            if (!UpdateCacheLevel( wxRect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension),
+                                          level, m_colorscheme, false ))
+                                b_cat = true;
                     
+                        if (b_cat) 
+                            WriteCatalogAndHeader();
+                        
                         //      We can free all the ptd memory completely
                         //      and the texture will be reloaded from disk cache    
                         ptd->FreeAll();
@@ -1591,8 +1596,12 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
                             break;
                         }
                     }
+                    bool b_cat = false;
                     for(;level < g_mipmap_max_level + 1; level++ )
-                        UpdateCacheLevel( rect, level, color_scheme );
+                        if (!UpdateCacheLevel( rect, level, color_scheme, false ))
+                            b_cat = true;
+                    if (b_cat)
+                        WriteCatalogAndHeader();
                 
                     //      We can free all the ptd memory completely
                     //      and the texture will be reloaded from disk cache    
@@ -1848,52 +1857,49 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
 
 
 
-void glTexFactory::UpdateCacheLevel( const wxRect &rect, int level, ColorScheme color_scheme )
+bool glTexFactory::UpdateCacheLevel( const wxRect &rect, int level, ColorScheme color_scheme, bool gCatalog )
 {
+    if( !g_GLOptions.m_bTextureCompressionCaching)
+        return true;
+
     //  Search for the requested texture
-        //  Search the catalog for this particular texture
-        CatalogEntryValue *v = GetCacheEntryValue(level, rect.x, rect.y, color_scheme) ;
+    //  Search the catalog for this particular texture
+    CatalogEntryValue *v = GetCacheEntryValue(level, rect.x, rect.y, color_scheme) ;
         
-        //      This texture is already done
-        if(v != 0)
-            return;
+    //      This texture is already done
+    if(v != 0)
+        return true;
     
-    
-    
+
 //    printf("Update cache level %d\n", level);
     
     //    Is this texture tile already defined?
     int array_index = ArrayIndex(rect.x, rect.y);
     glTextureDescriptor *ptd = m_td_array[array_index];
     
-    if(ptd){
+    if (!ptd)
+        return true;
         
-        int dim = g_GLOptions.m_iTextureDimension;
-        int size = g_tile_size;
+    int dim = g_GLOptions.m_iTextureDimension;
+    int size = g_tile_size;
     
-        for(int i=0 ; i < level ; i++){
-            dim /= 2;
-            size /= 4;
-            if(size < 8)
-                size = 8;
-        }
-
-        
-    
-       if( g_GLOptions.m_bTextureCompressionCaching){
-           unsigned char *pd = ptd->CompCompArrayAccess(CA_READ, NULL, level);
-           if(pd){
-               UpdateCachePrecomp(pd, ptd->compcomp_size[level], ptd, level, color_scheme);
-           }
-           else {
-               unsigned char *source = ptd->CompressedArrayAccess( CA_READ, NULL, level);
-               if(source)
-                    UpdateCache(source, size, ptd, level, color_scheme);
-           }
-       }
+    for(int i=0 ; i < level ; i++){
+        dim /= 2;
+        size /= 4;
+        if(size < 8)
+            size = 8;
     }
-
     
+    unsigned char *pd = ptd->CompCompArrayAccess(CA_READ, NULL, level);
+    if(pd){
+        return UpdateCachePrecomp(pd, ptd->compcomp_size[level], ptd, level, color_scheme);
+    }
+    else {
+        unsigned char *source = ptd->CompressedArrayAccess( CA_READ, NULL, level);
+        if(source)
+            return UpdateCache(source, size, ptd, level, color_scheme);
+    }
+    return true;
 }
 
 int glTexFactory::GetTextureLevel( glTextureDescriptor *ptd, const wxRect &rect, int level, ColorScheme color_scheme )
@@ -2200,7 +2206,7 @@ bool glTexFactory::WriteCatalogAndHeader()
 }
     
 bool glTexFactory::UpdateCache(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,
-                               ColorScheme color_scheme)
+                               ColorScheme color_scheme, bool bCatalog)
 {
     bool b_found = false;
     //  Search the catalog for this particular texture
@@ -2258,15 +2264,16 @@ bool glTexFactory::UpdateCache(unsigned char *data, int data_size, glTextureDesc
             
         //      Write the catalog and Header (which follows the catalog at the end of the file
             m_catalog_offset += compressed_size;
-            WriteCatalogAndHeader();
+            if (bCatalog)
+                WriteCatalogAndHeader();
         }
     }
     
-    return true;
+    return b_found;
 }
 
 bool glTexFactory::UpdateCachePrecomp(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,
-                               ColorScheme color_scheme)
+                               ColorScheme color_scheme, bool bCatalog)
 {
     bool b_found = false;
     //  Search the catalog for this particular texture
@@ -2312,11 +2319,12 @@ bool glTexFactory::UpdateCachePrecomp(unsigned char *data, int data_size, glText
             
             //      Write the catalog and Header (which follows the catalog at the end of the file
             m_catalog_offset += data_size;
-            WriteCatalogAndHeader();
+            if (bCatalog)
+                WriteCatalogAndHeader();
         }
     }
     
-    return true;
+    return b_found;
 }
 
 

@@ -91,7 +91,7 @@ public:
 
     bool PrepareTexture( int base_level, const wxRect &rect, ColorScheme color_scheme, bool b_throttle_thread = true );
     int GetTextureLevel( glTextureDescriptor *ptd, const wxRect &rect, int level,  ColorScheme color_scheme );
-    void UpdateCacheLevel( const wxRect &rect, int level, ColorScheme color_scheme );
+    bool UpdateCacheLevel( const wxRect &rect, int level, ColorScheme color_scheme, bool bCat = true );
     bool IsCompressedArrayComplete( int base_level, const wxRect &rect);
     bool IsCompressedArrayComplete( int base_level, glTextureDescriptor *ptd);
     bool IsLevelInCache( int level, const wxRect &rect, ColorScheme color_scheme );
@@ -120,9 +120,9 @@ private:
     bool WriteCatalogAndHeader();
     
     bool UpdateCache(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,
-                                   ColorScheme color_scheme);
+                                   ColorScheme color_scheme, bool bCat = true);
     bool UpdateCachePrecomp(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,
-                                          ColorScheme color_scheme);
+                                          ColorScheme color_scheme, bool bCat = true);
     
     void DeleteSingleTexture( glTextureDescriptor *ptd );
 
