@@ -181,7 +181,7 @@ class  ChartBaseBSB     :public ChartBase
       void latlong_to_chartpix(double lat, double lon, double &pixx, double &pixy);
       void chartpix_to_latlong(double pixx, double pixy, double *plat, double *plon);
 
-      virtual void InvalidateLineCache();
+      virtual void InvalidateLineCache(int start = -1, int end = -1);
 
 protected:
 //    Methods

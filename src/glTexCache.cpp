@@ -1369,15 +1369,6 @@ bool glTexFactory::CompressUnCacheEntry()
             return true;
         }
     }
-    // free buffer cache line if any
-    ChartBase *pChart = ChartData->OpenChartFromDB( m_ChartPath, FULL_INIT );
-    if( !pChart ) {
-        return false;
-    }
-
-    ChartBaseBSB *pBSBChart = dynamic_cast<ChartBaseBSB*>( pChart );
-    if (pBSBChart)
-        pBSBChart->InvalidateLineCache();
     
     return false;
 }
@@ -1464,13 +1455,37 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                     more = true;
                     if( IsCompressedArrayComplete( 0, ptd) ){
                         bool b_cat = false;
+                        wxRect rect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension);
                         for(int level = 0; level < g_mipmap_max_level + 1; level++ )
-                            if (!UpdateCacheLevel( wxRect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension),
-                                          level, m_colorscheme, false ))
+                            if (!UpdateCacheLevel( rect, level, m_colorscheme, false ))
                                 b_cat = true;
                     
-                        if (b_cat) 
+                        if (b_cat) {
+                            if (ptd->y && !ptd->x && (ptd->y % m_tex_dim) == 0) {
+                                ChartBase *pChart = ChartData->OpenChartFromDB( m_ChartPath, FULL_INIT );
+                                if( pChart ) {
+                                    ChartBaseBSB *pBSBChart = dynamic_cast<ChartBaseBSB*>( pChart );
+                                    if (pBSBChart) {
+                                        pBSBChart->InvalidateLineCache(ptd->y - m_tex_dim , ptd->y);
+                                    }
+                                }
+                            }
+                            #if 0
+                            /* try to free lock?*/
+                            ChartBase *pChart = ChartData->OpenChartFromDB( m_ChartPath, FULL_INIT );
+                            if( pChart ) {
+                                ChartBaseBSB *pBSBChart = dynamic_cast<ChartBaseBSB*>( pChart );
+                                if (pBSBChart) {
+                                    wxRect r = rect;
+                                    for (int j = (rect.y % m_stride); j < m_stride; j++) {
+                                        for (int x = 0; x <= m_stride
+                                        pBSBChart->InvalidateLineCache(rect.y - m_tex_dim , rect.y);
+                                    }
+                                }
+                            }
+                            #endif
                             WriteCatalogAndHeader();
+                        }
                         
                         //      We can free all the ptd memory completely
                         //      and the texture will be reloaded from disk cache    
@@ -1857,8 +1872,9 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
 
 
 
-bool glTexFactory::UpdateCacheLevel( const wxRect &rect, int level, ColorScheme color_scheme, bool gCatalog )
+bool glTexFactory::UpdateCacheLevel( const wxRect &rect, int level, ColorScheme color_scheme, bool bCatalog )
 {
+    bool ret = true;
     if( !g_GLOptions.m_bTextureCompressionCaching)
         return true;
 
@@ -1892,14 +1908,14 @@ bool glTexFactory::UpdateCacheLevel( const wxRect &rect, int level, ColorScheme 
     
     unsigned char *pd = ptd->CompCompArrayAccess(CA_READ, NULL, level);
     if(pd){
-        return UpdateCachePrecomp(pd, ptd->compcomp_size[level], ptd, level, color_scheme);
+        ret = UpdateCachePrecomp(pd, ptd->compcomp_size[level], ptd, level, color_scheme, bCatalog);
     }
     else {
         unsigned char *source = ptd->CompressedArrayAccess( CA_READ, NULL, level);
         if(source)
-            return UpdateCache(source, size, ptd, level, color_scheme);
+            ret =  UpdateCache(source, size, ptd, level, color_scheme, bCatalog);
     }
-    return true;
+    return ret;
 }
 
 int glTexFactory::GetTextureLevel( glTextureDescriptor *ptd, const wxRect &rect, int level, ColorScheme color_scheme )

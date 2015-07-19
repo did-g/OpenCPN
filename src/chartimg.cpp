@@ -2028,24 +2028,29 @@ bool ChartBaseBSB::CreateLineIndex()
 
 
 //    Invalidate and Free the line cache contents
-void ChartBaseBSB::InvalidateLineCache(void)
+void ChartBaseBSB::InvalidateLineCache(int start, int end)
 {
-      if(pLineCache)
+      if(!pLineCache)
+          return;
+
+      CachedLine *pt;
+      if (start == -1) {
+          start = 0;
+          end = Size_Y;
+      }
+printf(" ========================= Invalidate cache line %d %d\n", start, end);      
+      for(int ylc = start ; ylc < end ; ylc++)
       {
-            CachedLine *pt;
-            for(int ylc = 0 ; ylc < Size_Y ; ylc++)
-            {
-                  pt = &pLineCache[ylc];
-                  if(pt)
-                  {
-                        if(pt->pPix)
-                        {
-                              free (pt->pPix);
-                              pt->pPix = NULL;
-                        }
-                        pt->bValid = 0;
-                  }
-            }
+          pt = &pLineCache[ylc];
+          if(pt)
+          {
+              if(pt->pPix)
+              {
+                  free (pt->pPix);
+                  pt->pPix = NULL;
+              }
+              pt->bValid = 0;
+          }
       }
 }
 
