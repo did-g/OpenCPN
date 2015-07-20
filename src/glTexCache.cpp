@@ -1114,7 +1114,6 @@ glTexFactory::~glTexFactory()
             }
         }
     }
-    //WX_CLEAR_ARRAY (m_catalog); 	 
  
     free( m_td_array );         // array is empty
 }
@@ -1180,7 +1179,6 @@ void glTexFactory::DeleteSomeTextures( long target )
     }
 }
 
-#define MAX_TEXTURES 16384
 void glTexFactory::DeleteSomeTextures(  )
 {
     // iterate over all the textures presently loaded
@@ -1199,7 +1197,7 @@ void glTexFactory::DeleteSomeTextures(  )
                 DeleteSingleTexture( ptd);
         }
         
-        if(g_tex_count <= MAX_TEXTURES)
+        if(g_tex_count <= (MAX_TEXTURES*9/10))
             break;
     }
 }

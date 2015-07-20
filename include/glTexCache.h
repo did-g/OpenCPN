@@ -40,6 +40,7 @@
 #define MAP_BUFFER_OK                   4
 
 #define FACTORY_TIMER                   10000
+#define MAX_TEXTURES 			8192
 
 void HalfScaleChartBits( int width, int height, unsigned char *source, unsigned char *target );
 bool CompressUsingGPU( glTextureDescriptor *ptd, GLuint raster_format, int level, bool b_post_comp);
@@ -82,6 +83,10 @@ public:
 };
 
 WX_DEFINE_ARRAY(CatalogEntry*, ArrayOfCatalogEntries);
+
+#define FAC_TEX_CACHE (1 << 0)
+#define FAC_TEX_NEW   (1 << 1)
+#define FAC_TEX_DONE  (2 << 1)
 
 class glTexFactory : public wxEvtHandler
 {
@@ -134,6 +139,9 @@ private:
     int         n_catalog_entries;
     //ArrayOfCatalogEntries       m_catalog;
     CatalogEntryValue *m_cache[N_COLOR_SCHEMES][5];
+
+    char	*m_tex; // texture state, for purging raster chart line cache once done
+
     wxString    m_ChartPath;
     GLuint      m_raster_format;
     wxString    m_CompressedCacheFilePath;
@@ -142,6 +150,8 @@ private:
     bool        m_hdrOK;
     bool        m_catalogOK;
     bool        m_catalogCorrupted;
+    bool	m_catalogFull;
+
     wxFFile     *m_fs;
     uint32_t    m_chart_date_binary;
     

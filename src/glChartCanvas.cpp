@@ -3596,7 +3596,6 @@ void glChartCanvas::SetColorScheme(ColorScheme cs)
     m_currentTex = 0;
 }
 
-#define MAX_TEXTURES 16384
 bool glChartCanvas::TextureCrunch(double factor)
 {
     
@@ -3636,13 +3635,13 @@ bool glChartCanvas::TextureCrunch(double factor)
         {
             if (bGLMemCrunch)
                 ptf->DeleteSomeTextures( g_GLOptions.m_iTextureMemorySize * 1024 * 1024 * factor *hysteresis);
-            bGLTexCount  = g_tex_count > MAX_TEXTURES;
+            bGLTexCount  = g_tex_count >= MAX_TEXTURES;
             if (bGLTexCount)
                 ptf->DeleteSomeTextures();
         }
 
         bGLMemCrunch = g_tex_mem_used > (double)(g_GLOptions.m_iTextureMemorySize * 1024 * 1024) * factor *hysteresis;
-        bGLTexCount  = g_tex_count > MAX_TEXTURES;
+        bGLTexCount  = g_tex_count >= MAX_TEXTURES;
     
         if( ! bGLMemCrunch && ! bGLTexCount)
             break;
