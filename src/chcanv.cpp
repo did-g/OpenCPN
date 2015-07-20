@@ -4359,7 +4359,7 @@ void ChartCanvas::ShowChartInfoWindow( int x, int dbIndex )
             wxString s;
             ChartBase *pc = NULL;
 
-            // TOCTU race but worst case will reload chart.
+            // TOCTOU race but worst case will reload chart.
             // need to lock it or the background spooler may evict charts in 
             // OpenChartFromDBAndLock
             if( ( ChartData->IsChartInCache( dbIndex ) ) && ChartData->IsValid() )
