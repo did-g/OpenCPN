@@ -95,6 +95,7 @@ typedef std::vector<contour> contour_list;
 //==========================================================================
 class gshhsPolyFile;
 
+
 class GshhsPolyCell {
 public:
 
