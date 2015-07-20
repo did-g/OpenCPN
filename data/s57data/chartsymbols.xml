@@ -30970,6 +30970,70 @@
                         <comment>17020</comment>
                 </lookup>
 
+		<lookup id="4000" RCID="54029" name="SILBUI">
+			<type>Point</type>
+			<disp-prio>Point Symbol</disp-prio>
+			<radar-prio>On Top</radar-prio>
+			<table-name>Simplified</table-name>
+			<attrib-code index="0">CATSIL1</attrib-code>
+			<attrib-code index="1">CONVIS1</attrib-code>
+			<instruction>SY(SILBUI11)</instruction>
+			<display-cat>Standard</display-cat>
+			<comment>22220</comment>
+		</lookup>
+		<lookup id="4001" RCID="54030" name="SILBUI">
+			<type>Point</type>
+			<disp-prio>Point Symbol</disp-prio>
+			<radar-prio>On Top</radar-prio>
+			<table-name>Paper</table-name>
+			<attrib-code index="0">CATSIL1</attrib-code>
+			<attrib-code index="1">CONVIS1</attrib-code>
+			<instruction>SY(SILBUI11)</instruction>
+			<display-cat>Standard</display-cat>
+			<comment>22220</comment>
+		</lookup>
+		<lookup id="4002" RCID="54031" name="MSTCON">
+			<type>Point</type>
+			<disp-prio>Area Symbol</disp-prio>
+			<radar-prio>On Top</radar-prio>
+			<table-name>Paper</table-name>
+			<attrib-code index="0">CATLMK7</attrib-code>
+			<attrib-code index="1">CONVIS1</attrib-code>
+			<instruction>SY(MSTCON14)</instruction>
+			<display-cat>Standard</display-cat>
+			<comment>22220</comment>
+		</lookup>
+		<lookup id="4003" RCID="54032" name="MSTCON">
+			<type>Point</type>
+			<disp-prio>Point Symbol</disp-prio>
+			<radar-prio>On Top</radar-prio>
+			<table-name>Paper</table-name>
+			<attrib-code index="0">CATLMK7</attrib-code>
+			<instruction>SY(MSTCON04)</instruction>
+			<display-cat>Standard</display-cat>
+			<comment>32220</comment>
+		</lookup>
+		<lookup id="4004" RCID="54033" name="CHIMNY">
+			<type>Point</type>
+			<disp-prio>Area Symbol</disp-prio>
+			<radar-prio>On Top</radar-prio>
+			<table-name>Paper</table-name>
+			<attrib-code index="0">CATLMK3</attrib-code>
+			<attrib-code index="1">CONVIS1</attrib-code>
+			<instruction>SY(CHIMNY11)</instruction>
+			<display-cat>Standard</display-cat>
+			<comment>22220</comment>
+		</lookup>
+		<lookup id="4005" RCID="54034" name="CHIMNY">
+			<type>Point</type>
+			<disp-prio>Point Symbol</disp-prio>
+			<radar-prio>On Top</radar-prio>
+			<table-name>Paper</table-name>
+			<attrib-code index="0">CATLMK3</attrib-code>
+			<instruction>SY(CHIMNY01)</instruction>
+			<display-cat>Standard</display-cat>
+			<comment>32220</comment>
+		</lookup>
 
 	</lookups>
 
