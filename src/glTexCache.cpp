@@ -619,7 +619,7 @@ SendEvtAndReturn:
         Nevent.SetTicket(m_pticket);
         
         m_pMessageTarget->AddPendingEvent(Nevent);
-        // from here m_pticket may be invalide (delete in event handler)
+        // from here m_pticket is undefined (if deleted in event handler)
     }
 
     return 0;
