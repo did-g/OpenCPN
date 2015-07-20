@@ -14493,7 +14493,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,3,4</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK01);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1429" RCID="31481" name="notmrk">
@@ -14505,7 +14505,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2,3,4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK01);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1430" RCID="31482" name="notmrk">
@@ -14517,7 +14517,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,3</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1431" RCID="31483" name="notmrk">
@@ -14529,7 +14529,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,4</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1432" RCID="31484" name="notmrk">
@@ -14541,7 +14541,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,3</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1433" RCID="31485" name="notmrk">
@@ -14553,7 +14553,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,4</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1434" RCID="31486" name="notmrk">
@@ -14565,7 +14565,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF48);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1435" RCID="31487" name="notmrk">
@@ -14577,7 +14577,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF48);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1436" RCID="31488" name="notmrk">
@@ -14589,7 +14589,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2,3</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK05);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1437" RCID="31489" name="notmrk">
@@ -14601,7 +14601,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2,4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK05);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1438" RCID="31490" name="notmrk">
@@ -14613,7 +14613,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3,4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK01);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1439" RCID="31491" name="notmrk">
@@ -14625,7 +14625,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3,4</attrib-code>
 			<instruction>SY(NMKPRH08);SY(ADDMRK01);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1440" RCID="31492" name="notmrk">
@@ -14637,7 +14637,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH11);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1441" RCID="31493" name="notmrk">
@@ -14649,7 +14649,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH11);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1442" RCID="31494" name="notmrk">
@@ -14661,7 +14661,7 @@
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKREG16);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1443" RCID="31495" name="notmrk">
@@ -14673,7 +14673,7 @@
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKREG17);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1444" RCID="31496" name="notmrk">
@@ -14685,7 +14685,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKINF03);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1445" RCID="31497" name="notmrk">
@@ -14697,7 +14697,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1446" RCID="31498" name="notmrk">
@@ -14709,7 +14709,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1447" RCID="31499" name="notmrk">
@@ -14721,7 +14721,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1448" RCID="31500" name="notmrk">
@@ -14733,7 +14733,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1449" RCID="31501" name="notmrk">
@@ -14745,7 +14745,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1450" RCID="31502" name="notmrk">
@@ -14757,7 +14757,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF43);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1451" RCID="31503" name="notmrk">
@@ -14769,7 +14769,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF43);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1452" RCID="31504" name="notmrk">
@@ -14781,7 +14781,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF45);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1453" RCID="31505" name="notmrk">
@@ -14793,7 +14793,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF45);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1454" RCID="31506" name="notmrk">
@@ -14805,7 +14805,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH02);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1455" RCID="31507" name="notmrk">
@@ -14817,7 +14817,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH02);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1456" RCID="31508" name="notmrk">
@@ -14829,7 +14829,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1457" RCID="31509" name="notmrk">
@@ -14841,7 +14841,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1458" RCID="31510" name="notmrk">
@@ -14853,7 +14853,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1459" RCID="31511" name="notmrk">
@@ -14865,7 +14865,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH08);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1460" RCID="31512" name="notmrk">
@@ -14877,7 +14877,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH08);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1461" RCID="31513" name="notmrk">
@@ -14888,7 +14888,7 @@
 			<attrib-code index="0">catnmk100</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF48)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1462" RCID="31514" name="notmrk">
@@ -14899,7 +14899,7 @@
 			<attrib-code index="0">catnmk101</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF49)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1463" RCID="31515" name="notmrk">
@@ -14910,7 +14910,7 @@
 			<attrib-code index="0">catnmk102</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF50)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1464" RCID="31516" name="notmrk">
@@ -14921,7 +14921,7 @@
 			<attrib-code index="0">catnmk223</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1465" RCID="31517" name="notmrk">
@@ -14932,7 +14932,7 @@
 			<attrib-code index="0">catnmk235</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1466" RCID="31518" name="notmrk">
@@ -14943,7 +14943,7 @@
 			<attrib-code index="0">catnmk10</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH10)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1467" RCID="31519" name="notmrk">
@@ -14954,7 +14954,7 @@
 			<attrib-code index="0">catnmk11</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH11)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1468" RCID="31520" name="notmrk">
@@ -14965,7 +14965,7 @@
 			<attrib-code index="0">catnmk12</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH12)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1469" RCID="31521" name="notmrk">
@@ -14976,7 +14976,7 @@
 			<attrib-code index="0">catnmk13</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH13)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1470" RCID="31522" name="notmrk">
@@ -14987,7 +14987,7 @@
 			<attrib-code index="0">catnmk23</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1471" RCID="31523" name="notmrk">
@@ -14998,7 +14998,7 @@
 			<attrib-code index="0">catnmk31</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG10)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1472" RCID="31524" name="notmrk">
@@ -15009,7 +15009,7 @@
 			<attrib-code index="0">catnmk32</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1473" RCID="31525" name="notmrk">
@@ -15020,7 +15020,7 @@
 			<attrib-code index="0">catnmk33</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG11)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1474" RCID="31526" name="notmrk">
@@ -15031,7 +15031,7 @@
 			<attrib-code index="0">catnmk34</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG12)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1475" RCID="31527" name="notmrk">
@@ -15042,7 +15042,7 @@
 			<attrib-code index="0">catnmk35</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG13)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1476" RCID="31528" name="notmrk">
@@ -15053,7 +15053,7 @@
 			<attrib-code index="0">catnmk36</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG14)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1477" RCID="31529" name="notmrk">
@@ -15064,7 +15064,7 @@
 			<attrib-code index="0">catnmk37</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG15)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1478" RCID="31530" name="notmrk">
@@ -15075,7 +15075,7 @@
 			<attrib-code index="0">catnmk38</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG16)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1479" RCID="31531" name="notmrk">
@@ -15086,7 +15086,7 @@
 			<attrib-code index="0">catnmk39</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG17)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1480" RCID="31532" name="notmrk">
@@ -15097,7 +15097,7 @@
 			<attrib-code index="0">catnmk41</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1481" RCID="31533" name="notmrk">
@@ -15108,7 +15108,7 @@
 			<attrib-code index="0">catnmk42</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG19)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1482" RCID="31534" name="notmrk">
@@ -15119,7 +15119,7 @@
 			<attrib-code index="0">catnmk43</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG20)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1483" RCID="31535" name="notmrk">
@@ -15130,7 +15130,7 @@
 			<attrib-code index="0">catnmk44</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1484" RCID="31536" name="notmrk">
@@ -15141,7 +15141,7 @@
 			<attrib-code index="0">catnmk45</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1485" RCID="31537" name="notmrk">
@@ -15152,7 +15152,7 @@
 			<attrib-code index="0">catnmk46</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1486" RCID="31538" name="notmrk">
@@ -15163,7 +15163,7 @@
 			<attrib-code index="0">catnmk47</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD04)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1487" RCID="31539" name="notmrk">
@@ -15174,7 +15174,7 @@
 			<attrib-code index="0">catnmk48</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1488" RCID="31540" name="notmrk">
@@ -15185,7 +15185,7 @@
 			<attrib-code index="0">catnmk49</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1489" RCID="31541" name="notmrk">
@@ -15196,7 +15196,7 @@
 			<attrib-code index="0">catnmk50</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1490" RCID="31542" name="notmrk">
@@ -15207,7 +15207,7 @@
 			<attrib-code index="0">catnmk51</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1491" RCID="31543" name="notmrk">
@@ -15218,7 +15218,7 @@
 			<attrib-code index="0">catnmk52</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1492" RCID="31544" name="notmrk">
@@ -15229,7 +15229,7 @@
 			<attrib-code index="0">catnmk53</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF04)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1493" RCID="31545" name="notmrk">
@@ -15240,7 +15240,7 @@
 			<attrib-code index="0">catnmk54</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1494" RCID="31546" name="notmrk">
@@ -15251,7 +15251,7 @@
 			<attrib-code index="0">catnmk55</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1495" RCID="31547" name="notmrk">
@@ -15262,7 +15262,7 @@
 			<attrib-code index="0">catnmk58</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1496" RCID="31548" name="notmrk">
@@ -15273,7 +15273,7 @@
 			<attrib-code index="0">catnmk71</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF19)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1497" RCID="31549" name="notmrk">
@@ -15284,7 +15284,7 @@
 			<attrib-code index="0">catnmk72</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF20)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1498" RCID="31550" name="notmrk">
@@ -15295,7 +15295,7 @@
 			<attrib-code index="0">catnmk73</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF21)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1499" RCID="31551" name="notmrk">
@@ -15306,7 +15306,7 @@
 			<attrib-code index="0">catnmk74</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF22)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1500" RCID="31552" name="notmrk">
@@ -15317,7 +15317,7 @@
 			<attrib-code index="0">catnmk75</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF23)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1501" RCID="31553" name="notmrk">
@@ -15328,7 +15328,7 @@
 			<attrib-code index="0">catnmk76</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF24)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1502" RCID="31554" name="notmrk">
@@ -15339,7 +15339,7 @@
 			<attrib-code index="0">catnmk77</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF25)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1503" RCID="31555" name="notmrk">
@@ -15350,7 +15350,7 @@
 			<attrib-code index="0">catnmk78</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF26)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1504" RCID="31556" name="notmrk">
@@ -15361,7 +15361,7 @@
 			<attrib-code index="0">catnmk79</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF27)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1505" RCID="31557" name="notmrk">
@@ -15372,7 +15372,7 @@
 			<attrib-code index="0">catnmk80</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF28)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1506" RCID="31558" name="notmrk">
@@ -15383,7 +15383,7 @@
 			<attrib-code index="0">catnmk81</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF29)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1507" RCID="31559" name="notmrk">
@@ -15394,7 +15394,7 @@
 			<attrib-code index="0">catnmk90</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF38)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1508" RCID="31560" name="notmrk">
@@ -15405,7 +15405,7 @@
 			<attrib-code index="0">catnmk95</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF43)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1509" RCID="31561" name="notmrk">
@@ -15416,7 +15416,7 @@
 			<attrib-code index="0">catnmk96</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF44)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1510" RCID="31562" name="notmrk">
@@ -15427,7 +15427,7 @@
 			<attrib-code index="0">catnmk97</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF45)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1511" RCID="31563" name="notmrk">
@@ -15438,7 +15438,7 @@
 			<attrib-code index="0">catnmk98</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF46)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1512" RCID="31564" name="notmrk">
@@ -15449,7 +15449,7 @@
 			<attrib-code index="0">catnmk99</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF47)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1513" RCID="31565" name="notmrk">
@@ -15460,7 +15460,7 @@
 			<attrib-code index="0">catnmk1</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1514" RCID="31566" name="notmrk">
@@ -15471,7 +15471,7 @@
 			<attrib-code index="0">catnmk5</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1515" RCID="31567" name="notmrk">
@@ -15482,7 +15482,7 @@
 			<attrib-code index="0">catnmk6</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH07)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1516" RCID="31568" name="notmrk">
@@ -15493,7 +15493,7 @@
 			<attrib-code index="0">catnmk8</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH08)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1517" RCID="31569" name="notmrk">
@@ -15503,7 +15503,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk12</attrib-code>
 			<instruction>SY(NMKPRH12,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1518" RCID="31570" name="notmrk">
@@ -15513,7 +15513,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk13</attrib-code>
 			<instruction>SY(NMKPRH13,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1519" RCID="31571" name="notmrk">
@@ -15523,7 +15523,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk44</attrib-code>
 			<instruction>SY(NMKRCD01,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1520" RCID="31572" name="notmrk">
@@ -15533,7 +15533,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk45</attrib-code>
 			<instruction>SY(NMKRCD02,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1521" RCID="31573" name="notmrk">
@@ -15543,7 +15543,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk46</attrib-code>
 			<instruction>SY(NMKRCD03,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1522" RCID="31574" name="notmrk">
@@ -15553,7 +15553,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk47</attrib-code>
 			<instruction>SY(NMKRCD04,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1523" RCID="31575" name="notmrk">
@@ -15563,7 +15563,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk50</attrib-code>
 			<instruction>SY(NMKINF01,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1524" RCID="31576" name="notmrk">
@@ -15573,7 +15573,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">catnmk1</attrib-code>
 			<instruction>SY(NMKPRH02,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1525" RCID="31577" name="notmrk">
@@ -15583,7 +15583,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">fnctnm1</attrib-code>
 			<instruction>SY(NOTMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1526" RCID="31578" name="notmrk">
@@ -15593,7 +15593,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">fnctnm4</attrib-code>
 			<instruction>SY(NOTMRK03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1527" RCID="31579" name="notmrk">
@@ -15603,7 +15603,7 @@
 			<table-name>Simplified</table-name>
 			<attrib-code index="0">fnctnm5</attrib-code>
 			<instruction>SY(NOTMRK03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1528" RCID="31580" name="notmrk">
@@ -15612,7 +15612,7 @@
 			<radar-prio>On Top</radar-prio>
 			<table-name>Simplified</table-name>
 			<instruction>SY(NOTMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="1529" RCID="31581" name="ownshp">
@@ -27499,7 +27499,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,3,4</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK01);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2656" RCID="30724" name="notmrk">
@@ -27511,7 +27511,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2,3,4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK01);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2657" RCID="30725" name="notmrk">
@@ -27523,7 +27523,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,3</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2658" RCID="30726" name="notmrk">
@@ -27535,7 +27535,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,4</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2659" RCID="30727" name="notmrk">
@@ -27547,7 +27547,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,4</attrib-code>
 			<instruction>SY(NMKINF53);SY(ADDMRK05);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2660" RCID="30728" name="notmrk">
@@ -27559,7 +27559,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,3</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2661" RCID="30729" name="notmrk">
@@ -27571,7 +27571,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2,4</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK02);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2662" RCID="30730" name="notmrk">
@@ -27583,7 +27583,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF48);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2663" RCID="30731" name="notmrk">
@@ -27595,7 +27595,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF48);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2664" RCID="30732" name="notmrk">
@@ -27607,7 +27607,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2,3</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK05);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2665" RCID="30733" name="notmrk">
@@ -27619,7 +27619,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2,4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK05);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2666" RCID="30734" name="notmrk">
@@ -27631,7 +27631,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3,4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK01);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2667" RCID="30735" name="notmrk">
@@ -27643,7 +27643,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3,4</attrib-code>
 			<instruction>SY(NMKPRH08);SY(ADDMRK01);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2668" RCID="30736" name="notmrk">
@@ -27655,7 +27655,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH11);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2669" RCID="30737" name="notmrk">
@@ -27667,7 +27667,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH11);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2670" RCID="30738" name="notmrk">
@@ -27679,7 +27679,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKPRH14);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2671" RCID="30739" name="notmrk">
@@ -27691,7 +27691,7 @@
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKREG16);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2672" RCID="30740" name="notmrk">
@@ -27703,7 +27703,7 @@
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKREG17);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2673" RCID="30741" name="notmrk">
@@ -27715,7 +27715,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKINF03);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2674" RCID="30742" name="notmrk">
@@ -27727,7 +27727,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2675" RCID="30743" name="notmrk">
@@ -27739,7 +27739,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2676" RCID="30744" name="notmrk">
@@ -27751,7 +27751,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF06);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2677" RCID="30745" name="notmrk">
@@ -27763,7 +27763,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2678" RCID="30746" name="notmrk">
@@ -27775,7 +27775,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF20);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2679" RCID="30747" name="notmrk">
@@ -27787,7 +27787,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF43);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2680" RCID="30748" name="notmrk">
@@ -27799,7 +27799,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF43);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2681" RCID="30749" name="notmrk">
@@ -27811,7 +27811,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKINF45);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2682" RCID="30750" name="notmrk">
@@ -27823,7 +27823,7 @@
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKINF45);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2683" RCID="30751" name="notmrk">
@@ -27835,7 +27835,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH02);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2684" RCID="30752" name="notmrk">
@@ -27847,7 +27847,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH02);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2685" RCID="30753" name="notmrk">
@@ -27859,7 +27859,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk2</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2686" RCID="30754" name="notmrk">
@@ -27871,7 +27871,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2687" RCID="30755" name="notmrk">
@@ -27883,7 +27883,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH07);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2688" RCID="30756" name="notmrk">
@@ -27895,7 +27895,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk3</attrib-code>
 			<instruction>SY(NMKPRH08);SY(ADDMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2689" RCID="30757" name="notmrk">
@@ -27907,7 +27907,7 @@
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<attrib-code index="2">addmrk4</attrib-code>
 			<instruction>SY(NMKPRH08);SY(ADDMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2690" RCID="30758" name="notmrk">
@@ -27918,7 +27918,7 @@
 			<attrib-code index="0">catnmk100</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF48)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2691" RCID="30759" name="notmrk">
@@ -27929,7 +27929,7 @@
 			<attrib-code index="0">catnmk101</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF49)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2692" RCID="30760" name="notmrk">
@@ -27940,7 +27940,7 @@
 			<attrib-code index="0">catnmk102</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF50)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2693" RCID="30761" name="notmrk">
@@ -27951,7 +27951,7 @@
 			<attrib-code index="0">catnmk223</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2694" RCID="30762" name="notmrk">
@@ -27962,7 +27962,7 @@
 			<attrib-code index="0">catnmk235</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2695" RCID="30763" name="notmrk">
@@ -27973,7 +27973,7 @@
 			<attrib-code index="0">catnmk10</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH10)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2696" RCID="30764" name="notmrk">
@@ -27984,7 +27984,7 @@
 			<attrib-code index="0">catnmk11</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH11)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2697" RCID="30765" name="notmrk">
@@ -27995,7 +27995,7 @@
 			<attrib-code index="0">catnmk12</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH12)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2698" RCID="30766" name="notmrk">
@@ -28006,7 +28006,7 @@
 			<attrib-code index="0">catnmk13</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH13)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2699" RCID="30767" name="notmrk">
@@ -28017,7 +28017,7 @@
 			<attrib-code index="0">catnmk23</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2700" RCID="30768" name="notmrk">
@@ -28028,7 +28028,7 @@
 			<attrib-code index="0">catnmk24</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2701" RCID="30769" name="notmrk">
@@ -28039,7 +28039,7 @@
 			<attrib-code index="0">catnmk31</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG10)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2702" RCID="30770" name="notmrk">
@@ -28050,7 +28050,7 @@
 			<attrib-code index="0">catnmk32</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2703" RCID="30771" name="notmrk">
@@ -28061,7 +28061,7 @@
 			<attrib-code index="0">catnmk33</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG11)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2704" RCID="30772" name="notmrk">
@@ -28072,7 +28072,7 @@
 			<attrib-code index="0">catnmk34</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG12)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2705" RCID="30773" name="notmrk">
@@ -28083,7 +28083,7 @@
 			<attrib-code index="0">catnmk35</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG13)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2706" RCID="30774" name="notmrk">
@@ -28094,7 +28094,7 @@
 			<attrib-code index="0">catnmk36</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG14)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2707" RCID="30775" name="notmrk">
@@ -28105,7 +28105,7 @@
 			<attrib-code index="0">catnmk37</attrib-code>
 			<attrib-code index="1">fnctnm2</attrib-code>
 			<instruction>SY(NMKREG15)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2708" RCID="30776" name="notmrk">
@@ -28116,7 +28116,7 @@
 			<attrib-code index="0">catnmk38</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG16)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2709" RCID="30777" name="notmrk">
@@ -28127,7 +28127,7 @@
 			<attrib-code index="0">catnmk39</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG17)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2710" RCID="30778" name="notmrk">
@@ -28138,7 +28138,7 @@
 			<attrib-code index="0">catnmk41</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG01);SY(ADDMRK05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2711" RCID="30779" name="notmrk">
@@ -28149,7 +28149,7 @@
 			<attrib-code index="0">catnmk42</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG19)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2712" RCID="30780" name="notmrk">
@@ -28160,7 +28160,7 @@
 			<attrib-code index="0">catnmk43</attrib-code>
 			<attrib-code index="1">fnctnm3</attrib-code>
 			<instruction>SY(NMKREG20)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2713" RCID="30781" name="notmrk">
@@ -28171,7 +28171,7 @@
 			<attrib-code index="0">catnmk44</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2714" RCID="30782" name="notmrk">
@@ -28182,7 +28182,7 @@
 			<attrib-code index="0">catnmk45</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2715" RCID="30783" name="notmrk">
@@ -28193,7 +28193,7 @@
 			<attrib-code index="0">catnmk46</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2716" RCID="30784" name="notmrk">
@@ -28204,7 +28204,7 @@
 			<attrib-code index="0">catnmk47</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD04)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2717" RCID="30785" name="notmrk">
@@ -28215,7 +28215,7 @@
 			<attrib-code index="0">catnmk48</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2718" RCID="30786" name="notmrk">
@@ -28226,7 +28226,7 @@
 			<attrib-code index="0">catnmk49</attrib-code>
 			<attrib-code index="1">fnctnm4</attrib-code>
 			<instruction>SY(NMKRCD06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2719" RCID="30787" name="notmrk">
@@ -28237,7 +28237,7 @@
 			<attrib-code index="0">catnmk50</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2720" RCID="30788" name="notmrk">
@@ -28248,7 +28248,7 @@
 			<attrib-code index="0">catnmk51</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2721" RCID="30789" name="notmrk">
@@ -28259,7 +28259,7 @@
 			<attrib-code index="0">catnmk52</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2722" RCID="30790" name="notmrk">
@@ -28270,7 +28270,7 @@
 			<attrib-code index="0">catnmk53</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF04)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2723" RCID="30791" name="notmrk">
@@ -28281,7 +28281,7 @@
 			<attrib-code index="0">catnmk54</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF05)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2724" RCID="30792" name="notmrk">
@@ -28292,7 +28292,7 @@
 			<attrib-code index="0">catnmk55</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2725" RCID="30793" name="notmrk">
@@ -28303,7 +28303,7 @@
 			<attrib-code index="0">catnmk56</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2726" RCID="30794" name="notmrk">
@@ -28314,7 +28314,7 @@
 			<attrib-code index="0">catnmk58</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF53)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2727" RCID="30795" name="notmrk">
@@ -28325,7 +28325,7 @@
 			<attrib-code index="0">catnmk71</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF19)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2728" RCID="30796" name="notmrk">
@@ -28336,7 +28336,7 @@
 			<attrib-code index="0">catnmk72</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF20)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2729" RCID="30797" name="notmrk">
@@ -28347,7 +28347,7 @@
 			<attrib-code index="0">catnmk73</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF21)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2730" RCID="30798" name="notmrk">
@@ -28358,7 +28358,7 @@
 			<attrib-code index="0">catnmk74</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF22)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2731" RCID="30799" name="notmrk">
@@ -28369,7 +28369,7 @@
 			<attrib-code index="0">catnmk75</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF23)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2732" RCID="30800" name="notmrk">
@@ -28380,7 +28380,7 @@
 			<attrib-code index="0">catnmk76</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF24)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2733" RCID="30801" name="notmrk">
@@ -28391,7 +28391,7 @@
 			<attrib-code index="0">catnmk77</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF25)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2734" RCID="30802" name="notmrk">
@@ -28402,7 +28402,7 @@
 			<attrib-code index="0">catnmk78</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF26)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2735" RCID="30803" name="notmrk">
@@ -28413,7 +28413,7 @@
 			<attrib-code index="0">catnmk79</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF27)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2736" RCID="30804" name="notmrk">
@@ -28424,7 +28424,7 @@
 			<attrib-code index="0">catnmk80</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF28)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2737" RCID="30805" name="notmrk">
@@ -28435,7 +28435,7 @@
 			<attrib-code index="0">catnmk81</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF29)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2738" RCID="30806" name="notmrk">
@@ -28446,7 +28446,7 @@
 			<attrib-code index="0">catnmk90</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF38)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2739" RCID="30807" name="notmrk">
@@ -28457,7 +28457,7 @@
 			<attrib-code index="0">catnmk95</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF43)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2740" RCID="30808" name="notmrk">
@@ -28468,7 +28468,7 @@
 			<attrib-code index="0">catnmk96</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF44)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2741" RCID="30809" name="notmrk">
@@ -28479,7 +28479,7 @@
 			<attrib-code index="0">catnmk97</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF45)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2742" RCID="30810" name="notmrk">
@@ -28490,7 +28490,7 @@
 			<attrib-code index="0">catnmk98</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF46)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2743" RCID="30811" name="notmrk">
@@ -28501,7 +28501,7 @@
 			<attrib-code index="0">catnmk99</attrib-code>
 			<attrib-code index="1">fnctnm5</attrib-code>
 			<instruction>SY(NMKINF47)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2744" RCID="30812" name="notmrk">
@@ -28512,7 +28512,7 @@
 			<attrib-code index="0">catnmk1</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2745" RCID="30813" name="notmrk">
@@ -28523,7 +28523,7 @@
 			<attrib-code index="0">catnmk5</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH06)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2746" RCID="30814" name="notmrk">
@@ -28534,7 +28534,7 @@
 			<attrib-code index="0">catnmk6</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH07)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2747" RCID="30815" name="notmrk">
@@ -28545,7 +28545,7 @@
 			<attrib-code index="0">catnmk8</attrib-code>
 			<attrib-code index="1">fnctnm1</attrib-code>
 			<instruction>SY(NMKPRH08)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2748" RCID="30816" name="notmrk">
@@ -28555,7 +28555,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk12</attrib-code>
 			<instruction>SY(NMKPRH12,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2749" RCID="30817" name="notmrk">
@@ -28565,7 +28565,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk13</attrib-code>
 			<instruction>SY(NMKPRH13,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2750" RCID="30818" name="notmrk">
@@ -28575,7 +28575,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk14</attrib-code>
 			<instruction>SY(NMKPRH14,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2751" RCID="30819" name="notmrk">
@@ -28585,7 +28585,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk44</attrib-code>
 			<instruction>SY(NMKRCD01,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2752" RCID="30820" name="notmrk">
@@ -28595,7 +28595,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk45</attrib-code>
 			<instruction>SY(NMKRCD02,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2753" RCID="30821" name="notmrk">
@@ -28605,7 +28605,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk46</attrib-code>
 			<instruction>SY(NMKRCD03,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2754" RCID="30822" name="notmrk">
@@ -28615,7 +28615,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk47</attrib-code>
 			<instruction>SY(NMKRCD04,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2755" RCID="30823" name="notmrk">
@@ -28625,7 +28625,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk50</attrib-code>
 			<instruction>SY(NMKINF01,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2756" RCID="30824" name="notmrk">
@@ -28635,7 +28635,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk92</attrib-code>
 			<instruction>SY(NMKINF40,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2757" RCID="30825" name="notmrk">
@@ -28645,7 +28645,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">catnmk1</attrib-code>
 			<instruction>SY(NMKPRH02,ORIENT)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2758" RCID="30826" name="notmrk">
@@ -28655,7 +28655,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">fnctnm1</attrib-code>
 			<instruction>SY(NOTMRK01)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2759" RCID="30827" name="notmrk">
@@ -28665,7 +28665,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">fnctnm4</attrib-code>
 			<instruction>SY(NOTMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2760" RCID="30828" name="notmrk">
@@ -28675,7 +28675,7 @@
 			<table-name>Paper</table-name>
 			<attrib-code index="0">fnctnm5</attrib-code>
 			<instruction>SY(NOTMRK03)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2761" RCID="30829" name="notmrk">
@@ -28684,7 +28684,7 @@
 			<radar-prio>On Top</radar-prio>
 			<table-name>Paper</table-name>
 			<instruction>SY(NOTMRK02)</instruction>
-			<display-cat>Displaybase</display-cat>
+			<display-cat>Standard</display-cat>
 			<comment>17030</comment>
 		</lookup>
 		<lookup id="2762" RCID="30830" name="ownshp">
