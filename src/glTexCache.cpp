@@ -816,7 +816,8 @@ bool CompressionWorkerPool::ScheduleJob(glTexFactory* client, const wxRect &rect
             GetMemoryStatus(0, &mem_used);
             
             if(bthread_debug)
-                printf( "Adding job: %08X  Job Count: %lu  mem_used %d\n", pt->ident, (unsigned long)todo_list.GetCount(), mem_used);
+                printf( "Adding job: %08X  Job Count: %lu  mem_used %d %s\n", pt->ident, (unsigned long)todo_list.GetCount(), mem_used
+                        , (const char *) chart_path.mb_str());
         }
  
 //        int mem_used;
@@ -1444,6 +1445,8 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
     if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching) {
         if (m_pending) {
             bool more = false;
+            bool b_write = false;
+            int  cnt = 0;
             for(int i=0 ; i < m_ntex ; i++){
                 glTextureDescriptor *ptd = m_td_array[i];
             
@@ -1455,8 +1458,11 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                         bool b_cat = false;
                         wxRect rect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension);
                         for(int level = 0; level < g_mipmap_max_level + 1; level++ )
-                            if (!UpdateCacheLevel( rect, level, m_colorscheme, false ))
+                            if (!UpdateCacheLevel( rect, level, m_colorscheme, false )) {
                                 b_cat = true;
+                                b_write = true;
+                                cnt++;
+                            }
                     
                         if (b_cat) {
                             if (ptd->y && !ptd->x && (ptd->y % m_tex_dim) == 0) {
@@ -1468,30 +1474,20 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                                     }
                                 }
                             }
-                            #if 0
-                            /* try to free lock?*/
-                            ChartBase *pChart = ChartData->OpenChartFromDB( m_ChartPath, FULL_INIT );
-                            if( pChart ) {
-                                ChartBaseBSB *pBSBChart = dynamic_cast<ChartBaseBSB*>( pChart );
-                                if (pBSBChart) {
-                                    wxRect r = rect;
-                                    for (int j = (rect.y % m_stride); j < m_stride; j++) {
-                                        for (int x = 0; x <= m_stride
-                                        pBSBChart->InvalidateLineCache(rect.y - m_tex_dim , rect.y);
-                                    }
-                                }
-                            }
-                            #endif
-                            WriteCatalogAndHeader();
                         }
                         
                         //      We can free all the ptd memory completely
                         //      and the texture will be reloaded from disk cache    
                         ptd->FreeAll();
                         ptd->nCache_Color = m_colorscheme;               // mark this TD as cached.
-                        break;
+                        // XXX
+                        if (cnt > 2)
+                            break;
                     }
                 }
+            }
+            if (b_write) {
+                WriteCatalogAndHeader();
             }
             m_pending = more;
         }
