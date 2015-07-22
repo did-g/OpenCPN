@@ -890,9 +890,15 @@ void glChartCanvas::OnSize( wxSizeEvent& event )
 #endif
     
     /* expand opengl widget to fill viewport */
+#if 0
+    // miss a couple of rows
+    if( GetSize() != cc1->GetSize() ) {
+        SetSize( cc1->GetSize() );
+#else
     ViewPort &VP = cc1->GetVP();
     if( GetSize().x != VP.pix_width || GetSize().y != VP.pix_height ) {
         SetSize( VP.pix_width, VP.pix_height );
+#endif        
         if( m_bsetup )
             BuildFBO();
     }
