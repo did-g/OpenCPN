@@ -8963,10 +8963,8 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
         if(ru.Contains(chart_bar_rect) != wxOutRegion) {
             if(style->chartStatusWindowTransparent)
                 m_brepaint_piano = true;
-            else {
-                rgn_chart.Subtract( chart_bar_rect );
+            else
                 ru.Subtract(chart_bar_rect);
-            }
         }        
     }
 
