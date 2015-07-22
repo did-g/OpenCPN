@@ -3824,11 +3824,12 @@ void glChartCanvas::Render()
         return;
     
     ViewPort VPoint = cc1->VPoint;
+
     ViewPort svp = VPoint;
     svp.pix_width = svp.rv_rect.width;
     svp.pix_height = svp.rv_rect.height;
 
-    OCPNRegion chart_get_region( 0, 0, cc1->VPoint.rv_rect.width, cc1->VPoint.rv_rect.height );
+    OCPNRegion chart_get_region( 0, 0, VPoint.rv_rect.width, VPoint.rv_rect.height );
 
     ocpnDC gldc( *this );
 
