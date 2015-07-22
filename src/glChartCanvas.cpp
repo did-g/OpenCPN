@@ -890,7 +890,7 @@ void glChartCanvas::OnSize( wxSizeEvent& event )
 #endif
     
     /* expand opengl widget to fill viewport */
-#if 0
+#ifdef MISS_ROW_OK
     // miss a couple of rows
     if( GetSize() != cc1->GetSize() ) {
         SetSize( cc1->GetSize() );

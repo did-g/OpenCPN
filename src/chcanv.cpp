@@ -2851,8 +2851,14 @@ void ChartCanvas::LoadVP( ViewPort &vp, bool b_adjust )
 #ifdef ocpnUSE_GL
     if( g_bopengl ) {
         glChartCanvas::Invalidate();
-        if( m_glcc->GetSize().x != VPoint.pix_width || m_glcc->GetSize().y != VPoint.pix_height ) m_glcc->SetSize(
-                VPoint.pix_width, VPoint.pix_height );
+#ifdef MISS_ROW_OK
+        if( m_glcc->GetSize() != GetSize() ) {
+            m_glcc->SetSize( GetSize() );
+        }
+#else
+        if( m_glcc->GetSize().x != VPoint.pix_width || m_glcc->GetSize().y != VPoint.pix_height ) 
+            m_glcc->SetSize(VPoint.pix_width, VPoint.pix_height );
+#endif
     }
     else
 #endif
@@ -3017,6 +3023,22 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
             glChartCanvas::Invalidate();
 #endif
     }
+
+#if 0
+    printf("start %d", VPoint.pix_height);
+    // adjust pix_height to remove the chart bar from the viewport
+    if(!g_ChartBarWin) {
+        printf(" ici ");
+        ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
+        VPoint.pix_height = m_canvas_height;
+        if(!style->chartStatusWindowTransparent && g_bShowChartBar){
+            if( g_Piano->GetnKeys() )
+                VPoint.pix_height -= g_Piano->GetHeight();
+                printf(" end %d", VPoint.pix_height);
+        }
+    }
+    printf(" done\n");
+#endif
 
     //  A preliminary value, may be tweaked below
     VPoint.chart_scale = m_canvas_scale_factor / ( scale_ppm );
@@ -8963,8 +8985,13 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
         if(ru.Contains(chart_bar_rect) != wxOutRegion) {
             if(style->chartStatusWindowTransparent)
                 m_brepaint_piano = true;
-            else
+            else {
                 ru.Subtract(chart_bar_rect);
+#ifdef BROKEN
+#else
+                rgn_chart.Subtract( chart_bar_rect );
+#endif                
+            }
         }        
     }
 
