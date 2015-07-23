@@ -878,27 +878,20 @@ void glChartCanvas::OnActivate( wxActivateEvent& event )
 
 void glChartCanvas::OnSize( wxSizeEvent& event )
 {
+//printf("here\n");
     if( !g_bopengl ) {
-        SetSize( cc1->GetVP().pix_width, cc1->GetVP().pix_height );
+        SetClientSize( cc1->GetVP().pix_width, cc1->GetVP().pix_height );
         event.Skip();
         return;
     }
-
     // this is also necessary to update the context on some platforms
 #if !wxCHECK_VERSION(3,0,0)    
     wxGLCanvas::OnSize( event );
 #endif
     
     /* expand opengl widget to fill viewport */
-#ifdef MISS_ROW_OK
-    // miss a couple of rows
-    if( GetSize() != cc1->GetSize() ) {
-        SetSize( cc1->GetSize() );
-#else
-    ViewPort &VP = cc1->GetVP();
-    if( GetSize().x != VP.pix_width || GetSize().y != VP.pix_height ) {
-        SetSize( VP.pix_width, VP.pix_height );
-#endif        
+    if( GetClientSize() != cc1->GetClientSize() ) {
+        SetClientSize( cc1->GetClientSize() );
         if( m_bsetup )
             BuildFBO();
     }

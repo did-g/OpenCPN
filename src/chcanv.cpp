@@ -1534,7 +1534,7 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
 #endif        
         
     case WXK_F11:
-    _exit(0);
+    //_exit(0);
         parent_frame->ToggleFullScreen();
         b_handled = true;
         break;
@@ -2851,14 +2851,14 @@ void ChartCanvas::LoadVP( ViewPort &vp, bool b_adjust )
 #ifdef ocpnUSE_GL
     if( g_bopengl ) {
         glChartCanvas::Invalidate();
-#ifdef MISS_ROW_OK
-        if( m_glcc->GetSize() != GetSize() ) {
-            m_glcc->SetSize( GetSize() );
-        }
-#else
-        if( m_glcc->GetSize().x != VPoint.pix_width || m_glcc->GetSize().y != VPoint.pix_height ) 
-            m_glcc->SetSize(VPoint.pix_width, VPoint.pix_height );
+#if 0        
+        printf("glcc y %d x %d\n", m_glcc->GetClientSize().y, m_glcc->GetClientSize().x);
+        printf("vpoint y %d x %d\n", VPoint.pix_height, VPoint.pix_width);
+        printf("    y %d x %d\n", GetClientSize().y, GetClientSize().x);
 #endif
+        if( m_glcc->GetClientSize() != GetClientSize() ) {
+            m_glcc->SetClientSize( GetClientSize() );
+        }
     }
     else
 #endif
@@ -3024,7 +3024,7 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
 #endif
     }
 
-#if 0
+#ifdef REMOVE_BAR
     printf("start %d", VPoint.pix_height);
     // adjust pix_height to remove the chart bar from the viewport
     if(!g_ChartBarWin) {
@@ -3034,7 +3034,7 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
         if(!style->chartStatusWindowTransparent && g_bShowChartBar){
             if( g_Piano->GetnKeys() )
                 VPoint.pix_height -= g_Piano->GetHeight();
-                printf(" end %d", VPoint.pix_height);
+            printf(" end %d", VPoint.pix_height);
         }
     }
     printf(" done\n");
@@ -4307,6 +4307,10 @@ void ChartCanvas::OnSize( wxSizeEvent& event )
 {
 
     GetClientSize( &m_canvas_width, &m_canvas_height );
+//    Resize the current viewport
+
+    VPoint.pix_width = m_canvas_width;
+    VPoint.pix_height = m_canvas_height;
 
 //    Get some canvas metrics
 
@@ -4327,10 +4331,6 @@ void ChartCanvas::OnSize( wxSizeEvent& event )
 
     if( m_pQuilt ) m_pQuilt->SetQuiltParameters( m_canvas_scale_factor, m_canvas_width );
 
-//    Resize the current viewport
-
-    VPoint.pix_width = m_canvas_width;
-    VPoint.pix_height = m_canvas_height;
 
     // Resize the scratch BM
     delete pscratch_bm;
@@ -8987,7 +8987,7 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
                 m_brepaint_piano = true;
             else {
                 ru.Subtract(chart_bar_rect);
-#ifdef BROKEN
+#ifdef REMOVE_BAR
 #else
                 rgn_chart.Subtract( chart_bar_rect );
 #endif                
