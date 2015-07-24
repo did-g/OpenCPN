@@ -5334,7 +5334,8 @@ void MyFrame::ChartsRefresh( int dbi_hint, ViewPort &vp, bool b_purge )
 {
     if( !ChartData ) return;
 
-    ::wxBeginBusyCursor();
+    if (g_Platform)
+        g_Platform->ShowBusySpinner();
 
     bool b_run = FrameTimer1.IsRunning();
 
@@ -5405,7 +5406,6 @@ void MyFrame::ChartsRefresh( int dbi_hint, ViewPort &vp, bool b_purge )
 
     if( b_run ) FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 
-    ::wxEndBusyCursor();
 
 }
 
