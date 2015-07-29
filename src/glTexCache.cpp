@@ -1396,24 +1396,6 @@ CatalogEntryValue *glTexFactory::GetCacheEntryValue(int level, int x, int y, Col
     return r;    
 }
 
-CatalogEntry *glTexFactory::GetCacheEntry(int level, int x, int y, ColorScheme color_scheme)
-{
-
-    LoadCatalog();
-    
-    //  Search the catalog for this particular texture
-    for(int i=0 ; i < n_catalog_entries ; i++){
-        CatalogEntry *p = m_catalog.Item(i);
-        if( p && p->mip_level == level &&
-                p->x == x && p->y == y &&
-                p->tcolorscheme == color_scheme ) 
-        {
-            return p;
-        }
-    }
-    return 0;
-}
-
 bool glTexFactory::IsLevelInCache( int level, const wxRect &rect, ColorScheme color_scheme )
 {
     bool b_ret = false;

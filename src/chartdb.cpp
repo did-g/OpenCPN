@@ -1168,22 +1168,6 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
                     }
                     else {
                        nFd  = wxMax(g_nCacheLimit, 120);
-                    if((mem_used > g_memCacheLimit * 8 / 10) && (pChartCache->GetCount() > 2)) {
-                        wxString msg(_T("Removing oldest chart from cache: "));
-                        while (1)
-                        {
-                          CacheEntry *pce = FindOldestDeleteCandidate(true);
-                          if (pce == 0)
-                              break;                      // no possible delete candidate
-                          
-                          // purge texture cache, really need memory here
-                          DeleteCacheEntry(pce, true, msg);
-
-                          GetMemoryStatus(0, &mem_used);
-                          if((mem_used < g_memCacheLimit * 8 / 10) || (pChartCache->GetCount() <= 2)) 
-                              break;
-                                
-                        }  // while
                     }
                 }
                 if (!bFree)    // Use n chart cache policy, if memory-limit  policy is not used
