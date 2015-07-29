@@ -123,7 +123,8 @@ private:
     bool LoadCatalog(void);
     bool LoadHeader(void);
     bool WriteCatalogAndHeader();
-    
+
+    CatalogEntry *GetCacheEntry(int level, int x, int y, ColorScheme color_scheme);
     bool UpdateCache(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,
                                    ColorScheme color_scheme, bool bCat = true);
     bool UpdateCachePrecomp(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,

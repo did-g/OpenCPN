@@ -322,6 +322,10 @@ void GshhsPolyCell::ReadPoly(contour_list &poly)
         }
         poly.push_back(tmp_contour);
     }
+    return;
+
+fail:
+    wxLogMessage( _T("gshhs ReadPoly failed") );
 }
 
 void GshhsPolyCell::ReadPolygonFile()
@@ -341,6 +345,10 @@ void GshhsPolyCell::ReadPolygonFile()
     ReadPoly( poly3 );
     ReadPoly( poly4 );
     ReadPoly( poly5 );
+    return;
+
+fail:
+    wxLogMessage( _T("gshhs ReadPolygon failed") );
 }
 
 wxPoint GetPixFromLL(ViewPort &vp, double lat, double lon)
