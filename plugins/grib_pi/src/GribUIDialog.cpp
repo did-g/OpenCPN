@@ -751,9 +751,9 @@ void GRIBUICtrlBar::ContextMenuItemCallback(int id)
 void GRIBUICtrlBar::SetViewPort( PlugIn_ViewPort *vp )
 {
     if(m_vp == vp)  return;
+    if(m_vp == 0) m_vp = new PlugIn_ViewPort();
 
-    m_vp = new PlugIn_ViewPort(*vp);
-
+    *m_vp = *vp;
     if(pReq_Dialog)
         if(pReq_Dialog->IsShown()) pReq_Dialog->OnVpChange(vp);
 }
