@@ -1601,7 +1601,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
                     for(level = 0; level < g_mipmap_max_level + 1; level++ ) {
                         if (GetCacheEntryValue(level, rect.x, rect.y, color_scheme) == 0) {
                             spinner = true;
-                            g_Platform->ShowBusySpinner();
+                            OCPNPlatform::ShowBusySpinner();
                             break;
                         }
                     }
@@ -1705,7 +1705,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
     bool b_need_compress = false;
     if(!m_catalogOK && !spinner) {
         spinner = true;
-        g_Platform->ShowBusySpinner();
+        OCPNPlatform::ShowBusySpinner();
     }
 
     for(int level = 0; level < g_mipmap_max_level+1; level++ ) {
@@ -1735,7 +1735,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
                     if(!ptd->miplevel_upload[level]){
                         if (!spinner) {
                             spinner = true;
-                            g_Platform->ShowBusySpinner();
+                            OCPNPlatform::ShowBusySpinner();
                         }
                         
  //                       if(bthread_debug)

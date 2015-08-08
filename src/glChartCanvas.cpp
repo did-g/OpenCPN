@@ -4024,7 +4024,7 @@ void glChartCanvas::Render()
                         m_canvasregion = OCPNRegion( m_fbo_offsetx, m_fbo_offsety, sx, sy );
                         
                         if(m_cache_vp.view_scale_ppm != VPoint.view_scale_ppm )
-                            g_Platform->ShowBusySpinner();
+                            OCPNPlatform::ShowBusySpinner();
                         
                         RenderCanvasBackingChart(gldc, m_canvasregion);
                     }
@@ -4196,7 +4196,7 @@ void glChartCanvas::Render()
         glFinish();
     }
 #endif
-    g_Platform->HideBusySpinner();
+    OCPNPlatform::HideBusySpinner();
     
     n_render++;
 }

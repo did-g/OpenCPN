@@ -4925,11 +4925,11 @@ int MyFrame::DoOptionsDialog()
     g_boptionsactive = true;
 
 
-    g_Platform->ShowBusySpinner();
+    OCPNPlatform::ShowBusySpinner();
     
     g_options = new options( this, -1, _("Options") );
     
-    g_Platform->HideBusySpinner();
+    OCPNPlatform::HideBusySpinner();
     
 //    Set initial Chart Dir
     g_options->SetInitChartDir( *pInit_Chart_Dir );
@@ -9167,7 +9167,7 @@ void MyFrame::UpdateAISMOBRoute( AIS_Target_Data *ptarget )
 
 void MyFrame::applySettingsString( wxString settings)
 {
-    g_Platform->ShowBusySpinner();
+    OCPNPlatform::ShowBusySpinner();
     
     //  Parse the passed settings string
 //    wxLogMessage( settings );
@@ -9496,7 +9496,7 @@ void MyFrame::applySettingsString( wxString settings)
     if (NMEALogWindow::Get().Active())
         NMEALogWindow::Get().GetTTYWindow()->Raise();
 
-    g_Platform->HideBusySpinner();
+    OCPNPlatform::HideBusySpinner();
     
 }   
 

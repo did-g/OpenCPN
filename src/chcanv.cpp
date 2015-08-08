@@ -9613,7 +9613,7 @@ void ChartCanvas::Refresh( bool eraseBackground, const wxRect *rect )
     } else
 #endif
         wxWindow::Refresh( eraseBackground, rect );
-    g_Platform->HideBusySpinner();
+    OCPNPlatform::HideBusySpinner();
 }
 
 void ChartCanvas::Update()

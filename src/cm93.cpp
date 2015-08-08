@@ -4488,7 +4488,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
       }
 
       //    File is known to exist
-      g_Platform->ShowBusySpinner();
+      OCPNPlatform::ShowBusySpinner();
       
       wxString msg ( _T ( "Loading CM93 cell " ) );
       msg += file;
