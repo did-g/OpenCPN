@@ -5177,6 +5177,11 @@ int MyFrame::ProcessOptionsDialog( int rr, ArrayOfCDI *pNewDirArray )
         
     cc1->SetDisplaySizeMM( g_display_size_mm );
 
+    if(g_FloatingToolbarDialog){
+        g_FloatingToolbarDialog->SetAutoHide(g_bAutoHideToolbar);
+        g_FloatingToolbarDialog->SetAutoHideTimer(g_nAutoHideToolbar);
+    }
+    
     //    Do a full Refresh, trying to open the last open chart
     if(b_need_refresh){
         int index_hint = ChartData->FinddbIndex( chart_file_name );
@@ -5298,8 +5303,7 @@ void MyFrame::ChartsRefresh( int dbi_hint, ViewPort &vp, bool b_purge )
 {
     if( !ChartData ) return;
 
-    if (g_Platform)
-        g_Platform->ShowBusySpinner();
+    OCPNPlatform::ShowBusySpinner();
 
     bool b_run = FrameTimer1.IsRunning();
 
@@ -5388,7 +5392,7 @@ bool MyFrame::UpdateChartDatabaseInplace( ArrayOfCDI &DirArray, bool b_force, bo
     delete pCurrentStack;
     pCurrentStack = NULL;
 
-    ::wxBeginBusyCursor();
+    OCPNPlatform::ShowBusySpinner();
 
     wxProgressDialog *pprog = NULL;
     if( b_prog ) {
@@ -5409,7 +5413,7 @@ bool MyFrame::UpdateChartDatabaseInplace( ArrayOfCDI &DirArray, bool b_force, bo
 
     delete pprog;
 
-    ::wxEndBusyCursor();
+    OCPNPlatform::HideBusySpinner();
 
     pConfig->UpdateChartDirs( DirArray );
 
@@ -5777,7 +5781,8 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
         console->SetColorScheme( global_color_scheme );
         break;
 
-    default:
+    case 2:
+    {
         if (m_initializing)
             break;
         m_initializing = true;
@@ -5814,11 +5819,22 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
         g_pi_manager->NotifyAuiPlugIns();
         g_pi_manager->ShowDeferredBlacklistMessages(); //  Give the use dialog on any blacklisted PlugIns
         g_pi_manager->CallLateInit();
-
-        InitTimer.Stop(); // Initialization complete
+        break;
     }
-
-//    cc1->InvalidateGL();
+       
+    default:
+    {
+        // Last call....
+        
+        if(g_FloatingToolbarDialog){
+            g_FloatingToolbarDialog->SetAutoHide(g_bAutoHideToolbar);
+            g_FloatingToolbarDialog->SetAutoHideTimer(g_nAutoHideToolbar);
+        }
+            
+        InitTimer.Stop(); // Initialization complete
+        break;
+    }        
+    }   // switch       
     cc1->Refresh( true );
 }
 

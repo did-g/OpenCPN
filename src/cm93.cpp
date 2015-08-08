@@ -6805,7 +6805,7 @@ void CM93OffsetDialog::UpdateOffsets ( void )
 
             //    Closing the current cell will record the offsets in the M_COVR cache file
             //    Re-opening will then refresh the M_COVRs in the cover set
-            g_Platform->ShowBusySpinner();
+            OCPNPlatform::ShowBusySpinner();
             m_pcompchart->CloseandReopenCurrentSubchart();
 
             if ( m_pparent ) {
