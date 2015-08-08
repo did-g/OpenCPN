@@ -54,19 +54,19 @@ struct CompressedCacheHeader
     uint32_t catalog_offset;    
 };
 
-typedef struct _CatalogEntry_key
+struct CatalogEntryKey
 {
     int         mip_level;
     ColorScheme tcolorscheme;
     int         x;
     int         y;
-} CatalogEntryKey;
+};
 
-typedef struct _CatalogEntry_value
+struct CatalogEntryValue
 {
     int         texture_offset;
     uint32_t    compressed_size;
-} CatalogEntryValue;
+}; 
 
 class CatalogEntry
 {
@@ -87,6 +87,8 @@ WX_DEFINE_ARRAY(CatalogEntry*, ArrayOfCatalogEntries);
 #define FAC_TEX_CACHE (1 << 0)
 #define FAC_TEX_NEW   (1 << 1)
 #define FAC_TEX_DONE  (2 << 1)
+
+#define MAX_TEX_LEVEL 5
 
 class glTexFactory : public wxEvtHandler
 {
@@ -124,7 +126,6 @@ private:
     bool LoadHeader(void);
     bool WriteCatalogAndHeader();
 
-    CatalogEntry *GetCacheEntry(int level, int x, int y, ColorScheme color_scheme);
     bool UpdateCache(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,
                                    ColorScheme color_scheme, bool bCat = true);
     bool UpdateCachePrecomp(unsigned char *data, int data_size, glTextureDescriptor *ptd, int level,
@@ -138,7 +139,6 @@ private:
     void  ArrayXY(wxRect *r, int index) const;
 
     int         n_catalog_entries;
-    //ArrayOfCatalogEntries       m_catalog;
     CatalogEntryValue *m_cache[N_COLOR_SCHEMES][5];
 
     char	*m_tex; // texture state, for purging raster chart line cache once done
@@ -150,6 +150,7 @@ private:
     int         m_catalog_offset;
     bool        m_hdrOK;
     bool        m_catalogOK;
+
     bool        m_catalogCorrupted;
     bool	m_catalogFull;
 

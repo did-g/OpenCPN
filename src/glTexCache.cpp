@@ -1044,7 +1044,7 @@ glTexFactory::glTexFactory(ChartBase *chart, GLuint raster_format)
     m_LRUtime = 0;
 
     for (int i = 0; i < N_COLOR_SCHEMES; i++) {
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < MAX_TEX_LEVEL; j++) {
             m_cache[i][j] = NULL;
         }
     }
@@ -1108,7 +1108,7 @@ glTexFactory::~glTexFactory()
     DeleteAllDescriptors();
 
     for (int i = 0; i < N_COLOR_SCHEMES; i++) {
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < MAX_TEX_LEVEL; j++) {
             CatalogEntryValue *v = m_cache[i][j];
             if (v) {
                 free(v);
@@ -1328,6 +1328,10 @@ bool glTexFactory::CompressUnCacheEntry()
     wxRect rect;
     int level = 0;    
 
+    if (level < 0 || level >= MAX_TEX_LEVEL)
+        return 0;
+
+    //  Look in the cache
     LoadCatalog();
 
     CatalogEntryValue *v = m_cache[m_colorscheme][level];
@@ -1375,7 +1379,7 @@ bool glTexFactory::CompressUnCacheEntry()
 CatalogEntryValue *glTexFactory::GetCacheEntryValue(int level, int x, int y, ColorScheme color_scheme)
 {
 
-    if (level < 0 || level > 5)
+    if (level < 0 || level >= MAX_TEX_LEVEL)
         return 0;
 
     //  Look in the cache
@@ -1949,11 +1953,11 @@ int glTexFactory::GetTextureLevel( glTextureDescriptor *ptd, const wxRect &rect,
         
     //  Search for the requested texture
         //  Search the catalog for this particular texture
-        CatalogEntryValue *v = GetCacheEntryValue(level, rect.x, rect.y, color_scheme);
+        CatalogEntryValue *p = GetCacheEntryValue(level, rect.x, rect.y, color_scheme);
         
         //      Requested texture level is found in the cache
         //      so go load it
-        if( v != 0 ) {
+        if( p != 0 ) {
             
             int dim = g_GLOptions.m_iTextureDimension;
             int size = g_tile_size;
@@ -1965,13 +1969,13 @@ int glTexFactory::GetTextureLevel( glTextureDescriptor *ptd, const wxRect &rect,
             }
             
             if(m_fs->IsOpened()){
-                m_fs->Seek(v->texture_offset);
+                m_fs->Seek(p->texture_offset);
                 unsigned char *cb = (unsigned char*)malloc(size);
                 ptd->CompressedArrayAccess( CA_WRITE, cb, level);
                 
                 int max_compressed_size = LZ4_COMPRESSBOUND(g_tile_size);
                 char *compressed_data = new char[max_compressed_size];
-                m_fs->Read(compressed_data, v->compressed_size);
+                m_fs->Read(compressed_data, p->compressed_size);
                 
                 LZ4_decompress_fast(compressed_data, (char*)cb, size);
                 delete [] compressed_data;    
@@ -2105,7 +2109,7 @@ bool glTexFactory::AddCacheEntryValue(const CatalogEntry &p)
     if ((int)p.k.tcolorscheme < 0 || p.k.tcolorscheme >= N_COLOR_SCHEMES) 
         return false;
 
-    if (p.k.mip_level < 0 || p.k.mip_level >= 5) 
+    if (p.k.mip_level < 0 || p.k.mip_level >= MAX_TEX_LEVEL) 
         return false;
 
     int array_index = ArrayIndex(p.k.x, p.k.y);
@@ -2168,13 +2172,12 @@ bool glTexFactory::WriteCatalogAndHeader()
         wxRect rect;
         for (int i = 0; i < N_COLOR_SCHEMES; i++) {
             p.k.tcolorscheme = (ColorScheme)i;
-            for (int j = 0; j < 5; j++) {
+            for (int j = 0; j < MAX_TEX_LEVEL; j++) {
                 CatalogEntryValue *v = m_cache[i][j];
                 if (!v) 
                     continue;
                 p.k.mip_level = j;
                 for (int k = 0; k < m_ntex; k++) {
-                    // XXX
                     ArrayXY(&rect, k);
                     p.k.y = rect.y;
                     p.k.x = rect.x;
@@ -2190,13 +2193,6 @@ bool glTexFactory::WriteCatalogAndHeader()
             }
         }
 
-#if 0        
-        for(int i=0 ; i < n_catalog_entries ; i++){
-            CatalogEntry *p = m_catalog.Item(i);
-            p->Serialize(buf);
-            m_fs->Write( buf, buf_size);
-        }
-#endif        
         n_catalog_entries = new_n_catalog_entries;
         //   Write header at file end
         CompressedCacheHeader hdr;
@@ -2264,7 +2260,7 @@ bool glTexFactory::UpdateCache(unsigned char *data, int data_size, glTextureDesc
             int compressed_size = LZ4_compressHC2((char*)data, compressed_data, data_size, 4);
             p.v.compressed_size = compressed_size;
             AddCacheEntryValue(p);
-
+            
             //      We write the new data at the current catalog offset, overwriting the old catalog
             m_fs->Seek( m_catalog_offset );
             m_fs->Write( compressed_data, compressed_size );
