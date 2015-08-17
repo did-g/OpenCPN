@@ -603,7 +603,7 @@ void grib_pi::SendTimelineMessage(wxDateTime time)
         v[_T("Hour")] = time.GetHour();
         v[_T("Minute")] = time.GetMinute();
         v[_T("Second")] = time.GetSecond();
-        printf("grib %d %d\n", time.GetHour(), time.GetMinute());
+        // printf("grib %d %d\n", time.GetHour(), time.GetMinute());
     }
     else {
         v[_T("Day")] = -1;
@@ -612,7 +612,7 @@ void grib_pi::SendTimelineMessage(wxDateTime time)
         v[_T("Hour")] = -1;
         v[_T("Minute")] = -1;
         v[_T("Second")] = -1;
-        printf("send -1 time grib\n");
+        // printf("send -1 time grib\n");
 
     }
     wxJSONWriter w;

@@ -218,6 +218,8 @@ class GribRecord
         time_t getRecordCurrentDate () const     { return curDate; }
         const char* getStrRecordCurDate () const { return strCurDate; }
         void  setRecordCurrentDate (time_t t);
+        void   print();
+
     private:
         static bool GetInterpolatedParameters
             (const GribRecord &rec1, const GribRecord &rec2,
@@ -325,7 +327,7 @@ class GribRecord
         zuint  periodSeconds(zuchar unit, zuchar P1, zuchar P2, zuchar range);
         void   multiplyAllData(double k);
 
-        void   print();
+//        void   print();
 };
 
 //==========================================================================

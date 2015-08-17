@@ -1060,6 +1060,7 @@ GribTimelineRecordSet* GRIBUICtrlBar::GetTimeLineRecordSet(wxDateTime time)
     else
         interp_const = (nminute-minute1) / (minute2-minute1);
 
+    // XXX printf("%f ", interp_const);
     GribRecordSet &GRS1 = rsa->Item(im1), &GRS2 = rsa->Item(i);
     return new GribTimelineRecordSet(GRS1, GRS2, interp_const);
 }
