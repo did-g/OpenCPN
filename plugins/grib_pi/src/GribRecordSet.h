@@ -26,7 +26,6 @@
 
 #include "GribRecord.h"
 
-WX_DECLARE_OBJARRAY( GribRecord *, ArrayOfGribRecordPtrs );
 
     // These are indexes into the array
 enum { Idx_WIND_VX, Idx_WIND_VX850, Idx_WIND_VX700, Idx_WIND_VX500, Idx_WIND_VX300,

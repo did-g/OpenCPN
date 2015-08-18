@@ -485,6 +485,7 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
     }
     if(message_id == _T("GRIB_TIMELINE_REQUEST"))
     {
+        // local time
         SendTimelineMessage(m_pGribCtrlBar ? m_pGribCtrlBar->TimelineTime() : wxDateTime::Now());
     }
     if(message_id == _T("GRIB_TIMELINE_RECORD_REQUEST"))
@@ -595,13 +596,25 @@ void grib_pi::SendTimelineMessage(wxDateTime time)
         return;
 
     wxJSONValue v;
-    v[_T("Day")] = time.GetDay();
-    v[_T("Month")] = time.GetMonth();
-    v[_T("Year")] = time.GetYear();
-    v[_T("Hour")] = time.GetHour();
-    v[_T("Minute")] = time.GetMinute();
-    v[_T("Second")] = time.GetSecond();
+    if (time.IsValid()) {
+        v[_T("Day")] = time.GetDay();
+        v[_T("Month")] = time.GetMonth();
+        v[_T("Year")] = time.GetYear();
+        v[_T("Hour")] = time.GetHour();
+        v[_T("Minute")] = time.GetMinute();
+        v[_T("Second")] = time.GetSecond();
+        // printf("grib %d %d\n", time.GetHour(), time.GetMinute());
+    }
+    else {
+        v[_T("Day")] = -1;
+        v[_T("Month")] = -1;
+        v[_T("Year")] = -1;
+        v[_T("Hour")] = -1;
+        v[_T("Minute")] = -1;
+        v[_T("Second")] = -1;
+        // printf("send -1 time grib\n");
 
+    }
     wxJSONWriter w;
     wxString out;
     w.Write(v, out);

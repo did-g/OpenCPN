@@ -376,7 +376,7 @@ PolyTessGeo::PolyTessGeo(unsigned char *polybuf, int nrecl, int index, int senc_
 
     PolyTriGroup *ppg = new PolyTriGroup;
     ppg->m_bSMSENC = true;
-    ppg->data_type = DATA_TYPE_DOUBLE;
+    ppg->bfloat_type = false; //DATA_TYPE_DOUBLE;
     
     int nctr;
     my_bufgets( hdr_buf, POLY_LINE_HDR_MAX );
@@ -508,7 +508,7 @@ PolyTessGeo::PolyTessGeo(unsigned char *polybuf, int nrecl, int index, int senc_
         ppg->bsingle_alloc = true;
         ppg->single_buffer = vbuf;
         ppg->single_buffer_size = total_byte_size;
-        ppg->data_type = DATA_TYPE_FLOAT;
+        ppg->bfloat_type = true; //DATA_TYPE_FLOAT;
     }
     
     m_ppg_head = ppg;
@@ -787,7 +787,7 @@ int PolyTessGeo::PolyTessGeoTri(OGRPolygon *poly, bool bSENC_SM, double ref_lat,
     m_ppg_head->nContours = m_ncnt;
 
     m_ppg_head->pn_vertex = cntr;             // pointer to array of poly vertex counts
-    m_ppg_head->data_type = DATA_TYPE_DOUBLE;
+    m_ppg_head->bfloat_type = false; // DATA_TYPE_DOUBLE;
     
 
 //  Transcribe the raw geometry buffer
@@ -954,7 +954,7 @@ int PolyTessGeo::PolyTessGeoTri(OGRPolygon *poly, bool bSENC_SM, double ref_lat,
     m_ppg_head->bsingle_alloc = true;
     m_ppg_head->single_buffer = (unsigned char *)vbuf;
     m_ppg_head->single_buffer_size = total_byte_size;
-    m_ppg_head->data_type = DATA_TYPE_FLOAT;
+    m_ppg_head->bfloat_type = true; //DATA_TYPE_FLOAT;
     
 
 //  Free the polyout structure
@@ -1214,7 +1214,7 @@ int PolyTessGeo::BuildTessTri(void)
     m_ppg_head->nContours = m_ncnt;
     
     m_ppg_head->pn_vertex = cntr;             // pointer to array of poly vertex counts
-    m_ppg_head->data_type = DATA_TYPE_DOUBLE;
+    m_ppg_head->bfloat_type = false; //DATA_TYPE_DOUBLE;
     
     
     bool bSENC_SM = false;
@@ -1447,7 +1447,7 @@ int PolyTessGeo::Write_PolyTriGroup( FILE *ofs)
         ostream2->Write(&pTP->type, sizeof(int));
         ostream2->Write(&pTP->nVert, sizeof(int));
 
-        if(pPTG->data_type == DATA_TYPE_DOUBLE)
+        if(pPTG->bfloat_type == false /*DATA_TYPE_DOUBLE*/)
             ostream2->Write( pTP->p_vertex, pTP->nVert * 2 * sizeof(double));
         else
             ostream2->Write( pTP->p_vertex, pTP->nVert * 2 * sizeof(float));
@@ -1953,7 +1953,7 @@ int PolyTessGeo::PolyTessGeoGL(OGRPolygon *poly, bool bSENC_SM, double ref_lat, 
     m_ppg_head->nContours = m_ncnt;
 
     m_ppg_head->pn_vertex = cntr;             // pointer to array of poly vertex counts
-    m_ppg_head->data_type = DATA_TYPE_DOUBLE;
+    m_ppg_head->bfloat_type = false; //DATA_TYPE_DOUBLE;
     
 
 //  Transcribe the raw geometry buffer
@@ -2039,7 +2039,7 @@ int PolyTessGeo::PolyTessGeoGL(OGRPolygon *poly, bool bSENC_SM, double ref_lat, 
     m_ppg_head->bsingle_alloc = true;
     m_ppg_head->single_buffer = (unsigned char *)vbuf;
     m_ppg_head->single_buffer_size = total_byte_size;
-    m_ppg_head->data_type = DATA_TYPE_FLOAT;
+    m_ppg_head->bfloat_type = true;//DATA_TYPE_FLOAT;
     
     
     
@@ -2377,7 +2377,7 @@ int PolyTessGeo::BuildTessGL(void)
 
       m_ppg_head->nContours = m_ncnt;
       m_ppg_head->pn_vertex = cntr;             // pointer to array of poly vertex counts
-      m_ppg_head->data_type = DATA_TYPE_DOUBLE;
+      m_ppg_head->bfloat_type = false; //DATA_TYPE_DOUBLE;
       
 
 //  Transcribe the raw geometry buffer
@@ -2459,7 +2459,7 @@ int PolyTessGeo::BuildTessGL(void)
       m_ppg_head->bsingle_alloc = true;
       m_ppg_head->single_buffer = (unsigned char *)vbuf;
       m_ppg_head->single_buffer_size = total_byte_size;
-      m_ppg_head->data_type = DATA_TYPE_FLOAT;
+      m_ppg_head->bfloat_type = true; //DATA_TYPE_FLOAT;
       
       gluDeleteTess(GLUtessobj);
 
@@ -2841,7 +2841,7 @@ PolyTriGroup::PolyTriGroup()
     bsingle_alloc = false;
     single_buffer = NULL;
     single_buffer_size = 0;
-    data_type = DATA_TYPE_DOUBLE;
+    bfloat_type = false;//DATA_TYPE_DOUBLE;
     
 
 }

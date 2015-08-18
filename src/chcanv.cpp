@@ -61,6 +61,8 @@
 #include "pluginmanager.h"
 #include "ocpn_pixel.h"
 #include "ocpndc.h"
+#include "OCPNPlatform.h"
+
 #include "undo.h"
 #include "toolbar.h"
 #include "multiplexer.h"
@@ -119,6 +121,7 @@ extern sigjmp_buf           env;                    // the context saved by sigs
 
 #include <vector>
 
+#include <time.h>
 //    Profiling support
 //#include "/usr/include/valgrind/callgrind.h"
 
@@ -128,6 +131,7 @@ extern sigjmp_buf           env;                    // the context saved by sigs
 extern bool G_FloatPtInPolygon ( MyFlPoint *rgpts, int wnumpts, float x, float y ) ;
 extern void catch_signals(int signo);
 
+extern OCPNPlatform     *g_Platform;
 extern ChartBase        *Current_Vector_Ch;
 extern ChartBase        *Current_Ch;
 extern double           g_ChartNotRenderScaleFactor;
@@ -1191,7 +1195,7 @@ int ChartCanvas::FindClosestCanvasChartdbIndex( int scale )
             for( unsigned int is = 0; is < im; is++ ) {
                 const ChartTableEntry &m = ChartData->GetChartTableEntry(
                                                m_pQuilt->GetExtendedStackIndexArray().Item( is ) );
-                if( ( m.GetScale() >= scale )/* && (m_reference_family == m.GetChartFamily())*/) {
+                if( ( (m.GetScale()+50)/100 >= (scale+50)/100 )/* && (m_reference_family == m.GetChartFamily())*/) {
                     new_dbIndex = m_pQuilt->GetExtendedStackIndexArray().Item( is );
                     break;
                 }
@@ -1531,6 +1535,7 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
 #endif        
         
     case WXK_F11:
+    //_exit(0);
         parent_frame->ToggleFullScreen();
         b_handled = true;
         break;
@@ -2401,15 +2406,17 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
 void ChartCanvas::OnCursorTrackTimerEvent( wxTimerEvent& event )
 {
 #ifdef USE_S57
-    if( s57_CheckExtendedLightSectors( mouse_x, mouse_y, VPoint, extendedSectorLegs ) ){
+    if(s57_CheckExtendedLightSectors( mouse_x, mouse_y, VPoint, extendedSectorLegs ) ){
         if(!m_bsectors_shown) {
-            ReloadVP( false );
+            //ReloadVP( false );
+            Refresh();
             m_bsectors_shown = true;
         }
     }
     else {
         if( m_bsectors_shown ) {
-            ReloadVP( false );
+            //ReloadVP( false );
+            Refresh();
             m_bsectors_shown = false;
         }
     }
@@ -2784,7 +2791,7 @@ bool ChartCanvas::PanCanvas( double dx, double dy )
     wxPoint2DDouble p;
 
     extendedSectorLegs.clear();
-
+//printf("pan canvas %f %f\n", dx, dy);
     GetDoubleCanvasPointPix( GetVP().clat, GetVP().clon, &p );
     GetCanvasPixPoint( p.m_x + dx, p.m_y + dy, dlat, dlon );
 
@@ -2839,8 +2846,13 @@ void ChartCanvas::LoadVP( ViewPort &vp, bool b_adjust )
 #ifdef ocpnUSE_GL
     if( g_bopengl ) {
         glChartCanvas::Invalidate();
-        if( m_glcc->GetSize() != GetSize() ) {
-            m_glcc->SetSize( GetSize() );
+#if 0        
+        printf("glcc y %d x %d\n", m_glcc->GetClientSize().y, m_glcc->GetClientSize().x);
+        printf("vpoint y %d x %d\n", VPoint.pix_height, VPoint.pix_width);
+        printf("    y %d x %d\n", GetClientSize().y, GetClientSize().x);
+#endif
+        if( m_glcc->GetClientSize() != GetClientSize() ) {
+            m_glcc->SetClientSize( GetClientSize() );
         }
     }
     else
@@ -2976,10 +2988,10 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
         skew -= 2*PI;
 
     //  Any sensible change?
-    if( ( fabs( VPoint.view_scale_ppm - scale_ppm ) < 1e-9 )
+    if( VPoint.IsValid() && ( fabs( VPoint.view_scale_ppm - scale_ppm ) < 1e-9 )
             && ( fabs( VPoint.skew - skew ) < 1e-9 )
             && ( fabs( VPoint.rotation - rotation ) < 1e-9 ) && ( fabs( VPoint.clat - lat ) < 1e-9 )
-            && ( fabs( VPoint.clon - lon ) < 1e-9 ) && VPoint.IsValid() ) return false;
+            && ( fabs( VPoint.clon - lon ) < 1e-9 ) ) return false;
 
     VPoint.SetProjectionType( PROJECTION_MERCATOR );            // default
 
@@ -3006,6 +3018,22 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
             glChartCanvas::Invalidate();
 #endif
     }
+
+#ifdef REMOVE_BAR
+    printf("start %d", VPoint.pix_height);
+    // adjust pix_height to remove the chart bar from the viewport
+    if(!g_ChartBarWin) {
+        printf(" ici ");
+        ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
+        VPoint.pix_height = m_canvas_height;
+        if(!style->chartStatusWindowTransparent && g_bShowChartBar){
+            if( g_Piano->GetnKeys() )
+                VPoint.pix_height -= g_Piano->GetHeight();
+            printf(" end %d", VPoint.pix_height);
+        }
+    }
+    printf(" done\n");
+#endif
 
     //  A preliminary value, may be tweaked below
     VPoint.chart_scale = m_canvas_scale_factor / ( scale_ppm );
@@ -4274,6 +4302,10 @@ void ChartCanvas::OnSize( wxSizeEvent& event )
 {
 
     GetClientSize( &m_canvas_width, &m_canvas_height );
+//    Resize the current viewport
+
+    VPoint.pix_width = m_canvas_width;
+    VPoint.pix_height = m_canvas_height;
 
 //    Get some canvas metrics
 
@@ -4294,10 +4326,6 @@ void ChartCanvas::OnSize( wxSizeEvent& event )
 
     if( m_pQuilt ) m_pQuilt->SetQuiltParameters( m_canvas_scale_factor, m_canvas_width );
 
-//    Resize the current viewport
-
-    VPoint.pix_width = m_canvas_width;
-    VPoint.pix_height = m_canvas_height;
 
     // Resize the scratch BM
     delete pscratch_bm;
@@ -4568,10 +4596,42 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
             return true;
     }
 #endif    
-    
+#if 0    
+    if(event.Dragging()){
+        wxLongLong drag_time;
+        int ts;
+
+        drag_time = wxGetUTCTimeMillis() ;
+        ts = event.GetTimestamp() - m_PreviousPanEventTimeStamp;
+        if (m_bChartDragging) {
+            if (ts > 0 &&(drag_time - m_PreviousPanTimeStamp)/ts > 100) {
+//printf("\t %lld Mouse setup %d %d left down %d Dragging %d left is down %d left up %d %d\n", drag_time, x, y, event.LeftDown(), event.Dragging(),
+//event.LeftIsDown(), event.LeftUp(), event.GetTimestamp());
+//printf(" skipped pan, bogus %lld?\n", (drag_time - m_PreviousPanTimeStamp)/ts);
+                m_PreviousPanTimeStamp = drag_time;
+                m_PreviousPanEventTimeStamp = event.GetTimestamp();
+                return true;
+            }
+            else { 
+//                printf(" get pan, %lld?\n", (drag_time - m_PreviousPanTimeStamp)/ts);
+            }
+            
+        }
+        m_PreviousPanTimeStamp = drag_time;
+        m_PreviousPanEventTimeStamp = event.GetTimestamp();
+    }
+#endif    
     mouse_x = x;
     mouse_y = y;
     mouse_leftisdown = event.LeftDown();
+#if 0
+    struct timespec tp;
+
+    clock_gettime(CLOCK_REALTIME, &tp);
+    long long c_t = (long long)(tp.tv_sec)*1000000 + (tp.tv_nsec/1000);
+    printf(" %lld Mouse setup %d %d left down %d Dragging %d left is down %d left up %d %d  %d\n", c_t, x, y, mouse_leftisdown, event.Dragging(),
+    event.LeftIsDown(), event.LeftUp(), event.GetTimestamp(), m_bChartDragging);
+#endif    
     mx = x;
     my = y;
     GetCanvasPixPoint( x, y, m_cursor_lat, m_cursor_lon );
@@ -4646,12 +4706,17 @@ bool ChartCanvas::MouseEventSetup( wxMouseEvent& event,  bool b_handle_dclick )
             m_DoubleClickTimer->Stop();
             return(true);
         }
+        if (!m_bChartDragging) {
+            // Save the event for later running if there is no DClick.
+            // if dragging: 
+            // 1) it couldn't be a DClick 
+            // 2) on linux under load it leads to the chart moving back
 
-        // Save the event for later running if there is no DClick.
-        m_DoubleClickTimer->Start( 350, wxTIMER_ONE_SHOT );
-        singleClickEvent = event;
-        singleClickEventIsValid = true;
-        return(true);
+            m_DoubleClickTimer->Start( 350, wxTIMER_ONE_SHOT );
+            singleClickEvent = event;
+            singleClickEventIsValid = true;
+            return true;
+        }
     }
 
     //  This logic is necessary on MSW to handle the case where
@@ -6150,6 +6215,25 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
         
     }
     
+    if( (event.Dragging() && event.LeftIsDown()) || ( m_bChartDragging && event.LeftUp())){
+            if( ( last_drag.x != x ) || ( last_drag.y != y ) ) {
+                m_bChartDragging = true;
+                PanCanvas( last_drag.x - x, last_drag.y - y );
+                
+                last_drag.x = x;
+                last_drag.y = y;
+                
+                if( g_btouch ) {
+                    if(( m_bMeasure_Active && m_nMeasureState ) || ( parent_frame->nRoute_State )){
+                        //deactivate next LeftUp to ovoid creating an unexpected point
+                        m_DoubleClickTimer->Start();
+                        singleClickEventIsValid = false;
+                    }
+                }
+                
+            }
+    }
+        
     if( event.LeftUp() ) {
         if( 1/*leftIsDown*/ ) {  // left click for chart center
             leftIsDown = false;
@@ -6189,25 +6273,6 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
         }
     }
     
-    if( event.Dragging() && event.LeftIsDown()){
-            if( ( last_drag.x != x ) || ( last_drag.y != y ) ) {
-                m_bChartDragging = true;
-                PanCanvas( last_drag.x - x, last_drag.y - y );
-                
-                last_drag.x = x;
-                last_drag.y = y;
-                
-                if( g_btouch ) {
-                    if(( m_bMeasure_Active && m_nMeasureState ) || ( parent_frame->nRoute_State )){
-                        //deactivate next LeftUp to ovoid creating an unexpected point
-                        m_DoubleClickTimer->Start();
-                        singleClickEventIsValid = false;
-                    }
-                }
-                
-            }
-    }
-        
         
 
     return true;
@@ -8302,7 +8367,6 @@ void pupHandler_PasteTrack() {
         newPoint->m_bIsVisible = false;
         newPoint->m_GPXTrkSegNo = 1;
 
-        wxDateTime now = wxDateTime::Now();
         newPoint->SetCreateTime(curPoint->GetCreateTime());
 
         newTrack->AddPoint( newPoint );
@@ -8933,8 +8997,13 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
         if(ru.Contains(chart_bar_rect) != wxOutRegion) {
             if(style->chartStatusWindowTransparent)
                 m_brepaint_piano = true;
-            else
+            else {
                 ru.Subtract(chart_bar_rect);
+#ifdef REMOVE_BAR
+#else
+                rgn_chart.Subtract( chart_bar_rect );
+#endif                
+            }
         }        
     }
 
@@ -9162,10 +9231,9 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
             delete clip_region;
 
             ocpnDC bgdc( temp_dc );
-            double r =         VPoint.rotation;
-            SetVPRotation( 0.0 );
-            pWorldBackgroundChart->RenderViewOnDC( bgdc, VPoint );
-            SetVPRotation( r );
+            ViewPort vp = VPoint;
+            vp.rotation = 0;
+            pWorldBackgroundChart->RenderViewOnDC( bgdc, vp );
         }
     } // temp_dc.IsOk();
 
@@ -9555,7 +9623,7 @@ void ChartCanvas::Refresh( bool eraseBackground, const wxRect *rect )
     } else
 #endif
         wxWindow::Refresh( eraseBackground, rect );
-
+    OCPNPlatform::HideBusySpinner();
 }
 
 void ChartCanvas::Update()
@@ -10133,21 +10201,28 @@ void ChartCanvas::RebuildTideSelectList( LLBBox& BBox )
     }
 }
 
+extern wxDateTime gTimeSource;
 
 void ChartCanvas::DrawAllTidesInBBox( ocpnDC& dc, LLBBox& BBox )
 {
+    wxDateTime this_now = gTimeSource;
+    if (gTimeSource.IsValid() == false)
+        this_now = wxDateTime::Now();
+    time_t t_this_now = this_now.GetTicks();
+    bool cur_time = !gTimeSource.IsValid();
+
     wxPen *pblack_pen = wxThePenList->FindOrCreatePen( GetGlobalColor( _T ( "UINFD" ) ), 1,
                         wxPENSTYLE_SOLID );
-    wxPen *pyelo_pen = wxThePenList->FindOrCreatePen( GetGlobalColor( _T ( "YELO1" ) ), 1,
+    wxPen *pyelo_pen = wxThePenList->FindOrCreatePen( GetGlobalColor( cur_time?_T ( "YELO1" ): _T ( "YELO2" )), 1,
                        wxPENSTYLE_SOLID );
-    wxPen *pblue_pen = wxThePenList->FindOrCreatePen( GetGlobalColor( _T ( "BLUE2" ) ), 1,
+    wxPen *pblue_pen = wxThePenList->FindOrCreatePen( GetGlobalColor( cur_time?_T ( "BLUE2" ):_T ( "BLUE3" ) ), 1,
                        wxPENSTYLE_SOLID );
 
     wxBrush *pgreen_brush = wxTheBrushList->FindOrCreateBrush( GetGlobalColor( _T ( "GREEN1" ) ),
                             wxBRUSHSTYLE_SOLID );
 //        wxBrush *pblack_brush = wxTheBrushList->FindOrCreateBrush ( GetGlobalColor ( _T ( "UINFD" ) ), wxSOLID );
-    wxBrush *brc_1 = wxTheBrushList->FindOrCreateBrush( GetGlobalColor( _T ( "BLUE2" ) ), wxBRUSHSTYLE_SOLID );
-    wxBrush *brc_2 = wxTheBrushList->FindOrCreateBrush( GetGlobalColor( _T ( "YELO1" ) ), wxBRUSHSTYLE_SOLID );
+    wxBrush *brc_1 = wxTheBrushList->FindOrCreateBrush( GetGlobalColor(cur_time? _T ( "BLUE2" ):_T ( "BLUE3" ) ), wxBRUSHSTYLE_SOLID );
+    wxBrush *brc_2 = wxTheBrushList->FindOrCreateBrush( GetGlobalColor(cur_time? _T ( "YELO1" ): _T ( "YELO2" ) ), wxBRUSHSTYLE_SOLID );
 
     wxFont *dFont = FontMgr::Get().GetFont( _("ExtendedTideIcon") );
     dc.SetTextForeground( FontMgr::Get().GetFontColor( _("ExtendedTideIcon") ) );
@@ -10177,13 +10252,12 @@ void ChartCanvas::DrawAllTidesInBBox( ocpnDC& dc, LLBBox& BBox )
     int bmw = bm.GetWidth();
     int bmh = bm.GetHeight();
 
-    wxDateTime this_now = wxDateTime::Now();
-    time_t t_this_now = this_now.GetTicks();
 
     {
 
         double lon_last = 0.;
         double lat_last = 0.;
+        double marge = 0.05;
         for( int i = 1; i < ptcmgr->Get_max_IDX() + 1; i++ ) {
             const IDX_entry *pIDX = ptcmgr->GetIDX_entry( i );
 
@@ -10195,13 +10269,13 @@ void ChartCanvas::DrawAllTidesInBBox( ocpnDC& dc, LLBBox& BBox )
                 bool b_inbox = false;
                 double nlon;
 
-                if( BBox.PointInBox( lon, lat, 0 ) ) {
+                if( BBox.PointInBox( lon, lat, marge ) ) {
                     nlon = lon;
                     b_inbox = true;
-                } else if( BBox.PointInBox( lon + 360., lat, 0 ) ) {
+                } else if( BBox.PointInBox( lon + 360., lat, marge ) ) {
                     nlon = lon + 360.;
                     b_inbox = true;
-                } else if( BBox.PointInBox( lon - 360., lat, 0 ) ) {
+                } else if( BBox.PointInBox( lon - 360., lat, marge ) ) {
                     nlon = lon - 360.;
                     b_inbox = true;
                 }
@@ -10390,15 +10464,18 @@ void ChartCanvas::DrawAllCurrentsInBBox( ocpnDC& dc, LLBBox& BBox )
     wxFont *pTCFont;
     double lon_last = 0.;
     double lat_last = 0.;
+    // arrow size for Raz Blanchard : 12 knots north
+    double marge = 0.2;
+    bool cur_time = !gTimeSource.IsValid();
 
     double true_scale_display = floor( VPoint.chart_scale / 100. ) * 100.;
     bDrawCurrentValues =  true_scale_display < g_Show_Target_Name_Scale;
 
     wxPen *pblack_pen = wxThePenList->FindOrCreatePen( GetGlobalColor( _T ( "UINFD" ) ), 1,
                         wxPENSTYLE_SOLID );
-    wxPen *porange_pen = wxThePenList->FindOrCreatePen( GetGlobalColor( _T ( "UINFO" ) ), 1,
+    wxPen *porange_pen = wxThePenList->FindOrCreatePen( GetGlobalColor(cur_time? _T ( "UINFO" ):_T ( "UINFB" ) ), 1,
                          wxPENSTYLE_SOLID );
-    wxBrush *porange_brush = wxTheBrushList->FindOrCreateBrush( GetGlobalColor( _T ( "UINFO" ) ),
+    wxBrush *porange_brush = wxTheBrushList->FindOrCreateBrush( GetGlobalColor(cur_time? _T ( "UINFO" ): _T ( "UINFB" ) ),
                              wxBRUSHSTYLE_SOLID );
     wxBrush *pgray_brush = wxTheBrushList->FindOrCreateBrush( GetGlobalColor( _T ( "UIBDR" ) ),
                            wxBRUSHSTYLE_SOLID );
@@ -10412,8 +10489,6 @@ void ChartCanvas::DrawAllCurrentsInBBox( ocpnDC& dc, LLBBox& BBox )
 
     pTCFont = FontMgr::Get().GetFont( _("CurrentValue") );
     
-    int now = time( NULL );
-
     {
 
         for( int i = 1; i < ptcmgr->Get_max_IDX() + 1; i++ ) {
@@ -10430,7 +10505,7 @@ void ChartCanvas::DrawAllCurrentsInBBox( ocpnDC& dc, LLBBox& BBox )
                 bool b_dup = false;
                 if( ( type == 'c' ) && ( lat == lat_last ) && ( lon == lon_last ) ) b_dup = true;
 
-                if( !b_dup && ( BBox.PointInBox( lon, lat, 0 ) ) ) {
+                if( !b_dup && ( BBox.PointInBox( lon, lat, marge ) ) ) {
 
                     wxPoint r;
                     GetCanvasPointPix( lat, lon, &r );
@@ -10446,7 +10521,7 @@ void ChartCanvas::DrawAllCurrentsInBBox( ocpnDC& dc, LLBBox& BBox )
                     d[3].x = r.x - dd;
                     d[3].y = r.y;
 
-                    if( ptcmgr->GetTideOrCurrent15( now, i, tcvalue, dir, bnew_val ) ) {
+                    if( ptcmgr->GetTideOrCurrent15( 0 /* not used*/, i, tcvalue, dir, bnew_val ) ) {
                         porange_pen->SetWidth( 1 );
                         dc.SetPen( *pblack_pen );
                         dc.SetBrush( *porange_brush );

@@ -46,7 +46,6 @@
 #include "email.h"
 #include "folder.xpm"
 #include "GribUIDialog.h"
-#include <wx/arrimpl.cpp>
 
 //general variables
 double  m_cursor_lat, m_cursor_lon;
@@ -75,6 +74,7 @@ int round (double x) {
 
 #define DEFAULT_STYLE = wxCAPTION|wxCLOSE_BOX|wxSYSTEM_MENU|wxTAB_TRAVERSAL
 
+#include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY( ArrayOfGribRecordSets );
 
 enum SettingsDisplay {B_ARROWS, ISO_LINE, D_ARROWS, OVERLAY, NUMBERS, PARTICLES};
@@ -217,7 +217,6 @@ GRIBUICtrlBar::GRIBUICtrlBar(wxWindow *parent, wxWindowID id, const wxString& ti
         pConf->Read( _T ( "AirTemperaturePlot" ), &m_bDataPlot[GribOverlaySettings::AIR_TEMPERATURE], false );
         pConf->Read( _T ( "SeaTemperaturePlot" ), &m_bDataPlot[GribOverlaySettings::SEA_TEMPERATURE], false );
         pConf->Read( _T ( "CAPEPlot" ), &m_bDataPlot[GribOverlaySettings::CAPE], false );
-        pConf->Read( _T ( "RelHumidityPlot" ), &m_bDataPlot[GribOverlaySettings::REL_HUMIDITY], false );
 
 		pConf->Read( _T ( "CursorDataShown" ), &m_CDataIsShown, true );
 
@@ -277,7 +276,6 @@ GRIBUICtrlBar::~GRIBUICtrlBar()
         pConf->Write( _T ( "AirTemperaturePlot" ), m_bDataPlot[GribOverlaySettings::AIR_TEMPERATURE]);
         pConf->Write( _T ( "SeaTemperaturePlot" ), m_bDataPlot[GribOverlaySettings::SEA_TEMPERATURE]);
         pConf->Write( _T ( "CAPEPlot" ), m_bDataPlot[GribOverlaySettings::CAPE]);
-        pConf->Write( _T ( "RelHumidityPlot" ), m_bDataPlot[GribOverlaySettings::REL_HUMIDITY]);
 
 		pConf->Write( _T ( "CursorDataShown" ), m_CDataIsShown );
 
@@ -751,9 +749,9 @@ void GRIBUICtrlBar::ContextMenuItemCallback(int id)
 void GRIBUICtrlBar::SetViewPort( PlugIn_ViewPort *vp )
 {
     if(m_vp == vp)  return;
+    if(m_vp == 0) m_vp = new PlugIn_ViewPort();
 
-    m_vp = new PlugIn_ViewPort(*vp);
-
+    *m_vp = *vp;
     if(pReq_Dialog)
         if(pReq_Dialog->IsShown()) pReq_Dialog->OnVpChange(vp);
 }
@@ -768,6 +766,8 @@ void GRIBUICtrlBar::OnClose( wxCloseEvent& event )
             m_ZoneSelMode = START_SELECTION;
             //SetRequestBitmap( m_ZoneSelMode );
         }
+    pPlugIn->SendTimelineMessage(wxInvalidDateTime );
+
     pPlugIn->OnGribCtrlBarClose();
 }
 
@@ -1060,6 +1060,7 @@ GribTimelineRecordSet* GRIBUICtrlBar::GetTimeLineRecordSet(wxDateTime time)
     else
         interp_const = (nminute-minute1) / (minute2-minute1);
 
+    // XXX printf("%f ", interp_const);
     GribRecordSet &GRS1 = rsa->Item(im1), &GRS2 = rsa->Item(i);
     return new GribTimelineRecordSet(GRS1, GRS2, interp_const);
 }
@@ -1364,88 +1365,90 @@ GRIBFile::GRIBFile( const wxString file_name, bool CumRec, bool WaveRec )
             pRec = ls->at( i );
             isOK = true;
             time_t thistime = pRec->getRecordCurrentDate();
-
-            //   Search the GribRecordSet array for a GribRecordSet with matching time
-            for( unsigned int j = 0; j < m_GribRecordSetArray.GetCount(); j++ ) {
-                if( m_GribRecordSetArray.Item( j ).m_Reference_Time == thistime ) {
-                    int idx = -1, mdx = -1;
-                    switch(pRec->getDataType()) {
-                    case GRB_WIND_VX:
-                        if(pRec->getLevelType() == LV_ISOBARIC){
-                            switch(pRec->getLevelValue()){
-                            case 300: idx = Idx_WIND_VX300;break;
-                            case 500: idx = Idx_WIND_VX500;break;
-                            case 700: idx = Idx_WIND_VX700;break;
-                            case 850: idx = Idx_WIND_VX850;break;
-                            }
-                        } else
-                            idx = Idx_WIND_VX;
-                        break;
-                    case GRB_WIND_VY:
-                        if(pRec->getLevelType() == LV_ISOBARIC){
-                            switch(pRec->getLevelValue()){
-                            case 300: idx = Idx_WIND_VY300;break;
-                            case 500: idx = Idx_WIND_VY500;break;
-                            case 700: idx = Idx_WIND_VY700;break;
-                            case 850: idx = Idx_WIND_VY850;break;
-                            }
-                        } else
-                            idx = Idx_WIND_VY;
-                        break;
-                    case GRB_WIND_GUST: idx = Idx_WIND_GUST; break;
-                    case GRB_PRESSURE: idx = Idx_PRESSURE;   break;
-                    case GRB_HTSGW:    idx = Idx_HTSIGW;  break;
-                    case GRB_WVPER:    idx = Idx_WVPER;  break;
-                    case GRB_WVDIR:    idx = Idx_WVDIR;   break;
-                    case GRB_UOGRD:    idx = Idx_SEACURRENT_VX; break;
-                    case GRB_VOGRD:    idx = Idx_SEACURRENT_VY; break;
-                    case GRB_PRECIP_TOT: idx = Idx_PRECIP_TOT; break;
-                    case GRB_CLOUD_TOT:  idx = Idx_CLOUD_TOT; break;
-                    case GRB_TEMP:
-                        if(pRec->getLevelType() == LV_ISOBARIC){
-                            switch(pRec->getLevelValue()){
-                            case 300: idx = Idx_AIR_TEMP300;break;
-                            case 500: idx = Idx_AIR_TEMP500;break;
-                            case 700: idx = Idx_AIR_TEMP700;break;
-                            case 850: idx = Idx_AIR_TEMP850;break;
-                            }
-                        } else
-                            idx = Idx_AIR_TEMP;
-                        if(pRec->getDataCenterModel() == NORWAY_METNO ) mdx = 1000 + NORWAY_METNO;
-                        break;
-                    case GRB_WTMP:
-                        idx = Idx_SEA_TEMP;
-                        if(pRec->getDataCenterModel() == NOAA_GFS ) mdx = 1000 + NOAA_GFS;
-                        break;
-                    case GRB_CAPE:      idx = Idx_CAPE;break;
-                    case GRB_HUMID_REL:
-                        if(pRec->getLevelType() == LV_ISOBARIC){
-                            switch(pRec->getLevelValue()){
-                            case 300: idx = Idx_HUMID_RE300;break;
-                            case 500: idx = Idx_HUMID_RE500;break;
-                            case 700: idx = Idx_HUMID_RE700;break;
-                            case 850: idx = Idx_HUMID_RE850;break;
-                            }
+            int idx = -1, mdx = -1;
+            switch(pRec->getDataType()) {
+            case GRB_WIND_VX:
+                    if(pRec->getLevelType() == LV_ISOBARIC){
+                        switch(pRec->getLevelValue()){
+                        case 300: idx = Idx_WIND_VX300;break;
+                        case 500: idx = Idx_WIND_VX500;break;
+                        case 700: idx = Idx_WIND_VX700;break;
+                        case 850: idx = Idx_WIND_VX850;break;
                         }
-                        break;
-                    case GRB_GEOPOT_HGT:
-                        if(pRec->getLevelType() == LV_ISOBARIC){
-                            switch(pRec->getLevelValue()){
-                            case 300: idx = Idx_GEOP_HGT300;break;
-                            case 500: idx = Idx_GEOP_HGT500;break;
-                            case 700: idx = Idx_GEOP_HGT700;break;
-                            case 850: idx = Idx_GEOP_HGT850;break;
-                            }
+                    } else
+                        idx = Idx_WIND_VX;
+                    break;
+            case GRB_WIND_VY:
+                    if(pRec->getLevelType() == LV_ISOBARIC){
+                        switch(pRec->getLevelValue()){
+                        case 300: idx = Idx_WIND_VY300;break;
+                        case 500: idx = Idx_WIND_VY500;break;
+                        case 700: idx = Idx_WIND_VY700;break;
+                        case 850: idx = Idx_WIND_VY850;break;
                         }
-                        break;
-                     }
-
-                    if(idx != -1) {
-                        m_GribRecordSetArray.Item( j ).m_GribRecordPtrArray[idx]= pRec;
-                        if(m_GribIdxArray.Index(idx) == wxNOT_FOUND ) m_GribIdxArray.Add(idx, 1);
-                        if(mdx != -1 && m_GribIdxArray.Index(mdx) == wxNOT_FOUND ) m_GribIdxArray.Add(mdx, 1);
+                    } else
+                        idx = Idx_WIND_VY;
+                    break;
+            case GRB_WIND_GUST: idx = Idx_WIND_GUST; break;
+            case GRB_PRESSURE: idx = Idx_PRESSURE;   break;
+            case GRB_HTSGW:    idx = Idx_HTSIGW;  break;
+            case GRB_WVPER:    idx = Idx_WVPER;  break;
+            case GRB_WVDIR:    idx = Idx_WVDIR;   break;
+            case GRB_UOGRD:    idx = Idx_SEACURRENT_VX; break;
+            case GRB_VOGRD:    idx = Idx_SEACURRENT_VY; break;
+            case GRB_PRECIP_TOT: idx = Idx_PRECIP_TOT; break;
+            case GRB_CLOUD_TOT:  idx = Idx_CLOUD_TOT; break;
+            case GRB_TEMP:
+                    if(pRec->getLevelType() == LV_ISOBARIC){
+                        switch(pRec->getLevelValue()){
+                        case 300: idx = Idx_AIR_TEMP300;break;
+                        case 500: idx = Idx_AIR_TEMP500;break;
+                        case 700: idx = Idx_AIR_TEMP700;break;
+                        case 850: idx = Idx_AIR_TEMP850;break;
+                        }
+                    } else
+                        idx = Idx_AIR_TEMP;
+                    if(pRec->getDataCenterModel() == NORWAY_METNO ) mdx = 1000 + NORWAY_METNO;
+                    break;
+            case GRB_WTMP:
+                    idx = Idx_SEA_TEMP;
+                    if(pRec->getDataCenterModel() == NOAA_GFS ) mdx = 1000 + NOAA_GFS;
+                    break;
+            case GRB_CAPE:      idx = Idx_CAPE;break;
+            case GRB_HUMID_REL:
+                    if(pRec->getLevelType() == LV_ISOBARIC){
+                        switch(pRec->getLevelValue()){
+                        case 300: idx = Idx_HUMID_RE300;break;
+                        case 500: idx = Idx_HUMID_RE500;break;
+                        case 700: idx = Idx_HUMID_RE700;break;
+                        case 850: idx = Idx_HUMID_RE850;break;
+                        }
                     }
                     break;
+            case GRB_GEOPOT_HGT:
+                    if(pRec->getLevelType() == LV_ISOBARIC){
+                        switch(pRec->getLevelValue()){
+                        case 300: idx = Idx_GEOP_HGT300;break;
+                        case 500: idx = Idx_GEOP_HGT500;break;
+                        case 700: idx = Idx_GEOP_HGT700;break;
+                        case 850: idx = Idx_GEOP_HGT850;break;
+                        }
+                    }
+                    break;
+            }
+
+
+            //   Search the GribRecordSet array for a GribRecordSet with matching time
+            if(idx != -1) {
+                for( unsigned int j = 0; j < m_GribRecordSetArray.GetCount(); j++ ) {
+                    if( m_GribRecordSetArray.Item( j ).m_Reference_Time == thistime ) {
+                        m_GribRecordSetArray.Item( j ).m_GribRecordPtrArray[idx]= pRec;
+                        if (m_GribIdxArray.Index(idx) == wxNOT_FOUND ) 
+                            m_GribIdxArray.Add(idx, 1);
+                        if (mdx != -1 && m_GribIdxArray.Index(mdx) == wxNOT_FOUND ) 
+                            m_GribIdxArray.Add(mdx, 1);
+                        break;
+                    }
                 }
             }
         }

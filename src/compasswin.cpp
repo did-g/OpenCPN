@@ -68,7 +68,7 @@ ocpnFloatingCompassWindow::ocpnFloatingCompassWindow( wxWindow *parent )
     m_pStatBoxToolStaticBmp = NULL;
 
     m_scale = 1.0;
-    SetSize(
+    SetClientSize(
         m_scale * ( ( _img_compass.GetWidth() + _img_gpsRed.GetWidth() ) + style->GetCompassLeftMargin() * 2
         + style->GetToolSeparation()),
                    m_scale * (_img_compass.GetHeight() + style->GetCompassTopMargin() + style->GetCompassBottomMargin()) );
@@ -129,7 +129,7 @@ void ocpnFloatingCompassWindow::SetScaleFactor( float factor)
     else
         m_scale = 1.0;
     
-    SetSize(
+    SetClientSize(
         m_scale * ( ( _img_compass.GetWidth() + _img_gpsRed.GetWidth() ) + style->GetCompassLeftMargin() * 2
         + style->GetToolSeparation()),
             m_scale * (_img_compass.GetHeight() + style->GetCompassTopMargin() + style->GetCompassBottomMargin()) );
@@ -311,7 +311,7 @@ wxBitmap ocpnFloatingCompassWindow::CreateBmp( bool newColorScheme )
             SetShape( wxRegion( m_MaskBmp, *wxWHITE, 0 ) );
         }
         else if(radius) {
-            m_MaskBmp = wxBitmap( GetSize().x, GetSize().y );
+            m_MaskBmp = wxBitmap( GetClientSize().x, GetClientSize().y );
             wxMemoryDC sdc( m_MaskBmp );
             sdc.SetBackground( *wxWHITE_BRUSH );
             sdc.Clear();

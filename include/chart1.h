@@ -273,7 +273,6 @@ private:
 
 
 
-WX_DECLARE_OBJARRAY(wxRect, ArrayOfRect);
 
 
 class MyApp: public wxApp

@@ -3988,7 +3988,6 @@ ConnectionParams *options::CreateConnectionParamsFromSelectedItem()
     pConnectionParams->Protocol = PROTO_NMEA0183;
 
     pConnectionParams->bEnabled = m_connection_enabled;
-    pConnectionParams->b_IsSetup = false;
  
     if(pConnectionParams->Type == INTERNAL_GPS){
         pConnectionParams->NetworkAddress = _T("");
@@ -5467,8 +5466,6 @@ void ChartGroupsUI::OnDeleteGroup( wxCommandEvent &event )
     }
 }
 
-WX_DEFINE_OBJARRAY( ChartGroupElementArray );
-WX_DEFINE_OBJARRAY( ChartGroupArray );
 
 int ChartGroupsUI::FindGroupBranch( ChartGroup *pGroup, wxTreeCtrl *ptree, wxTreeItemId item,
         wxString *pbranch_adder )

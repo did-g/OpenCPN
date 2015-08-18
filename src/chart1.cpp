@@ -146,12 +146,8 @@
 #include "crashprint.h"
 #endif
 
-WX_DECLARE_OBJARRAY(wxDialog *, MyDialogPtrArray);
-
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY( ArrayOfCDI );
-WX_DEFINE_OBJARRAY( ArrayOfRect );
-WX_DEFINE_OBJARRAY( MyDialogPtrArray );
 
 #ifdef __WXMSW__
 void RedirectIOToConsole();
@@ -166,6 +162,7 @@ OCPNPlatform              *g_Platform;
 bool                      g_bFirstRun;
 
 int                       g_unit_test_1;
+int                       g_unit_test_2;
 bool                      g_start_fullscreen;
 bool                      g_rebuild_gl_cache;
 
@@ -649,7 +646,6 @@ float                     g_compass_scalefactor;
 
 ocpnCompass              *g_Compass;
 
-MyDialogPtrArray          g_MacShowDialogArray;
 bool                      g_benable_rotate;
 
 bool                      g_bShowMag;
@@ -824,6 +820,7 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
 {
     //    Add some OpenCPN specific command line options
     parser.AddSwitch( _T("unit_test_1") );
+    parser.AddSwitch( _T("unit_test_2") );
     parser.AddSwitch( _T("p") );
     parser.AddSwitch( _T("no_opengl") );
     parser.AddSwitch( _T("fullscreen") );
@@ -833,6 +830,7 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
 bool MyApp::OnCmdLineParsed( wxCmdLineParser& parser )
 {
     g_unit_test_1 = parser.Found( _T("unit_test_1") );
+    g_unit_test_2 = parser.Found( _T("unit_test_2") );
     g_bportable = parser.Found( _T("p") );
     g_bdisable_opengl = parser.Found( _T("no_opengl") );
     g_start_fullscreen = parser.Found( _T("fullscreen") );
@@ -2345,7 +2343,8 @@ MyFrame::MyFrame( wxFrame *frame, const wxString& title, const wxPoint& pos, con
     Connect( wxEVT_OCPN_DATASTREAM, (wxObjectEventFunction) (wxEventFunction) &MyFrame::OnEvtOCPN_NMEA );
 
     bFirstAuto = true;
-
+    b_autofind = false;
+    
     //  Create/connect a dynamic event handler slot for OCPN_MsgEvent(s) coming from PlugIn system
     Connect( wxEVT_OCPN_MSG, (wxObjectEventFunction) (wxEventFunction) &MyFrame::OnEvtPlugInMessage );
 
@@ -3265,31 +3264,41 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
     // This way the main window is already invisible and to the user
     // it appears to have finished rather than hanging for several seconds
     // while the compression threads exit
-    if(g_bopengl && g_CompressorPool && g_CompressorPool->GetRunningJobCount()){
+    if(g_bopengl && g_CompressorPool) {
+        wxString fmsg;
+        if (g_CompressorPool->GetRunningJobCount()){
         
-        wxLogMessage(_T("Starting compressor pool drain"));
-        wxDateTime now = wxDateTime::Now();
-        time_t stall = now.GetTicks();
-        time_t end = stall + THREAD_WAIT_SECONDS;
+            wxLogMessage(_T("Starting compressor pool drain"));
+            wxDateTime now = wxDateTime::Now();
+            time_t stall = now.GetTicks();
+            time_t end = stall + THREAD_WAIT_SECONDS;
 
-        int n_comploop = 0;
-        while(stall < end ) {
-            wxDateTime later = wxDateTime::Now();
-            stall = later.GetTicks();
+            int n_comploop = 0;
+            while(stall < end ) {
+                wxDateTime later = wxDateTime::Now();
+                stall = later.GetTicks();
 
-            wxString msg;
-            msg.Printf(_T("Time: %d  Job Count: %d"), n_comploop, g_CompressorPool->GetRunningJobCount());
-            wxLogMessage(msg);
-            if(!g_CompressorPool->GetRunningJobCount())
-                break;
-            wxYield();
-            wxSleep(1);
+                wxString msg;
+                msg.Printf(_T("Time: %d  Job Count: %d"), n_comploop, g_CompressorPool->GetRunningJobCount());
+                wxLogMessage(msg);
+                if(!g_CompressorPool->GetRunningJobCount())
+                    break;
+                wxYield();
+                wxSleep(1);
+            }
+            fmsg.Printf(_T("Finished compressor pool drain..Time: %d  Job Count: %d"),
+                    n_comploop, g_CompressorPool->GetRunningJobCount());
+            wxLogMessage(fmsg);
         }
     
-        wxString fmsg;
-        fmsg.Printf(_T("Finished compressor pool drain..Time: %d  Job Count: %d"),
-                    n_comploop, g_CompressorPool->GetRunningJobCount());
+        fmsg.Printf(_T("Compressor Jobs started %d, queue full %d, purged %d, aborted %d" ), 
+                g_CompressorPool->GetStartedJobCount(),
+                g_CompressorPool->GetRefusedJobCount(),
+                g_CompressorPool->GetPurgedJobCount(),
+                g_CompressorPool->GetAbortedJobCount()
+            );
         wxLogMessage(fmsg);
+        
     }
      
 #endif
@@ -4415,15 +4424,15 @@ bool MyFrame::ToggleLights( bool doToggle, bool temporary )
     OBJLElement *pOLE = NULL;
     
 #ifdef USE_S57
-    if( ps52plib ) {
-        for( unsigned int iPtr = 0; iPtr < ps52plib->pOBJLArray->GetCount(); iPtr++ ) {
+    if( !ps52plib ) 
+        return false;
+
+    for( unsigned int iPtr = 0; iPtr < ps52plib->pOBJLArray->GetCount(); iPtr++ ) {
             pOLE = (OBJLElement *) ( ps52plib->pOBJLArray->Item( iPtr ) );
             if( !strncmp( pOLE->OBJLName, "LIGHTS", 6 ) ) {
                 oldstate = pOLE->nViz != 0;
                 break;
             }
-	    pOLE = NULL;
-        }
     }
 
     oldstate &= !ps52plib->IsObjNoshow("LIGHTS");
@@ -4939,11 +4948,11 @@ int MyFrame::DoOptionsDialog()
     g_boptionsactive = true;
 
 
-    g_Platform->ShowBusySpinner();
+    OCPNPlatform::ShowBusySpinner();
     
     g_options = new options( this, -1, _("Options") );
     
-    g_Platform->HideBusySpinner();
+    OCPNPlatform::HideBusySpinner();
     
 //    Set initial Chart Dir
     g_options->SetInitChartDir( *pInit_Chart_Dir );
@@ -5388,7 +5397,6 @@ void MyFrame::ChartsRefresh( int dbi_hint, ViewPort &vp, bool b_purge )
 
     if( b_run ) FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 
-    OCPNPlatform::HideBusySpinner();
 
 }
 
@@ -5960,7 +5968,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
         return;
     }
 
-    if( g_unit_test_1 ) {
+    if( g_unit_test_1 || g_unit_test_2) {
 //            if((0 == ut_index) && GetQuiltMode())
 //                  ToggleQuiltMode();
 
@@ -5968,7 +5976,13 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
         if( g_toolbar ) g_toolbar->ToggleTool( ID_FOLLOW, cc1->m_bFollow );
 
         if( ChartData ) {
+            if( g_GroupIndex > 0 ) {
+                while (ut_index < ChartData->GetChartTableEntries() && !ChartData->IsChartInGroup( ut_index, g_GroupIndex ) ) {
+                    ut_index++;
+                }
+            }
             if( ut_index < ChartData->GetChartTableEntries() ) {
+                
                 const ChartTableEntry *cte = &ChartData->GetChartTableEntry( ut_index );
                 double lat = ( cte->GetLatMax() + cte->GetLatMin() ) / 2;
                 double lon = ( cte->GetLonMax() + cte->GetLonMin() ) / 2;
@@ -5983,13 +5997,33 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
                 } else
                     SelectdbChart( ut_index );
 
-                double ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
-                ppm /= 2;
+                double ppm;
+                if (g_unit_test_1) {
+                    ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
+                    ppm /= 2;
+                }
+                else {
+                    // for full chart choose use max width or heigh
+                    //ChartBase *pc = ChartData->OpenChartFromDB( ut_index, FULL_INIT );
+                    
+                    //double scale = pc->GetNormalScaleMax( cc1->GetCanvasScaleFactor(), cc1->GetCanvasWidth() );
+                    double dlat = fabs( (cte->GetLatMax() - cte->GetLatMin() ));
+                    double scale = cte->GetScale()*10;
+                    //double ppm1 = dlat
+                    double ppm1 =cc1->GetCanvasScaleFactor() / scale;
+                    //ppm = (dlat*1852.0)/**cc1->GetCanvasScaleFactor() *//;
+                    ppm = (double)cc1->GetCanvasHeight()/(dlat*1852.0*100);
+                    // printf("%f %f %d %f %f %f\n", dlat, cc1->GetCanvasScaleFactor(), cc1->GetCanvasHeight(), scale, ppm, ppm1);
+
+                }
                 cc1->SetVPScale( ppm );
 
                 cc1->ReloadVP();
 
                 ut_index++;
+            }
+            else {
+                 _exit(0);
             }
         }
     }
@@ -6314,7 +6348,10 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
             bnew_view = true;
     }
 
-    FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
+    if( g_unit_test_1 || g_unit_test_2) 
+        FrameTimer1.Start( TIMER_GFRAME_1 /*/2*/, wxTIMER_CONTINUOUS );
+    else
+        FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 
     if(g_bopengl) {
 #ifdef ocpnUSE_GL
@@ -6707,8 +6744,9 @@ void MyFrame::HandlePianoClick( int selected_index, int selected_dbIndex )
         }
     } else {
         if( cc1->IsChartQuiltableRef( selected_dbIndex ) ){
+#if 0
             if( ChartData ) ChartData->PurgeCache();
-
+#endif
 
             //  If the chart is a vector chart, and of very large scale,
             //  then we had better set the new scale directly to avoid excessive underzoom
@@ -8008,6 +8046,8 @@ void MyFrame::DoPrint( void )
 
 }
 
+wxDateTime gTimeSource;
+
 void MyFrame::OnEvtPlugInMessage( OCPN_MsgEvent & event )
 {
     wxString message_ID = event.GetID();
@@ -8043,7 +8083,16 @@ void MyFrame::OnEvtPlugInMessage( OCPN_MsgEvent & event )
             gVar = decl_val;
         }
     }
+    if(message_ID == _T("GRIB_TIMELINE"))
+    {
+        wxJSONReader r;
+        wxJSONValue v;
+        r.Parse(message_JSONText, &v);
 
+        gTimeSource.Set
+            (v[_T("Day")].AsInt(), (wxDateTime::Month)v[_T("Month")].AsInt(), v[_T("Year")].AsInt(),
+             v[_T("Hour")].AsInt(), v[_T("Minute")].AsInt(), v[_T("Second")].AsInt());
+    }
     if(message_ID == _T("OCPN_TRACK_REQUEST"))
     {
         wxJSONValue  root;
@@ -9155,6 +9204,7 @@ void MyFrame::applySettingsString( wxString settings)
     //  Save some present values
     int last_UIScaleFactor = g_GUIScaleFactor;
     bool previous_expert = g_bUIexpert;
+    OCPNPlatform::ShowBusySpinner();
     
     //  Parse the passed settings string
     bool bproc_InternalGPS = false;
@@ -9534,6 +9584,8 @@ void MyFrame::applySettingsString( wxString settings)
     
     if (NMEALogWindow::Get().Active())
         NMEALogWindow::Get().GetTTYWindow()->Raise();
+
+    OCPNPlatform::HideBusySpinner();
     
 }   
 

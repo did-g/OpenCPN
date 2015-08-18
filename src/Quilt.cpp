@@ -359,7 +359,7 @@ ArrayOfInts Quilt::GetCandidatedbIndexArray( bool from_ref_chart, bool exclude_u
         QuiltCandidate *pqc = m_pcandidate_array->Item( ir );
         if( from_ref_chart )                     // only add entries of smaller scale than ref scale
         {
-            if( pqc->ChartScale >= m_reference_scale ) {
+            if( (pqc->ChartScale+50)/100 >= (m_reference_scale+50)/100 ) {
                 // Search the no-show array
                 if( exclude_user_hidden ) {
                     bool b_noshow = false;
@@ -841,7 +841,7 @@ int Quilt::GetNewRefChart( void )
             double skew_norm = m.GetChartSkew();
             if( skew_norm > 180. ) skew_norm -= 360.;
             
-            if( ( m.GetScale() >= m_reference_scale )
+            if( ( (m.GetScale()+50)/100 >= (m_reference_scale+50)/100 )
                     && ( m_reference_family == m.GetChartFamily() )
                     && ( m_quilt_proj == m.GetChartProjectionType() )
                     && ( m_bquiltskew || (fabs(skew_norm) < 1.0) ) ){
@@ -979,11 +979,14 @@ int Quilt::AdjustRefOnZoom( bool b_zin, ChartFamilyEnum family,  ChartTypeEnum t
     
         
     int new_ref_dbIndex = -1;
-    
+    int smaller_scale = 90000000;    
     // Search for the largest scale chart whose scale limits contain the requested scale.
     for(size_t i=0 ; i < index_array.GetCount() ; i++){
         int a = min_scale.Item(i);
         int b = max_scale.Item(i);
+        if (a < smaller_scale) {
+            smaller_scale = a;
+        }        
 
         if( ( proposed_scale_onscreen < min_scale.Item(i) * 1.05) &&   // 5 percent leeway to allow for roundoff errors
             (proposed_scale_onscreen > max_scale.Item(i)) ) {
@@ -992,7 +995,9 @@ int Quilt::AdjustRefOnZoom( bool b_zin, ChartFamilyEnum family,  ChartTypeEnum t
         }
     }
 
-                    
+    if (new_ref_dbIndex == -1 && b_zin && proposed_scale_onscreen > smaller_scale) {
+        new_ref_dbIndex = -2;
+    }
     return new_ref_dbIndex;
 }
 
@@ -1052,8 +1057,13 @@ int Quilt::AdjustRefOnZoomIn( double proposed_scale_onscreen )
         BuildExtendedChartStackAndCandidateArray(true, m_zout_dbindex, m_vp_quilt);
     
     
-    int proposed_ref_index = AdjustRefOnZoom( true, (ChartFamilyEnum)current_family, current_type, proposed_scale_onscreen );
-
+    int proposed_ref_index;
+    proposed_ref_index = AdjustRefOnZoom( true, (ChartFamilyEnum)current_family, current_type, proposed_scale_onscreen );
+    if (proposed_ref_index == -2) {
+        // we start from an underzoom displayed chart, don't reset it
+        proposed_ref_index = m_refchart_dbIndex;
+    }
+    
     SetReferenceChart( proposed_ref_index );
     
     return proposed_ref_index;
@@ -1129,14 +1139,14 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
     EmptyCandidateArray();
     m_extended_stack_array.Clear();
 
-    int reference_scale = 1.;
+    int reference_scale = 1;
     int reference_type = -1;
     int reference_family;
     int quilt_proj = PROJECTION_UNKNOWN;
 
     if( ref_db_index >= 0 ) {
         const ChartTableEntry &cte_ref = ChartData->GetChartTableEntry( ref_db_index );
-        reference_scale = cte_ref.GetScale();
+        reference_scale = ((cte_ref.GetScale() +50)/100)*100;
         reference_type = cte_ref.GetChartType();
         quilt_proj = ChartData->GetDBChartProj( ref_db_index );
         reference_family = cte_ref.GetChartFamily();
@@ -1175,7 +1185,7 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
             && ( cte.GetChartType() != CHART_TYPE_CM93COMP ) ) {
                 QuiltCandidate *qcnew = new QuiltCandidate;
                 qcnew->dbIndex = i;
-                qcnew->ChartScale = cte.GetScale();
+                qcnew->ChartScale = ((cte.GetScale()+50)/100)*100;
 
                 m_pcandidate_array->Add( qcnew );               // auto-sorted on scale
 
@@ -1220,8 +1230,8 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
                 continue;
 
             //    Calculate zoom factor for this chart
-            double candidate_chart_scale = cte.GetScale();
-            double chart_native_ppm = m_canvas_scale_factor / candidate_chart_scale;
+            int candidate_chart_scale = ((cte.GetScale() +50)/100)*100;
+            double chart_native_ppm = m_canvas_scale_factor / (double)cte.GetScale();
             double zoom_factor = vp_in.view_scale_ppm / chart_native_ppm;
 
             //  Try to guarantee that there is one chart added with scale larger than reference scale
@@ -1457,7 +1467,14 @@ bool Quilt::Compose( const ViewPort &vp_in )
     m_bbusy = true;
     
     ChartData->UnLockCache();
-    ChartData->UnLockAllCacheCharts();
+//    ChartData->UnLockAllCacheCharts();
+    for(unsigned int ir = 0; ir < m_pcandidate_array->GetCount(); ir++ ) {
+        QuiltCandidate *pqc = m_pcandidate_array->Item( ir );
+        if (pqc->b_locked == true) {
+            ChartData->UnLockCacheChart(pqc->dbIndex);
+        }
+    }
+
     
     ViewPort vp_local = vp_in;                   // need a non-const copy
 
@@ -1596,7 +1613,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
                 }
             }
             
-            if( cte.GetScale() >= m_reference_scale ) {
+            if( (cte.GetScale()+50)/100 >= (m_reference_scale+50)/100 ) {
                 //  If this chart appears in the no-show array, then simply include it, but
                 //  don't subtract its region when determining the smaller scale charts to include.....
                 bool b_in_noshow = false;
@@ -1650,7 +1667,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
 
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( pqc->dbIndex );
             
-            if( cte.GetScale() >= m_reference_scale ) {
+            if( (cte.GetScale()+50)/100 >= (m_reference_scale+50)/100 ) {
                 bool b_in_noshow = false;
                 for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.GetCount(); ins++ ) {
                     if( g_quilt_noshow_index_array.Item( ins ) == pqc->dbIndex ) // chart is in the noshow list
@@ -1694,7 +1711,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
 
         if( !pqc->b_include ) {
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( pqc->dbIndex );
-            if( cte.GetScale() >= m_reference_scale ) {
+            if( (cte.GetScale()+50)/100 >= (m_reference_scale+50)/100 ) {
                 m_eclipsed_stack_array.Add( pqc->dbIndex );
                 pqc->b_eclipsed = true;
             }
@@ -1762,7 +1779,7 @@ bool Quilt::Compose( const ViewPort &vp_in )
 
             if( !vpck_region.IsEmpty() ) {
                 if( add_scale ) {
-                    if( add_scale == cte.GetScale() ) pqc->b_include = true;
+                    if( (add_scale+50)/100 == (cte.GetScale()+50)/100 ) pqc->b_include = true;
                     ;
                 } else {
                     pqc->b_include = true;
@@ -1950,21 +1967,33 @@ bool Quilt::Compose( const ViewPort &vp_in )
     //  thus causing performance loss on recursion
     //  We will (always??) get a refresh on the new Quilt anyway...
     cc1->EnablePaint(false);
-    
+
+//wxLogMessage( _T("======== lock chart"));
+    //  first lock charts already in the cache
+    //  otherwise under memory pressure if chart1 and chart2
+    //  are in the quilt loading chart1 could evict chart2
+    //  
     for( ir = 0; ir < m_pcandidate_array->GetCount(); ir++ ) {
         QuiltCandidate *pqc = m_pcandidate_array->Item( ir );
         if( ( pqc->b_include ) && ( !pqc->b_eclipsed ) )
+            pqc->b_locked = ChartData->LockCacheChart( pqc->dbIndex );
+    }
+
+    // open charts not in the cache
+    for( ir = 0; ir < m_pcandidate_array->GetCount(); ir++ ) {
+        QuiltCandidate *pqc = m_pcandidate_array->Item( ir );
+        if( ( pqc->b_include ) && ( !pqc->b_eclipsed ) ) {
 //         I am fairly certain this test can now be removed
 //            with improved smooth movement logic
 //            if( !ChartData->IsChartInCache( pqc->dbIndex ) )
 //                b_stop_movement = true;
-
-            ChartData->OpenChartFromDBAndLock( pqc->dbIndex, FULL_INIT );
-//              ChartData->OpenChartFromDB( pqc->dbIndex, FULL_INIT );
+            ChartData->OpenChartFromDBAndLock( pqc->dbIndex, FULL_INIT, !pqc->b_locked );
+            pqc->b_locked = true;
         }
+    }
 
     cc1->EnablePaint(true);
-    
+//wxLogMessage( _T("====== done"));
     //    Build and maintain the array of indexes in this quilt
 
     m_last_index_array = m_index_array;       //save the last one for delta checks

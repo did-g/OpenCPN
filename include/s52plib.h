@@ -263,7 +263,7 @@ private:
     int RenderLC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderMPS( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderCARC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
-    char *RenderCS( ObjRazRules *rzRules, Rules *rules );
+    wxString *RenderCS( ObjRazRules *rzRules, Rules *rules );
     int RenderGLLS( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderGLLC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     

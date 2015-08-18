@@ -345,8 +345,8 @@ void  GribReader::copyMissingWaveRecords (int dataType, int levelType, int level
 		GribRecord *rec = getGribRecord( dataType, levelType, levelValue,date );
 		if ( rec == NULL ) {
 			itd2 = itd;
-			itd2 ++;	// next date
-			if (itd2 != setdates.end()) {
+            itd2 ++;	// next date
+			while (itd2 != setdates.end()) {
 				time_t date2 = *itd2;
 				GribRecord *rec2 = getGribRecord( dataType, levelType, levelValue, date2 );
 				if (rec2 && rec2->isOk() ) {
@@ -355,12 +355,147 @@ void  GribReader::copyMissingWaveRecords (int dataType, int levelType, int level
 					if (r2 != NULL) {
 						r2->setRecordCurrentDate (date);
 						storeRecordInMap (r2);
+						break;
 					}
 				}
+				itd2 ++;	// next date
+
 			}
 		}
 	}
 }
+
+#if 0
+void  GribReader::InterpolateMissingRecords (int dataType, int levelType, int levelValue)
+{
+	std::set<time_t>  setdates = getListDates();
+	std::set<time_t>::iterator itd, itd2;
+    GribRecord *REC1 = 0;
+    time_t date1;
+
+	for (itd=setdates.begin(); itd!=setdates.end(); itd++) {
+		time_t date = *itd;
+		GribRecord *rec = getGribRecord( dataType, levelType, levelValue,date );
+		if ( rec == 0 ) {
+		    if (REC1 == 0)
+		        continue;
+			itd2 = itd;
+            itd2 ++;	// next date
+			while (itd2 != setdates.end()) {
+				time_t date2 = *itd2;
+				GribRecord *rec2 = getGribRecord( dataType, levelType, levelValue, date2 );
+				if (rec2 && rec2->isOk() ) {
+					// create a copied record from date2
+					GribRecord *r2 = new GribRecord (*rec2);
+                    r2->setRecordCurrentDate (date);
+					storeRecordInMap (r2);
+					REC1 = r2;
+					date1 = date;
+					break;
+				}
+				itd2 ++;	// next date
+			}
+		}
+		else {
+		    REC1 = rec;
+		    date1 = date;
+		}
+	}
+}
+#else
+bool GribReader::get_gribY(GribRecord *&ret, int dataType, int levelType, int levelValue, time_t date)
+{
+    switch (dataType) {
+    case GRB_WIND_VX:
+        ret = getGribRecord( GRB_WIND_VY, levelType, levelValue, date );
+        if (ret == 0 || ret->isOk() == false)
+            return false;
+        break;
+    case GRB_UOGRD:
+        ret = getGribRecord( GRB_VOGRD, levelType, levelValue, date );
+        if (ret == 0 || ret->isOk() == false)
+            return false;
+        break;
+    }
+    return true;
+}
+
+void  GribReader::InterpolateMissingRecords (int dataType, int levelType, int levelValue)
+{
+	std::set<time_t>  setdates = getListDates();
+	std::set<time_t>::iterator itd, itd2;
+    GribRecord *REC1 = 0;
+    GribRecord *REC1Y = 0;
+    time_t date1;
+    itd=setdates.begin();
+	while (itd!=setdates.end())
+	{
+		time_t date = *itd;
+		GribRecord *rec = getGribRecord( dataType, levelType, levelValue, date );
+		if ( rec && rec->isOk() ) {
+		    REC1 = 0;
+		    if (get_gribY(REC1Y, dataType, levelType, levelValue, date) == true)
+		    {
+    		    // there's a valid record or no need for one
+	    	    REC1  = rec;
+		        date1 = date;
+		        itd ++;
+		        continue;
+            }
+		}
+		else if (REC1 == 0 || REC1->isOk() == false)
+		{
+		    // no record but no first record
+		    itd++;
+		    continue;
+        }
+        // the record is empty
+		itd2 = itd;
+        time_t date2 = *itd2;
+        itd2 ++;	// next date
+        int cnt = 2;
+		while (itd2 != setdates.end()) {
+			GribRecord *rec2 = getGribRecord( dataType, levelType, levelValue, *itd2 );
+			GribRecord *rec2y;
+			if (rec2 && rec2->isOk() ) {
+		        if (get_gribY(rec2y, dataType, levelType, levelValue, *itd2) == true)
+		        {
+		            double interp = 1./(double)cnt;
+		            double j = 1.;
+		            for (; itd != itd2; itd++)
+		            {
+    		            GribRecord *r2y = 0, *ret;
+	    	            switch (dataType) { 
+		                case GRB_WIND_VX:
+		                case GRB_UOGRD:
+		                    ret = GribRecord::Interpolated2DRecord(r2y, *REC1, *REC1Y, *rec2, *rec2y, interp*j);
+		                    break;
+                        default:
+                            ret = GribRecord::InterpolatedRecord(*REC1, *rec2, interp*j);
+                            break;
+                        }
+                        if (ret) {
+					        ret->setRecordCurrentDate (*itd);
+					        storeRecordInMap (ret);
+					        if (r2y) {
+					            r2y->setRecordCurrentDate (*itd);
+					            storeRecordInMap (r2y);
+                            }
+                        }
+                        j += 1.;
+
+                    }
+					break;
+                }
+			}
+			cnt++;
+			itd2 ++;	// next date
+		}
+		if (itd2 == setdates.end())
+		    break;
+	}
+}
+#endif
 
 //---------------------------------------------------------------------------------
 void  GribReader::copyFirstCumulativeRecord()
@@ -386,6 +521,19 @@ void  GribReader::copyMissingWaveRecords ()
 	copyMissingWaveRecords (GRB_HTSGW, LV_GND_SURF, 0);
 	copyMissingWaveRecords (GRB_WVDIR, LV_GND_SURF,0);
     copyMissingWaveRecords (GRB_WVPER, LV_GND_SURF,0);
+
+	InterpolateMissingRecords (GRB_UOGRD, LV_GND_SURF, 0); //Idx_SEACURRENT_VX
+
+	InterpolateMissingRecords (GRB_WIND_VX, LV_ABOV_GND, 10);
+
+	InterpolateMissingRecords (GRB_WIND_GUST, LV_GND_SURF, 0);
+	InterpolateMissingRecords (GRB_TEMP, LV_ABOV_GND, 2);
+	InterpolateMissingRecords (GRB_PRESSURE, LV_MSL, 0);
+	InterpolateMissingRecords (GRB_CAPE, LV_GND_SURF, 0);
+	//total rainfall
+	InterpolateMissingRecords (GRB_PRECIP_TOT, LV_GND_SURF, 0);
+	//cloud cover
+	InterpolateMissingRecords (GRB_CLOUD_TOT, LV_ATMOS_ALL, 0);
 }
 
 //---------------------------------------------------------------------------------

@@ -90,6 +90,7 @@ class GribReader
       void  copyFirstCumulativeRecord   (int dataType,int levelType,int levelValue);
       //void  removeFirstCumulativeRecord (int dataType,int levelType,int levelValue);
       void  copyMissingWaveRecords (int dataType,int levelType,int levelValue);
+      void  InterpolateMissingRecords (int dataType, int levelType, int levelValue);
 
       std::map < std::string, std::vector<GribRecord *>* > * getGribMap(){ return  &mapGribRecords; }              //dsr
 
@@ -114,6 +115,8 @@ class GribReader
         void clean_vector(std::vector<GribRecord *> &ls);
         void clean_all_vectors();
         std::vector<GribRecord *> * getFirstNonEmptyList();
+
+        bool get_gribY(GribRecord *&ret, int dataType, int levelType, int levelValue, time_t date);
 
       // Interpolation between 2 GribRecord
         double      get2GribsInterpolatedValueByDate (

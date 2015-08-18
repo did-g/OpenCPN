@@ -93,12 +93,13 @@ typedef std::vector<contour> contour_list;
 #define GSSH_SUBM 16 // divide each cell to 16x16 sub cells
 
 //==========================================================================
+class gshhsPolyFile;
 
 
 class GshhsPolyCell {
 public:
 
-    GshhsPolyCell( FILE *fpoly, int x0, int y0, PolygonFileHeader *header );
+    GshhsPolyCell( gshhsPolyFile *fpoly, int x0, int y0, PolygonFileHeader *header );
     ~GshhsPolyCell();
 
     void drawMapPlain( ocpnDC &pnt, double dx, ViewPort &vp, wxColor const &seaColor,
@@ -116,7 +117,7 @@ private:
     int nbpoints;
     int x0cell, y0cell;
 
-    FILE *fpoly;
+    gshhsPolyFile *fpoly;
 
     std::vector<wxLineF> coasts;
     PolygonFileHeader *header;
@@ -154,11 +155,11 @@ public:
     int GetPolyVersion() { return polyHeader.version; }
 
 private:
-    FILE *fpoly;
+    gshhsPolyFile *fpoly;
     GshhsPolyCell * allCells[360][180];
 
     PolygonFileHeader polyHeader;
-    void readPolygonFileHeader( FILE *polyfile, PolygonFileHeader *header );
+    void readPolygonFileHeader(gshhsPolyFile *polyfile, PolygonFileHeader *header );
 
     wxMutex mutex1, mutex2;
 };
@@ -192,7 +193,7 @@ public:
 
 class GshhsPolygon {
 public:
-    GshhsPolygon( FILE *file );
+    GshhsPolygon( gshhsPolyFile *file );
 
     virtual ~GshhsPolygon();
 
@@ -213,7 +214,7 @@ public:
     std::vector<GshhsPoint *> lsPoints;
 
 protected:
-    FILE *file;
+    gshhsPolyFile *file;
     bool ok;
     bool greenwich, antarctic;
 };
