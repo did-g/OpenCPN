@@ -86,14 +86,8 @@ void ocpnCompass::Paint( ocpnDC& dc )
             glDisable( GL_TEXTURE_2D );
             
         }
-#else 
-
-#ifdef __WXOSX__
-dc.DrawBitmap( m_StatBmp, m_rect.x, m_rect.y, false );
-#else
-dc.DrawBitmap( m_StatBmp, m_rect.x, m_rect.y, true );
-#endif
-//        dc.DrawBitmap( m_StatBmp, m_rect.x, m_rect.y, true/*false*/ );
+#else        
+        dc.DrawBitmap( m_StatBmp, m_rect.x, m_rect.y, true );
 #endif        
     }
 }
