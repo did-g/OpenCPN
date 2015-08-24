@@ -755,6 +755,7 @@ void CompressionWorkerPool::OnEvtThread( OCPN_CompressionThreadEvent & event )
                 i++;
         }
     }
+
     delete ticket;
 }
 
