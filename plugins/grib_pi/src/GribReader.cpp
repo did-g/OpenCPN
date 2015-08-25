@@ -365,44 +365,6 @@ void  GribReader::copyMissingWaveRecords (int dataType, int levelType, int level
 	}
 }
 
-#if 0
-void  GribReader::InterpolateMissingRecords (int dataType, int levelType, int levelValue)
-{
-	std::set<time_t>  setdates = getListDates();
-	std::set<time_t>::iterator itd, itd2;
-    GribRecord *REC1 = 0;
-    time_t date1;
-
-	for (itd=setdates.begin(); itd!=setdates.end(); itd++) {
-		time_t date = *itd;
-		GribRecord *rec = getGribRecord( dataType, levelType, levelValue,date );
-		if ( rec == 0 ) {
-		    if (REC1 == 0)
-		        continue;
-			itd2 = itd;
-            itd2 ++;	// next date
-			while (itd2 != setdates.end()) {
-				time_t date2 = *itd2;
-				GribRecord *rec2 = getGribRecord( dataType, levelType, levelValue, date2 );
-				if (rec2 && rec2->isOk() ) {
-					// create a copied record from date2
-					GribRecord *r2 = new GribRecord (*rec2);
-                    r2->setRecordCurrentDate (date);
-					storeRecordInMap (r2);
-					REC1 = r2;
-					date1 = date;
-					break;
-				}
-				itd2 ++;	// next date
-			}
-		}
-		else {
-		    REC1 = rec;
-		    date1 = date;
-		}
-	}
-}
-#else
 bool GribReader::get_gribY(GribRecord *&ret, int dataType, int levelType, int levelValue, time_t date)
 {
     switch (dataType) {
@@ -495,7 +457,6 @@ void  GribReader::InterpolateMissingRecords (int dataType, int levelType, int le
 		    break;
 	}
 }
-#endif
 
 //---------------------------------------------------------------------------------
 void  GribReader::copyFirstCumulativeRecord()
