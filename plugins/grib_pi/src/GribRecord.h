@@ -142,6 +142,8 @@ class GribRecord
 
         static GribRecord *MagnitudeRecord(const GribRecord &rec1, const GribRecord &rec2);
 
+        void Substract(const GribRecord &rec);
+
         bool  isOk()  const   {return ok;};
         bool  isDataKnown()  const   {return knownData;};
         bool  isEof() const   {return eof;};
@@ -166,6 +168,7 @@ class GribRecord
         //-----------------------------------------
         int    getPeriodP1() const  { return periodP1; }
         int    getPeriodP2() const  { return periodP2; }
+        zuchar getTimeRange() const { return timeRange; }
 
         // Number of points in the grid
         int    getNi() const     { return Ni; }

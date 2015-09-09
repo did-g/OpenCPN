@@ -92,6 +92,7 @@ class GribReader
       //void  removeFirstCumulativeRecord (int dataType,int levelType,int levelValue);
       void  copyMissingWaveRecords (int dataType,int levelType,int levelValue);
       void  InterpolateMissingRecords (int dataType, int levelType, int levelValue);
+      void  computeAccumulationRecords (int dataType, int levelType, int levelValue);
 
       std::map < std::string, std::vector<GribRecord *>* > * getGribMap(){ return  &mapGribRecords; }              //dsr
 

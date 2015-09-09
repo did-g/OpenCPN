@@ -487,6 +487,30 @@ void  GribReader::InterpolateMissingRecords (int dataType, int levelType, int le
 	}
 }
 
+void  GribReader::computeAccumulationRecords (int dataType, int levelType, int levelValue)
+{
+	std::set<time_t>  setdates = getListDates();
+	std::set<time_t>::reverse_iterator rit;
+    GribRecord *prev = 0;
+
+    if (setdates.empty())
+        return;
+
+	// XXX only work if P2 -P1 === time
+    for (rit = setdates.rbegin(); rit != setdates.rend(); ++rit)
+    {
+		time_t date = *rit;
+		GribRecord *rec = getGribRecord( dataType, levelType, levelValue, date );
+		if ( rec && rec->isOk() ) {
+		    // XXX double check reference date and timerange 
+		    if (prev != 0 && rec->getTimeRange() == 4) 
+                prev->Substract(*rec);
+		    prev = rec;
+		}
+	}
+	    
+}
+
 //---------------------------------------------------------------------------------
 void  GribReader::copyFirstCumulativeRecord()
 {
@@ -534,6 +558,7 @@ void GribReader::readGribFileContent()
 
     createListDates();
 //    hoursBetweenRecords = computeHoursBeetweenGribRecords();
+
 
 	//-----------------------------------------------------
 	// Are dewpoint data in file ?

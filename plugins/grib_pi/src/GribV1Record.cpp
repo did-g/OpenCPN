@@ -741,18 +741,22 @@ zuint GribV1Record::periodSeconds(zuchar unit,zuchar P1,zuchar P2,zuchar range) 
     }
     debug("id=%d: PDS unit %d (time range) b21=%d %d P1=%d P2=%d\n",id,unit, range,res,P1,P2);
     dur = 0;
+    // (grib1/5.table)
     switch (range) {
         case 0:
             dur = (zuint)P1; break;
         case 1:
             dur = 0; break;
+
         case 2:
-        case 3:
+        case 3:  // Average  (reference time + P1 to reference time + P2)
             // dur = ((zuint)P1+(zuint)P2)/2; break;     // TODO
             dur = (zuint)P2; break;
-         case 4:
+
+         case 4: // Accumulation  (reference time + P1 to reference time + P2)
             dur = (zuint)P2; break;
-        case 10:
+
+        case 10: // P1 occupies octets 19 and 20; product valid at reference time + P1 
             dur = ((zuint)P1<<8) + (zuint)P2; break;
         default:
             erreur("id=%d: unknown time range in PDS b21=%d",id,range);
