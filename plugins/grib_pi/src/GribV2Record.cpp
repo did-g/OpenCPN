@@ -247,7 +247,6 @@ static void getBits(unsigned char *buf,int *loc,size_t off,size_t bits)
   unsigned int lmask,temp;
   size_t buf_size=sizeof(unsigned char)*8,loc_size=sizeof(int)*8,wskip;
   int rshift;
-  size_t n;
 
   /* no work to do */
   if (bits == 0)
@@ -259,6 +258,7 @@ static void getBits(unsigned char *buf,int *loc,size_t off,size_t bits)
   }
   else {
 #if 0  
+  size_t n;
   /* create masks to use when right-shifting (necessary because different
    compilers do different things when right-shifting a signed bit-field) */
     bmask=1;
@@ -855,9 +855,12 @@ static zuchar GRBV2_TO_DATA(int productDiscipline, int dataCat, int dataNum)
         switch (dataCat) {
         // waves
         case 0:
-#if 0        
             switch (dataNum) {
-            case 3: ret= GRB_WVHGT; break; //DATA_TO_GRBV2[DATA_WAVES_SIG_HGT_COMB] = grb2DataType(10,0,3);
+            case 3: ret= GRB_HTSGW; break; //DATA_TO_GRBV2[DATA_WAVES_SIG_HGT_COMB] = grb2DataType(10,0,3);
+            case 14: ret= GRB_WVDIR; break; // grb2DataType(10,0,14);
+            case 15: ret= GRB_WVPER; break; // grb2DataType(10,0,15);
+
+#if 0        
             DATA_TO_GRBV2[DATA_WAVES_WND_DIR] = grb2DataType(10,0,4);
             DATA_TO_GRBV2[DATA_WAVES_WND_HGT] = grb2DataType(10,0,5);
             DATA_TO_GRBV2[DATA_WAVES_WND_PERIOD] = grb2DataType(10,0,6);
@@ -868,8 +871,8 @@ static zuchar GRBV2_TO_DATA(int productDiscipline, int dataCat, int dataNum)
             DATA_TO_GRBV2[DATA_WAVES_PRIM_PERIOD] = grb2DataType(10,0,11);
             DATA_TO_GRBV2[DATA_WAVES_SEC_DIR] = grb2DataType(10,0,12);
             DATA_TO_GRBV2[DATA_WAVES_SEC_PERIOD] = grb2DataType(10,0,13);
-            }
 #endif            
+            }
             break;
         case 1:
             switch (dataNum) {
