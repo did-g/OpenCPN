@@ -300,15 +300,17 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update the Sig Wave Height
     if( RecordArray[Idx_HTSIGW] ) {
-        double height = RecordArray[Idx_HTSIGW]->
-            getInterpolatedValue(m_cursor_lon, m_cursor_lat, true );
+        double height = RecordArray[Idx_HTSIGW]->getInterpolatedValue(m_cursor_lon, m_cursor_lat, true );
+        if( height == GRIB_NOTDEF ) 
+            height = RecordArray[Idx_HTSIGW]->getInterpolatedValue(m_cursor_lon, m_cursor_lat, false );
 
         if( height != GRIB_NOTDEF ) {
             height = m_gparent.m_OverlaySettings.CalibrateValue(GribOverlaySettings::WAVE, height);
             wxString w( wxString::Format( _T("%4.1f ") + m_gparent.m_OverlaySettings.GetUnitSymbol(GribOverlaySettings::WAVE), height ));
             if( RecordArray[Idx_WVPER] ) {
-                double period = RecordArray[Idx_WVPER]->
-                    getInterpolatedValue(m_cursor_lon, m_cursor_lat, true );
+                double period = RecordArray[Idx_WVPER]->getInterpolatedValue(m_cursor_lon, m_cursor_lat, true );
+                if (period == GRIB_NOTDEF )
+                    period = RecordArray[Idx_WVPER]->getInterpolatedValue(m_cursor_lon, m_cursor_lat, false );
                 if( period != GRIB_NOTDEF ) {
                     if( m_DialogStyle == SEPARATED_VERTICAL )
                         m_tcWavePeriode->SetValue( wxString::Format(_T("%01ds") , (int) round(period)) );
@@ -326,8 +328,10 @@ void CursorData::UpdateTrackingControls( void )
 
     // Update the Wave direction
     if( RecordArray[Idx_WVDIR] ) {
-        double direction = RecordArray[Idx_WVDIR]->
-            getInterpolatedValue(m_cursor_lon, m_cursor_lat, true, true );
+        double direction = RecordArray[Idx_WVDIR]->getInterpolatedValue(m_cursor_lon, m_cursor_lat, true, true );
+        if (direction == GRIB_NOTDEF )
+            direction = RecordArray[Idx_WVDIR]->getInterpolatedValue(m_cursor_lon, m_cursor_lat, false, true );
+
         if( direction != GRIB_NOTDEF )
             m_tcWaveDirection->SetValue( wxString::Format( _T("%03d\u00B0"), (int)direction ));
         else

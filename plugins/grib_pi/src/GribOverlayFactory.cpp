@@ -514,6 +514,12 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
             double lat, lon;
             GetCanvasLLPix( &uvp, p, &lat, &lon );
             double v = pGR->getInterpolatedValue(lon, lat);
+            // XX
+            // retry without numerical interpolation
+            // for grid with a lot of undef value
+            if( v == GRIB_NOTDEF ) 
+                v = pGR->getInterpolatedValue(lon, lat, false);
+
             unsigned char r, g, b, a;
             if( v != GRIB_NOTDEF ) {
                 v = m_Settings.CalibrateValue(settings, v);
@@ -603,6 +609,8 @@ wxImage GRIBOverlayFactory::CreateGribImage( int settings, GribRecord *pGR,
             GetCanvasLLPix( vp, p, &lat, &lon );
 
             double v = pGR->getInterpolatedValue(lon, lat);
+            if( v == GRIB_NOTDEF ) 
+                v = pGR->getInterpolatedValue(lon, lat, false);
             if( v != GRIB_NOTDEF ) {
                 v = m_Settings.CalibrateValue(settings, v);
                 wxColour c = GetGraphicColor(settings, v);
