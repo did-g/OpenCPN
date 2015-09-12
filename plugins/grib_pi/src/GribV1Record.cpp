@@ -40,13 +40,8 @@ void  GribV1Record::translateDataType()
 		&& (idGrid==4 || idGrid==255))		// Saildocs
 	{
         dataCenterModel = NOAA_GFS;
-		if (dataType == GRB_PRECIP_TOT) {	// mm/period -> mm/h
-			if (periodP2 > periodP1)
-				multiplyAllData( 1.0/(periodP2-periodP1) );
-		}
 		if (dataType == GRB_PRECIP_RATE) {	// mm/s -> mm/h
-			if (periodP2 > periodP1)
-				multiplyAllData( 3600.0 );
+            multiplyAllData( 3600.0 );
         }
         if (dataType == GRB_TEMP                        //gfs Water surface Temperature
             && levelType == LV_GND_SURF
@@ -77,13 +72,8 @@ void  GribV1Record::translateDataType()
 	else if (idCenter==7 && idModel==89 && idGrid==255)
     {
         // dataCenterModel ??
-		if (dataType == GRB_PRECIP_TOT) {	// mm/period -> mm/h
-			if (periodP2 > periodP1)
-				multiplyAllData( 1.0/(periodP2-periodP1) );
-		}
 		if (dataType == GRB_PRECIP_RATE) {	// mm/s -> mm/h
-			if (periodP2 > periodP1)
-				multiplyAllData( 3600.0 );
+            multiplyAllData( 3600.0 );
 		}
 
 

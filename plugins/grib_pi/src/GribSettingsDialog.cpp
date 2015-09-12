@@ -376,6 +376,7 @@ wxString GribOverlaySettings::GetUnitSymbol(int settings)
         case FAHRENHEIT: return _T("\u00B0F");
         } break;
     case 4: switch(Settings[settings].m_Units) {
+        // XXX need a MILLIMETERS_H setting?
         case MILLIMETERS: return _T("mm");
         case INCHES:      return _T("in");
         } break;
