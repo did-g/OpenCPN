@@ -339,10 +339,18 @@ void CursorData::UpdateTrackingControls( void )
     }
 
     //    Update the Current control
-    if(GribRecord::getInterpolatedValues(vkn, ang,
+    bool ok;
+    ok = GribRecord::getInterpolatedValues(vkn, ang,
                                          RecordArray[Idx_SEACURRENT_VX],
                                          RecordArray[Idx_SEACURRENT_VY],
-                                         m_cursor_lon, m_cursor_lat)) {
+                                         m_cursor_lon, m_cursor_lat);
+   if (ok == false) 
+         ok = GribRecord::getInterpolatedValues(vkn, ang,
+                                         RecordArray[Idx_SEACURRENT_VX],
+                                         RecordArray[Idx_SEACURRENT_VY],
+                                         m_cursor_lon, m_cursor_lat, false);
+   
+   if (ok) {
         vkn = m_gparent.m_OverlaySettings.CalibrateValue(GribOverlaySettings::CURRENT, vkn);
 
         m_tcCurrentVelocity->SetValue( wxString::Format( _T("%4.1f ") + m_gparent.m_OverlaySettings.GetUnitSymbol(GribOverlaySettings::CURRENT), vkn ) );
