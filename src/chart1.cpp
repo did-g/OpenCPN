@@ -1066,6 +1066,10 @@ void LoadS57()
         }
 
         pConfig->LoadS57Config();
+        
+        if(cc1)
+            ps52plib->SetPPMM( cc1->GetPixPerMM() );
+            
     } else {
         wxLogMessage( _T("   S52PLIB Initialization failed, disabling Vector charts.") );
         delete ps52plib;
@@ -9273,6 +9277,13 @@ void MyFrame::applySettingsString( wxString settings)
         }
     }
 
+    float conv = 1;
+    int depthUnit = ps52plib->m_nDepthUnitDisplay;
+    if ( depthUnit == 0 ) // feet
+        conv = 0.3048f; // international definiton of 1 foot is 0.3048 metres
+    else if ( depthUnit == 2 ) // fathoms
+        conv = 0.3048f * 6; // 1 fathom is 6 feet
+
     wxStringTokenizer tk(settings, _T(";"));
     while ( tk.HasMoreTokens() )
     {
@@ -9392,13 +9403,6 @@ void MyFrame::applySettingsString( wxString settings)
 
         else if(token.StartsWith( _T("prefs_shallowdepth"))){
             double old_dval = S52_getMarinerParam( S52_MAR_SHALLOW_CONTOUR );
-
-            float conv = 1;
-            //             if ( depthUnit == 0 ) // feet
-            //                 conv = 0.3048f; // international definiton of 1 foot is 0.3048 metres
-            //             else if ( depthUnit == 2 ) // fathoms
-            //                 conv = 0.3048f * 6; // 1 fathom is 6 feet
-
             double dval;
             if(val.ToDouble(&dval)){
                 if(fabs(dval - old_dval) > .1){
@@ -9409,12 +9413,11 @@ void MyFrame::applySettingsString( wxString settings)
         }
 
         else if(token.StartsWith( _T("prefs_safetydepth"))){
-            double old_dval = S52_getMarinerParam( S52_MAR_SAFETY_DEPTH );
-            float conv = 1;
+            double old_dval = S52_getMarinerParam( S52_MAR_SAFETY_CONTOUR );
             double dval;
             if(val.ToDouble(&dval)){
                 if(fabs(dval - old_dval) > .1){
-                    S52_setMarinerParam( S52_MAR_SAFETY_DEPTH, dval * conv );
+                    S52_setMarinerParam( S52_MAR_SAFETY_CONTOUR, dval * conv );
                     rr |= S52_CHANGED;
                 }
             }
@@ -9422,7 +9425,6 @@ void MyFrame::applySettingsString( wxString settings)
 
         else if(token.StartsWith( _T("prefs_deepdepth"))){
             double old_dval = S52_getMarinerParam( S52_MAR_DEEP_CONTOUR );
-            float conv = 1;
             double dval;
             if(val.ToDouble(&dval)){
                 if(fabs(dval - old_dval) > .1){
