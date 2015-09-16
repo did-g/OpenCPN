@@ -196,7 +196,7 @@ private:
     void drawSingleArrow( int x, int y, double ang, wxColour arrowColor, int arrowWidth, int arrowSizeIdx );
     void drawWindArrowWithBarbs( int settings, int x, int y, double vkn, double ang,
                                  bool south, wxColour arrowColor, double rotate_angle );
-    void drawLineBuffer(LineBuffer &buffer, int x, int y, double ang, bool south=false);
+    void drawLineBuffer(LineBuffer &buffer, int x, int y, double ang, wxColour arrowColor, int arrowWidth, bool south=false );
 
     void DrawNumbers( wxPoint p, double value, int settings, wxColour back_color );
 

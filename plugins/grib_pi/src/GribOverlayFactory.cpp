@@ -37,6 +37,7 @@
 
 #include "GribUIDialog.h"
 #include "GribOverlayFactory.h"
+#include "vase_rend_draft_2.h"
 
 extern int m_Altitude;
 
@@ -923,11 +924,9 @@ void GRIBOverlayFactory::RenderGribBarbedArrows( int settings, GribRecord **pGR,
 #ifdef ocpnUSE_GL
     if( !m_pdc ) {
         //      Enable anti-aliased lines, at best quality
-        glEnable( GL_LINE_SMOOTH );
         glEnable( GL_BLEND );
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-        glLineWidth( 2 );
+	glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_VERTEX_ARRAY);
     }
 #endif
@@ -1006,8 +1005,11 @@ void GRIBOverlayFactory::RenderGribBarbedArrows( int settings, GribRecord **pGR,
 
 
 #ifdef ocpnUSE_GL
-    if( !m_pdc )
+    if( !m_pdc ) {
+        glDisable(GL_BLEND); //restore blending options
+	glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
+    }
 #endif
 }
 
@@ -1127,10 +1129,10 @@ void GRIBOverlayFactory::RenderGribDirectionArrows( int settings, GribRecord **p
 #ifdef ocpnUSE_GL
     if( !m_pdc ) {
         //      Enable anti-aliased lines, at best quality
-        glEnable( GL_LINE_SMOOTH );
         glEnable( GL_BLEND );
+        
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+	glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_VERTEX_ARRAY);
     }
 #endif
@@ -1234,8 +1236,11 @@ void GRIBOverlayFactory::RenderGribDirectionArrows( int settings, GribRecord **p
     }
 
 #ifdef ocpnUSE_GL
-    if( !m_pdc )
+    if( !m_pdc ) {
+        glDisable(GL_BLEND); //restore blending options
+	glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
+    }
 #endif
 }
 
@@ -1917,30 +1922,12 @@ void GRIBOverlayFactory::DrawMessageWindow( wxString msg, int x, int y , wxFont 
 
 void GRIBOverlayFactory::drawDoubleArrow( int x, int y, double ang, wxColour arrowColor, int arrowWidth, int arrowSizeIdx )
 {
-    if( m_pdc ) {
-        wxPen pen( arrowColor, 2 );
-        m_pdc->SetPen( pen );
-        m_pdc->SetBrush( *wxTRANSPARENT_BRUSH);
-    } else {
-        glColor3ub(arrowColor.Red(), arrowColor.Green(), arrowColor.Blue());
-        glLineWidth(arrowWidth);
-    }
-
-    drawLineBuffer(m_DoubleArrow[arrowSizeIdx], x, y, ang);
+    drawLineBuffer(m_DoubleArrow[arrowSizeIdx], x, y, ang, arrowColor, arrowWidth);
 }
 
 void GRIBOverlayFactory::drawSingleArrow( int x, int y, double ang, wxColour arrowColor, int arrowWidth, int arrowSizeIdx )
 {
-    if( m_pdc ) {
-        wxPen pen( arrowColor, arrowWidth );
-        m_pdc->SetPen( pen );
-        m_pdc->SetBrush( *wxTRANSPARENT_BRUSH);
-    } else {
-        glColor3ub(arrowColor.Red(), arrowColor.Green(), arrowColor.Blue());
-        glLineWidth(arrowWidth);
-    }
-
-    drawLineBuffer(m_SingleArrow[arrowSizeIdx], x, y, ang);
+    drawLineBuffer(m_SingleArrow[arrowSizeIdx], x, y, ang, arrowColor, arrowWidth);
 }
 
 void GRIBOverlayFactory::drawWindArrowWithBarbs( int settings, int x, int y, double vkn, double ang, bool south,
@@ -1948,21 +1935,6 @@ void GRIBOverlayFactory::drawWindArrowWithBarbs( int settings, int x, int y, dou
 {
     if(m_Settings.Settings[settings].m_iBarbedColour == 1)
         arrowColor = GetGraphicColor(settings, vkn);
-
-    if( m_pdc ) {
-        wxPen pen( arrowColor, 2 );
-        m_pdc->SetPen( pen );
-        m_pdc->SetBrush( *wxTRANSPARENT_BRUSH);
-
-#if wxUSE_GRAPHICS_CONTEXT
-        if( m_hiDefGraphics && m_gdc )
-            m_gdc->SetPen( pen );
-#endif
-    }
-#ifdef ocpnUSE_GL
-    else
-        glColor3ub(arrowColor.Red(), arrowColor.Green(), arrowColor.Blue());
-#endif
 
     int cacheidx;
 
@@ -1979,10 +1951,10 @@ void GRIBOverlayFactory::drawWindArrowWithBarbs( int settings, int x, int y, dou
 
     ang += rotate_angle;
 
-    drawLineBuffer(m_WindArrowCache[cacheidx], x, y, ang, south);
+    drawLineBuffer(m_WindArrowCache[cacheidx], x, y, ang, arrowColor, 2, south);
 }
 
-void GRIBOverlayFactory::drawLineBuffer(LineBuffer &buffer, int x, int y, double ang, bool south)
+void GRIBOverlayFactory::drawLineBuffer(LineBuffer &buffer, int x, int y, double ang, wxColour arrowColor, int arrowWidth, bool south)
 {
     // transform vertexes by angle
     float six = sinf( ang ), cox = cosf( ang ), siy, coy;
@@ -2001,6 +1973,16 @@ void GRIBOverlayFactory::drawLineBuffer(LineBuffer &buffer, int x, int y, double
     }
 
     if( m_pdc ) {
+        wxPen pen( arrowColor, arrowWidth );
+        m_pdc->SetPen( pen );
+        m_pdc->SetBrush( *wxTRANSPARENT_BRUSH);
+#if wxUSE_GRAPHICS_CONTEXT
+        if( m_hiDefGraphics && m_gdc )
+            m_gdc->SetPen( pen );
+#endif
+    } 
+
+    if( m_pdc ) {
         for(int i=0; i < buffer.count; i++) {
             float *l = vertexes + 4*i;
 #if wxUSE_GRAPHICS_CONTEXT
@@ -2010,10 +1992,17 @@ void GRIBOverlayFactory::drawLineBuffer(LineBuffer &buffer, int x, int y, double
 #endif
                 m_pdc->DrawLine( l[0], l[1], l[2], l[3] );
         }
-    } else {                       // OpenGL mode
 #ifdef ocpnUSE_GL
-        glVertexPointer(2, GL_FLOAT, 2*sizeof(float), vertexes);
-        glDrawArrays(GL_LINES, 0, 2*buffer.count);
+    } else {                       // OpenGL mode
+        for(int i=0; i < buffer.count; i++) {
+            float *l = vertexes + 4*i;
+            line ( l[0], l[1], l[2], l[3],		//coordinates
+			arrowWidth,			//thickness in px
+			arrowColor.Red()/255.0, arrowColor.Green()/255.0, arrowColor.Blue()/255.0,
+    
+			1., 0., 0.,		//background color
+			true);			//not using alphablend
+        }        
 #endif
     }
 }
