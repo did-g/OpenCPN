@@ -444,17 +444,28 @@ time_t GribRecord::makeDate(
     date.tm_yday   = 0;         /* day in the year */
     date.tm_isdst  = 0;         /* daylight saving time */
 
-	time_t   temps = -1;
-    wxDateTime dt(date);
+#ifdef __WXGTK__
+        // assume it's GNU which has timegm
+	time_t   temps = timegm(&date);
+	temps += ((hour * 3600) + (min * 60 ) + sec);								//find datetime exactly as in the file
+#else
+        time_t   temps;
+        // wx date handling is weird
+        // it doesn't understand time_t < 0 (01-01-1970)
+        // and at least on linux the following returns the wrong
+        // value, off by one hour, for 1990-01-01 with a CET TZ
+        wxDateTime dt(date);
 	temps = dt.GetTicks();
 	temps += ((hour * 3600) + (min * 60 ) + sec);								//find datetime exactly as in the file
 	wxDateTime dtt(temps);
-	wxTimeSpan of = wxDateTime::Now() - (wxDateTime::Now().ToGMT() );			//transform to local time
+	
+        wxDateTime now = wxDateTime::Now();
+	wxTimeSpan of = now - now.ToGMT();			//transform to local time
 	if(dtt.IsDST())																//correct dst offset applied 3 times  why ???
 		of -= wxTimeSpan( 2, 0 );
 	dtt += of;
 	temps = dtt.GetTicks();
-
+#endif
 /*
 	char sdate[64];
 	sprintf(sdate, "%04d-%02d-%02d 00:00:00", year,month,day);
