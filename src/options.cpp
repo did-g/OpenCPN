@@ -4498,7 +4498,7 @@ void options::OnChartDirListSelect( wxCommandEvent& event )
         m_removeBtn->Enable();
     } else {
         wxArrayInt sel;
-        m_removeBtn->Enable( pActiveChartsList->GetSelections( sel ) );
+        m_removeBtn->Enable( pActiveChartsList->GetSelections( sel ) != 0 );
     }
 }
 
@@ -7234,6 +7234,11 @@ void OpenGLOptionsDlg::Populate( void )
             m_cbUseAcceleratedPanning->Disable();
         }
     }
+    else{
+        m_cbUseAcceleratedPanning->SetValue( g_GLOptions.m_bUseAcceleratedPanning );
+        m_cbUseAcceleratedPanning->Disable();
+    }
+        
 }
 
 void OpenGLOptionsDlg::OnButtonRebuild( wxCommandEvent& event )

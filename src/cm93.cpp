@@ -4833,7 +4833,7 @@ static double scale_breaks[] =
       150000.,                //D
       300000.,                //C
       1000000.,               //B
-      3000000.,               //A
+      5000000.,               //A
       20000000.               //Z
 };
 
@@ -4854,9 +4854,10 @@ int cm93compchart::GetCMScaleFromVP ( const ViewPort &vpt )
 
 
 
-      //    Completely intuitive exponential curve adjustment
       if ( g_cm93_zoom_factor )
       {
+#if 0
+            //    Completely intuitive exponential curve adjustment
             double efactor = ( double ) ( g_cm93_zoom_factor ) * ( .176 / 7. );
             for ( int i=0 ; i < 7 ; i++ )
             {
@@ -4866,8 +4867,11 @@ int cm93compchart::GetCMScaleFromVP ( const ViewPort &vpt )
                         printf ( "g_cm93_zoom_factor: %2d  efactor: %6g efr:%6g, scale_breaks[i]:%6g  scale_breaks_adj[i]: %6g\n",
                                  g_cm93_zoom_factor, efactor, efr, scale_breaks[i], scale_breaks_adj[i] );
             }
-            // get Bahamas and Bermuda on the same screen...
-            scale_breaks_adj[6] *= 1.5;  
+#else
+            // improved adjustment for small scales
+            double efr = ( double ) g_cm93_zoom_factor * pow(scale_mpp, -.05);
+            scale_mpp_adj *= pow(.6, efr );
+#endif
       }
 
       int cmscale_calc = 7;
