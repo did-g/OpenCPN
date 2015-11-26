@@ -6587,9 +6587,16 @@ wxString s57chart::CreateObjDescriptions( ListOfObjRazRules* rule_list )
 
             LUPstring = _T("    LUP INST: ");
             if( current->LUP->INST ) LUPstring += *( current->LUP->INST );
-            LUPstring += _T("<br><br>");
-            classAttributes << LUPstring;
 
+            if( current->obj->m_chart_context->chart ) {
+                wxString SafetyString;
+                SafetyString.Printf( _T("chart Safety CNT:  %g<br>"), current->obj->m_chart_context->chart->GetCalculatedSafetyContour() );
+                classAttributes << SafetyString;
+            }
+
+            LUPstring += _T("<br><br>");
+
+            classAttributes << LUPstring;
         }
 
         if( GEO_POINT == current->obj->Primitive_type ) {
