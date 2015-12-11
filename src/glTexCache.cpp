@@ -1513,6 +1513,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
                         else {
                             ptd->nGPU_compressed = GPU_TEXTURE_UNCOMPRESSED;
                             b_need_compress = true;
+//                            OCPNPlatform::ShowBusySpinner();
 
 #if 1
                         // in this version, we upload only the current level and don't use mipmaps
