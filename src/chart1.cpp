@@ -7569,8 +7569,8 @@ double MyFrame::GetBestVPScale( ChartBase *pchart )
             double new_scale_ppm = cc1->GetVPScale();
             proposed_scale_onscreen = cc1->GetCanvasScaleFactor() / new_scale_ppm;
         } else {
-            //  This logic will bring the new chart onscreen at roughly twice the true paper scale equivalent.
-            proposed_scale_onscreen = pchart->GetNativeScale() / 2;
+            //  This logic will bring the new chart onscreen at roughly half the true paper scale equivalent.
+            proposed_scale_onscreen = pchart->GetNativeScale() * 2.;
             double equivalent_vp_scale = cc1->GetCanvasScaleFactor() / proposed_scale_onscreen;
             double new_scale_ppm = pchart->GetNearestPreferredScalePPM( equivalent_vp_scale );
             proposed_scale_onscreen = cc1->GetCanvasScaleFactor() / new_scale_ppm;
