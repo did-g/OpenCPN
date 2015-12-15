@@ -780,9 +780,10 @@ int Quilt::AdjustRefOnZoom( bool b_zin, ChartFamilyEnum family,  ChartTypeEnum t
 
         if( b_allow_fullscreen_ref || pCurrentStack->DoesStackContaindbIndex( test_db_index ) ) {
             if( ( family == ChartData->GetDBChartFamily( test_db_index ) )
-                && IsChartQuiltableRef( test_db_index )
-                && !IsChartS57Overlay( test_db_index ) ){
-
+                && IsChartQuiltableRef( test_db_index ) 
+                && !IsChartS57Overlay( test_db_index ) 
+                && ChartData->GetDBChartType( test_db_index ) != CHART_TYPE_CM93COMP) {
+                
                 index_array.Add(test_db_index);
                 int nscale = ChartData->GetDBChartScale(test_db_index);
                 nom_scale.Add(nscale);
@@ -812,7 +813,7 @@ int Quilt::AdjustRefOnZoom( bool b_zin, ChartFamilyEnum family,  ChartTypeEnum t
             int test_db_index = index_array.Item( i-1 );
             if( type == ChartData->GetDBChartType( test_db_index ) ){
                 int smallest_min_scale = min_scale.Item(i-1);
-                min_scale.Item(i-1) = smallest_min_scale * 80; //wxMax(smallest_min_scale, 200000);
+                min_scale.Item(i-1) = smallest_min_scale * 10; //wxMax(smallest_min_scale, 200000);
                 break;
             }
         }
