@@ -1316,7 +1316,9 @@ bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz, int &wpt_duplicat
                     if( NULL != pWayPointMan )
                         pWayPointMan->AddRoutePoint( pWp );
                      pSelect->AddSelectableRoutePoint( pWp->m_lat, pWp->m_lon, pWp );
-                     BBox.Expand(pWp->m_lon, pWp->m_lat);
+                     LLBBox wptbox;
+                     wptbox.Set(pWp->m_lat, pWp->m_lon, pWp->m_lat, pWp->m_lon);
+                     BBox.Expand(wptbox);
             }
             else {
                 delete pWp;
@@ -1327,8 +1329,8 @@ bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz, int &wpt_duplicat
             if( !strcmp(object.name(), "trk") ) {
                 Track *pTrack = GPXLoadTrack1( object, b_full_viz, false, false, 0);
                 if (InsertTrack( pTrack ) && b_compute_bbox && pTrack->IsVisible()) {
-                        BBox.Expand(pTrack->GetBBox());
-                    }
+                        //BBox.Expand(pTrack->GetBBox());
+                }
                 //delete pTrack
             }
             else
