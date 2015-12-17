@@ -1088,8 +1088,7 @@ void RouteManagerDialog::MakeAllRoutesInvisible()
 void RouteManagerDialog::ZoomtoRoute( Route *route )
 {
 
-    wxBoundingBox RBBox = route->GetBBox();
-    gFrame->CenterView( RBBox );
+    gFrame->CenterView( route->GetBBox() );
     
     m_bNeedConfigFlush = true;
 }
