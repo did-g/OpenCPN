@@ -726,7 +726,8 @@ OCPNRegion ViewPort::GetVPRegionIntersect( const OCPNRegion &Region, int nPoints
 #endif    
         
     
-#ifdef __WXGTK__
+// XXXX #ifdef __WXGTK__
+#if 0
     sigaction(SIGSEGV, NULL, &sa_all_old);             // save existing action for this signal
 
     struct sigaction temp;
