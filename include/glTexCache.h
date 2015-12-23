@@ -179,6 +179,7 @@ private:
     int         m_ny_tex;
     
     ColorScheme m_colorscheme;
+    bool	m_pending;
     wxTimer     m_timer;
     size_t      m_ticks;
     int		m_LRUtime;

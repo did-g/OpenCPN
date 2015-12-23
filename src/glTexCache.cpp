@@ -957,6 +957,8 @@ glTexFactory::glTexFactory(ChartBase *chart, int raster_format)
     }
 
     m_ticks = 0;
+    m_pending = false;
+
     // only the main thread can start timer
     if (wxThread::IsMain()) {
         m_timer.SetOwner(this, FACTORY_TIMER);
@@ -1081,7 +1083,7 @@ void glTexFactory::DeleteAllDescriptors( void )
         delete ptd;
         m_td_array[i] = 0;
     }
-    
+    m_pending = false;
 }
 
 bool glTexFactory::BackgroundCompressionAsJob() const
@@ -1143,22 +1145,26 @@ bool glTexFactory::IsCompressedArrayComplete( int base_level, const wxRect &rect
 
 bool glTexFactory::IsCompressedArrayComplete( int base_level, glTextureDescriptor *ptd)
 {
+    if (ptd == 0)
+        return false;
+
+    // it's racy but not more than testing GPU_TEXTURE_COMPRESSED
+    if( ptd->nGPU_compressed == GPU_TEXTURE_UNKNOWN)
+        return false;
+
     bool b_all_cmm_built = false;
     
-    if(ptd) {
-        
-        //  It may be that the compressed mipmaps have been generated , uploaded, and free'ed
-        if( ptd->nGPU_compressed == GPU_TEXTURE_COMPRESSED){
-            b_all_cmm_built = true;
-        }
-        else {
-            // are all required double-compressed levels available?
-            b_all_cmm_built = true;
-            for(int level = base_level; level < g_mipmap_max_level+1; level++ ) {
-                if(NULL == ptd->CompCompArrayAccess( CA_READ, NULL, level)){
-                    b_all_cmm_built = false;
-                    break;
-                }
+    //  It may be that the compressed mipmaps have been generated , uploaded, and free'ed
+    if( ptd->nGPU_compressed == GPU_TEXTURE_COMPRESSED){
+        b_all_cmm_built = true;
+    }
+    else {
+        // are all required double-compressed levels available?
+        b_all_cmm_built = true;
+        for(int level = base_level; level < g_mipmap_max_level+1; level++ ) {
+            if(NULL == ptd->CompCompArrayAccess( CA_READ, NULL, level)){
+                b_all_cmm_built = false;
+                break;
             }
         }
     }
@@ -1224,6 +1230,7 @@ void glTexFactory::DoImmediateFullCompress(const wxRect &rect)
         m_td_array[array_index] = p;
         ptd = p;
     }
+    m_pending = true;
     
     if(g_CompressorPool){
         for(int level = 0; level < g_mipmap_max_level + 1; level++ ) {
@@ -1239,11 +1246,14 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
     //  Scrub all the TD's, looking for any completed compression jobs that have
     //  not been written to disk
     //  In the interest of not disturbing the GUI, process only one TD per tick
-    if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching) {
+    if(g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching && m_pending) {
+        bool more = false;
         for(int i=0 ; i < m_ntex ; i++){
             glTextureDescriptor *ptd = m_td_array[i];
             
             if( ptd && ptd->nCache_Color != m_colorscheme ){
+                if (ptd->nGPU_compressed != GPU_TEXTURE_UNKNOWN)
+                    more = true;
                 if( IsCompressedArrayComplete( 0, ptd) ){
                     bool work = UpdateCacheAllLevels( wxRect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension),
                                           m_colorscheme );
@@ -1270,6 +1280,7 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                 }
             }
         }
+        m_pending = more;
     }
 
 #ifdef __OCPN__ANDROID__    
@@ -1366,6 +1377,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
         p->level_min = g_mipmap_max_level + 1;  // default, nothing loaded
         m_td_array[array_index] = p;
         ptd = p;
+        m_pending = true;
     }
     else 
     {
@@ -1600,6 +1612,7 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
          if( (GL_COMPRESSED_RGBA_S3TC_DXT1_EXT == g_raster_format) ||
              (GL_COMPRESSED_RGB_S3TC_DXT1_EXT == g_raster_format) ||
              (GL_ETC1_RGB8_OES == g_raster_format) ){
+                m_pending = true;
                 if(g_CompressorPool)
                     g_CompressorPool->ScheduleJob( this, rect, 0, b_throttle_thread, false, true);   // with postZip
         }
