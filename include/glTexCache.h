@@ -125,6 +125,7 @@ public:
     void PurgeBackgroundCompressionPool();
     void OnTimer(wxTimerEvent &event);
     void SetLRUTime(int lru) { m_LRUtime = lru; }
+    void SetPendingJob() { m_pending = true; }
     int	 GetLRUTime() { return m_LRUtime; }
     void FreeSome( long target );
     

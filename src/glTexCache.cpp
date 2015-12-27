@@ -695,6 +695,7 @@ bool CompressionWorkerPool::ScheduleJob(glTexFactory* client, const wxRect &rect
     pt->bpost_zip_compress = b_postZip;
 
     if(!b_immediate){
+        client->SetPendingJob();
         todo_list.Append(pt);
         if(bthread_debug){
             int mem_used;
@@ -1230,7 +1231,6 @@ void glTexFactory::DoImmediateFullCompress(const wxRect &rect)
         m_td_array[array_index] = p;
         ptd = p;
     }
-    m_pending = true;
     
     if(g_CompressorPool){
         for(int level = 0; level < g_mipmap_max_level + 1; level++ ) {
@@ -1252,8 +1252,9 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
             glTextureDescriptor *ptd = m_td_array[i];
             
             if( ptd && ptd->nCache_Color != m_colorscheme ){
-                if (ptd->nGPU_compressed != GPU_TEXTURE_UNKNOWN)
-                    more = true;
+                if (ptd->nGPU_compressed == GPU_TEXTURE_UNKNOWN)
+                    continue;
+                more = true;
                 if( IsCompressedArrayComplete( 0, ptd) ){
                     bool work = UpdateCacheAllLevels( wxRect(ptd->x, ptd->y, g_GLOptions.m_iTextureDimension, g_GLOptions.m_iTextureDimension),
                                           m_colorscheme );
@@ -1377,7 +1378,6 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
         p->level_min = g_mipmap_max_level + 1;  // default, nothing loaded
         m_td_array[array_index] = p;
         ptd = p;
-        m_pending = true;
     }
     else 
     {
@@ -1612,7 +1612,6 @@ bool glTexFactory::PrepareTexture( int base_level, const wxRect &rect, ColorSche
          if( (GL_COMPRESSED_RGBA_S3TC_DXT1_EXT == g_raster_format) ||
              (GL_COMPRESSED_RGB_S3TC_DXT1_EXT == g_raster_format) ||
              (GL_ETC1_RGB8_OES == g_raster_format) ){
-                m_pending = true;
                 if(g_CompressorPool)
                     g_CompressorPool->ScheduleJob( this, rect, 0, b_throttle_thread, false, true);   // with postZip
         }
