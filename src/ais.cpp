@@ -913,7 +913,12 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
     //    Calculate AIS target Position Predictor, using global static variable for length of vector
 
     float pred_lat, pred_lon;
-    spherical_ll_gc_ll( td->Lat, td->Lon, td->COG, target_sog * g_ShowCOG_Mins / 60., &pred_lat, &pred_lon );
+    if ( td->Class == AIS_ATON  || td->Class == AIS_BASE  ) {
+        pred_lat = td->Lat;
+        pred_lon = td->Lon;
+    }
+    else
+        spherical_ll_gc_ll( td->Lat, td->Lon, td->COG, target_sog * g_ShowCOG_Mins / 60., &pred_lat, &pred_lon );
 
     //    Is predicted point in the VPoint?
     if(drawit) ;
@@ -942,7 +947,12 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
         //    Use a 100 pixel vector to calculate angle
         float angle_distance_nm = ( 100. / cc1->GetVP().view_scale_ppm ) / 1852.;
         float angle_lat, angle_lon;
-        spherical_ll_gc_ll( td->Lat, td->Lon, td->COG, angle_distance_nm, &angle_lat, &angle_lon );
+        if ( td->Class == AIS_ATON  || td->Class == AIS_BASE  ) {
+            angle_lat = td->Lat;
+            angle_lon = td->Lon;
+        }
+        else
+            spherical_ll_gc_ll( td->Lat, td->Lon, td->COG, angle_distance_nm, &angle_lat, &angle_lon );
 
         wxPoint AnglePoint;
         cc1->GetCanvasPointPix( angle_lat, angle_lon, &AnglePoint );
@@ -1114,7 +1124,12 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
     if( ((td->n_alert_state == AIS_ALERT_SET) && (td->bCPA_Valid)) || (td->b_show_AIS_CPA && (td->bCPA_Valid))) {
         //  Calculate the point of CPA for target
         double tcpa_lat, tcpa_lon;
-        ll_gc_ll( td->Lat, td->Lon, td->COG, target_sog * td->TCPA / 60., &tcpa_lat, &tcpa_lon );
+        if ( td->Class == AIS_ATON  || td->Class == AIS_BASE  ) {
+            tcpa_lat = td->Lat;
+            tcpa_lon = td->Lon;
+        }
+        else
+            ll_gc_ll( td->Lat, td->Lon, td->COG, target_sog * td->TCPA / 60., &tcpa_lat, &tcpa_lon );
         wxPoint tCPAPoint;
         wxPoint TPoint = TargetPoint;
         cc1->GetCanvasPointPix( tcpa_lat, tcpa_lon, &tCPAPoint );
