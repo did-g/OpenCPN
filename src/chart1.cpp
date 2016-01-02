@@ -1545,7 +1545,10 @@ bool MyApp::OnInit()
             return false;               // exit quietly
     }
 #endif
-
+#if 0
+    // Faster but plugins may need Idle (weather routing does)
+    wxIdleEvent::SetMode(wxIDLE_PROCESS_SPECIFIED);
+#endif    
     // Instantiate the global OCPNPlatform class
     g_Platform = new OCPNPlatform;
 
