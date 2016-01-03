@@ -677,6 +677,24 @@ static void AtoN_Diamond( ocpnDC &dc, int x, int y, int radius, AIS_Target_Data*
                 TriPointDown[2] = wxPoint(  0, 0 );
                 TriPointDown[3] = wxPoint(  -rad1a, -rad1a );
 
+    wxPoint CircleOpen[16]; // Workaround to draw transparent circles
+                CircleOpen[0] = wxPoint(  -1, 5 );
+                CircleOpen[1] = wxPoint(  1, 5 );
+                CircleOpen[2] = wxPoint(  3, 4 );
+                CircleOpen[3] = wxPoint(  4, 3);
+                CircleOpen[4] = wxPoint(  5, 1 );
+                CircleOpen[5] = wxPoint(  5,-1  );
+                CircleOpen[6] = wxPoint(  4,-3  );
+                CircleOpen[7] = wxPoint(  3,-4  );
+                CircleOpen[8] = wxPoint(  1,-5  );
+                CircleOpen[9] = wxPoint( -1,-5 );
+                CircleOpen[10] = wxPoint( -3,-4 );
+                CircleOpen[11] = wxPoint( -4,-3 );
+                CircleOpen[12] = wxPoint( -5,-1 );
+                CircleOpen[13] = wxPoint( -4,3 );
+                CircleOpen[14] = wxPoint( -3,4 );
+                CircleOpen[15] = wxPoint( -1,5 );
+                
     switch (td->ShipType ) {
         case 9 :
         case 20://Card. N
@@ -737,16 +755,21 @@ static void AtoN_Diamond( ocpnDC &dc, int x, int y, int radius, AIS_Target_Data*
             break;
         case 17: 
         case 28: //Isolated danger
-            //TODO Draw transparant circles
+            dc.SetPen( aton_WhiteBorderPen );
+            dc.DrawLines( 16, CircleOpen, x, y - radius -5);
             dc.SetPen( aton_DrawPen );
-            dc.DrawCircle(x, y-radius-rad3a, rad3a);
-            dc.DrawCircle(x, y-radius-3*rad3a-1, rad3a);
+            dc.DrawLines( 16, CircleOpen, x, y - radius -5);
+            dc.SetPen( aton_WhiteBorderPen );
+            dc.DrawLines( 16, CircleOpen, x, y - radius -16);
+            dc.SetPen( aton_DrawPen );
+            dc.DrawLines( 16, CircleOpen, x, y - radius -16);
             break;
         case 18: 
         case 29: //Safe water
-            //TODO Draw transparant circle
+            dc.SetPen( aton_WhiteBorderPen );
+            dc.DrawLines( 16, CircleOpen, x, y - radius -5);
             dc.SetPen( aton_DrawPen );
-            dc.DrawCircle(x, y-radius-rad3a, rad3a);
+            dc.DrawLines( 16, CircleOpen, x, y - radius -5);
             break;
         case 19: 
         case 30:{ //Special Mark
@@ -1495,8 +1518,8 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
 
         //        Draw the inactive cross-out line
         if( !td->b_active ) {
-            wxPoint p1 = transrot( wxPoint( -14, 0 ), sin_theta, cos_theta, TargetPoint );
-            wxPoint p2 = transrot( wxPoint( 14, 0 ), sin_theta, cos_theta, TargetPoint );
+            wxPoint p1 = transrot( wxPoint( (int)-14*targetscale/100, 0 ), sin_theta, cos_theta, TargetPoint );
+            wxPoint p2 = transrot( wxPoint( (int)14*targetscale/100, 0 ),  sin_theta, cos_theta, TargetPoint );
 
             dc.SetPen( wxPen( UBLCK, 2 ) );
             dc.StrokeLine( p1.x, p1.y, p2.x, p2.y );
@@ -1506,14 +1529,18 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
         //    Symbolize it if set by most recent message
         if( td->b_blue_paddle ) {
             wxPoint ais_flag_icon[4];
-            ais_flag_icon[0] = wxPoint(-8, -6);
-            ais_flag_icon[1] = wxPoint(-2, 18);
-            ais_flag_icon[2] = wxPoint(-2, 0);
-            ais_flag_icon[3] = wxPoint(-2, -6);
+            ais_flag_icon[0] = wxPoint((int)-8*targetscale/100, (int)-6*targetscale/100);
+            ais_flag_icon[1] = wxPoint( (int)-2*targetscale/100, (int)18*targetscale/100);
+            ais_flag_icon[2] = wxPoint( (int)-2*targetscale/100, 0);
+            ais_flag_icon[3] = wxPoint( (int)-2*targetscale/100, (int)-6*targetscale/100);
+            
             transrot_pts(4, ais_flag_icon, sin_theta, cos_theta, TargetPoint);
 
+            int penWidth = 2;
+            if(targetscale < 100)
+                penWidth = 1;
             dc.SetBrush( wxBrush( GetGlobalColor( _T ( "UINFB" ) ) ) );
-            dc.SetPen( wxPen( GetGlobalColor( _T ( "CHWHT" ) ), 2 ) );
+            dc.SetPen( wxPen( GetGlobalColor( _T ( "CHWHT" ) ), penWidth ) );
             dc.StrokePolygon( 4, ais_flag_icon);
         }
     }

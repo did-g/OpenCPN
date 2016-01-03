@@ -71,13 +71,15 @@ static wxBitmap LoadSVG( const wxString filename, unsigned int width, unsigned i
 
 wxBitmap MergeBitmaps( wxBitmap back, wxBitmap front, wxSize offset )
 {
-    wxBitmap merged( front.GetWidth(), front.GetHeight(), front.GetDepth() );
-
     //  If the front bitmap has no alpha channel, then merging will accomplish nothing
     //  So, simply return the bitmap intact
+    //  However, if the bitmaps are different sizes, do the render anyway.
     wxImage im_front = front.ConvertToImage();
-    if(!im_front.HasAlpha())
+    if(!im_front.HasAlpha() && (front.GetWidth() == back.GetWidth()) )
         return front;
+
+    wxBitmap merged( back.GetWidth(), back.GetHeight(), back.GetDepth() );
+    
 #if !wxCHECK_VERSION(2,9,4)
 
     // Manual alpha blending for broken wxWidgets alpha bitmap support, pervasive in wx2.8.
@@ -199,7 +201,7 @@ wxBitmap ConvertTo24Bit( wxColor bgColor, wxBitmap front ) {
 // Tools and Icons perform on-demand loading and dimming of bitmaps.
 // Changing color scheme invalidatres all loaded bitmaps.
 
-wxBitmap Style::GetIcon(const wxString & name, int width, int height)
+wxBitmap Style::GetIcon(const wxString & name, int width, int height, bool bforceReload)
 {
     if( iconIndex.find( name ) == iconIndex.end() ) {
         wxString msg( _T("The requested icon was not found in the style: ") );
@@ -212,7 +214,7 @@ wxBitmap Style::GetIcon(const wxString & name, int width, int height)
 
     Icon* icon = (Icon*) icons.Item( index );
 
-    if( icon->loaded )
+    if( icon->loaded && !bforceReload)
         return icon->icon;
     if( icon->size.x == 0 )
         icon->size = toolSize[currentOrientation];
@@ -228,7 +230,7 @@ wxBitmap Style::GetIcon(const wxString & name, int width, int height)
         bm = LoadSVG( fullFilePath, retSize.x, retSize.y);
     else
     {
-        wxLogMessage( _T("Can't find SVG icon: ") + fullFilePath );
+///        wxLogMessage( _T("Can't find SVG icon: ") + fullFilePath );
 #endif // ocpnUSE_SVG
         wxRect location( icon->iconLoc, icon->size );
         bm = graphics->GetSubBitmap( location );
