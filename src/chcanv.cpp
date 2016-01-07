@@ -915,6 +915,9 @@ ChartCanvas::ChartCanvas ( wxFrame *frame ) :
     if ( !g_bdisable_opengl )
         m_pQuilt->EnableHighDefinitionZoom( true );
 #endif    
+
+    m_pgridFont = wxTheFontList->FindOrCreateFont( 8, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+         wxFONTWEIGHT_NORMAL, FALSE, wxString( _T ( "Arial" ) ) );
         
 }
 
@@ -1515,7 +1518,18 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
         break;
     }
     case WXK_F4:
-        StartMeasureRoute();
+        if( !m_bMeasure_Active )
+            StartMeasureRoute();
+        else{
+            CancelMeasureRoute();
+            
+            SetCursor( *pCursorArrow );
+            
+            gFrame->SurfaceToolbar();
+            InvalidateGL();
+            Refresh( false );
+        }
+        
         break;
 
     case WXK_F5:
@@ -4081,10 +4095,8 @@ void ChartCanvas::GridDraw( ocpnDC& dc )
     float gridlatMajor, gridlatMinor, gridlonMajor, gridlonMinor;
     wxCoord w, h;
     wxPen GridPen( GetGlobalColor( _T ( "SNDG1" ) ), 1, wxPENSTYLE_SOLID );
-    wxFont *font = wxTheFontList->FindOrCreateFont( 8, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
-                   wxFONTWEIGHT_NORMAL, FALSE, wxString( _T ( "Arial" ) ) );
     dc.SetPen( GridPen );
-    dc.SetFont( *font );
+    dc.SetFont( *m_pgridFont );
     dc.SetTextForeground( GetGlobalColor( _T ( "SNDG1" ) ) );
 
     w = m_canvas_width;
@@ -9167,7 +9179,7 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
 
     //  If the ViewPort is rotated, we may be able to use the cached rotated bitmap
     bool b_rcache_ok = false;
-    b_rcache_ok = !b_newview;
+    ///b_rcache_ok = !b_newview;
 
     //  If in skew compensation mode, with a skewed VP shown, we may be able to use the cached rotated bitmap
     if(  fabs( VPoint.skew ) > 0.01 ) b_rcache_ok = !b_newview;
@@ -9389,7 +9401,10 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
 
     wxMemoryDC *pChartDC = &temp_dc;
     wxMemoryDC rotd_dc;
-
+    
+    if( ( ( fabs( GetVP().rotation ) > 0.01 ) )
+        ||   ( fabs( GetVP().skew ) > 0.01 ) )  {
+        
         //  Can we use the current rotated image cache?
         if( !b_rcache_ok ) {
 #ifdef __WXMSW__
@@ -9445,7 +9460,11 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
             pChartDC = &temp_dc;
             m_roffset = wxPoint( 0, 0 );
         }
-
+    } else {            // unrotated
+        pChartDC = &temp_dc;
+        m_roffset = wxPoint( 0, 0 );
+    }
+        
     wxPoint offset = m_roffset;
 
     //        Save the PixelCache viewpoint for next time
