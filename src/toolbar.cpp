@@ -152,17 +152,18 @@ void GrabberWin::MouseEvent( wxMouseEvent& event )
 
     if( event.RightDown() ){
         if(m_ptoolbar){
-            m_dragging = true;
-            
-            if( !m_ptoolbar->m_bnavgrabber ){
-                m_ptoolbar->m_bnavgrabber = true;
-                m_ptoolbar->SetGrabber(_T("4WayMove") );
-            }
-            else{
-                m_ptoolbar->m_bnavgrabber = false;
-                m_ptoolbar->SetGrabber(_T("grabber_hi") );
-            }
+            if(!m_ptoolbar->m_bsubmerged){
+                m_dragging = true;
                 
+                if( !m_ptoolbar->m_bnavgrabber ){
+                    m_ptoolbar->m_bnavgrabber = true;
+                    m_ptoolbar->SetGrabber(_T("4WayMove") );
+                }
+                else{
+                    m_ptoolbar->m_bnavgrabber = false;
+                    m_ptoolbar->SetGrabber(_T("grabber_hi") );
+                }
+            }
         }
     }
     
@@ -484,6 +485,17 @@ void ocpnFloatingToolbarDialog::RePosition()
         m_position.y = wxMax(0, m_position.y);
 
         wxPoint screen_pos = m_pparent->ClientToScreen( m_position );
+
+        //  GTK sometimes has trouble with ClientToScreen() if executed in the context of an event handler
+        //  The position of the window is calculated incorrectly if a deferred Move() has not been processed yet.
+        //  So work around this here...
+        //  Discovered with a Dashboard window left-docked, toggled on and off by toolbar tool.
+#ifdef __WXGTK__
+        wxPoint pp = m_pparent->GetPosition();
+        wxPoint ppg = m_pparent->GetParent()->GetScreenPosition();
+        wxPoint screen_pos_fix = ppg + pp + m_position;
+        screen_pos.x = screen_pos_fix.x;
+#endif        
 
         Move( screen_pos );
 

@@ -2324,7 +2324,8 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
                     m_pAISRolloverWin->SetString( s );
 
                     wxSize win_size = GetSize();
-                    if( console->IsShown() ) win_size.x -= console->GetSize().x;
+                    if( console && console->IsShown() ) win_size.x -= console->GetSize().x;
+
                     m_pAISRolloverWin->SetBestPosition( mouse_x, mouse_y, 16, 16, AIS_ROLLOVER, win_size );
 
                     m_pAISRolloverWin->SetBitmap( AIS_ROLLOVER );
@@ -9177,12 +9178,10 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
         b_newview = false;
     }
 
-    //  If the ViewPort is rotated, we may be able to use the cached rotated bitmap
+    //  If the ViewPort is skewed or rotated, we may be able to use the cached rotated bitmap.
     bool b_rcache_ok = false;
-    ///b_rcache_ok = !b_newview;
-
-    //  If in skew compensation mode, with a skewed VP shown, we may be able to use the cached rotated bitmap
-    if(  fabs( VPoint.skew ) > 0.01 ) b_rcache_ok = !b_newview;
+    if( fabs( VPoint.skew ) > 0.01 || fabs( VPoint.rotation ) > 0.01)
+        b_rcache_ok = !b_newview;
 
     //  Make a special VP
     if( VPoint.b_MercatorProjectionOverride ) VPoint.SetProjectionType( PROJECTION_MERCATOR );
