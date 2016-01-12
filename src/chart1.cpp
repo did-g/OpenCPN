@@ -2921,8 +2921,13 @@ bool MyFrame::CheckAndAddPlugInTool( ocpnToolBarSimple *tb )
                     break;
             }
 
-            tb->AddTool( pttc->id, wxString( pttc->label ), *( ptool_bmp ),
+            wxToolBarToolBase * tool = tb->AddTool( pttc->id, wxString( pttc->label ), *( ptool_bmp ),
                     wxString( pttc->shortHelp ), pttc->kind );
+            
+            tb->SetToolBitmapsSVG( pttc->id, pttc->pluginNormalIconSVG,
+                                   pttc->pluginRolloverIconSVG,
+                                   pttc->pluginToggledIconSVG );
+            
             bret = true;
         }
     }
@@ -2954,26 +2959,35 @@ bool MyFrame::AddDefaultPositionPlugInTools( ocpnToolBarSimple *tb )
         if( pttc->position == -1 )                  // PlugIn has requested default positioning
                 {
             wxBitmap *ptool_bmp;
+            wxBitmap *ptool_bmp_Rollover;
 
             switch( global_color_scheme ){
                 case GLOBAL_COLOR_SCHEME_DAY:
                     ptool_bmp = pttc->bitmap_day;
+                    ptool_bmp_Rollover = pttc->bitmap_Rollover_day;
                     ;
                     break;
                 case GLOBAL_COLOR_SCHEME_DUSK:
                     ptool_bmp = pttc->bitmap_dusk;
+                    ptool_bmp_Rollover = pttc->bitmap_Rollover_dusk;
                     break;
                 case GLOBAL_COLOR_SCHEME_NIGHT:
                     ptool_bmp = pttc->bitmap_night;
+                    ptool_bmp_Rollover = pttc->bitmap_Rollover_night;
                     break;
                 default:
                     ptool_bmp = pttc->bitmap_day;
-                    ;
+                    ptool_bmp_Rollover = pttc->bitmap_Rollover_day;
                     break;
             }
 
-            tb->AddTool( pttc->id, wxString( pttc->label ), *( ptool_bmp ),
-                    wxString( pttc->shortHelp ), pttc->kind );
+            wxToolBarToolBase * tool = tb->AddTool( pttc->id, wxString( pttc->label ), *( ptool_bmp ),
+                                                    wxString( pttc->shortHelp ), pttc->kind );
+            
+            tb->SetToolBitmapsSVG( pttc->id, pttc->pluginNormalIconSVG,
+                                   pttc->pluginRolloverIconSVG,
+                                   pttc->pluginToggledIconSVG );
+            
             bret = true;
         }
     }
@@ -3003,7 +3017,7 @@ void MyFrame::RequestNewToolbar(bool bforcenew)
             DestroyMyToolbar();
 
         g_toolbar = CreateAToolbar();
-        if (g_FloatingToolbarDialog->m_bsubmerged) {
+        if (g_FloatingToolbarDialog->isSubmergedToGrabber()) {
             g_FloatingToolbarDialog->SubmergeToGrabber();
         } else {
             g_FloatingToolbarDialog->RePosition();
@@ -4895,6 +4909,16 @@ void MyFrame::SetToolbarItemBitmaps( int tool_id, wxBitmap *bmp, wxBitmap *bmpRo
         g_toolbar->RefreshRect( rect );
     }
 }
+
+void MyFrame::SetToolbarItemSVG( int tool_id, wxString normalSVGfile, wxString rolloverSVGfile, wxString toggledSVGfile )
+{
+    if( g_toolbar ) {
+        g_toolbar->SetToolBitmapsSVG( tool_id, normalSVGfile, rolloverSVGfile, toggledSVGfile );
+        wxRect rect = g_toolbar->GetToolRect( tool_id );
+        g_toolbar->RefreshRect( rect );
+    }
+}
+
 
 void MyFrame::ApplyGlobalSettings( bool bFlyingUpdate, bool bnewtoolbar )
 {
