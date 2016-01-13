@@ -258,7 +258,6 @@ wxEvent* OCPN_CompressProgressEvent::Clone() const
 {
     OCPN_CompressProgressEvent *newevent=new OCPN_CompressProgressEvent(*this);
     newevent->m_string=this->m_string;
-    newevent->count=this->count;
     newevent->thread=this->thread;
     return newevent;
 }

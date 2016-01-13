@@ -138,7 +138,6 @@ public:
     
     // required for sending with wxPostEvent()
     wxEvent *Clone() const;
-    int count;
     int thread;
     
     std::string m_string;
