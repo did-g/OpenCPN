@@ -52,16 +52,18 @@ void bmdump(wxBitmap bm, wxString name)
     img.SaveFile( name << _T(".png"), wxBITMAP_TYPE_PNG );
 }
 
-#ifdef ocpnUSE_SVG
 static wxBitmap LoadSVG( const wxString filename, unsigned int width, unsigned int height )
 {
+#ifdef ocpnUSE_SVG
     wxSVGDocument svgDoc;
     if( svgDoc.Load(filename) )
         return wxBitmap( svgDoc.Render( width, height, NULL, true, true ) );
     else
         return wxBitmap(width, height);
-}
+#else
+    return wxBitmap(width, height);
 #endif // ocpnUSE_SVG
+}
 
 // This function can be used to create custom bitmap blending for all platforms
 // where 32 bit bitmap ops are broken. Can hopefully be removed for wxWidgets 3.0...
@@ -457,7 +459,7 @@ wxBitmap Style::BuildPluginIcon( const wxBitmap* bm, int iconType )
         case TOOLICON_NORMAL: {
             if( hasBackground ) {
                 wxBitmap bg = GetNormalBG();
-                bg = SetBitmapBrightness( bg );
+
                 wxSize offset = wxSize( bg.GetWidth() - bm->GetWidth(), bg.GetHeight() - bm->GetHeight() );
                 offset /= 2;
                 iconbm = MergeBitmaps( bg, *bm, offset );
@@ -477,8 +479,11 @@ wxBitmap Style::BuildPluginIcon( const wxBitmap* bm, int iconType )
             iconbm = MergeBitmaps( GetToggledBG(), *bm, wxSize( 0, 0 ) );
             break;
         }
+        default:
+            return wxNullBitmap;
+            break;
     }
-    return iconbm;
+    return SetBitmapBrightness( iconbm );
 }
 
 wxBitmap Style::SetBitmapBrightness( wxBitmap& bitmap )

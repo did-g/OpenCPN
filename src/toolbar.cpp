@@ -156,7 +156,7 @@ void GrabberWin::MouseEvent( wxMouseEvent& event )
 
     if( event.RightDown() ){
         if(m_ptoolbar){
-            if(!m_ptoolbar->m_bsubmerged){
+            if(!m_ptoolbar->isSubmergedToGrabber()){
                 m_dragging = true;
                 
                 if( !m_ptoolbar->m_bnavgrabber ){
@@ -196,7 +196,7 @@ void GrabberWin::MouseEvent( wxMouseEvent& event )
                     m_ptoolbar->ToggleOrientation();
             }
             else if(!m_dragging){
-                if(m_ptoolbar->m_bsubmerged){
+                if(m_ptoolbar->isSubmergedToGrabber()){
                     m_ptoolbar->SurfaceFromGrabber();
                 }
                 else{
@@ -281,6 +281,7 @@ public:
     wxString iconName;
     const wxBitmap* pluginNormalIcon;
     const wxBitmap* pluginRolloverIcon;
+    const wxBitmap* pluginToggledIcon;
     bool firstInLine;
     bool lastInLine;
     bool rollover;
@@ -358,6 +359,7 @@ ocpnFloatingToolbarDialog::ocpnFloatingToolbarDialog( wxWindow *parent, wxPoint 
     Hide();
 
     m_bsubmerged = false;
+    m_bsubmergedToGrabber = false;
     
     m_fade_timer.SetOwner( this, FADE_TIMER );
     if( g_bTransparentToolbar )
@@ -406,8 +408,6 @@ void ocpnFloatingToolbarDialog::SetColorScheme( ColorScheme cs )
     ClearBackground();
 
     if( m_ptoolbar ) {
-        wxColour back_color = GetGlobalColor( _T("GREY2") );
-
         //  Set background
         m_ptoolbar->SetBackgroundColour( back_color );
         m_ptoolbar->ClearBackground();
@@ -524,6 +524,7 @@ void ocpnFloatingToolbarDialog::SubmergeToGrabber()
 {
 //Submerge();
     m_bsubmerged = true;
+    m_bsubmergedToGrabber = true;
     Hide();
     if( m_ptoolbar ) m_ptoolbar->KillTooltip();
 
@@ -594,6 +595,7 @@ bool ocpnFloatingToolbarDialog::CheckSurfaceRequest( wxMouseEvent &event )
 void ocpnFloatingToolbarDialog::SurfaceFromGrabber()
 {
     m_bsubmerged = false;
+    m_bsubmergedToGrabber = false;
     
 #ifndef __WXOSX__
     Hide();
@@ -636,7 +638,7 @@ void ocpnFloatingToolbarDialog::DestroyTimerEvent( wxTimerEvent& event )
 
 bool ocpnFloatingToolbarDialog::isSubmergedToGrabber()
 {
-    return (m_pRecoverwin != 0);
+    return (m_bsubmergedToGrabber);
 }
 
 void ocpnFloatingToolbarDialog::HideTooltip()
@@ -1087,6 +1089,9 @@ void ToolTipWin::SetColorScheme( ColorScheme cs )
 {
     m_back_color = GetGlobalColor( _T ( "UIBCK" ) );
     m_text_color = FontMgr::Get().GetFontColor( _("ToolTips") );
+    // assume black is the default 
+    if (m_text_color == *wxBLACK)
+       m_text_color = GetGlobalColor( _T ( "UITX1" ) );
 
     m_cs = cs;
 }
@@ -1875,15 +1880,13 @@ void ocpnToolBarSimple::DrawTool( wxDC& dc, wxToolBarToolBase *toolBase )
                     svgFile = tool->pluginRolloverIconSVG;
             }
             
-            if(m_style->sysname.Lower() != _T("traditional") )
-                svgFile.Clear();
-            
             if(svgFile.Length()){         // try SVG
 #ifdef ocpnUSE_SVG
                 if( wxFileExists( svgFile ) ){
                     wxSVGDocument svgDoc;
                     if( svgDoc.Load(svgFile) ){
-                        wxBitmap bmp = wxBitmap( svgDoc.Render( tool->m_width, tool->m_height, NULL, true, true ) );
+                        bmp = wxBitmap( svgDoc.Render( tool->m_width, tool->m_height, NULL, true, true ) );
+                        bmp = m_style->SetBitmapBrightness(bmp);
                     }
                     else
                         bmp = m_style->BuildPluginIcon( tool->pluginNormalIcon, TOOLICON_NORMAL );
@@ -1911,36 +1914,6 @@ void ocpnToolBarSimple::DrawTool( wxDC& dc, wxToolBarToolBase *toolBase )
                     }
                 }
             }
-            
-#if 0            
-            if( tool->IsToggled() ) {
-                bmp = m_style->GetToolIcon( tool->GetToolname(), TOOLICON_TOGGLED, tool->rollover,
-                                            tool->m_width, tool->m_height );
-                
-                if( bmp.GetDepth() == 1 ) {     // Tool icon not found
-                    if( tool->rollover ) {
-                        bmp = m_style->BuildPluginIcon( tool->pluginRolloverIcon, TOOLICON_TOGGLED );
-                        if( ! bmp.IsOk() )
-                            bmp = m_style->BuildPluginIcon( tool->pluginNormalIcon, TOOLICON_TOGGLED );
-                    }
-                    else
-                        bmp = m_style->BuildPluginIcon( tool->pluginNormalIcon, TOOLICON_TOGGLED );
-                }
-            } else {
-                bmp = m_style->GetToolIcon( tool->GetToolname(), TOOLICON_NORMAL, tool->rollover,
-                                            tool->m_width, tool->m_height );
-                
-                if( bmp.GetDepth() == 1 ) {      // Tool icon not found
-                    if( tool->rollover ) {
-                        bmp = m_style->BuildPluginIcon( tool->pluginRolloverIcon, TOOLICON_NORMAL );
-                        if( ! bmp.IsOk() )
-                            bmp = m_style->BuildPluginIcon( tool->pluginNormalIcon, TOOLICON_NORMAL );
-                    }
-                    else
-                        bmp = m_style->BuildPluginIcon( tool->pluginNormalIcon, TOOLICON_NORMAL );
-                }
-            }
-#endif            
             tool->SetNormalBitmap( bmp );
             tool->bitmapOK = true;
         } else {

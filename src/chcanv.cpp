@@ -117,6 +117,8 @@ extern struct sigaction sa_all_old;
 extern sigjmp_buf           env;                    // the context saved by sigsetjmp();
 #endif
 
+extern float  g_ChartScaleFactorExp;
+
 #include <vector>
 
 #if defined(__MSVC__) &&  (_MSC_VER < 1700) 
@@ -1251,6 +1253,11 @@ void ChartCanvas::EnablePaint(bool b_enable)
 bool ChartCanvas::IsQuiltDelta()
 {
     return m_pQuilt->IsQuiltDelta( VPoint );
+}
+
+void ChartCanvas::UnlockQuilt()
+{
+    m_pQuilt->UnlockQuilt();
 }
 
 ArrayOfInts ChartCanvas::GetQuiltIndexArray( void )
@@ -3965,7 +3972,10 @@ void ChartCanvas::ShipDraw( ocpnDC& dc )
                     if( rot_image.GetAlpha( ip, jp ) > 64 ) rot_image.SetAlpha( ip, jp, 255 );
 
             wxBitmap os_bm( rot_image );
-
+            
+            wxImage scaled_image = os_bm.ConvertToImage();
+            os_bm = wxBitmap(scaled_image.Scale(scaled_image.GetWidth() * g_ChartScaleFactorExp, scaled_image.GetHeight() * g_ChartScaleFactorExp, wxIMAGE_QUALITY_HIGH));
+            
             int w = os_bm.GetWidth();
             int h = os_bm.GetHeight();
             img_height = h;
@@ -6353,6 +6363,8 @@ bool ChartCanvas::MouseEventProcessObjects( wxMouseEvent& event )
         
 }
 
+bool panleftIsDown;
+
 bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
 {
     int x, y;
@@ -6394,10 +6406,13 @@ bool ChartCanvas::MouseEventProcessCanvas( wxMouseEvent& event )
         ZoomCanvas( factor, true, false );
         
     }
-    
+
+    if( event.LeftDown() )
+        panleftIsDown = true;
+        
     if( event.LeftUp() ) {
-        if( 1/*leftIsDown*/ ) {  // left click for chart center
-            leftIsDown = false;
+        if( panleftIsDown ) {  // leftUp for chart center, but only after a leftDown seen here.
+            panleftIsDown = false;
             
             if( !g_btouch ){
                 if( !m_bChartDragging && !m_bMeasure_Active ) {

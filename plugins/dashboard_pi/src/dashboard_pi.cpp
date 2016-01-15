@@ -30,6 +30,10 @@
 #ifndef  WX_PRECOMP
 #include "wx/wx.h"
 #endif //precompiled headers
+
+// xw 2.8
+#include <wx/filename.h>
+
 #include <typeinfo>
 #include "dashboard_pi.h"
 #include "icons.h"
@@ -359,10 +363,17 @@ int dashboard_pi::Init( void )
      wxString normalIcon = shareLocn + _T("Dashboard.svg");
      wxString toggledIcon = shareLocn + _T("Dashboard_toggled.svg");
      wxString rolloverIcon = shareLocn + _T("Dashboard_rollover.svg");
+     
+     //  For journeyman styles, we prefer the built-in raster icons which match the rest of the toolbar.
+     if(GetActiveStyleName().Lower() != _T("traditional")){
+         normalIcon = _T("");
+         toggledIcon = _T("");
+         rolloverIcon = _T("");
+     }
+         
      wxLogMessage(normalIcon);
-     m_toolbar_item_id = InsertPlugInToolSVG( _T(""), normalIcon, toggledIcon, wxITEM_CHECK,
+     m_toolbar_item_id = InsertPlugInToolSVG( _T(""), normalIcon, rolloverIcon, toggledIcon, wxITEM_CHECK,
              _("Dashboard"), _T(""), NULL, DASHBOARD_TOOL_POSITION, 0, this );
-     SetToolbarToolBitmapsSVG(m_toolbar_item_id, normalIcon, rolloverIcon, toggledIcon);
     
     
     ApplyConfig();

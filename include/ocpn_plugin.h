@@ -602,9 +602,9 @@ extern "C"  DECL_EXP void SetToolbarToolViz(int item, bool viz);      // Tempora
 extern "C"  DECL_EXP void SetToolbarItemState(int item, bool toggle);
 extern "C"  DECL_EXP void SetToolbarToolBitmaps(int item, wxBitmap *bitmap, wxBitmap *bmpRollover);
 
-extern "C"  DECL_EXP int InsertPlugInToolSVG(wxString label, wxString SVGfile, wxString SVGfileToggled, wxItemKind kind,
-                                          wxString shortHelp, wxString longHelp, wxObject *clientData, int position,
-                                          int tool_sel, opencpn_plugin *pplugin);
+extern "C"  DECL_EXP int InsertPlugInToolSVG(wxString label, wxString SVGfile, wxString SVGfileRollover, wxString SVGfileToggled,
+                                          wxItemKind kind, wxString shortHelp, wxString longHelp,
+                                          wxObject *clientData, int position, int tool_sel, opencpn_plugin *pplugin);
 extern "C"  DECL_EXP void SetToolbarToolBitmapsSVG(int item, wxString SVGfile,
                                                    wxString SVGfileRollover,
                                                    wxString SVGfileToggled );
@@ -1019,7 +1019,7 @@ extern  DECL_EXP wxDialog *GetActiveOptionsDialog();
 extern  DECL_EXP wxArrayString GetWaypointGUIDArray( void );
 
 extern  DECL_EXP bool AddPersistentFontKey(wxString TextElement);
-
+extern  DECL_EXP wxString GetActiveStyleName();
 
 /*  Platform optimized File/Dir selector dialogs */
 extern  DECL_EXP int PlatformDirSelectorDialog( wxWindow *parent, wxString *file_spec, wxString Title, wxString initDir);

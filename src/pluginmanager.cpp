@@ -73,6 +73,7 @@
 extern MyConfig        *pConfig;
 extern AIS_Decoder     *g_pAIS;
 extern wxAuiManager    *g_pauimgr;
+extern ocpnStyle::StyleManager* g_StyleManager;
 
 #if wxUSE_XLOCALE || !wxCHECK_VERSION(3,0,0)
 extern wxLocale        *plocale_def_lang;
@@ -1641,20 +1642,22 @@ int PlugInManager::AddToolbarTool(wxString label, wxBitmap *bitmap, wxBitmap *bm
     return pttc->id;
 }
 
-int PlugInManager::AddToolbarTool(wxString label, wxString SVGfile, wxString SVGfileToggled, wxItemKind kind,
-                                  wxString shortHelp, wxString longHelp, wxObject *clientData, int position,
-                                  int tool_sel, opencpn_plugin *pplugin )
+int PlugInManager::AddToolbarTool(wxString label, wxString SVGfile, wxString SVGRolloverfile, wxString SVGToggledfile,
+                                  wxItemKind kind, wxString shortHelp, wxString longHelp,
+                                  wxObject *clientData, int position, int tool_sel, opencpn_plugin *pplugin )
 {
     PlugInToolbarToolContainer *pttc = new PlugInToolbarToolContainer;
     pttc->label = label;
     
     pttc->pluginNormalIconSVG = SVGfile;
-    pttc->pluginToggledIconSVG = SVGfileToggled;
+    pttc->pluginRolloverIconSVG = SVGRolloverfile;
+    pttc->pluginToggledIconSVG = SVGToggledfile;
     
     // Build a set of bitmaps based on the generic "puzzle piece" icon,
     // In case there is some problem with the SVG file(s) specified.
     ocpnStyle::Style*style = g_StyleManager->GetCurrentStyle();
     pttc->bitmap_day = new wxBitmap( style->GetIcon( _T("default_pi") ));
+    pttc->bitmap_Rollover_day = new wxBitmap( style->GetIcon( _T("default_pi") ));
 
     pttc->bitmap_dusk = BuildDimmedToolBitmap(pttc->bitmap_day, 128);
     pttc->bitmap_night = BuildDimmedToolBitmap(pttc->bitmap_day, 32);
@@ -1978,12 +1981,12 @@ void SetToolbarToolBitmaps(int item, wxBitmap *bitmap, wxBitmap *bmpRollover)
         s_ppim->SetToolbarItemBitmaps(item, bitmap, bmpRollover);
 }
 
-int InsertPlugInToolSVG(wxString label, wxString SVGfile, wxString SVGfileToggled, wxItemKind kind,
-                                          wxString shortHelp, wxString longHelp, wxObject *clientData, int position,
-                                          int tool_sel, opencpn_plugin *pplugin)
+int InsertPlugInToolSVG(wxString label, wxString SVGfile, wxString SVGfileRollover, wxString SVGfileToggled,
+                        wxItemKind kind, wxString shortHelp, wxString longHelp,
+                        wxObject *clientData, int position, int tool_sel, opencpn_plugin *pplugin)
 {
     if(s_ppim)
-        return s_ppim->AddToolbarTool(label, SVGfile, SVGfileToggled, kind,
+        return s_ppim->AddToolbarTool(label, SVGfile, SVGfileRollover, SVGfileToggled, kind,
                                       shortHelp, longHelp, clientData, position,
                                       tool_sel, pplugin );
     else
@@ -2141,6 +2144,15 @@ bool AddPersistentFontKey(wxString TextElement)
 {
     return FontMgr::Get().AddAuxKey( TextElement );
 }
+
+wxString GetActiveStyleName()
+{
+    if(g_StyleManager)
+        return g_StyleManager->GetCurrentStyle()->name;
+    else
+        return _T("");
+}
+
 
 wxColour GetFontColour_PlugIn(wxString TextElement)
 {
