@@ -541,6 +541,9 @@ void RoutePoint::Draw( ocpnDC& dc, wxPoint *rpn )
         }
 
         if( m_pMarkFont ) {
+            // assume black is the default 
+            if (m_FontColor == *wxBLACK)
+                m_FontColor = GetGlobalColor( _T ( "UITX1" ) );
             wxRect r2( r.x + m_NameLocationOffsetX, r.y + m_NameLocationOffsetY, m_NameExtents.x,
                     m_NameExtents.y );
             r1.Union( r2 );
@@ -709,6 +712,9 @@ void RoutePoint::DrawGL( ViewPort &vp, bool use_cached_screen_coords )
         }
 
         if( m_pMarkFont ) {
+            // assume black is the default 
+            if (m_FontColor == *wxBLACK)
+                m_FontColor = GetGlobalColor( _T ( "UITX1" ) );
             wxRect r2( r.x + m_NameLocationOffsetX, r.y + m_NameLocationOffsetY,
                        m_NameExtents.x, m_NameExtents.y );
             r3.Union( r2 );
