@@ -2025,6 +2025,8 @@ extern ocpnGLOptions g_GLOptions;
         g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching ) {
 
         cc1->ReloadVP();                  //  Get a nice chart background loaded
+        Yield();
+        
 
         //      Turn off the toolbar as a clear signal that the system is busy right now.
         // Note: I commented this out because the toolbar never comes back for me
