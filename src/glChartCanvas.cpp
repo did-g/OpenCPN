@@ -1088,9 +1088,6 @@ void glChartCanvas::BuildFBO( )
     // Disable Render to FBO
     ( s_glBindFramebuffer )( GL_FRAMEBUFFER_EXT, 0 );
 
-    // Disable Render to FBO
-    ( s_glBindFramebuffer )( GL_FRAMEBUFFER_EXT, 0 );
-
     /* invalidate cache */
     Invalidate();
 
