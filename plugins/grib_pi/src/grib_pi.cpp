@@ -75,6 +75,7 @@ grib_pi::grib_pi(void *ppimgr)
       initialize_images();
       m_pLastTimelineSet = NULL;
       m_bShowGrib = false;
+      m_GUIScaleFactor = -10;
 }
 
 grib_pi::~grib_pi(void)
@@ -363,6 +364,7 @@ void grib_pi::OnToolbarToolCallback(int id)
     if( scale_factor != m_GUIScaleFactor ) starting = true;
 
     m_GUIScaleFactor = scale_factor;
+    bool scaled = false;
     
     if(!m_pGribCtrlBar)
     {
@@ -386,9 +388,10 @@ void grib_pi::OnToolbarToolCallback(int id)
         m_pGRIBOverlayFactory->SetTimeZone( m_bTimeZone );
         m_pGRIBOverlayFactory->SetParentSize( m_display_width, m_display_height);
         m_pGRIBOverlayFactory->SetSettings( m_bGRIBUseHiDef, m_bGRIBUseGradualColors );
-
+        // openFile calls GetScaledBitmap
+        m_pGribCtrlBar->SetScaledBitmap( m_GUIScaleFactor );
+        scaled = true;
         m_pGribCtrlBar->OpenFile( m_bLoadLastOpenFile == 0 );
-
     }
 
     if( m_pGribCtrlBar->GetFont() != *OCPNGetFont(_("Dialog"), 10) ) starting = true;
@@ -401,6 +404,8 @@ void grib_pi::OnToolbarToolCallback(int id)
         if( starting ) {
             SetDialogFont( m_pGribCtrlBar );
 	    m_pGribCtrlBar->SetScaledBitmap( m_GUIScaleFactor );
+            if (!scaled)
+                m_pGribCtrlBar->SetScaledBitmap( m_GUIScaleFactor );
             m_pGribCtrlBar->SetDialogsStyleSizePosition( true );
             m_pGribCtrlBar->Refresh();
         } else {
