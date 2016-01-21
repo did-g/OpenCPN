@@ -580,7 +580,7 @@ WX_DEFINE_LIST(JobList);
 CompressionWorkerPool::CompressionWorkerPool()
 {
     m_njobs_running = 0;
-    int nCPU =  wxMax(1, wxThread::GetCPUCount());
+    int nCPU =  OCPNPlatform::CPUCount();
     m_max_jobs =  nCPU;
 
     bthread_debug = false;

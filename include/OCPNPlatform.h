@@ -78,7 +78,8 @@ public:
     static void OnExit_1( void );
     static void OnExit_2( void );
     
-
+    static int CPUCount();
+    
     void SetDefaultOptions( void );
 
     void applyExpertMode(bool mode);

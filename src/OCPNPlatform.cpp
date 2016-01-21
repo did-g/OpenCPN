@@ -223,6 +223,8 @@ extern int                      g_nTrackPrecision;
 extern wxString                 g_toolbarConfig;
 extern bool                     g_bPreserveScaleOnX;
 
+extern int              	g_nCPUCount;
+
 #ifdef ocpnUSE_GL
 extern ocpnGLOptions            g_GLOptions;
 #endif
@@ -313,7 +315,23 @@ int CALLBACK CrashCallback(CR_CRASH_CALLBACK_INFO* pInfo)
 }
 #endif
 
-
+// on 32 bits system if there's a lot of CPU
+int OCPNPlatform::CPUCount()
+{
+    int cnt = 4;
+    if (g_nCPUCount > 0)
+        return g_nCPUCount;
+    
+    cnt = wxThread::GetCPUCount();
+        
+    if (cnt < 1) {
+        // obviously there's a least one CPU!
+        cnt = 1;
+    }
+    // at most four CPU for now
+    cnt = wxMin(cnt, 4);
+    return cnt;
+}
 
 //  Called from MyApp() immediately upon entry to MyApp::OnInit()
 void OCPNPlatform::Initialize_1( void )

@@ -181,7 +181,6 @@ extern bool             g_fog_overzoom;
 extern double           g_overzoom_emphasis_base;
 extern bool             g_oz_vector_scale;
 extern TCMgr            *ptcmgr;
-extern int              g_nCPUCount;
 
 
 ocpnGLOptions g_GLOptions;
@@ -506,15 +505,8 @@ void BuildCompressedCache()
     pprog_threads = 0;
     CompressedCacheWorkerThread **workers = NULL;
     if(ramonly) {
-        if(g_nCPUCount > 0)
-            thread_count = g_nCPUCount;
-        else
-            thread_count = wxThread::GetCPUCount();
+        thread_count = OCPNPlatform::CPUCount();
         
-        if (thread_count < 1) {
-            // obviously there's a least one CPU!
-            thread_count = 1;
-        }
         pprog_threads = thread_count;
 
         workers = new CompressedCacheWorkerThread*[thread_count];
