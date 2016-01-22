@@ -536,7 +536,7 @@ void BuildCompressedCache()
     pprog->Hide();
     wxSize sz = pprog->GetSize();
     sz.x = csz.x * 8 / 10;
-    sz.y += thread_count * 40;          // allow for multiline messages
+    //sz.y += thread_count * 40;          // allow for multiline messages
     pprog->SetSize( sz );
     pprog_size = sz;
 
