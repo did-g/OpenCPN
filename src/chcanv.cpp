@@ -510,6 +510,7 @@ ChartCanvas::ChartCanvas ( wxFrame *frame ) :
     SetBackgroundColour ( GetGlobalColor ( _T ( "NODTA" ) ) );
     SetBackgroundStyle ( wxBG_STYLE_CUSTOM );  // on WXMSW, this prevents flashing on color scheme change
 
+    m_bRefreshRequested = false;
     m_bDrawingRoute = false;
     m_bRouteEditing = false;
     m_bMarkEditing = false;
@@ -9765,6 +9766,13 @@ bool ChartCanvas::SetCursor( const wxCursor &c )
     else
 #endif
         return wxWindow::SetCursor( c );
+}
+
+bool ChartCanvas::IsRefreshRequested()
+{
+    bool ret = m_bRefreshRequested;
+    m_bRefreshRequested = false;
+    return ret;
 }
 
 void ChartCanvas::Refresh( bool eraseBackground, const wxRect *rect )

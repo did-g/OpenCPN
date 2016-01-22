@@ -177,7 +177,10 @@ public:
       virtual void Refresh( bool eraseBackground = true,
                             const wxRect *rect = (const wxRect *) NULL );
       virtual void Update();
-
+ 
+      void RequestRefresh()  {m_bRefreshRequested = true;}
+      bool IsRefreshRequested();
+      
       void LostMouseCapture(wxMouseCaptureLostEvent& event);
       
       void CancelMouseRoute();
@@ -384,7 +387,7 @@ private:
                                wxPoint lPredPoint, bool b_render_hdt,
           wxPoint lShipMidPoint);
       ChInfoWin   *m_pCIWin;
-
+      bool        m_bRefreshRequested;
       bool        m_bShowCurrent;
       bool        m_bShowTide;
       int         cursor_region;

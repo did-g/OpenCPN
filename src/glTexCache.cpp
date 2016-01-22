@@ -1271,7 +1271,7 @@ void glTexFactory::OnTimer(wxTimerEvent &event)
                         // gone up a mipmap level
                         glChartCanvas::Invalidate(); // ensure we refresh
                         extern ChartCanvas *cc1;
-                        cc1->Refresh();
+                        cc1->RequestRefresh();
                     }
                     else {
                         // XXX is that true?

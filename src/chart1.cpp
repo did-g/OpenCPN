@@ -6673,10 +6673,13 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
     
     if(g_bopengl) {
 #ifdef ocpnUSE_GL
-        if(m_fixtime - cc1->GetglCanvas()->m_last_render_time > 0)
+        if (cc1->IsRefreshRequested())
+            bnew_view = true;
+                
+        else if(m_fixtime - cc1->GetglCanvas()->m_last_render_time > 0)
             bnew_view = true;
 
-        if( AnyAISTargetsOnscreen( cc1->GetVP() ) )
+        else if( AnyAISTargetsOnscreen( cc1->GetVP() ) )
             bnew_view = true;
 
         if(bnew_view) /* full frame in opengl mode */
