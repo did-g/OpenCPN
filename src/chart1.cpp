@@ -1796,7 +1796,7 @@ bool MyApp::OnInit()
     cc1->SetQuiltMode( g_bQuiltEnable );                     // set initial quilt mode
     cc1->m_bFollow = pConfig->st_bFollow;               // set initial state
     cc1->SetViewPoint( vLat, vLon, initial_scale_ppm, 0., 0. );
-    g_ChartUpdatePeriod = !!cc1->m_bFollow;
+    g_ChartUpdatePeriod = 1; // !!cc1->m_bFollow;
     gFrame->Enable();
 
     cc1->SetFocus();
@@ -7404,7 +7404,7 @@ void MyFrame::SetChartUpdatePeriod( ViewPort &vp )
 {
     //    Set the chart update period based upon chart skew and skew compensator
 
-    g_ChartUpdatePeriod = !!cc1->m_bFollow;            // General default
+    g_ChartUpdatePeriod = 1; // !!cc1->m_bFollow;            // General default
 
     if (!g_bopengl && !vp.b_quilt)
         if ( fabs(vp.skew) > 0.0001)
