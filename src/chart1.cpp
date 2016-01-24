@@ -2607,6 +2607,8 @@ void MyFrame::SetAndApplyColorScheme( ColorScheme cs )
     g_Piano->ResetRollover();
     g_Piano->SetColorScheme( cs );
 
+    if( g_options ) g_options->SetColorScheme( cs );
+
     if( console ) console->SetColorScheme( cs );
 
     if( g_pRouteMan ) g_pRouteMan->SetColorScheme( cs );
