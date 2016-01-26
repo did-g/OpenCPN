@@ -3198,7 +3198,15 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
                 b_ret = true;
             }
         }
-        
+        //  Create the quilt
+        if( ChartData && pCurrentStack ) {
+            int current_db_index;
+            current_db_index = pCurrentStack->GetCurrentEntrydbIndex();       // capture the current
+
+            ChartData->BuildChartStack( pCurrentStack, lat, lon, current_db_index);
+            pCurrentStack->SetCurrentEntryFromdbIndex( current_db_index );
+        }
+
         if(!g_bopengl)
             VPoint.b_MercatorProjectionOverride = false;
     }
@@ -3212,7 +3220,7 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
         if( ChartData /*&& ChartData->IsValid()*/ ) {
             if( !pCurrentStack ) return false;
 
-            int current_db_index = -1;
+            int current_db_index;
             current_db_index = pCurrentStack->GetCurrentEntrydbIndex();       // capture the current
 
             ChartData->BuildChartStack( pCurrentStack, lat, lon );
