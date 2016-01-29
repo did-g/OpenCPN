@@ -2601,6 +2601,8 @@ void MyFrame::SetAndApplyColorScheme( ColorScheme cs )
     g_Piano->ResetRollover();
     g_Piano->SetColorScheme( cs );
 
+    if( g_options ) g_options->SetColorScheme( cs );
+
     if( console ) console->SetColorScheme( cs );
 
     if( g_pRouteMan ) g_pRouteMan->SetColorScheme( cs );
@@ -5599,6 +5601,7 @@ bool MyFrame::ScrubGroupArray()
             {
                 ChartGroupElement *pelement = pGroup->m_element_array.Item( j );
                 pGroup->m_element_array.RemoveAt( j );
+                j--;
                 delete pelement;
                 b_change = true;
             }
@@ -6970,7 +6973,7 @@ void MyFrame::UpdateGPSCompassStatusBox( bool b_force_new )
         wxSize parent_size = cc1->GetSize();
 
         // check to see if it would overlap if it was in its home position (upper right)
-        wxPoint tentative_pt(parent_size.x - rect.width - cc1_edge_comp, 0);
+        wxPoint tentative_pt(parent_size.x - rect.width - cc1_edge_comp, g_StyleManager->GetCurrentStyle()->GetCompassYOffset());
         wxRect tentative_rect( tentative_pt, rect.GetSize() );
 
         //  If the toolbar location has changed, or the proposed compassDialog location has changed
@@ -10976,7 +10979,8 @@ static const char *usercolors[] = { "Table:DAY", "GREEN1;120;255;120;", "GREEN2;
         "DASHN; 200;120;  0;",              // Dashboard Needle
         "DASH1; 204;204;255;",              // Dashboard Illustrations
         "DASH2; 122;131;172;",              // Dashboard Illustrations
-
+        "COMP1; 211;211;211;",              // Compass Window Background
+        
         "Table:DUSK", "GREEN1; 60;128; 60;", "GREEN2; 22; 75; 22;", "GREEN3; 80;100; 80;",
         "GREEN4;  0;128;  0;", "BLUE1;  80; 80;160;", "BLUE2;  30; 30;120;", "BLUE3;   0;  0;128;",
         "GREY1; 100;100;100;", "GREY2; 128;128;128;", "RED1;  150;100;100;", "UBLCK;   0;  0;  0;",
@@ -11022,7 +11026,8 @@ static const char *usercolors[] = { "Table:DAY", "GREEN1;120;255;120;", "GREEN2;
         "DASHN; 100; 50;  0;",              // Dashboard Needle
         "DASH1;  76; 76;113;",              // Dashboard Illustrations
         "DASH2;  48; 52; 72;",              // Dashboard Illustrations
-
+        "COMP1; 107;107;107;",              // Compass Window Background
+        
         "Table:NIGHT", "GREEN1; 30; 80; 30;", "GREEN2; 15; 60; 15;", "GREEN3; 12; 23;  9;",
         "GREEN4;  0; 64;  0;", "BLUE1;  60; 60;100;", "BLUE2;  22; 22; 85;", "BLUE3;   0;  0; 40;",
         "GREY1;  48; 48; 48;", "GREY2;  32; 32; 32;", "RED1;  100; 50; 50;", "UWHIT; 255;255;255;",
@@ -11067,7 +11072,8 @@ static const char *usercolors[] = { "Table:DAY", "GREEN1;120;255;120;", "GREEN2;
         "DASHN;  17; 80; 56;",              // Dashboard Needle
         "DASH1;  48; 52; 72;",              // Dashboard Illustrations
         "DASH2;  36; 36; 53;",              // Dashboard Illustrations
-
+        "COMP1;  24; 24; 24;",              // Compass Window Background
+        
         "*****" };
 
 int get_static_line( char *d, const char **p, int index, int n )
@@ -12264,6 +12270,8 @@ bool ReloadLocale()
         // of the wxWidgets strings is not present.
         // So try again, without attempting to load defaults wxstd.mo.
         if( !b_initok ){
+            delete plocale_def_lang;
+            plocale_def_lang = new wxLocale;
             b_initok = plocale_def_lang->Init( pli->Language, 0 );
         }
         loc_lang_canonical = pli->CanonicalName;

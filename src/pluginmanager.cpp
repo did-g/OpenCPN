@@ -104,6 +104,7 @@ extern ChartCanvas     *cc1;
 extern wxArrayString    g_locale_catalog_array;
 extern int              g_GUIScaleFactor;
 extern int              g_ChartScaleFactor;
+extern wxString         g_locale;
 
 unsigned int      gs_plib_flags;
 
@@ -2166,10 +2167,10 @@ wxBitmap GetBitmapFromSVGFile(wxString filename, unsigned int width, unsigned in
     if ( (width > 0) && (height > 0) && svgDoc.Load(filename))
         return wxBitmap(svgDoc.Render(width, height, NULL, false, true));
     else
-        return wxBitmap(0, 0);
+        return wxBitmap();
     
 #else        
-        return wxBitmap(0, 0);
+        return wxBitmap();
 #endif // ocpnUSE_SVG   
 }
 
@@ -2356,6 +2357,11 @@ int RemoveChartFromDBInPlace( wxString &full_path )
     }
     
     return bret;
+}
+
+wxString GetLocaleCanonicalName()
+{
+    return g_locale;
 }
 
 

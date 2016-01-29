@@ -8996,6 +8996,8 @@ static void RouteLegInfo( ocpnDC &dc, wxPoint ref_point, int row, wxString s )
     yp += hilite_offset;
 
     dc.SetPen( wxPen( GetGlobalColor( _T ( "UBLCK" ) ) ) );
+    dc.SetTextForeground( FontMgr::Get().GetFontColor( _("RouteLegInfoRollover") ) );
+    
     AlphaBlending( dc, xp, yp, w, h, 0.0, GetGlobalColor( _T ( "YELO1" ) ), 172 );
 
     dc.DrawText( s, xp, yp );
@@ -11184,14 +11186,26 @@ int SetScreenBrightness( int brightness )
             ReleaseDC( NULL, hDC );                                             // Release the DC
         }
 
-        if( NULL == g_pcurtain ) InitScreenBrightness();
+        if(brightness < 100 ){
+            if( NULL == g_pcurtain )
+                InitScreenBrightness();
+    
+            if( g_pcurtain ) {
+                int sbrite = wxMax(1, brightness);
+                sbrite = wxMin(100, sbrite);
 
-        if( g_pcurtain ) {
-            int sbrite = wxMax(1, brightness);
-            sbrite = wxMin(100, sbrite);
-
-            g_pcurtain->SetTransparent( ( 100 - sbrite ) * 256 / 100 );
+                g_pcurtain->SetTransparent( ( 100 - sbrite ) * 256 / 100 );
+            }
         }
+        else{
+            if( g_pcurtain ) {
+                g_pcurtain->Close();
+                g_pcurtain->Destroy();
+                g_pcurtain = NULL;
+            }
+        }
+        
+            
         return 1;
     }
 
@@ -11458,8 +11472,7 @@ void DimeControl( wxWindow* ctrl, wxColour col, wxColour window_back_color, wxCo
             ( (wxRadioButton*) win )->SetBackgroundColour( window_back_color );
 
         else if( win->IsKindOf( CLASSINFO(wxScrolledWindow) ) ) {
-            if( cs != GLOBAL_COLOR_SCHEME_DAY && cs != GLOBAL_COLOR_SCHEME_RGB )
-                ( (wxScrolledWindow*) win )->SetBackgroundColour( window_back_color );
+            ( (wxScrolledWindow*) win )->SetBackgroundColour( window_back_color );
         }
 #endif
 

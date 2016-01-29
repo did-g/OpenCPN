@@ -112,6 +112,7 @@ and extended by Sean D'Epagnier to support plotting."));
 
 wmm_pi::wmm_pi(void *ppimgr)
     : opencpn_plugin_18(ppimgr),
+    m_bShowPlot(false), 
     m_DeclinationMap(DECLINATION, MagneticModel, TimedMagneticModel, &Ellip),
     m_InclinationMap(INCLINATION, MagneticModel, TimedMagneticModel, &Ellip),
     m_FieldStrengthMap(FIELD_STRENGTH, MagneticModel, TimedMagneticModel, &Ellip),
@@ -552,8 +553,13 @@ void wmm_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
         wxColour cf;
         GetGlobalColor(_T("CHBLK"), &cf);
         dc.SetTextForeground(cf);
-        if(pFontSmall->IsOk())
+        if(pFontSmall->IsOk()){
+            if(live.IsOk()){
+                int point_size = wxMax(10, 10 * scale);
+                pFontSmall->SetPointSize(point_size);
+            }
             dc.SetFont(*pFontSmall);
+        }
         wxSize s = dc.GetTextExtent(NewVal);
         dc.DrawText(NewVal, (icon.GetWidth() - s.GetWidth()) / 2, (icon.GetHeight() - s.GetHeight()) / 2);
         dc.SelectObject(wxNullBitmap);
