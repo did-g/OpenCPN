@@ -105,6 +105,7 @@ extern wxArrayString    g_locale_catalog_array;
 extern int              g_GUIScaleFactor;
 extern int              g_ChartScaleFactor;
 extern wxString         g_locale;
+extern bool             g_btouch;
 
 unsigned int      gs_plib_flags;
 
@@ -2172,6 +2173,11 @@ wxBitmap GetBitmapFromSVGFile(wxString filename, unsigned int width, unsigned in
 #else        
         return wxBitmap();
 #endif // ocpnUSE_SVG   
+}
+
+bool IsTouchInterface_PlugIn(void)
+{
+    return g_btouch;
 }
 
 wxColour GetFontColour_PlugIn(wxString TextElement)
