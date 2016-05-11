@@ -390,6 +390,7 @@ class MyFrame: public wxFrame
     void ToggleChartBar();
     void SetbFollow(void);
     void ClearbFollow(void);
+    void ToggleGrid();
     void ToggleChartOutlines(void);
     void ToggleENCText(void);
     void ToggleSoundings(void);
