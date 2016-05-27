@@ -4345,7 +4345,7 @@ void options::CreatePanel_UI(size_t parent, int border_size,
   wxStaticBox* itemFontStaticBox = new wxStaticBox(itemPanelFont, wxID_ANY, _("Fonts"));
   
   int fLayout = wxHORIZONTAL;
-  if(m_nCharWidthMax <  40)
+  if(0 && m_nCharWidthMax <  40)
       fLayout = wxVERTICAL;
   
   wxStaticBoxSizer* itemFontStaticBoxSizer = new wxStaticBoxSizer(itemFontStaticBox, fLayout);
