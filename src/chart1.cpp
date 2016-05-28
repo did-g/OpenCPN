@@ -782,6 +782,9 @@ bool stConnection::OnExec(const wxString& topic, const wxString& data)
         NavObjectCollection1 *pSet = new NavObjectCollection1;
         pSet->load_file(path.fn_str());
         pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), true ); // Import with full vizibility of names and objects
+        if( pRouteManagerDialog && pRouteManagerDialog->IsShown() )
+            pRouteManagerDialog->UpdateLists();
+        
         LLBBox box = pSet->GetBBox();
         if (box.GetValid()) {
             gFrame->CenterView(box);
@@ -4517,10 +4520,7 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
             if( pRouteManagerDialog->IsShown() )
                 pRouteManagerDialog->Hide();
             else {
-                pRouteManagerDialog->UpdateRouteListCtrl();
-                pRouteManagerDialog->UpdateTrkListCtrl();
-                pRouteManagerDialog->UpdateWptListCtrl();
-                pRouteManagerDialog->UpdateLayListCtrl();
+                pRouteManagerDialog->UpdateLists();
 
                 pRouteManagerDialog->Show();
 
