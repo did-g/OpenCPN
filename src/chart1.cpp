@@ -1604,14 +1604,20 @@ bool MyApp::OnInit()
     dc.DrawText( _T("X"), 0, 0 );
 #endif
 
+    // Instantiate the global OCPNPlatform class
+    g_Platform = new OCPNPlatform;
+
     //  On Windows
     //  We allow only one instance unless the portable option is used
     if(!g_bportable) {
+        wxChar separator = wxFileName::GetPathSeparator();
+        wxString service_name = g_Platform->GetPrivateDataDir() + separator + _T("opencpn-ipc");
+
         m_checker = new wxSingleInstanceChecker(_T("OpenCPN"));
         if ( !m_checker->IsAnotherRunning() )
         {
             stServer *m_server = new stServer;
-            if ( !m_server->Create(wxT("/tmp/.opencpn")) ) {
+            if ( !m_server->Create(service_name) ) {
 		wxLogDebug(wxT("Failed to create an IPC service."));
             }
         }
@@ -1621,7 +1627,7 @@ bool MyApp::OnInit()
     	    // ignored under DDE, host name in TCP/IP based classes
     	    wxString hostName = wxT("localhost");
     	    // Create the connection service, topic
-    	    wxConnectionBase* connection = client->MakeConnection(hostName, wxT("/tmp/.opencpn"), wxT("OpenCPN"));
+    	    wxConnectionBase* connection = client->MakeConnection(hostName, service_name, _T("OpenCPN"));
     	    if (connection) {
     	        // Ask the other instance to open a file or raise itself
     	        if ( !g_params.empty() ) {
@@ -1650,8 +1656,6 @@ bool MyApp::OnInit()
     // Faster but plugins may need Idle (weather routing does)
     wxIdleEvent::SetMode(wxIDLE_PROCESS_SPECIFIED);
 #endif    
-    // Instantiate the global OCPNPlatform class
-    g_Platform = new OCPNPlatform;
 
     //  Perform first stage initialization
     OCPNPlatform::Initialize_1( );
