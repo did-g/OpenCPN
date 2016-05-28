@@ -5689,26 +5689,31 @@ void MyFrame::CenterView(const wxBoundingBox& BBox)
 {
     double clat = BBox.GetMinY() + ( BBox.GetHeight() / 2 );
     double clon = BBox.GetMinX() + ( BBox.GetWidth() / 2 );
-
     if( clon > 180. ) clon -= 360.;
     else
         if( clon < -180. ) clon += 360.;
 
     // Calculate ppm
     double rw, rh, ppm; // route width, height, final ppm scale to use
-    int ww, wh; // chart window width, height
-    // route bbox width in nm
-    DistanceBearingMercator( BBox.GetMinY(), BBox.GetMinX(), BBox.GetMinY(),
-            BBox.GetMaxX(), NULL, &rw );
-    // route bbox height in nm
-    DistanceBearingMercator( BBox.GetMinY(), BBox.GetMinX(), BBox.GetMaxY(),
-            BBox.GetMinX(), NULL, &rh );
+    if (BBox.GetMinY() == BBox.GetMaxY() && BBox.GetMinX() == BBox.GetMaxX())
+    {
+        // only one point, (should be a box?)
+        ppm = cc1->GetVPScale();
+    }
+    else {
+        int ww, wh; // chart window width, height
+        // route bbox width in nm
+        DistanceBearingMercator( BBox.GetMinY(), BBox.GetMinX(), BBox.GetMinY(),
+                BBox.GetMaxX(), NULL, &rw );
+        // route bbox height in nm
+        DistanceBearingMercator( BBox.GetMinY(), BBox.GetMinX(), BBox.GetMaxY(),
+                BBox.GetMinX(), NULL, &rh );
 
-    cc1->GetSize( &ww, &wh );
+        cc1->GetSize( &ww, &wh );
 
-    ppm = wxMin(ww/(rw*1852), wh/(rh*1852)) * ( 100 - fabs( clat ) ) / 90;
-
-    ppm = wxMin(ppm, 1.0);
+        ppm = wxMin(ww/(rw*1852), wh/(rh*1852)) * ( 100 - fabs( clat ) ) / 90;
+        ppm = wxMin(ppm, 1.0);
+    }
 
 //      cc1->ClearbFollow();
 //      cc1->SetViewPoint(clat, clon, ppm, 0, cc1->GetVPRotation(), CURRENT_RENDER);
