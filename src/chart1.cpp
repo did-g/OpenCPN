@@ -31,7 +31,6 @@
 //#include "c:\\Program Files\\visual leak detector\\include\\vld.h"
 #endif
 
-
 #include "wx/print.h"
 #include "wx/printdlg.h"
 #include "wx/artprov.h"
@@ -159,6 +158,8 @@ WX_DEFINE_OBJARRAY( ArrayOfCDI );
 #ifdef __WXMSW__
 void RedirectIOToConsole();
 #endif
+
+#include "wx/ipc.h"
 
 //------------------------------------------------------------------------------
 //      Static variable definition
@@ -756,6 +757,73 @@ void InitializeUserColors( void );
 void DeInitializeUserColors( void );
 void SetSystemColors( ColorScheme cs );
 extern "C" bool CheckSerialAccess( void );
+
+// Connection class, for use by both communicating instances
+class stConnection : public wxConnection
+{
+public:
+    stConnection() {}
+    ~stConnection() {}
+    bool OnExec(const wxString& topic, const wxString& data);
+};
+
+// Opens a file passed from another instance
+bool stConnection::OnExec(const wxString& topic, const wxString& data)
+{
+    wxString path(data);
+    if (path.IsEmpty()) {
+        if (gFrame) {
+            if (cc1)
+                cc1->InvalidateGL();
+            gFrame->Refresh( false );
+            gFrame->Raise();
+        }
+    }
+    else {
+        NavObjectCollection1 *pSet = new NavObjectCollection1;
+        pSet->load_file(path.fn_str());
+        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN() ); // Import with full vizibility of names and objects
+        delete pSet;
+        return true;
+    }
+    return true;
+}
+
+// Server class, for listening to connection requests
+class stServer: public wxServer
+{
+public:
+    wxConnectionBase *OnAcceptConnection(const wxString& topic);
+};
+
+// Accepts a connection from another instance
+wxConnectionBase *stServer::OnAcceptConnection(const wxString& topic)
+{
+    if (topic.Lower() == wxT("opencpn")) 
+    {
+        // Check that there are no modal dialogs active
+	wxWindowList::Node* node = wxTopLevelWindows.GetFirst();
+	while (node) {
+	    wxDialog* dialog = wxDynamicCast(node->GetData(), wxDialog);
+	    if (dialog && dialog->IsModal()) {
+	        return 0;
+            }
+            node = node->GetNext();
+        }
+        return new stConnection();
+    }
+    return 0;
+}
+
+
+// Client class, to be used by subsequent instances in OnInit
+class stClient: public wxClient
+{
+public:
+    stClient() {};
+    wxConnectionBase *OnMakeConnection() { return new stConnection; }
+};
+
 
 
 //------------------------------------------------------------------------------
@@ -1517,6 +1585,8 @@ void ParseAllENC()
 
 bool MyApp::OnInit()
 {
+    m_checker = 0;
+
     if( !wxApp::OnInit() ) return false;
 
 #if defined(__WXGTK__) && defined(__arm__) && defined(ocpnUSE_GLES)
@@ -1533,13 +1603,46 @@ bool MyApp::OnInit()
 
     //  On Windows
     //  We allow only one instance unless the portable option is used
-#ifdef __WXMSW__
-    m_checker = new wxSingleInstanceChecker(_T("OpenCPN"));
     if(!g_bportable) {
-        if ( m_checker->IsAnotherRunning() )
+        m_checker = new wxSingleInstanceChecker(_T("OpenCPN"));
+        if ( !m_checker->IsAnotherRunning() )
+        {
+            stServer *m_server = new stServer;
+            if ( !m_server->Create(wxT("/tmp/.opencpn")) ) {
+		wxLogDebug(wxT("Failed to create an IPC service."));
+            }
+        }
+        else {
+    	    wxLogNull logNull;
+    	    stClient* client = new stClient;
+    	    // ignored under DDE, host name in TCP/IP based classes
+    	    wxString hostName = wxT("localhost");
+    	    // Create the connection service, topic
+    	    wxConnectionBase* connection = client->MakeConnection(hostName, wxT("/tmp/.opencpn"), wxT("OpenCPN"));
+    	    if (connection) {
+    	        // Ask the other instance to open a file or raise itself
+    	        if ( !g_params.empty() ) {
+                    for ( size_t n = 0; n < g_params.size(); n++ )
+                    {
+                        wxString path = g_params[n];
+                        if( ::wxFileExists( path ) ) 
+                        {
+                            connection->Execute(path);
+                        }
+                    }
+                }
+                connection->Execute(wxT(""));
+    	        connection->Disconnect();
+    	        delete connection;
+            }
+            else {
+                wxMessageBox(wxT("Sorry, the existing instance may be too busy too respond.\nPlease close any open dialogs and retry."),
+                    wxT("OpenCPN"), wxICON_INFORMATION|wxOK);
+            }
+            delete client;
             return false;               // exit quietly
+        }
     }
-#endif
 #if 0
     // Faster but plugins may need Idle (weather routing does)
     wxIdleEvent::SetMode(wxIDLE_PROCESS_SPECIFIED);
@@ -1555,8 +1658,6 @@ bool MyApp::OnInit()
     // This is necessary at least on OS X, for the capitalisation to be correct in the system menus.
     MyApp::SetAppDisplayName("OpenCPN");
 #endif
-
-
 
 
     //  Seed the random number generator
@@ -2581,10 +2682,7 @@ int MyApp::OnExit()
 
     FontMgr::Shutdown();
 
-#ifdef __WXMSW__
     delete m_checker;
-#endif
-
 
     g_Platform->OnExit_2();
 
