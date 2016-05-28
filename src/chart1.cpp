@@ -176,10 +176,8 @@ bool                      g_start_fullscreen;
 bool                      g_rebuild_gl_cache;
 bool                      g_parse_all_enc;
 
-#if wxUSE_CMDLINE_PARSER
 // Files specified on the command line, if any.
 wxVector<wxString> g_params;
-#endif
                 
 
 MyFrame                   *gFrame;
@@ -6694,7 +6692,6 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
             break;
         }
 
-#if wxUSE_CMDLINE_PARSER
         case 5:
         {
             if ( !g_params.empty() ) {
@@ -6715,7 +6712,6 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
             break;
 
         }
-#endif
         default:
         {
             // Last call....
