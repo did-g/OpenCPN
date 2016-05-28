@@ -175,6 +175,12 @@ bool                      g_start_fullscreen;
 bool                      g_rebuild_gl_cache;
 bool                      g_parse_all_enc;
 
+#if wxUSE_CMDLINE_PARSER
+// Files specified on the command line, if any.
+wxVector<wxString> g_params;
+#endif
+                
+
 MyFrame                   *gFrame;
 
 ChartCanvas               *cc1;
@@ -922,6 +928,11 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
     parser.AddOption( _T("unit_test_1"), wxEmptyString, _("Display a slideshow of <num> charts and then exit. Zero or negative <num> specifies no limit."), wxCMD_LINE_VAL_NUMBER );
 
     parser.AddSwitch( _T("unit_test_2") );
+
+    parser.AddParam("import GPX files",
+                        wxCMD_LINE_VAL_STRING,
+                        wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE);
+                                                
 }
 
 bool MyApp::OnCmdLineParsed( wxCmdLineParser& parser )
@@ -941,6 +952,9 @@ bool MyApp::OnCmdLineParsed( wxCmdLineParser& parser )
             g_unit_test_1 = -1;
     }
 
+    for (size_t paramNr=0; paramNr < parser.GetParamCount(); ++paramNr)
+            g_params.push_back(parser.GetParam(paramNr));
+            
     return true;
 }
 #endif
@@ -6582,6 +6596,28 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
             break;
         }
 
+#if wxUSE_CMDLINE_PARSER
+        case 5:
+        {
+            if ( !g_params.empty() ) {
+                for ( size_t n = 0; n < g_params.size(); n++ )
+                {
+                    wxString path = g_params[n];
+                    if( ::wxFileExists( path ) ) 
+                    {
+                        NavObjectCollection1 *pSet = new NavObjectCollection1;
+                        pSet->load_file(path.fn_str());
+
+                        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN() ); // Import with full vizibility of names and objects
+
+                        delete pSet;
+                    }
+                }
+            }
+            break;
+
+        }
+#endif
         default:
         {
             // Last call....

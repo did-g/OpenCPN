@@ -723,9 +723,10 @@ bool PlugInManager::UnLoadAllPlugIns()
         DeactivatePlugIn( pic );
         
         pic->m_destroy_fn(pic->m_pplugin);
-
+#if 0
+// Valgrind
         delete pic->m_plibrary;            // This will unload the PlugIn
-
+#endif
         pic->m_bInitState = false;
 
         delete pic;
