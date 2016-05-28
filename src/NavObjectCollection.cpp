@@ -961,10 +961,10 @@ bool GPXCreateRoute( pugi::xml_node node, Route *pRoute )
 }
                        
 
-void InsertRouteA( Route *pTentRoute )
+static bool InsertRouteA( Route *pTentRoute )
 {
     if( !pTentRoute )
-        return;
+        return false;
     
     bool bAddroute = true;
     //    If the route has only 1 point, don't load it.
@@ -1028,12 +1028,13 @@ void InsertRouteA( Route *pTentRoute )
         
         delete pTentRoute;
     }
+    return bAddroute;
 }
                        
-void InsertTrack( Track *pTentTrack, bool bApplyChanges = false )
+static bool InsertTrack( Track *pTentTrack, bool bApplyChanges = false )
 {
     if(!pTentTrack)
-        return;
+        return false;
     
     bool bAddtrack = true;
     //    If the track has only 1 point, don't load it.
@@ -1066,6 +1067,8 @@ void InsertTrack( Track *pTentTrack, bool bApplyChanges = false )
         }
     } else
         delete pTentTrack;
+    return bAddtrack;
+         
 }                       
                        
 void UpdateRouteA( Route *pTentRoute )
@@ -1297,7 +1300,7 @@ bool NavObjectCollection1::SaveFile( const wxString filename )
     return true;
 }
 
-bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz )
+bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz, bool b_compute_bbox )
 {
     pugi::xml_node objects = this->child("gpx");
     
@@ -1319,13 +1322,17 @@ bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz )
         else
             if( !strcmp(object.name(), "trk") ) {
                 Track *pTrack = GPXLoadTrack1( object, b_full_viz, false, false, 0);
-                InsertTrack( pTrack );
+                if (InsertTrack( pTrack ) && b_compute_bbox && pTrack->IsVisible()) {
+                        BBox.Expand(pTrack->GetBBox());
+                    }
                 //delete pTrack
             }
             else
                 if( !strcmp(object.name(), "rte") ) {
                     Route *pRoute = GPXLoadRoute1( object, b_full_viz, false, false, 0, false );
-                    InsertRouteA( pRoute );
+                    if (InsertRouteA( pRoute ) && b_compute_bbox && pRoute->IsVisible()) {
+                        BBox.Expand(pRoute->GetBBox());
+                    }
                 }
                 
                 
