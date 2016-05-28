@@ -768,19 +768,24 @@ public:
 // Opens a file passed from another instance
 bool stConnection::OnExec(const wxString& topic, const wxString& data)
 {
+    // not setup yet
+    if (!gFrame || !cc1) 
+        return false;
+
     wxString path(data);
     if (path.IsEmpty()) {
-        if (gFrame) {
-            if (cc1)
-                cc1->InvalidateGL();
-            gFrame->Refresh( false );
-            gFrame->Raise();
-        }
+        cc1->InvalidateGL();
+        gFrame->Refresh( false );
+        gFrame->Raise();
     }
     else {
         NavObjectCollection1 *pSet = new NavObjectCollection1;
         pSet->load_file(path.fn_str());
-        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN() ); // Import with full vizibility of names and objects
+        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), true ); // Import with full vizibility of names and objects
+        LLBBox box = pSet->GetBBox();
+        if (box.GetValid()) {
+            gFrame->CenterView(box);
+        }
         delete pSet;
         return true;
     }
@@ -997,7 +1002,7 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
 
     parser.AddParam("import GPX files",
                         wxCMD_LINE_VAL_STRING,
-                        wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE);
+                        wxCMD_LINE_PARAM_OPTIONAL );
                                                 
 }
 
@@ -5641,7 +5646,6 @@ void MyFrame::ToggleToolbar( bool b_smooth )
     }
 }
 
-
 void MyFrame::JumpToPosition( double lat, double lon, double scale )
 {
     if (lon > 180.0)
@@ -5678,6 +5682,39 @@ void MyFrame::JumpToPosition( double lat, double lon, double scale )
     if( g_pi_manager ) {
         g_pi_manager->SendViewPortToRequestingPlugIns( cc1->GetVP() );
     }
+}
+
+
+void MyFrame::CenterView(const wxBoundingBox& BBox)
+{
+    double clat = BBox.GetMinY() + ( BBox.GetHeight() / 2 );
+    double clon = BBox.GetMinX() + ( BBox.GetWidth() / 2 );
+
+    if( clon > 180. ) clon -= 360.;
+    else
+        if( clon < -180. ) clon += 360.;
+
+    // Calculate ppm
+    double rw, rh, ppm; // route width, height, final ppm scale to use
+    int ww, wh; // chart window width, height
+    // route bbox width in nm
+    DistanceBearingMercator( BBox.GetMinY(), BBox.GetMinX(), BBox.GetMinY(),
+            BBox.GetMaxX(), NULL, &rw );
+    // route bbox height in nm
+    DistanceBearingMercator( BBox.GetMinY(), BBox.GetMinX(), BBox.GetMaxY(),
+            BBox.GetMinX(), NULL, &rh );
+
+    cc1->GetSize( &ww, &wh );
+
+    ppm = wxMin(ww/(rw*1852), wh/(rh*1852)) * ( 100 - fabs( clat ) ) / 90;
+
+    ppm = wxMin(ppm, 1.0);
+
+//      cc1->ClearbFollow();
+//      cc1->SetViewPoint(clat, clon, ppm, 0, cc1->GetVPRotation(), CURRENT_RENDER);
+//      cc1->Refresh();
+
+    JumpToPosition( clat, clon, ppm );
 }
 
 int MyFrame::DoOptionsDialog()
@@ -6703,8 +6740,11 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
                         NavObjectCollection1 *pSet = new NavObjectCollection1;
                         pSet->load_file(path.fn_str());
 
-                        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN() ); // Import with full vizibility of names and objects
-
+                        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), true ); // Import with full vizibility of names and objects
+                        LLBBox box = pSet->GetBBox();
+                        if (box.GetValid()) {
+                            CenterView(box);
+                        }
                         delete pSet;
                     }
                 }
