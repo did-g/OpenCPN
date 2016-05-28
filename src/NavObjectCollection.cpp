@@ -1316,6 +1316,7 @@ bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz, int &wpt_duplicat
                     if( NULL != pWayPointMan )
                         pWayPointMan->AddRoutePoint( pWp );
                      pSelect->AddSelectableRoutePoint( pWp->m_lat, pWp->m_lon, pWp );
+                     BBox.Expand(pWp->m_lon, pWp->m_lat);
             }
             else {
                 delete pWp;
