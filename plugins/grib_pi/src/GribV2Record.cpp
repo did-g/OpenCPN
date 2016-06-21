@@ -156,7 +156,7 @@ public:
 
 
 #ifdef JASPER
-int dec_jpeg2000(char *injpc,int bufsize,int *outfld)
+static int dec_jpeg2000(char *injpc,int bufsize,int *outfld)
 /*$$$  SUBPROGRAM DOCUMENTATION BLOCK
 *                .      .    .                                       .
 * SUBPROGRAM:    dec_jpeg2000      Decodes JPEG2000 code stream
@@ -942,14 +942,16 @@ static bool unpackDS(GRIBMessage *grib_msg,int grid_num)
     case 40:
     case 40000:
         int len, *jvals, cnt;
+        int npoints;
 	getBits(grib_msg->buffer,&len,grib_msg->offset,32);
 	len=len-5;
-	jvals=(int *)malloc(grib_msg->md.ny*grib_msg->md.nx*sizeof(int));
-	(grib_msg->grids[grid_num]).gridpoints= new double[grib_msg->md.ny *grib_msg->md.nx];
+	npoints = grib_msg->md.ny*grib_msg->md.nx;
+	jvals=(int *)malloc( npoints *sizeof(int));
+	(grib_msg->grids[grid_num]).gridpoints= new double[npoints];
 	if (len > 0)
 	  dec_jpeg2000((char *)&grib_msg->buffer[grib_msg->offset/8+5],len,jvals);
 	cnt=0;
-	for (n=0; n < grib_msg->md.ny*grib_msg->md.nx; n++) {
+	for (n=0; n < npoints; n++) {
 	  if (grib_msg->md.bitmap == NULL || grib_msg->md.bitmap[n] == 1) {
 	    if (len == 0)
 		jvals[cnt]=0;
