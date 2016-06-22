@@ -170,7 +170,7 @@ ENDIF(QT_ANDROID)
     
     SET(SRC_GRIB ${SRC_GRIB} ${jasper_base_sources} ${jasper_headers} ${jasper_jp2_sources} ${jasper_jp2_headers} ${jasper_jpc_sources} ${jasper_jpc_headers})
 
-    ADD_DEFINITIONS(-DJASPER)
+    ADD_DEFINITIONS(-O3 -DJASPER)
     ADD_DEFINITIONS(-DEXCLUDE_MIF_SUPPORT -DEXCLUDE_PNM_SUPPORT -DEXCLUDE_BMP_SUPPORT -DEXCLUDE_RAS_SUPPORT -DEXCLUDE_JPG_SUPPORT -DEXCLUDE_PGX_SUPPORT)
    
     INCLUDE_DIRECTORIES("src/jasper/include")
