@@ -56,6 +56,7 @@
 
 #include "chartimg.h"
 #include "ocpn_pixel.h"
+#include "ChartDataInputStream.h"
 
 #ifndef __WXMSW__
 #include <signal.h>
@@ -344,7 +345,7 @@ ChartGEO::~ChartGEO()
 
 InitReturn ChartGEO::Init( const wxString& name, ChartInitFlag init_flags)
 {
-      #define BUF_LEN_MAX 4000
+      #define BUF_LEN_MAX 4096
 
       PreInit(name, init_flags, GLOBAL_COLOR_SCHEME_DAY);
 
@@ -354,7 +355,7 @@ InitReturn ChartGEO::Init( const wxString& name, ChartInitFlag init_flags)
 
       m_filesize = wxFileName::GetSize( name );
       
-      if(!ifs_hdr->Ok())
+      if(!ifs_hdr->IsOk())
             return INIT_FAIL_REMOVE;
 
       int nPlypoint = 0;
@@ -661,7 +662,7 @@ found_uclc_file:
           return INIT_FAIL_REMOVE;
       }
 
-      if(!ifss_bitmap->Ok())
+      if(!ifss_bitmap->IsOk())
       {
           free(pPlyTable);
           return INIT_FAIL_REMOVE;
@@ -766,9 +767,10 @@ found_uclc_file:
               wxLogMessage(msg);
               wxLogMessage(_T("   Default datum (WGS84) substituted."));
               
-              //          return INIT_FAIL_REMOVE;
-              }
+              datum_index = DATUM_INDEX_WGS84;
           }
+          m_datum_index = datum_index;
+      }
 
 //    Convert captured plypoint information into chart COVR structures
       m_nCOVREntries = 1;
@@ -834,8 +836,14 @@ ChartKAP::~ChartKAP()
 
 InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 {
-      #define BUF_LEN_MAX 4000
+      #define BUF_LEN_MAX 4096
 
+      ifs_hdr = new ChartDataNonSeekableInputStream(name);          // open the Header file as a read-only stream
+      
+      if(!ifs_hdr->IsOk())
+            return INIT_FAIL_REMOVE;
+
+    
       int nPlypoint = 0;
       Plypoint *pPlyTable = (Plypoint *)malloc(sizeof(Plypoint));
 
@@ -843,21 +851,9 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 
       char buffer[BUF_LEN_MAX];
 
-      ifs_hdr = new wxFFileInputStream(name);          // open the Header file as a read-only stream
-
-      m_filesize = wxFileName::GetSize( name );
-      
-      if(!ifs_hdr->Ok())
-	  {
-            free(pPlyTable);
-            return INIT_FAIL_REMOVE;
-      }
 
       m_FullPath = name;
       m_Description = m_FullPath;
-
-      ifss_bitmap = new wxFFileInputStream(name); // Open again, as the bitmap
-      ifs_bitmap = new wxBufferedInputStream(*ifss_bitmap);
 
       //    Clear georeferencing coefficients
       for(int icl=0 ; icl< 12 ; icl++)
@@ -1079,6 +1075,13 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
                                     m_projection = PROJECTION_TRANSVERSE_MERCATOR;
                                     bp_set = true;
                               }
+
+                              if(stru.Matches(_T("*GAUSS CONFORMAL*")))
+                              {
+                                    m_projection = PROJECTION_TRANSVERSE_MERCATOR;
+                                    bp_set = true;
+                              }
+
                               if(!bp_set)
                               {
                                   m_projection = PROJECTION_UNKNOWN;
@@ -1585,6 +1588,20 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
       nColorSize = ifs_hdr->GetC();
 
       nFileOffsetDataStart = ifs_hdr->TellI();
+      delete ifs_hdr;
+      ifs_hdr = NULL;
+
+      
+      ChartDataInputStream *stream = new ChartDataInputStream(name); // Open again, as the bitmap
+      wxString tempfile;
+#ifdef USE_LZMA      
+      tempfile = stream->TempFileName();
+#endif
+      m_filesize = wxFileName::GetSize( tempfile.empty() ? name : tempfile );
+
+      ifss_bitmap = stream;
+      ifs_bitmap = new wxBufferedInputStream(*ifss_bitmap);
+
 
 //    Perform common post-init actions in ChartBaseBSB
       InitReturn pi_ret = PostInit();
@@ -1705,20 +1722,8 @@ ChartBaseBSB::~ChartBaseBSB()
       }
 
 //    Free the line cache
-
-      if(pLineCache)
-      {
-            CachedLine *pt;
-            for(int ylc = 0 ; ylc < Size_Y ; ylc++)
-            {
-                  pt = &pLineCache[ylc];
-                  free (pt->pTileOffset);
-                  free (pt->pPix);
-            }
-            free (pLineCache);
-      }
-
-
+      FreeLineCacheRows();
+      free (pLineCache);
 
       delete pPixCache;
 
@@ -1727,6 +1732,36 @@ ChartBaseBSB::~ChartBaseBSB()
             delete pPalettes[i];
 
 }
+
+void ChartBaseBSB::FreeLineCacheRows(int start, int end)
+{
+    if(pLineCache)
+    {
+        if(end < 0)
+            end = Size_Y;
+        else
+            end = wxMin(end, Size_Y);
+        for(int ylc = start ; ylc < end ; ylc++) {
+            CachedLine *pt = &pLineCache[ylc];
+            if(pt->bValid) {
+                free (pt->pTileOffset);
+                free (pt->pPix);
+                pt->bValid = false;
+            }
+        }
+    }
+}
+
+bool ChartBaseBSB::HaveLineCacheRow(int row)
+{
+    if(pLineCache)
+    {
+        CachedLine *pt = &pLineCache[row];
+        return pt->bValid;
+    }
+    return false;
+}
+
 
 //    Report recommended minimum and maximum scale values for which use of this chart is valid
 
@@ -4035,7 +4070,7 @@ bool ChartBaseBSB::GetChartBits(wxRect& source, unsigned char *pPix, int sub_sam
 //    Read and return count of a line of BSB header file
 //-----------------------------------------------------------------------------------------------
 
-int ChartBaseBSB::ReadBSBHdrLine(wxFFileInputStream* ifs, char* buf, int buf_len_max)
+int ChartBaseBSB::ReadBSBHdrLine(wxInputStream* ifs, char* buf, int buf_len_max)
 
 {
       char  read_char;
@@ -4366,7 +4401,7 @@ int   ChartBaseBSB::BSBGetScanline( unsigned char *pLineBuf, int y, int xs, int 
               unsigned char *offset = lp - 1;
               if(byNext == 0 || lp == end) {
                   // finished early...corrupt?
-                  while(tileindex < Size_X/TILE_SIZE + 1) {
+                  while(tileindex < (unsigned int)Size_X/TILE_SIZE + 1) {
                       pt->pTileOffset[tileindex].offset = pt->pTileOffset[0].offset;
                       pt->pTileOffset[tileindex].pixel = 0;
                       tileindex++;
@@ -4588,7 +4623,7 @@ nocachestart:
                   // it is probably possible to gain even faster performance by ensuring alignment
                   // to 16 or 32byte boundary (depending on processor) then using inline assembly
 
-#ifdef ARMHF          
+#ifdef __ARM_ARCH
 //  ARM needs 8 byte alignment for *(uint64_T *x) = *(uint64_T *y)
 //  because the compiler will (probably) use the ldrd/strd instuction pair.
 //  So, advance the prgb pointer until it is 8-byte aligned,

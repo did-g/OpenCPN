@@ -174,6 +174,8 @@ AIS_Decoder::~AIS_Decoder( void )
 
     AISTargetNames->clear();
     delete AISTargetNames;
+
+    clear_hash_ERI();
     
     m_dsc_timer.Stop();
     m_AIS_Audio_Alert_Timer.Stop();
@@ -256,37 +258,12 @@ void AIS_Decoder::BuildERIShipTypeHash(void)
       make_hash_ERI(1910, _("Hydrofoil"));
 }
 
-
-//----------------------------------------------------------------------------------
-//     Strip NMEA V4 tags from message
-//----------------------------------------------------------------------------------
-wxString AIS_Decoder::ProcessNMEA4Tags( wxString msg)
-{
-    int idxFirst =  msg.Find('\\');
-    
-    if(wxNOT_FOUND == idxFirst)
-        return msg;
-    
-    if(idxFirst < (int)msg.Length()-1){
-        int idxSecond = msg.Mid(idxFirst + 1).Find('\\') + 1;
-        if(wxNOT_FOUND != idxSecond){
-            if(idxSecond < (int)msg.Length()-1){
-                
-               // wxString tag = msg.Mid(idxFirst+1, (idxSecond - idxFirst) -1);
-                return msg.Mid(idxSecond + 1);
-            }
-        }
-    }
-    
-    return msg;
-}
-
 //----------------------------------------------------------------------------------
 //     Handle events from AIS DataStream
 //----------------------------------------------------------------------------------
 void AIS_Decoder::OnEvtAIS( OCPN_DataStreamEvent& event )
 {
-    wxString message = ProcessNMEA4Tags(wxString(event.GetNMEAString().c_str(), wxConvUTF8) );
+    wxString message = event.ProcessNMEA4Tags();
 
     int nr = 0;
     if( !message.IsEmpty() )
@@ -564,8 +541,10 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
         strncpy( arpa_name_str, token.mb_str(), len );
         arpa_name_str[len] = 0;
         arpa_status = tkz.GetNextToken(); //12) Target Status
-        if (arpa_status != _T("L"))
+        if ( arpa_status != _T( "L" ) ) {
             arpa_lost = false;
+        } else if ( arpa_status != wxEmptyString )
+            arpa_nottracked = true;
         arpa_reftarget = tkz.GetNextToken(); //13) Reference Target
         if ( tkz.HasMoreTokens() )
         {
@@ -1446,7 +1425,7 @@ bool AIS_Decoder::Parse_VDXBitstring( AIS_Bitstring *bstr, AIS_Target_Data *ptd 
 //          1 = station compliant with Recommendation ITU-R M.1371-3
 //          2-3 = station compliant with future editions
             int AIS_version_indicator = bstr->GetInt( 39, 2 );
-            if( AIS_version_indicator < 2 ) {
+            if( AIS_version_indicator < 4 ) {
                 ptd->IMO = bstr->GetInt( 41, 30 );
 
                 bstr->GetStr( 71, 42, &ptd->CallSign[0], 7 );
@@ -2230,7 +2209,8 @@ void AIS_Decoder::OnTimerAIS( wxTimerEvent& event )
         if( td->Class == AIS_SART ) removelost_Mins = 18.0;
 
         if( g_bRemoveLost ) {
-            if( ( target_posn_age > removelost_Mins * 60 ) && ( td->Class != AIS_GPSG_BUDDY ) ) {
+            bool b_arpalost = ( td->Class == AIS_ARPA  && td->b_lost ); //A lost ARPA target would be deleted at once
+            if ( ( ( target_posn_age > removelost_Mins * 60 ) && ( td->Class != AIS_GPSG_BUDDY ) ) || b_arpalost ) {
                 //      So mark the target as lost, with unknown position, and make it not selectable
                 td->b_lost = true;
                 td->b_positionOnceValid = false;
@@ -2243,8 +2223,9 @@ void AIS_Decoder::OnTimerAIS( wxTimerEvent& event )
                 pSelectAIS->DeleteSelectablePoint( (void *) mmsi_long, SELTYPE_AISTARGET );
 
                 //      If we have not seen a static report in 3 times the removal spec,
-                //      then remove the target from all lists.
-                if( target_static_age > removelost_Mins * 60 * 3 ) 
+                //      then remove the target from all lists
+                //      or a lost ARPA target.
+                if ( target_static_age > removelost_Mins * 60 * 3 || b_arpalost )
                     remove_array.Add(td->MMSI);         //Add this target to removal list
             }
         }
@@ -2625,10 +2606,19 @@ void AIS_Decoder::SendJSONMsg(AIS_Target_Data* pTarget)
     jMsg[wxS("cog")] = pTarget->COG;
     jMsg[wxS("hdg")] = pTarget->HDG;
     jMsg[wxS("mmsi")] = pTarget->MMSI;
+    jMsg[wxS("class")] = pTarget->Class;
+    jMsg[wxS("ownship")] = pTarget->b_OwnShip;
+    jMsg[wxS("active")] = pTarget->b_active;
+    jMsg[wxS("lost")] = pTarget->b_lost;
     wxString l_ShipName = wxString::FromUTF8(pTarget->ShipName);
     for(size_t i =0; i < l_ShipName.Len(); i++) {
         if(l_ShipName.GetChar(i) == '@') l_ShipName.SetChar(i, '\n');
     }
     jMsg[wxS("shipname")] = l_ShipName;
+    wxString l_CallSign = wxString::FromUTF8(pTarget->CallSign);
+    for(size_t i =0; i < l_CallSign.Len(); i++) {
+        if(l_CallSign.GetChar(i) == '@') l_CallSign.SetChar(i, '\n');
+    }
+    jMsg[wxS("callsign")] = l_CallSign;
     g_pi_manager->SendJSONMessageToAllPlugins( wxT("AIS"), jMsg );    
 }

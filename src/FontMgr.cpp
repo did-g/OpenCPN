@@ -29,6 +29,28 @@
 #include "FontMgr.h"
 #include "OCPNPlatform.h"
 
+class  OCPNwxFontList: public wxGDIObjListBase
+{
+public:
+    wxFont *FindOrCreateFont(int pointSize,
+                             wxFontFamily family,
+                             wxFontStyle style,
+                             wxFontWeight weight,
+                             bool underline = false,
+                             const wxString& face = wxEmptyString,
+                             wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
+    void FreeAll( void );
+    
+private:
+    bool isSame(wxFont *font, int pointSize, wxFontFamily family,
+                wxFontStyle style,
+                wxFontWeight weight,
+                bool underline,
+                const wxString& facename,
+                wxFontEncoding encoding);
+};
+
+
 extern wxString g_locale;
 extern OCPNPlatform     *g_Platform;
 
@@ -72,7 +94,15 @@ FontMgr::FontMgr()
 
 FontMgr::~FontMgr()
 {
+    m_fontlist->Clear();
     delete m_fontlist;
+    
+    delete m_wxFontCache;
+}
+
+void FontMgr::SetLocale( wxString& newLocale)
+{
+    s_locale = newLocale;
 }
 
 wxColour FontMgr::GetFontColor( const wxString &TextElement ) const
@@ -231,7 +261,7 @@ bool FontMgr::SetFont(const wxString &TextElement, wxFont *pFont, wxColour color
     while( node ) {
         pmfd = (MyFontDesc *) node->GetData();
         if( pmfd->m_dialogstring == TextElement ) {
-            if(pmfd->m_configstring.BeforeFirst('-') == g_locale) {
+            if(pmfd->m_configstring.BeforeFirst('-') == s_locale) {
                 
             // Todo Think about this
             //
@@ -351,24 +381,6 @@ void FontMgr::LoadFontNative( wxString *pConfigString, wxString *pNativeDesc )
 
     }
 }
-class  OCPNwxFontList: public wxGDIObjListBase
-{
-public:
-    wxFont *FindOrCreateFont(int pointSize,
-                             wxFontFamily family,
-                             wxFontStyle style,
-                             wxFontWeight weight,
-                             bool underline = false,
-                             const wxString& face = wxEmptyString,
-                             wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
-private:
-    bool isSame(wxFont *font, int pointSize, wxFontFamily family,
-                             wxFontStyle style,
-                             wxFontWeight weight,
-                             bool underline,
-                             const wxString& facename,
-                             wxFontEncoding encoding);
-};
 
 wxFont* FontMgr::FindOrCreateFont( int point_size, wxFontFamily family, 
                     wxFontStyle style, wxFontWeight weight, bool underline,
@@ -467,6 +479,16 @@ wxFont *OCPNwxFontList::FindOrCreateFont(int pointSize,
     return font;
 }
 
+void OCPNwxFontList::FreeAll( void )
+{
+    wxFont *font;
+    wxList::compatibility_iterator node;
+    for (node = list.GetFirst(); node; node = node->GetNext())
+    {
+        font = (wxFont *)node->GetData();
+        delete font;
+    }
+}
 
 wxString FontCandidates[] = {
     _T("AISTargetAlert"), 

@@ -327,9 +327,11 @@ void Track::Clone( Track *psourcetrack, int start_nPoint, int end_nPoint, const 
     for( i = start_nPoint; i <= end_nPoint; i++ ) {
 
         TrackPoint *psourcepoint = psourcetrack->GetPoint( i );
-        TrackPoint *ptargetpoint = new TrackPoint( psourcepoint->m_lat, psourcepoint->m_lon);
-
-        AddPoint( ptargetpoint );
+        if(psourcepoint){
+            TrackPoint *ptargetpoint = new TrackPoint( psourcepoint);
+            
+            AddPoint( ptargetpoint );
+        }
     }
 }
 
@@ -610,7 +612,9 @@ void Track::Draw( ocpnDC& dc, ViewPort &VP, const LLBBox &box )
 
             delete [] points;
         }
-    } else { // opengl version
+    }
+#ifdef ocpnUSE_GL    
+    else { // opengl version
         glColor3ub(col.Red(), col.Green(), col.Blue());
         glLineWidth( wxMax( g_GLMinSymbolLineWidth, width ) );
 
@@ -641,11 +645,15 @@ void Track::Draw( ocpnDC& dc, ViewPort &VP, const LLBBox &box )
 
         delete [] points;
     }
+#endif
 }
 
 TrackPoint *Track::GetPoint( int nWhichPoint )
 {
-    return TrackPoints[nWhichPoint];
+    if(nWhichPoint < (int) TrackPoints.size())
+        return TrackPoints[nWhichPoint];
+    else
+        return NULL;
 }
 
 TrackPoint *Track::GetLastPoint()
@@ -959,7 +967,7 @@ int Track::Simplify( double maxDelta )
     return reduction;
 }
 
-Route *Track::RouteFromTrack( wxProgressDialog *pprog )
+Route *Track::RouteFromTrack( wxGenericProgressDialog *pprog )
 {
 
     Route *route = new Route();

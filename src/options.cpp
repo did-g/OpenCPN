@@ -47,7 +47,7 @@
                     4) /* does this work in 2.8 too.. do we need a test? */
 #include <wx/renderer.h>
 #endif
-#ifdef __WXGTK__
+#if defined(__WXGTK__) || defined(__WXQT__)
 #include <wx/colordlg.h>
 #endif
 
@@ -107,7 +107,7 @@ extern bool g_bShowDepthUnits;
 extern bool g_bskew_comp;
 extern bool g_bopengl;
 extern bool g_bsmoothpanzoom;
-extern bool g_bShowMag;
+extern bool g_bShowTrue, g_bShowMag;
 extern double g_UserVar;
 extern int g_chart_zoom_modifier;
 extern int g_NMEAAPBPrecision;
@@ -322,7 +322,7 @@ class OCPNCheckedListCtrl : public wxScrolledWindow {
 
   virtual ~OCPNCheckedListCtrl() {}
 
-  unsigned int Append(wxString& label);
+  unsigned int Append(wxString& label, bool benable = true);
   unsigned int GetCount() { return m_list.GetCount(); }
 
   void Clear();
@@ -355,8 +355,10 @@ bool OCPNCheckedListCtrl::Create(wxWindow* parent, wxWindowID id,
   return TRUE;
 }
 
-unsigned int OCPNCheckedListCtrl::Append(wxString& label) {
+unsigned int OCPNCheckedListCtrl::Append(wxString& label, bool benable) {
   wxCheckBox* cb = new wxCheckBox(this, wxID_ANY, label);
+  cb->Enable(benable);
+  cb->SetValue(!benable);
   m_sizer->Add(cb);
   m_sizer->Layout();  
   
@@ -388,6 +390,7 @@ void OCPNCheckedListCtrl::Clear() {
       delete cb;
   }
   m_list.Clear();
+  Scroll(0,0);
 }
 
 extern ArrayOfMMSIProperties g_MMSI_Props_Array;
@@ -648,7 +651,7 @@ void MMSIListCtrl::OnListItemRightClick(wxListEvent& event) {
   if (m_context_item == wxNOT_FOUND) return;
   wxMenu* menu = new wxMenu(_("MMSI Properties"));
   wxMenuItem* item_edit =
-      new wxMenuItem(menu, ID_DEF_MENU_MMSI_EDIT, _("Edit..."));
+      new wxMenuItem(menu, ID_DEF_MENU_MMSI_EDIT, _("Edit") + _T("..."));
   menu->Append(item_edit);
   wxMenuItem* item_delete =
       new wxMenuItem(menu, ID_DEF_MENU_MMSI_DELETE, _("Delete"));
@@ -851,6 +854,8 @@ BEGIN_EVENT_TABLE(options, wxDialog)
 EVT_CHECKBOX(ID_DEBUGCHECKBOX1, options::OnDebugcheckbox1Click)
 EVT_BUTTON(ID_BUTTONADD, options::OnButtonaddClick)
 EVT_BUTTON(ID_BUTTONDELETE, options::OnButtondeleteClick)
+EVT_BUTTON(ID_PARSEENCBUTTON, options::OnButtonParseENC)
+EVT_BUTTON(ID_BUTTONCOMPRESS, options::OnButtoncompressClick)
 EVT_BUTTON(ID_TCDATAADD, options::OnInsertTideDataLocation)
 EVT_BUTTON(ID_TCDATADEL, options::OnRemoveTideDataLocation)
 EVT_BUTTON(ID_APPLY, options::OnApplyClick)
@@ -859,7 +864,7 @@ EVT_BUTTON(wxID_CANCEL, options::OnCancelClick)
 EVT_BUTTON(ID_BUTTONFONTCHOOSE, options::OnChooseFont)
 EVT_CLOSE(options::OnClose)
 
-#ifdef __WXGTK__
+#if defined(__WXGTK__) || defined(__WXQT__)
 EVT_BUTTON(ID_BUTTONFONTCOLOR, options::OnChooseFontColor)
 #endif
 #ifdef ocpnUSE_GL
@@ -869,6 +874,7 @@ EVT_CHOICE(ID_RADARDISTUNIT, options::OnDisplayCategoryRadioButton)
 EVT_CHOICE(ID_DEPTHUNITSCHOICE, options::OnUnitsChoice)
 EVT_BUTTON(ID_CLEARLIST, options::OnButtonClearClick)
 EVT_BUTTON(ID_SELECTLIST, options::OnButtonSelectClick)
+EVT_BUTTON(ID_SETSTDLIST, options::OnButtonSetStd)
 EVT_BUTTON(ID_AISALERTSELECTSOUND, options::OnButtonSelectSound)
 EVT_BUTTON(ID_AISALERTTESTSOUND, options::OnButtonTestSound)
 EVT_CHECKBOX(ID_SHOWGPSWINDOW, options::OnShowGpsWindowCheckboxClick)
@@ -972,6 +978,7 @@ void options::Init(void) {
   pDispCat = NULL;
   m_pSerialArray = NULL;
   pUpdateCheckBox = NULL;
+  pParseENCButton = NULL;
   k_charts = 0;
   k_vectorcharts = 0;
   k_plugins = 0;
@@ -1195,7 +1202,7 @@ void options::CreatePanel_NMEA_Compact(size_t parent, int border_size,
   bSizer161->Add(m_cbGarminUploadHost, 0, wxALL, cb_space);
 
   m_cbAPBMagnetic =
-      new wxCheckBox(m_pNMEAForm, wxID_ANY, _("Use mag bearings in ECAPB"),
+      new wxCheckBox(m_pNMEAForm, wxID_ANY, _("Use magnetic bearings in output sentence ECAPB"),
                      wxDefaultPosition, wxDefaultSize, 0);
   m_cbAPBMagnetic->SetValue(g_bMagneticAPB);
   bSizer161->Add(m_cbAPBMagnetic, 0, wxALL, cb_space);
@@ -1213,14 +1220,14 @@ void options::CreatePanel_NMEA_Compact(size_t parent, int border_size,
   bSizer17 = new wxBoxSizer(wxVERTICAL);
 
   m_lcSources = new wxListCtrl(m_pNMEAForm, wxID_ANY, wxDefaultPosition,
-                               wxSize(300, 200), wxLC_REPORT | wxLC_SINGLE_SEL);
+                               wxSize(300, m_fontHeight * 2), wxLC_REPORT | wxLC_SINGLE_SEL);
   bSizer17->Add(m_lcSources, 1, wxALL | wxEXPAND, 5);
 
   wxBoxSizer* bSizer18;
   bSizer18 = new wxBoxSizer(wxHORIZONTAL);
   bSizer17->Add(bSizer18, 0, wxEXPAND, 5);
 
-  m_buttonAdd = new wxButton(m_pNMEAForm, wxID_ANY, _("Add..."),
+  m_buttonAdd = new wxButton(m_pNMEAForm, wxID_ANY, _("Add") + _T("..."),
                              wxDefaultPosition, wxDefaultSize, 0);
   bSizer18->Add(m_buttonAdd, 0, wxALL, 5);
 
@@ -1267,7 +1274,7 @@ void options::CreatePanel_NMEA_Compact(size_t parent, int border_size,
                           wxDefaultPosition, wxDefaultSize, 0);
     bSizer15->Add(m_rbTypeInternalBT, 0, wxALL, 5);
 
-    m_buttonScanBT = new wxButton(m_pNMEAForm, wxID_ANY, _("BT Scan..."),
+    m_buttonScanBT = new wxButton(m_pNMEAForm, wxID_ANY, _("BT Scan") + _T("..."),
                                   wxDefaultPosition, wxDefaultSize);
     m_buttonScanBT->Hide();
     sbSizerConnectionProps->Add(m_buttonScanBT, 0, wxALL, 5);
@@ -1479,8 +1486,8 @@ void options::CreatePanel_NMEA_Compact(size_t parent, int border_size,
   // m_stPrecision->Wrap( -1 );
   fgSizer5a->Add(m_stPrecision, 0, wxALL, 5);
 
-  wxString m_choicePrecisionChoices[] = {_("x"), _("x.x"), _("x.xx"),
-                                         _("x.xxx"), _("x.xxxx")};
+  wxString m_choicePrecisionChoices[] = {_T("x"), _T("x.x"), _T("x.xx"),
+                                         _T("x.xxx"), _T("x.xxxx")};
   int m_choicePrecisionNChoices =
       sizeof(m_choicePrecisionChoices) / sizeof(wxString);
   m_choicePrecision =
@@ -2065,12 +2072,12 @@ void options::CreatePanel_NMEA(size_t parent, int border_size,
 
   m_cbOutput =
       new wxCheckBox(m_pNMEAForm, wxID_ANY,
-                     _("Output on this port ( as Autopilot or NMEA Repeater)"),
+                     wxString::Format(_T("%s (%s)"), _("Output on this port"), _("as autopilot or NMEA repeater")),
                      wxDefaultPosition, wxDefaultSize, 0);
   fgSizer5->Add(m_cbOutput, 0, wxALL, 5);
 
   m_stTalkerIdText = new wxStaticText(m_pNMEAForm, wxID_ANY,
-                                      _("Talker ID (blank = default ID)"),
+                                      wxString::Format(_T("%s (%s)"), _("Talker ID"), _("blank = default ID")),
                                       wxDefaultPosition, wxDefaultSize, 0);
   m_stTalkerIdText->Wrap(-1);
   fgSizer5->Add(m_stTalkerIdText, 0, wxALL, 5);
@@ -2371,7 +2378,7 @@ void options::OnConnectionToggleEnableMouse(wxMouseEvent& event) {
 
 void options::CreatePanel_Ownship(size_t parent, int border_size,
                                   int group_item_spacing) {
-  itemPanelShip = AddPage(parent, _("Own Ship"));
+  itemPanelShip = AddPage(parent, _("Own ship"));
 
   ownShip = new wxBoxSizer(wxVERTICAL);
   itemPanelShip->SetSizer(ownShip);
@@ -2473,7 +2480,7 @@ void options::CreatePanel_Ownship(size_t parent, int border_size,
   dispOptions->Add(radarGrid, 0, wxLEFT | wxEXPAND, 30);
 
   wxStaticText* distanceText =
-      new wxStaticText(itemPanelShip, wxID_STATIC, _("Distance Between Rings"));
+      new wxStaticText(itemPanelShip, wxID_STATIC, _("Distance between rings"));
   radarGrid->Add(distanceText, 1, wxEXPAND | wxALL, group_item_spacing);
 
   pNavAidRadarRingsStep = new wxTextCtrl(itemPanelShip, ID_OPTEXTCTRL, _T(""),
@@ -2485,7 +2492,7 @@ void options::CreatePanel_Ownship(size_t parent, int border_size,
       new wxStaticText(itemPanelShip, wxID_STATIC, _("Distance Unit"));
   radarGrid->Add(unitText, 1, wxEXPAND | wxALL, group_item_spacing);
 
-  wxString pDistUnitsStrings[] = {_("Nautical Miles"), _("Kilometers")};
+  wxString pDistUnitsStrings[] = {_("Nautical miles"), _("Kilometers")};
   m_itemRadarRingsUnits =
       new wxChoice(itemPanelShip, ID_RADARDISTUNIT, wxDefaultPosition,
                    m_pShipIconType->GetSize(), 2, pDistUnitsStrings);
@@ -2598,7 +2605,7 @@ void options::CreatePanel_Ownship(size_t parent, int border_size,
   waypointSizer->Add(waypointradarGrid, 0, wxLEFT | wxEXPAND, 30);
 
   wxStaticText* waypointdistanceText = new wxStaticText(
-      itemPanelShip, wxID_STATIC, _("Distance Between Waypoint Rings"));
+      itemPanelShip, wxID_STATIC, _("Distance between rings"));
   waypointradarGrid->Add(waypointdistanceText, 1, wxEXPAND | wxALL,
                          group_item_spacing);
 
@@ -2679,20 +2686,36 @@ void options::CreatePanel_ChartsLoad(size_t parent, int border_size,
   cmdButtonSizer->Add(m_removeBtn, 1, wxALL | wxEXPAND, group_item_spacing);
   m_removeBtn->Disable();
 
+#ifdef USE_LZMA
+  m_compressBtn =
+      new wxButton(chartPanelWin, ID_BUTTONCOMPRESS, _("Compress Selected"));
+  cmdButtonSizer->Add(m_compressBtn, 1, wxALL | wxEXPAND, group_item_spacing);
+  m_compressBtn->Disable();
+#else
+  m_compressBtn = NULL;
+#endif
+
   wxStaticBox* itemStaticBoxUpdateStatic =
       new wxStaticBox(chartPanelWin, wxID_ANY, _("Update Control"));
   wxStaticBoxSizer* itemStaticBoxSizerUpdate =
       new wxStaticBoxSizer(itemStaticBoxUpdateStatic, wxVERTICAL);
   chartPanel->Add(itemStaticBoxSizerUpdate, 0, wxGROW | wxALL, 5);
 
-  pScanCheckBox = new wxCheckBox(chartPanelWin, ID_SCANCHECKBOX,
-                                 _("Scan Charts and Update Database"));
-  itemStaticBoxSizerUpdate->Add(pScanCheckBox, 1, wxALL, 5);
+  wxFlexGridSizer* itemFlexGridSizerUpdate = new wxFlexGridSizer(1);
+  itemFlexGridSizerUpdate->SetFlexibleDirection( wxHORIZONTAL );
 
-  pUpdateCheckBox = new wxCheckBox(chartPanelWin, ID_UPDCHECKBOX,
-                                   _("Force Full Database Rebuild"));
-  itemStaticBoxSizerUpdate->Add(pUpdateCheckBox, 1, wxALL, 5);
+  pScanCheckBox = new wxCheckBox(chartPanelWin, ID_SCANCHECKBOX, _("Scan Charts and Update Database"));
+  itemFlexGridSizerUpdate->Add(pScanCheckBox, 1, wxALL, 5);
 
+  pUpdateCheckBox = new wxCheckBox(chartPanelWin, ID_UPDCHECKBOX, _("Force Full Database Rebuild"));
+  itemFlexGridSizerUpdate->Add(pUpdateCheckBox, 1, wxALL, 5);
+
+  pParseENCButton = new wxButton(chartPanelWin, ID_PARSEENCBUTTON, _("Prepare all ENC Charts"));
+  itemFlexGridSizerUpdate->Add(pParseENCButton, 1, wxALL, 5);
+
+  itemStaticBoxSizerUpdate->Add( itemFlexGridSizerUpdate, 1, wxEXPAND, 5 );
+  
+  
   chartPanel->Layout();
 }
 
@@ -2723,11 +2746,11 @@ void options::CreatePanel_Advanced(size_t parent, int border_size,
     boxCharts->Add(pFullScreenQuilt, inputFlags);
 
     pOverzoomEmphasis = new wxCheckBox(m_ChartDisplayPage, ID_FULLSCREENQUILT,
-                                       _("Suppress blur/fog effects"));
+                                       _("Suppress blur/fog effects on overzoom"));
     boxCharts->Add(pOverzoomEmphasis, inputFlags);
 
     pOZScaleVector = new wxCheckBox(m_ChartDisplayPage, ID_FULLSCREENQUILT,
-                                    _("Suppress scaled vector charts"));
+                                    _("Suppress scaled vector charts on overzoom"));
     boxCharts->Add(pOZScaleVector, inputFlags);
 
     // Control Options
@@ -2759,7 +2782,7 @@ void options::CreatePanel_Advanced(size_t parent, int border_size,
     itemBoxSizerUI->Add(OpenGLSizer, 0, 0, 0);
 
     pOpenGL = new wxCheckBox(m_ChartDisplayPage, ID_OPENGLBOX,
-                             _("Use Accelerated Graphics"));
+                             _("Use Accelerated Graphics (OpenGL)"));
     OpenGLSizer->Add(pOpenGL, inputFlags);
     pOpenGL->Enable(!g_bdisable_opengl);
 
@@ -2768,7 +2791,7 @@ void options::CreatePanel_Advanced(size_t parent, int border_size,
 #endif
 
     wxButton* bOpenGL =
-        new wxButton(m_ChartDisplayPage, ID_OPENGLOPTIONS, _("Options..."));
+        new wxButton(m_ChartDisplayPage, ID_OPENGLOPTIONS, _("Options") + _T("..."));
     OpenGLSizer->Add(bOpenGL, inputFlags);
     bOpenGL->Enable(!g_bdisable_opengl);
 
@@ -3018,7 +3041,7 @@ void options::CreatePanel_Advanced(size_t parent, int border_size,
 #endif
 
     wxButton* bOpenGL =
-        new wxButton(m_ChartDisplayPage, ID_OPENGLOPTIONS, _("Options..."));
+        new wxButton(m_ChartDisplayPage, ID_OPENGLOPTIONS, _("Options") + _T("..."));
     OpenGLSizer->Add(bOpenGL, inputFlags);
     bOpenGL->Enable(!g_bdisable_opengl);
 
@@ -3175,7 +3198,7 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
         new wxTextCtrl(ps57Ctl, ID_OPTEXTCTRL, _T(""), wxDefaultPosition,
                        wxSize(60, -1), wxTE_RIGHT);
     depShalRow->Add(m_ShallowCtl, inputFlags);
-    m_depthUnitsShal = new wxStaticText(ps57Ctl, wxID_ANY, _("metres"));
+    m_depthUnitsShal = new wxStaticText(ps57Ctl, wxID_ANY, _("meters"));
     depShalRow->Add(m_depthUnitsShal, inputFlags);
 
     optionsColumn->Add(new wxStaticText(ps57Ctl, wxID_ANY, _("Safety Depth")),
@@ -3185,7 +3208,7 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
     m_SafetyCtl = new wxTextCtrl(ps57Ctl, ID_OPTEXTCTRL, _T(""),
                                  wxDefaultPosition, wxSize(60, -1), wxTE_RIGHT);
     depSafeRow->Add(m_SafetyCtl, inputFlags);
-    m_depthUnitsSafe = new wxStaticText(ps57Ctl, wxID_ANY, _("metres"));
+    m_depthUnitsSafe = new wxStaticText(ps57Ctl, wxID_ANY, _("meters"));
     depSafeRow->Add(m_depthUnitsSafe, inputFlags);
 
     optionsColumn->Add(new wxStaticText(ps57Ctl, wxID_ANY, _("Deep Depth")),
@@ -3195,7 +3218,7 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
     m_DeepCtl = new wxTextCtrl(ps57Ctl, ID_OPTEXTCTRL, _T(""),
                                wxDefaultPosition, wxSize(60, -1), wxTE_RIGHT);
     depDeepRow->Add(m_DeepCtl, inputFlags);
-    m_depthUnitsDeep = new wxStaticText(ps57Ctl, wxID_ANY, _("metres"));
+    m_depthUnitsDeep = new wxStaticText(ps57Ctl, wxID_ANY, _("meters"));
     depDeepRow->Add(m_depthUnitsDeep, inputFlags);
 
     // spacer
@@ -3231,25 +3254,29 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
         new wxStaticBoxSizer(marinersBox, wxVERTICAL);
     dispSizer->Add(marinersSizer, 1, wxALL | wxEXPAND, border_size);
 
-#if defined(__WXMSW__) || defined(__WXOSX__)
-    wxString* ps57CtlListBoxStrings = NULL;
-
-    ps57CtlListBox = new wxCheckListBox(
-        ps57Ctl, ID_CHECKLISTBOX, wxDefaultPosition, wxSize(250, 350), 0,
-        ps57CtlListBoxStrings, wxLB_SINGLE | wxLB_HSCROLL | wxLB_SORT);
-#else
+// #if defined(__WXMSW__) || defined(__WXOSX__)
+//     wxString* ps57CtlListBoxStrings = NULL;
+// 
+//     ps57CtlListBox = new wxCheckListBox(
+//         ps57Ctl, ID_CHECKLISTBOX, wxDefaultPosition, wxSize(250, 350), 0,
+//         ps57CtlListBoxStrings, wxLB_SINGLE | wxLB_HSCROLL | wxLB_SORT);
+// #else
     ps57CtlListBox = new OCPNCheckedListCtrl(
         ps57Ctl, ID_CHECKLISTBOX, wxDefaultPosition, wxSize(250, 350));
-#endif
+// #endif
     marinersSizer->Add(ps57CtlListBox, 1, wxALL | wxEXPAND, group_item_spacing);
 
-    wxBoxSizer* btnRow = new wxBoxSizer(wxHORIZONTAL);
-    itemButtonSelectList =
-        new wxButton(ps57Ctl, ID_SELECTLIST, _("Select All"));
-    btnRow->Add(itemButtonSelectList, 1, wxALL | wxEXPAND, group_item_spacing);
+    wxBoxSizer* btnRow1 = new wxBoxSizer(wxHORIZONTAL);
+    itemButtonSelectList =  new wxButton(ps57Ctl, ID_SELECTLIST, _("Select All"));
+    btnRow1->Add(itemButtonSelectList, 1, wxALL | wxEXPAND, group_item_spacing);
     itemButtonClearList = new wxButton(ps57Ctl, ID_CLEARLIST, _("Clear All"));
-    btnRow->Add(itemButtonClearList, 1, wxALL | wxEXPAND, group_item_spacing);
-    marinersSizer->Add(btnRow);
+    btnRow1->Add(itemButtonClearList, 1, wxALL | wxEXPAND, group_item_spacing);
+    marinersSizer->Add(btnRow1);
+    
+    wxBoxSizer* btnRow2 = new wxBoxSizer(wxHORIZONTAL);
+    itemButtonSetStd = new wxButton(ps57Ctl, ID_SETSTDLIST, _("Reset to STANDARD"));
+    btnRow2->Add(itemButtonSetStd, 1, wxALL | wxEXPAND, group_item_spacing);
+    marinersSizer->Add(btnRow2);
   }
 
   else {
@@ -3386,7 +3413,7 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
         new wxTextCtrl(ps57Ctl, ID_OPTEXTCTRL, _T(""), wxDefaultPosition,
                        wxSize(100, -1), wxTE_RIGHT);
     DepthColumn->Add(m_ShallowCtl, inputFlags);
-    m_depthUnitsShal = new wxStaticText(ps57Ctl, wxID_ANY, _("metres"));
+    m_depthUnitsShal = new wxStaticText(ps57Ctl, wxID_ANY, _("meters"));
     DepthColumn->Add(m_depthUnitsShal, inputFlags);
 
     DepthColumn->Add(new wxStaticText(ps57Ctl, wxID_ANY, _("Safety Depth")),
@@ -3395,7 +3422,7 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
         new wxTextCtrl(ps57Ctl, ID_OPTEXTCTRL, _T(""), wxDefaultPosition,
                        wxSize(100, -1), wxTE_RIGHT);
     DepthColumn->Add(m_SafetyCtl, inputFlags);
-    m_depthUnitsSafe = new wxStaticText(ps57Ctl, wxID_ANY, _("metres"));
+    m_depthUnitsSafe = new wxStaticText(ps57Ctl, wxID_ANY, _("meters"));
     DepthColumn->Add(m_depthUnitsSafe, inputFlags);
 
     DepthColumn->Add(new wxStaticText(ps57Ctl, wxID_ANY, _("Deep Depth")),
@@ -3403,7 +3430,7 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
     m_DeepCtl = new wxTextCtrl(ps57Ctl, ID_OPTEXTCTRL, _T(""),
                                wxDefaultPosition, wxSize(100, -1), wxTE_RIGHT);
     DepthColumn->Add(m_DeepCtl, inputFlags);
-    m_depthUnitsDeep = new wxStaticText(ps57Ctl, wxID_ANY, _("metres"));
+    m_depthUnitsDeep = new wxStaticText(ps57Ctl, wxID_ANY, _("meters"));
     DepthColumn->Add(m_depthUnitsDeep, inputFlags);
 
     // spacer
@@ -3447,15 +3474,15 @@ void options::CreatePanel_VectorCharts(size_t parent, int border_size,
     btnRow->Add(itemButtonClearList, 1, wxALL | wxEXPAND, group_item_spacing);
     marinersSizer->Add(btnRow);
 
-#if defined(__WXMSW__) || defined(__WXOSX__)
-    wxString* ps57CtlListBoxStrings = NULL;
-    ps57CtlListBox = new wxCheckListBox(
-        ps57Ctl, ID_CHECKLISTBOX, wxDefaultPosition, wxSize(250, 350), 0,
-        ps57CtlListBoxStrings, wxLB_SINGLE | wxLB_HSCROLL | wxLB_SORT);
-#else
+// #if defined(__WXMSW__) || defined(__WXOSX__)
+//     wxString* ps57CtlListBoxStrings = NULL;
+//     ps57CtlListBox = new wxCheckListBox(
+//         ps57Ctl, ID_CHECKLISTBOX, wxDefaultPosition, wxSize(250, 350), 0,
+//         ps57CtlListBoxStrings, wxLB_SINGLE | wxLB_HSCROLL | wxLB_SORT);
+// #else
     ps57CtlListBox = new OCPNCheckedListCtrl(
         ps57Ctl, ID_CHECKLISTBOX, wxDefaultPosition, wxSize(250, 350));
-#endif
+// #endif
 
     marinersSizer->Add(ps57CtlListBox, 1, wxALL | wxEXPAND, group_item_spacing);
   }
@@ -3672,7 +3699,7 @@ void options::CreatePanel_Display(size_t parent, int border_size,
     boxCharts->Add(pCDOQuilting, verticleInputFlags);
 
     pPreserveScale = new wxCheckBox(pDisplayPanel, ID_PRESERVECHECKBOX,
-                                    _("Preserve Scale when Switching Charts"));
+                                    _("Preserve scale when switching charts"));
     boxCharts->Add(pPreserveScale, verticleInputFlags);
 
     // spacer
@@ -3763,7 +3790,7 @@ void options::CreatePanel_Display(size_t parent, int border_size,
     boxCharts->Add(pCDOQuilting, inputFlags);
 
     pPreserveScale = new wxCheckBox(pDisplayPanel, ID_PRESERVECHECKBOX,
-                                    _("Preserve Scale on Chart Switch"));
+                                    _("Preserve scale when switching charts"));
     boxCharts->Add(pPreserveScale, inputFlags);
 
     // spacer
@@ -3884,8 +3911,11 @@ void options::CreatePanel_Units(size_t parent, int border_size,
                     groupLabelFlags);
 
     //  "Mag Heading" checkbox
+    pCBTrueShow =
+        new wxCheckBox(panelUnits, ID_MAGSHOWCHECKBOX, _("Show true"));
+    unitsSizer->Add(pCBTrueShow, 0, wxALL, group_item_spacing);
     pCBMagShow =
-        new wxCheckBox(panelUnits, ID_MAGSHOWCHECKBOX, _("Show magnetic"));
+        new wxCheckBox(panelUnits, ID_MAGSHOWCHECKBOX, _("Show magnetic bearings and headings"));
     unitsSizer->Add(pCBMagShow, 0, wxALL, group_item_spacing);
 
     //  Mag Heading user variation
@@ -3992,6 +4022,9 @@ void options::CreatePanel_Units(size_t parent, int border_size,
     unitsSizer->Add(bearingsSizer, 0, 0, 0);
 
     //  "Mag Heading" checkbox
+    pCBTrueShow = new wxCheckBox(panelUnits, ID_TRUESHOWCHECKBOX,
+                                _("Show true bearings and headings"));
+    bearingsSizer->Add(pCBTrueShow, 0, wxALL, group_item_spacing);
     pCBMagShow = new wxCheckBox(panelUnits, ID_MAGSHOWCHECKBOX,
                                 _("Show magnetic bearings and headings"));
     bearingsSizer->Add(pCBMagShow, 0, wxALL, group_item_spacing);
@@ -4001,7 +4034,7 @@ void options::CreatePanel_Units(size_t parent, int border_size,
     bearingsSizer->Add(magVarSizer, 0, wxALL, group_item_spacing);
 
     itemStaticTextUserVar =
-        new wxStaticText(panelUnits, wxID_ANY, _("Assumed magnetic variation"));
+        new wxStaticText(panelUnits, wxID_ANY, wxEmptyString);
     magVarSizer->Add(itemStaticTextUserVar, 0, wxALL | wxALIGN_CENTRE_VERTICAL,
                      group_item_spacing);
 
@@ -4297,7 +4330,7 @@ void options::CreatePanel_UI(size_t parent, int border_size,
       new wxButton(itemPanelFont, ID_BUTTONFONTCHOOSE, _("Choose Font..."),
                    wxDefaultPosition, wxDefaultSize, 0);
   itemFontStaticBoxSizer->Add(itemFontChooseButton, 0, wxALL, border_size);
-#ifdef __WXGTK__
+#if defined(__WXGTK__) || defined(__WXQT__)
   wxButton* itemFontColorButton =
       new wxButton(itemPanelFont, ID_BUTTONFONTCOLOR, _("Choose Font Color..."),
                    wxDefaultPosition, wxDefaultSize, 0);
@@ -4407,7 +4440,7 @@ void options::CreatePanel_UI(size_t parent, int border_size,
   miscOptions->Add(m_pSlider_GUI_Factor, 0, wxALL, border_size);
   m_pSlider_GUI_Factor->Show();
 
-#ifdef __WXQT__
+#ifdef __OCPN_ANDROID__
   m_pSlider_GUI_Factor->GetHandle()->setStyleSheet(getQtStyleSheet());
 #endif
 
@@ -4421,7 +4454,7 @@ void options::CreatePanel_UI(size_t parent, int border_size,
   miscOptions->Add(m_pSlider_Chart_Factor, 0, wxALL, border_size);
   m_pSlider_Chart_Factor->Show();
 
-#ifdef __WXQT__
+#ifdef __OCPN_ANDROID____
   m_pSlider_Chart_Factor->GetHandle()->setStyleSheet(getQtStyleSheet());
 #endif
   
@@ -4821,6 +4854,7 @@ void options::SetInitialSettings(void) {
         pSmoothPanZoom->Disable();
     }
 #endif
+  pCBTrueShow->SetValue(g_bShowTrue);
   pCBMagShow->SetValue(g_bShowMag);
 
   s.Printf(_T("%4.1f"), g_UserVar);
@@ -5034,6 +5068,76 @@ void options::SetInitialSettings(void) {
   
 }
 
+void options::resetMarStdList(bool bsetConfig, bool bsetStd)
+{
+    if (ps57CtlListBox) {
+        //    S52 Primary Filters
+        ps57CtlListBox->Clear();
+        marinersStdXref.clear();
+        
+        for (unsigned int iPtr = 0; iPtr < ps52plib->pOBJLArray->GetCount(); iPtr++) {
+            OBJLElement* pOLE = (OBJLElement*)(ps52plib->pOBJLArray->Item(iPtr));
+
+            if( !strncmp(pOLE->OBJLName, "CBLARE", 6))
+                int yyp = 3;
+                
+            wxString item;
+            if (iPtr < ps52plib->OBJLDescriptions.size()) {
+                item = ps52plib->OBJLDescriptions[iPtr];
+            } else {
+                item = wxString(pOLE->OBJLName, wxConvUTF8);
+            }
+            
+            
+            // Find the most conservative Category, among Point, Area, and Line LUPs
+            DisCat cat = OTHER;
+ 
+            DisCat catp = ps52plib->findLUPDisCat(pOLE->OBJLName, SIMPLIFIED);
+            DisCat cata = ps52plib->findLUPDisCat(pOLE->OBJLName, PLAIN_BOUNDARIES);
+            DisCat catl = ps52plib->findLUPDisCat(pOLE->OBJLName, LINES);
+            
+            if((catp == DISPLAYBASE) || (cata == DISPLAYBASE) || (catl== DISPLAYBASE) )
+                cat = DISPLAYBASE;
+            else if((catp == STANDARD) || (cata == STANDARD) || (catl== STANDARD) )
+                cat = STANDARD;
+            
+            bool benable = true;
+            if(cat > 0)
+                benable = cat != DISPLAYBASE;
+            
+            // The ListBox control will insert entries in sorted order, which means
+                // we need to
+                // keep track of already inserted items that gets pushed down the line.
+                int newpos = ps57CtlListBox->Append(item, benable);
+                marinersStdXref.push_back(newpos);
+                for (size_t i = 0; i < iPtr; i++) {
+                    if (marinersStdXref[i] >= newpos) marinersStdXref[i]++;
+                }
+                
+                bool bviz = 0;
+                if(bsetConfig)
+                    bviz = !(pOLE->nViz == 0);
+                
+                if(cat == DISPLAYBASE)
+                    bviz = true;
+                
+                if(bsetStd){
+                    if(cat == STANDARD){
+                        bviz = true;
+                    }
+                }
+                
+                ps57CtlListBox->Check(newpos, bviz);
+        }
+    }
+
+    //  Force the wxScrolledWindow to recalculate its scroll bars
+    wxSize s = ps57CtlListBox->GetSize();
+    ps57CtlListBox->SetSize(s.x, s.y-1);
+    
+
+}
+
 void options::SetInitialVectorSettings(void)
 {
 #ifdef USE_S57
@@ -5042,34 +5146,8 @@ void options::SetInitialVectorSettings(void)
     //    Diplay Category
     if (ps52plib) {
         m_bVectorInit = true;
-    
-        if (ps57CtlListBox) {
-            //    S52 Primary Filters
-            ps57CtlListBox->Clear();
-            marinersStdXref.clear();
-            
-            for (unsigned int iPtr = 0; iPtr < ps52plib->pOBJLArray->GetCount();
-                 iPtr++) {
-                OBJLElement* pOLE = (OBJLElement*)(ps52plib->pOBJLArray->Item(iPtr));
-            wxString item;
-            if (iPtr < ps52plib->OBJLDescriptions.size()) {
-                item = ps52plib->OBJLDescriptions[iPtr];
-            } else {
-                item = wxString(pOLE->OBJLName, wxConvUTF8);
-            }
-            
-            // The ListBox control will insert entries in sorted order, which means
-            // we need to
-            // keep track of already inseted items that gets pushed down the line.
-            int newpos = ps57CtlListBox->Append(item);
-            marinersStdXref.push_back(newpos);
-            for (size_t i = 0; i < iPtr; i++) {
-                if (marinersStdXref[i] >= newpos) marinersStdXref[i]++;
-            }
-            
-            ps57CtlListBox->Check(newpos, !(pOLE->nViz == 0));
-                 }
-        }
+        resetMarStdList(true, false);
+
         #ifdef __OCPN__ANDROID__
         ps57CtlListBox->GetHandle()->setStyleSheet(getQtStyleSheet());
         #endif
@@ -5097,11 +5175,10 @@ void options::SetInitialVectorSettings(void)
         
         if( ps57CtlListBox )
             ps57CtlListBox->Enable(MARINERS_STANDARD == ps52plib->GetDisplayCategory());
-        itemButtonClearList->Enable(MARINERS_STANDARD ==
-        ps52plib->GetDisplayCategory());
-        itemButtonSelectList->Enable(MARINERS_STANDARD ==
-        ps52plib->GetDisplayCategory());
-        
+        itemButtonClearList->Enable(MARINERS_STANDARD == ps52plib->GetDisplayCategory());
+        itemButtonSelectList->Enable(MARINERS_STANDARD == ps52plib->GetDisplayCategory());
+        itemButtonSetStd->Enable(MARINERS_STANDARD == ps52plib->GetDisplayCategory());
+                
         //  Other Display Filters
         pCheck_SOUNDG->SetValue(ps52plib->m_bShowSoundg);
         pCheck_META->SetValue(ps52plib->m_bShowMeta);
@@ -5140,6 +5217,9 @@ void options::SetInitialVectorSettings(void)
 void options::UpdateOptionsUnits(void) {
   int depthUnit = pDepthUnitSelect->GetSelection();
 
+  depthUnit = wxMax(depthUnit, 0);
+  depthUnit = wxMin(depthUnit, 2);
+  
   // depth unit conversion factor
   float conv = 1;
   if (depthUnit == 0)  // feet
@@ -5170,11 +5250,19 @@ void options::UpdateOptionsUnits(void) {
   s.Trim(FALSE);
   m_DeepCtl->SetValue(s);
 #endif
-  
+
   //disable input for variation if WMM is available
-  itemStaticTextUserVar->Enable(!(g_pi_manager && g_pi_manager->IsPlugInAvailable(_T("WMM"))));
-  itemStaticTextUserVar2->Enable(!(g_pi_manager && g_pi_manager->IsPlugInAvailable(_T("WMM"))));
-  pMagVar->Enable(!(g_pi_manager && g_pi_manager->IsPlugInAvailable(_T("WMM"))));
+  bool havewmm = g_pi_manager && g_pi_manager->IsPlugInAvailable(_T("WMM"));
+  if(havewmm)
+      itemStaticTextUserVar->SetLabel(_("WMM Plugin for magnetic variation"));
+  else
+      itemStaticTextUserVar->SetLabel(_("Assumed magnetic variation"));
+
+  // size hack to adjust change in static text size
+  wxSize sz = this->GetSize(); this->SetSize(sz.x+1, sz.y); this->SetSize(sz);
+
+  itemStaticTextUserVar2->Enable(!havewmm);
+  pMagVar->Enable(!havewmm);
 } 
 
 void options::OnSizeAutoButton(wxCommandEvent& event) {
@@ -5285,7 +5373,7 @@ void options::OnOpenGLOptions(wxCommandEvent& event) {
       g_GLOptions.m_bTextureCompression = dlg.GetTextureCompression();
       ::wxBeginBusyCursor();
       cc1->GetglCanvas()->SetupCompression();
-      cc1->GetglCanvas()->ClearAllRasterTextures();
+      g_glTextureManager->ClearAllRasterTextures();
       ::wxEndBusyCursor();
     }
     else
@@ -5301,12 +5389,11 @@ void options::OnOpenGLOptions(wxCommandEvent& event) {
 }
 
 void options::OnChartDirListSelect(wxCommandEvent& event) {
-  if (event.IsSelection()) {
-    m_removeBtn->Enable();
-  } else {
     wxArrayInt sel;
-    m_removeBtn->Enable(pActiveChartsList->GetSelections(sel) != 0);
-  }
+    bool selected = pActiveChartsList->GetSelections(sel);
+    m_removeBtn->Enable(selected);
+    if(m_compressBtn)
+        m_compressBtn->Enable(selected);
 }
 
 void options::OnDisplayCategoryRadioButton(wxCommandEvent& event) {
@@ -5314,14 +5401,19 @@ void options::OnDisplayCategoryRadioButton(wxCommandEvent& event) {
   ps57CtlListBox->Enable(select);
   itemButtonClearList->Enable(select);
   itemButtonSelectList->Enable(select);
+  itemButtonSetStd->Enable(select);
+  
 
   event.Skip();
 }
 
 void options::OnButtonClearClick(wxCommandEvent& event) {
-  int nOBJL = ps57CtlListBox->GetCount();
-  for (int iPtr = 0; iPtr < nOBJL; iPtr++) ps57CtlListBox->Check(iPtr, FALSE);
-
+  resetMarStdList(false, false);
+    
+//   int nOBJL = ps57CtlListBox->GetCount();
+//   for (int iPtr = 0; iPtr < nOBJL; iPtr++){
+//           ps57CtlListBox->Check(iPtr, FALSE);
+//   }
   event.Skip();
 }
 
@@ -5330,6 +5422,12 @@ void options::OnButtonSelectClick(wxCommandEvent& event) {
   for (int iPtr = 0; iPtr < nOBJL; iPtr++) ps57CtlListBox->Check(iPtr, TRUE);
 
   event.Skip();
+}
+
+void options::OnButtonSetStd(wxCommandEvent& event) {
+    resetMarStdList(false, true);
+    
+    event.Skip();
 }
 
 bool options::ShowToolTips(void) { return TRUE; }
@@ -5436,40 +5534,25 @@ ConnectionParams* options::CreateConnectionParamsFromSelectedItem(void) {
   if (m_rbTypeSerial->GetValue() && m_comboPort->GetValue() == _T("Deleted" ))
     return NULL;
 
+  //  We check some values here for consistency.
+  //  If necessary, set defaults so user will see some result, however wrong...
+    
   //  DataStreams should be Input, Output, or Both
   if (!(m_cbInput->GetValue() || m_cbOutput->GetValue())) {
-      m_pListbook->SetSelection(2);   // Raise connections page.
-      OCPNMessageBox(NULL, _("Data connection must be input, output or both"),
-                   _("OpenCPN Info"), wxICON_HAND);
-
-    return NULL;
+      m_cbInput->SetValue( true );
   }
 
   if (m_rbTypeSerial->GetValue() && m_comboPort->GetValue() == wxEmptyString) {
-      m_pListbook->SetSelection(2);   // Raise connections page.
-      OCPNMessageBox(NULL, _("You must select or enter the port..."),
-                   _("OpenCPN Info"), wxICON_HAND);
-    return NULL;
+      m_comboPort->Select(0);
   }
   //  TCP, GPSD and UDP require port field to be set.
   //  TCP clients, GPSD and UDP output sockets require an address
   else if (m_rbTypeNet->GetValue()) {
     if (wxAtoi(m_tNetPort->GetValue()) == 0) {
-        m_pListbook->SetSelection(2);   // Raise connections page.
-        OCPNMessageBox(NULL, _("You must enter a port..."), _("OpenCPN Info"),
-                     wxICON_HAND);
-      return NULL;
+        m_tNetPort->SetValue(_T("2947"));       // reset to default
     }
     if (m_tNetAddress->GetValue() == wxEmptyString) {
-      if ((m_rbNetProtoGPSD->GetValue()) ||
-          (m_rbNetProtoUDP->GetValue() && m_cbOutput->GetValue())) {
-          m_pListbook->SetSelection(2);   // Raise connections page.
-          OCPNMessageBox(NULL, _("You must enter the address..."),
-                       _("OpenCPN Info"), wxICON_HAND);
-        return NULL;
-      } else {
         m_tNetAddress->SetValue(_T("0.0.0.0"));
-      }
     }
   }
 
@@ -5691,7 +5774,7 @@ void options::OnApplyClick(wxCommandEvent& event) {
   //  to facility identification and allow stop and restart of the stream
   wxString lastAddr;
   int lastPort = 0;
-  NetworkProtocol lastNetProtocol;
+  NetworkProtocol lastNetProtocol = PROTO_UNDEFINED;
   
   if (itemIndex >= 0) {
     int params_index = m_lcSources->GetItemData(itemIndex);
@@ -5806,6 +5889,7 @@ void options::OnApplyClick(wxCommandEvent& event) {
 
   g_bLookAhead = pCBLookAhead->GetValue();
 
+  g_bShowTrue = pCBTrueShow->GetValue();
   g_bShowMag = pCBMagShow->GetValue();
   pMagVar->GetValue().ToDouble(&g_UserVar);
 
@@ -6089,7 +6173,8 @@ void options::OnApplyClick(wxCommandEvent& event) {
 
   if (event.GetId() == ID_APPLY) {
     gFrame->ProcessOptionsDialog(m_returnChanges, m_pWorkDirList);
-    
+    m_CurrentDirList = *m_pWorkDirList; // Perform a deep copy back to main database.
+
     //  We can clear a few flag bits on "Apply", so they won't be recognised at the "OK" click.
     //  Their actions have already been accomplished once...
     m_returnChanges &= ~( FORCE_UPDATE | SCAN_UPDATE );
@@ -6145,6 +6230,338 @@ void options::OnButtondeleteClick(wxCommandEvent& event) {
   pActiveChartsList->Delete(n);
 #endif
 
+  UpdateWorkArrayFromTextCtl();
+
+  if (m_pWorkDirList) {
+    pActiveChartsList->Clear();
+
+    int nDir = m_pWorkDirList->GetCount();
+    for (int id = 0; id < nDir; id++) {
+      dirname = m_pWorkDirList->Item(id).fullpath;
+      if (!dirname.IsEmpty()) {
+        pActiveChartsList->Append(dirname);
+      }
+    }
+  }
+
+  k_charts |= CHANGE_CHARTS;
+
+  pScanCheckBox->Disable();
+
+  event.Skip();
+}
+
+void options::OnButtonParseENC(wxCommandEvent &event)
+{
+    cc1->EnablePaint(false);
+    
+    extern void ParseAllENC();
+    ParseAllENC();
+    ViewPort vp;
+    gFrame->ChartsRefresh(-1, vp, true);
+    
+    cc1->EnablePaint(true);
+    
+}   
+
+#ifdef USE_LZMA
+#include <lzma.h>
+
+static bool
+compress(lzma_stream *strm, FILE *infile, FILE *outfile)
+{
+    // This will be LZMA_RUN until the end of the input file is reached.
+    // This tells lzma_code() when there will be no more input.
+    lzma_action action = LZMA_RUN;
+
+    // Buffers to temporarily hold uncompressed input
+    // and compressed output.
+    uint8_t inbuf[BUFSIZ];
+    uint8_t outbuf[BUFSIZ];
+
+    // Initialize the input and output pointers. Initializing next_in
+    // and avail_in isn't really necessary when we are going to encode
+    // just one file since LZMA_STREAM_INIT takes care of initializing
+    // those already. But it doesn't hurt much and it will be needed
+    // if encoding more than one file like we will in 02_decompress.c.
+    //
+    // While we don't care about strm->total_in or strm->total_out in this
+    // example, it is worth noting that initializing the encoder will
+    // always reset total_in and total_out to zero. But the encoder
+    // initialization doesn't touch next_in, avail_in, next_out, or
+    // avail_out.
+    strm->next_in = NULL;
+    strm->avail_in = 0;
+    strm->next_out = outbuf;
+    strm->avail_out = sizeof(outbuf);
+
+    // Loop until the file has been successfully compressed or until
+    // an error occurs.
+    while (true) {
+        // Fill the input buffer if it is empty.
+        if (strm->avail_in == 0 && !feof(infile)) {
+            strm->next_in = inbuf;
+            strm->avail_in = fread(inbuf, 1, sizeof(inbuf),
+                                   infile);
+
+            if (ferror(infile)) {
+                fprintf(stderr, "Read error: %s\n",
+                        strerror(errno));
+                return false;
+            }
+
+            // Once the end of the input file has been reached,
+            // we need to tell lzma_code() that no more input
+            // will be coming and that it should finish the
+            // encoding.
+            if (feof(infile))
+                action = LZMA_FINISH;
+        }
+
+        // Tell liblzma do the actual encoding.
+        //
+        // This reads up to strm->avail_in bytes of input starting
+        // from strm->next_in. avail_in will be decremented and
+        // next_in incremented by an equal amount to match the
+        // number of input bytes consumed.
+        //
+        // Up to strm->avail_out bytes of compressed output will be
+        // written starting from strm->next_out. avail_out and next_out
+        // will be incremented by an equal amount to match the number
+        // of output bytes written.
+        //
+        // The encoder has to do internal buffering, which means that
+        // it may take quite a bit of input before the same data is
+        // available in compressed form in the output buffer.
+        lzma_ret ret = lzma_code(strm, action);
+
+        // If the output buffer is full or if the compression finished
+        // successfully, write the data from the output bufffer to
+        // the output file.
+        if (strm->avail_out == 0 || ret == LZMA_STREAM_END) {
+            // When lzma_code() has returned LZMA_STREAM_END,
+            // the output buffer is likely to be only partially
+            // full. Calculate how much new data there is to
+            // be written to the output file.
+            size_t write_size = sizeof(outbuf) - strm->avail_out;
+
+            if (fwrite(outbuf, 1, write_size, outfile)
+                != write_size) {
+                fprintf(stderr, "Write error: %s\n",
+                        strerror(errno));
+                return false;
+            }
+
+            // Reset next_out and avail_out.
+            strm->next_out = outbuf;
+            strm->avail_out = sizeof(outbuf);
+        }
+
+        // Normally the return value of lzma_code() will be LZMA_OK
+        // until everything has been encoded.
+        if (ret != LZMA_OK) {
+            // Once everything has been encoded successfully, the
+            // return value of lzma_code() will be LZMA_STREAM_END.
+            //
+            // It is important to check for LZMA_STREAM_END. Do not
+            // assume that getting ret != LZMA_OK would mean that
+            // everything has gone well.
+            if (ret == LZMA_STREAM_END)
+                return true;
+
+            // It's not LZMA_OK nor LZMA_STREAM_END,
+            // so it must be an error code. See lzma/base.h
+            // (src/liblzma/api/lzma/base.h in the source package
+            // or e.g. /usr/include/lzma/base.h depending on the
+            // install prefix) for the list and documentation of
+            // possible values. Most values listen in lzma_ret
+            // enumeration aren't possible in this example.
+            const char *msg;
+            switch (ret) {
+            case LZMA_MEM_ERROR:
+                msg = "Memory allocation failed";
+                break;
+
+            case LZMA_DATA_ERROR:
+                // This error is returned if the compressed
+                // or uncompressed size get near 8 EiB
+                // (2^63 bytes) because that's where the .xz
+                // file format size limits currently are.
+                // That is, the possibility of this error
+                // is mostly theoretical unless you are doing
+                // something very unusual.
+                //
+                // Note that strm->total_in and strm->total_out
+                // have nothing to do with this error. Changing
+                // those variables won't increase or decrease
+                // the chance of getting this error.
+                msg = "File size limits exceeded";
+                break;
+
+            default:
+                // This is most likely LZMA_PROG_ERROR, but
+                // if this program is buggy (or liblzma has
+                // a bug), it may be e.g. LZMA_BUF_ERROR or
+                // LZMA_OPTIONS_ERROR too.
+                //
+                // It is inconvenient to have a separate
+                // error message for errors that should be
+                // impossible to occur, but knowing the error
+                // code is important for debugging. That's why
+                // it is good to print the error code at least
+                // when there is no good error message to show.
+                msg = "Unknown error, possibly a bug";
+                break;
+            }
+
+            wxLogMessage(_T("LZMA Encoder error: %s (error code %u)\n"),
+                         msg, ret);
+            return false;
+        }
+    }
+}
+#endif
+
+static bool CompressChart(wxString in, wxString out)
+{
+#ifdef USE_LZMA
+    FILE *infile = fopen(in.mb_str(), "rb");
+    if(!infile)
+        return false;
+
+    FILE *outfile = fopen(out.mb_str(), "wb");
+    if(!outfile) {
+        fclose(infile);
+        return false;
+    }
+
+    lzma_stream strm = LZMA_STREAM_INIT;
+    bool success = false;
+    if(lzma_easy_encoder(&strm, LZMA_PRESET_DEFAULT, LZMA_CHECK_CRC64) == LZMA_OK)
+        success = compress(&strm, infile, outfile);
+
+    lzma_end(&strm);
+    fclose(infile);
+    fclose(outfile);
+
+    return success;
+#endif
+    return false;
+}
+
+void options::OnButtoncompressClick(wxCommandEvent& event) {
+  wxString dirname;
+
+  wxArrayInt pListBoxSelections;
+#ifndef __WXQT__  // Multi selection is not implemented in wxQT
+  pActiveChartsList->GetSelections(pListBoxSelections);
+  int nSelections = pListBoxSelections.GetCount();
+#else
+  int nSelections = 1;
+  int n = pActiveChartsList->GetSelection();
+  pListBoxSelections += n;
+#endif
+
+    if(OCPNMessageBox( this, _("Compression will alter chart files on disk.\n\
+This may make them incompatible with other programs or older versions of OpenCPN.\n\
+Compressed charts may take slightly longer to load and display on some systems.\n\
+They can be decompressed again using unxz or 7 zip programs."),
+                     _("OpenCPN Warning"),
+                     (long) wxYES | wxCANCEL | wxCANCEL_DEFAULT | wxICON_WARNING) != wxID_YES)
+      return;
+
+    wxArrayString filespecs;
+    filespecs.Add("*.kap");
+    filespecs.Add("*.KAP");
+    filespecs.Add("*.000");
+    
+    // should we verify we are in a cm93 directory for these?
+    filespecs.Add("*.A"), filespecs.Add("*.B"), filespecs.Add("*.C"), filespecs.Add("*.D");
+    filespecs.Add("*.E"), filespecs.Add("*.F"), filespecs.Add("*.G"), filespecs.Add("*.Z");
+
+    wxProgressDialog prog1(_("OpenCPN Compress Charts"), wxEmptyString,
+                           filespecs.GetCount()*pListBoxSelections.GetCount()+1, this,
+                          wxPD_SMOOTH | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME |
+                          wxPD_REMAINING_TIME | wxPD_CAN_SKIP);
+
+  //    Make sure the dialog is big enough to be readable
+  wxSize sz = prog1.GetSize();
+  sz.x = cc1->GetClientSize().x * 8 / 10;
+  prog1.SetSize( sz );
+
+  wxArrayString charts;
+  for(unsigned int i=0; i<pListBoxSelections.GetCount(); i++) {
+      dirname = pActiveChartsList->GetString(pListBoxSelections[i]);
+      if (dirname.IsEmpty())
+          continue;
+      //    This is a fix for OSX, which appends EOL to results of
+      //    GetLineText()
+      while ((dirname.Last() == wxChar(_T('\n'))) ||
+             (dirname.Last() == wxChar(_T('\r'))))
+          dirname.RemoveLast();
+
+      if(!wxDir::Exists(dirname))
+          continue;
+
+      wxDir dir(dirname);
+      wxArrayString FileList;
+      for(unsigned int j = 0; j<filespecs.GetCount(); j++) {
+          dir.GetAllFiles(dirname, &FileList, filespecs[j]);
+          bool skip = false;
+          prog1.Update(i*filespecs.GetCount()+j, dirname+filespecs[j], &skip);
+          if(skip)
+              return;
+      }
+
+
+      for(unsigned int j=0; j<FileList.GetCount(); j++)
+          charts.Add(FileList[j]);
+  }
+  prog1.Hide();
+
+  if(charts.GetCount() == 0) {
+      OCPNMessageBox(
+      this,
+      _("No charts found to compress."),
+      _("OpenCPN Info"));
+      return;
+  }
+
+    
+  // TODO: make this use threads
+  unsigned long total_size = 0, total_compressed_size = 0, count = 0;
+  wxProgressDialog prog(_("OpenCPN Compress Charts"), wxEmptyString, charts.GetCount()+1, this,
+                        wxPD_SMOOTH | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME |
+                        wxPD_REMAINING_TIME | wxPD_CAN_SKIP);
+
+  prog.SetSize( sz );
+
+  for(unsigned int i=0; i<charts.GetCount(); i++) {
+      bool skip = false;
+      prog.Update(i, charts[i], &skip);
+      if(skip)
+          break;
+
+      wxString compchart = charts[i] + _T(".xz");
+      if(CompressChart(charts[i], compchart)) {
+          total_size += wxFileName::GetSize(charts[i]).ToULong();
+          total_compressed_size += wxFileName::GetSize(compchart).ToULong();
+          wxRemoveFile(charts[i]);
+          count++;
+      }
+  }
+
+  // report statistics
+  double total_size_mb = total_size/1024.0/1024.0;
+  double total_compressed_size_mb = total_compressed_size/1024.0/1024.0;
+  OCPNMessageBox(
+      this,
+      wxString::Format(_("compressed %ld charts\nfrom %.1fMB to %.1fMB\nsaved %.1fMB (%.1f%%)"),
+                       count, total_size_mb, total_compressed_size_mb,
+                       total_size_mb - total_compressed_size_mb,
+                       (1 - total_compressed_size_mb / total_size_mb) * 100.0),
+      _("OpenCPN Info"));
+  
   UpdateWorkArrayFromTextCtl();
 
   if (m_pWorkDirList) {
@@ -6246,7 +6663,7 @@ void options::OnChooseFont(wxCommandEvent& event) {
   event.Skip();
 }
 
-#ifdef __WXGTK__
+#if defined(__WXGTK__) || defined(__WXQT__)
 void options::OnChooseFontColor(wxCommandEvent& event) {
   wxString sel_text_element = m_itemFontElementListBox->GetStringSelection();
 
@@ -7532,6 +7949,8 @@ void options::SetDefaultConnectionParams(void) {
   //    m_choiceSerialProtocol->Select( cp->Protocol ); // TODO
   m_choicePriority->Select(m_choicePriority->FindString(_T( "1" )));
 
+  m_tNetAddress->SetValue(_T("0.0.0.0"));
+  
   bool bserial = TRUE;
 #ifdef __WXGTK__
   if (!g_bserial_access_checked) bserial = FALSE;
@@ -7622,6 +8041,11 @@ void options::FillSourceList(void) {
 #endif
 
   m_lcSources->SortItems(SortConnectionOnPriority, (long)m_lcSources);
+  
+  // If space is at a permium, adjust the size of the connections list to the minimum useful
+  if(m_bcompact)
+    m_lcSources->SetMinSize(wxSize(-1, wxMax((m_fontHeight * 3 / 2), (g_pConnectionParams->Count() + 1) * m_fontHeight)));
+  
 }
 
 void options::OnRemoveDatasourceClick(wxCommandEvent& event) {
@@ -7768,9 +8192,9 @@ SentenceListDlg::SentenceListDlg(wxWindow* parent, FilterDirection dir,
 
 const wxString SentenceListDlg::GetBoxLabel(void) const {
   if (m_dir == FILTER_OUTPUT)
-    return m_type == WHITELIST ? _("Transmit Sentences") : _("Drop Sentences");
+    return m_type == WHITELIST ? _("Transmit sentences") : _("Drop sentences");
   else
-    return m_type == WHITELIST ? _("Accept Sentences") : _("Ignore Sentences");
+    return m_type == WHITELIST ? _("Accept only sentences") : _("Ignore sentences");
 }
 
 void SentenceListDlg::Populate(const wxArrayString& list) {
@@ -7872,6 +8296,10 @@ OpenGLOptionsDlg::OpenGLOptionsDlg(wxWindow* parent)
 #endif
                ),
       m_brebuild_cache(FALSE) {
+          
+  wxFont* dialogFont = GetOCPNScaledFont(_("Dialog"));
+  SetFont(*dialogFont);
+          
   wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
   wxFlexGridSizer* flexSizer = new wxFlexGridSizer(2);
 
@@ -8023,7 +8451,7 @@ void OpenGLOptionsDlg::OnButtonRebuild(wxCommandEvent& event) {
 
 void OpenGLOptionsDlg::OnButtonClear(wxCommandEvent& event) {
   ::wxBeginBusyCursor();
-  if (g_bopengl) cc1->GetglCanvas()->ClearAllRasterTextures();
+  if (g_bopengl) g_glTextureManager->ClearAllRasterTextures();
 
   wxString path = g_Platform->GetPrivateDataDir() +
                   wxFileName::GetPathSeparator() + _T( "raster_texture_cache" );

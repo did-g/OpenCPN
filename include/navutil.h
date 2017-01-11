@@ -86,7 +86,7 @@ extern double parseLatLon(wxString latlon);
 
 class Route;
 class NavObjectCollection;
-class wxProgressDialog;
+class wxGenericProgressDialog;
 class ocpnDC;
 class NavObjectCollection1;
 class NavObjectChanges;
@@ -275,9 +275,6 @@ class WXDLLEXPORT X11FontPicker : public wxFontDialogBase
 };
 
 
-//      Simple and fast CRC32 calculator
-
-extern "C" unsigned int crc32buf(unsigned char *buf, size_t len);
 
 
 #endif
