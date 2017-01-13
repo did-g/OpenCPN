@@ -73,6 +73,7 @@
 #include "gshhs.h"
 #include "mygeom.h"
 #include "OCPNPlatform.h"
+#include "version.h"
 
 #ifdef __OCPN__ANDROID__
 #include "androidUTIL.h"
@@ -469,12 +470,15 @@ bool PlugInManager::LoadAllPlugIns(const wxString &plugin_dir, bool load_enabled
     UpDateChartDataTypes();
 
     // Inform plugins of the current color scheme
-    g_pi_manager->SetColorSchemeForAllPlugIns( global_color_scheme );
+    SetColorSchemeForAllPlugIns( global_color_scheme );
 
     //  Only allow the PlugIn compatibility dialogs once per instance of application.
     if(b_enable_blackdialog)
         m_benable_blackdialog_done = true;
 
+    // Tell all the PlugIns about the current OCPN configuration
+    SendConfigToAllPlugIns();
+    
     //  And then reload all catalogs.
     ReloadLocale();
 
@@ -1874,6 +1878,29 @@ void PlugInManager::SetColorSchemeForAllPlugIns(ColorScheme cs)
     }
 }
 
+void PlugInManager::SendConfigToAllPlugIns()
+{
+    // Send the current run-time configuration to all PlugIns
+    wxJSONValue v;
+    v[_T("OpenCPN Version Major")] = VERSION_MAJOR;
+    v[_T("OpenCPN Version Minor")] = VERSION_MINOR;
+    v[_T("OpenCPN Version Patch")] = VERSION_PATCH;
+    v[_T("OpenCPN Version Date")] = VERSION_DATE;
+    
+    //  S52PLIB state
+    if(ps52plib){
+        v[_T("OpenCPN S52PLIB ShowText")] = ps52plib->GetShowS57Text();
+        v[_T("OpenCPN S52PLIB ShowSoundings")] = ps52plib->GetShowSoundings();
+        v[_T("OpenCPN S52PLIB ShowLights")] = !ps52plib->GetLightsOff();
+        v[_T("OpenCPN S52PLIB ShowAnchorConditions")] = ps52plib->GetAnchorOn();
+    }
+    
+    wxJSONWriter w;
+    wxString out;
+    w.Write(v, out);
+    SendMessageToAllPlugins(wxString(_T("OpenCPN Config")), out);
+}
+
 void PlugInManager::NotifyAuiPlugIns(void)
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
@@ -2722,7 +2749,7 @@ wxScrolledWindow *AddOptionsPage( OptionsParentPI parent, wxString title )
 bool DeleteOptionsPage( wxScrolledWindow* page )
 {
     if (! g_pOptions) return false;
-    return g_pOptions->DeletePage( page );
+    return g_pOptions->DeletePluginPage( page );
 }
 
 bool DecodeSingleVDOMessage( const wxString& str, PlugIn_Position_Fix_Ex *pos, wxString *accumulator )
