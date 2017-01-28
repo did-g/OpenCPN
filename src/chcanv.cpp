@@ -4207,8 +4207,13 @@ void ChartCanvas::ScaleBarDraw( ocpnDC& dc )
     else {
         double blat, blon, tlat, tlon;
 
-        int x_origin = g_bDisplayGrid ? 50 : 10;
-        int y_origin = m_canvas_height - 30;
+//        int x_origin = g_bDisplayGrid ? 50 : 10;
+        int x_origin = m_canvas_width - 200;
+        int chartbar_height = GetChartbarHeight();
+        ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
+        if (style->chartStatusWindowTransparent)
+            chartbar_height = 0;
+        int y_origin = m_canvas_height - chartbar_height - 5;
 
         GetCanvasPixPoint( x_origin, y_origin, blat, blon );
         GetCanvasPixPoint( x_origin + m_canvas_width, y_origin, tlat, tlon );
@@ -5052,16 +5057,18 @@ bool ChartCanvas::MouseEventProcessObjects( wxMouseEvent& event )
         double zlat, zlon;
         GetCanvasPixPoint( x, y, zlat, zlon );
         
-        SelectItem *pFindAIS;
-        pFindAIS = pSelectAIS->FindSelection( zlat, zlon, SELTYPE_AISTARGET );
+        if(g_bShowAIS){
+            SelectItem *pFindAIS;
+            pFindAIS = pSelectAIS->FindSelection( zlat, zlon, SELTYPE_AISTARGET );
         
-        if( pFindAIS ) {
-            m_FoundAIS_MMSI = pFindAIS->GetUserData();
-            if( g_pAIS->Get_Target_Data_From_MMSI( m_FoundAIS_MMSI ) ) {
-                wxWindow *pwin = wxDynamicCast(this, wxWindow);
-                ShowAISTargetQueryDialog( pwin, m_FoundAIS_MMSI );
+            if( pFindAIS ) {
+                m_FoundAIS_MMSI = pFindAIS->GetUserData();
+                if( g_pAIS->Get_Target_Data_From_MMSI( m_FoundAIS_MMSI ) ) {
+                    wxWindow *pwin = wxDynamicCast(this, wxWindow);
+                    ShowAISTargetQueryDialog( pwin, m_FoundAIS_MMSI );
+                }
+                return true;
             }
-            return true;
         }
         
         SelectableItemList rpSelList = pSelect->FindSelectionList( zlat, zlon, SELTYPE_ROUTEPOINT );
