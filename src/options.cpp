@@ -4746,7 +4746,7 @@ void options::CreateControls(void) {
       nb->Connect(wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED,
                   wxNotebookEventHandler(options::OnChartsPageChange),
                   NULL, this);
-      
+
 #endif
   }
       
@@ -6247,7 +6247,15 @@ void options::OnButtonParseENC(wxCommandEvent &event)
     cc1->EnablePaint(false);
     
     extern void ParseAllENC();
+#ifdef __WXOSX__
+    HideWithEffect(wxSHOW_EFFECT_BLEND );
+#endif
+        
     ParseAllENC();
+#ifdef __WXOSX__
+    ShowWithEffect(wxSHOW_EFFECT_BLEND );
+#endif
+    
     ViewPort vp;
     gFrame->ChartsRefresh(-1, vp, true);
     
@@ -6705,6 +6713,8 @@ void options::OnChartsPageChange(wxListbookEvent& event) {
     if (!m_bVectorInit)
         SetInitialVectorSettings();
   }
+  
+  event.Skip();  // Allow continued event processing
 }
 
 void options::OnPageChange(wxListbookEvent& event) {
