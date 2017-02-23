@@ -4462,7 +4462,7 @@ void options::CreatePanel_UI(size_t parent, int border_size,
   miscOptions->Add(pResponsive, 0, wxALL, border_size);
 
   pInlandEcdis = new wxCheckBox(itemPanelFont, ID_INLANDECDISBOX,
-                                _("Use Settings for Inland ECDIS"));
+                                _("Use Settings for Inland ECDIS Version 2.3"));
   miscOptions->Add(pInlandEcdis, 0, wxALL, border_size);
   
   miscOptions->AddSpacer(10);
@@ -6228,7 +6228,7 @@ void options::OnApplyClick(wxCommandEvent& event) {
     if ( g_bInlandEcdis != pInlandEcdis->GetValue() ){ // InlandEcdis changed
         g_bInlandEcdis = pInlandEcdis->GetValue();
         SwitchInlandEcdisMode( g_bInlandEcdis );
-        m_returnChanges |= TOOLBAR_CHANGED | FORCE_UPDATE;    
+        m_returnChanges |= TOOLBAR_CHANGED;    
     }
   // PlugIn Manager Panel
 

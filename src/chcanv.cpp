@@ -81,6 +81,7 @@
 #include "gshhs.h"
 #include "canvasMenu.h"
 #include "wx28compat.h"
+#include "Track.h"
 
 #ifdef __OCPN__ANDROID__
 #include "androidUTIL.h"
@@ -218,6 +219,7 @@ extern int              g_pNavAidRadarRingsStepUnits;
 extern bool             g_bWayPointPreventDragging;
 extern bool             g_bEnableZoomToCursor;
 extern bool             g_bShowChartBar;
+extern bool             g_bInlandEcdis;
 
 extern AISTargetAlertDialog    *g_pais_alert_dialog_active;
 extern AISTargetQueryDialog    *g_pais_query_dialog_active;
@@ -1706,6 +1708,12 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
                 m_bMeasure_DistCircle = false;
 
             StartMeasureRoute();
+            break;
+            
+        case 'N':
+            if( g_bInlandEcdis && ps52plib){
+                gFrame->SetENCDisplayCategory( (_DisCat)STANDARD );
+            }
             break;
 
         case 'O':
@@ -7636,7 +7644,7 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
 
     int rx, ry, rwidth, rheight;
     ru.GetBox( rx, ry, rwidth, rheight );
-//        printf("%d Onpaint update region box: %d %d %d %d\n", spaint++, rx, ry, rwidth, rheight);
+        //printf("%d Onpaint update region box: %d %d %d %d\n", spaint++, rx, ry, rwidth, rheight);
 
 #ifdef ocpnUSE_DIBSECTION
     ocpnMemDC temp_dc;
@@ -7682,6 +7690,15 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
         }        
     }
 
+    if(g_Compass && g_Compass->IsShown()){
+        wxRect compassRect = g_Compass->GetRect();
+        if(ru.Contains(compassRect) != wxOutRegion) {
+            ru.Subtract(compassRect);
+        }
+    }
+            
+    
+    
     //  Is this viewpoint the same as the previously painted one?
     bool b_newview = true;
 
@@ -8047,7 +8064,77 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
         q_dc.SelectObject( wxNullBitmap );
 
     }
+#if 0
+    //  It is possible that this two-step method may be reuired for some platforms.
+    //  So, retain in the code base to aid recovery if necessary
+    
+    // Create and Render the Vector quilt decluttered text overlay, omitting CM93 composite
+    if( VPoint.b_quilt ) {
+        if(m_pQuilt->IsQuiltVector() && ps52plib && ps52plib->GetShowS57Text()){
+            ChartBase *chart = m_pQuilt->GetRefChart();
+            if( chart && chart->GetChartType() != CHART_TYPE_CM93COMP){
+                
+                //        Clear the text Global declutter list
+                ChartPlugInWrapper *ChPI = dynamic_cast<ChartPlugInWrapper*>( chart );
+                if(ChPI)
+                    ChPI->ClearPLIBTextList();
+                else{
+                    if(ps52plib)
+                        ps52plib->ClearTextList();
+                }
+                
+                wxMemoryDC t_dc;
+                wxBitmap qbm(  GetVP().pix_width, GetVP().pix_height );
+                
+                wxColor maskBackground = wxColour(1,0,0);
+                t_dc.SelectObject( qbm );
+                t_dc.SetBackground(wxBrush(maskBackground));
+                t_dc.Clear();
 
+                //  Copy the scratch DC into the new bitmap
+                t_dc.Blit( 0, 0, GetVP().pix_width, GetVP().pix_height, scratch_dc.GetDC(), 0, 0, wxCOPY );
+
+                //  Render the text to the new bitmap
+                OCPNRegion chart_all_text_region( wxRect( 0, 0, GetVP().pix_width, GetVP().pix_height ) );
+                m_pQuilt->RenderQuiltRegionViewOnDCTextOnly( t_dc, svp, chart_all_text_region );
+                
+                //  Copy the new bitmap back to the scratch dc
+                wxRegionIterator upd_final( ru );
+                while( upd_final ) {
+                    wxRect rect = upd_final.GetRect();
+                    scratch_dc.GetDC()->Blit( rect.x, rect.y, rect.width, rect.height, &t_dc, rect.x, rect.y, wxCOPY, true );
+                    upd_final++;
+                }
+                
+                t_dc.SelectObject( wxNullBitmap );
+            }
+        }
+    }
+#endif
+    // Direct rendering model...
+    if( VPoint.b_quilt ) {
+        if(m_pQuilt->IsQuiltVector() && ps52plib && ps52plib->GetShowS57Text()){
+            ChartBase *chart = m_pQuilt->GetRefChart();
+            if( chart && chart->GetChartType() != CHART_TYPE_CM93COMP){
+                
+                //        Clear the text Global declutter list
+                ChartPlugInWrapper *ChPI = dynamic_cast<ChartPlugInWrapper*>( chart );
+                if(ChPI)
+                    ChPI->ClearPLIBTextList();
+                else{
+                    if(ps52plib)
+                        ps52plib->ClearTextList();
+                }
+                
+                //  Render the text directly to the scratch bitmap
+                OCPNRegion chart_all_text_region( wxRect( 0, 0, GetVP().pix_width, GetVP().pix_height ) );
+                m_pQuilt->RenderQuiltRegionViewOnDCTextOnly( mscratch_dc, svp, chart_all_text_region );
+                
+            }
+        }
+    }
+    
+    
 //    And finally, blit the scratch dc onto the physical dc
     wxRegionIterator upd_final( rgn_blit );
     while( upd_final ) {
@@ -8057,8 +8144,8 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
     }
 
     //  Test code to validate the dc drawing rectangle....
-    /*
-     OCPNRegionIterator upd_ru ( ru ); // get the update rect list
+/*
+    wxRegionIterator upd_ru ( rgn_blit ); // get the update rect list
      while ( upd_ru )
      {
      wxRect rect = upd_ru.GetRect();
@@ -8068,7 +8155,7 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
      dc.DrawRectangle(rect);
      upd_ru ++ ;
      }
-     */
+*/
 
 //    Deselect the chart bitmap from the temp_dc, so that it will not be destroyed in the temp_dc dtor
     temp_dc.SelectObject( wxNullBitmap );
@@ -8076,53 +8163,7 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
     mscratch_dc.SelectObject( wxNullBitmap );
 
     dc.DestroyClippingRegion();
-    
-    // Create and Render the Vector quilt decluttered text overlay, omitting CM93 composite
-    if( VPoint.b_quilt ) {
-        if(m_pQuilt->IsQuiltVector() && ps52plib && ps52plib->GetShowS57Text()){
-            ChartBase *chart = m_pQuilt->GetRefChart();
-            if(chart->GetChartType() != CHART_TYPE_CM93COMP){
-                wxMemoryDC q_dc;
-                wxBitmap qbm(  GetVP().pix_width, GetVP().pix_height );
-                
-                q_dc.SelectObject( qbm );
-                q_dc.SetBackground(wxBrush(wxColour(1,0,0)));
-                q_dc.Clear();
-                
-                //        Clear the text Global declutter list
-                if(chart){
-                    ChartPlugInWrapper *ChPI = dynamic_cast<ChartPlugInWrapper*>( chart );
-                    if(ChPI){
-                        ChPI->ClearPLIBTextList();
-                    }
-                    else{
-                        if(ps52plib)
-                            ps52plib->ClearTextList();
-                    }
-                }
-                
-                OCPNRegion chart_all_text_region( wxRect( 0, 0, GetVP().pix_width, GetVP().pix_height ) );
-                m_pQuilt->RenderQuiltRegionViewOnDCTextOnly( q_dc, svp, chart_all_text_region );
 
-                wxMask *pMask = new wxMask(qbm, wxColor(1,0,0));
-                qbm.SetMask(pMask);
-    
-                //  Pick up the new Mask
-                q_dc.SelectObject( wxNullBitmap );
-                q_dc.SelectObject( qbm );
-                
-                // Blit back into source, at the correct height
-                int height = GetVP().pix_height;
-                if(m_brepaint_piano)
-                    height -= GetChartbarHeight();
-                    
-                dc.Blit( 0, 0,  GetVP().pix_width, height, &q_dc, 0, 0, wxCOPY, true );
-                
-                q_dc.SelectObject( wxNullBitmap );
-            }
-        }
-    }
-    
     
     PaintCleanup();
     OCPNPlatform::HideBusySpinner();
@@ -9014,20 +9055,21 @@ void ChartCanvas::DrawAllTidesInBBox( ocpnDC& dc, LLBBox& BBox )
 				    // scale default size by tide_draw_scaler factor
 				    int width = (int) (12 * tide_draw_scaler + 0.5);
 				    int height = (int) (45 * tide_draw_scaler + 0.5);
-				    int linew = wxMax(1, (int) (tide_draw_scaler + 0.5));
+				    int linew = wxMax(1, (int) (tide_draw_scaler));
 
 				    //std::cerr << "tide icon w=" << width << ", h=" << height;
 				    //std::cerr << ", linew=" << linew << ", scale=" << tide_draw_scaler << std::endl;
 
                                     //process tide state  ( %height and flow sens )
                                     float ts = 1 - ( ( nowlev - ltleve ) / ( htleve - ltleve ) );
-                                    int hs = ( httime > lttime ) ? -5 : 5;
+                                    int hs = ( httime > lttime ) ? -4 : 4;
+				    hs *= (int) (tide_draw_scaler + 0.5); 
                                     if( ts > 0.995 || ts < 0.005 ) hs = 0;
                                     int ht_y = (int) ( height * ts );
 
 				    //draw yellow tide rectangle outlined in black
-                                    dc.SetPen( *pblack_pen );
 				    pblack_pen->SetWidth(linew);
+                                    dc.SetPen( *pblack_pen );
                                     dc.SetBrush( *pyelo_brush );
                                     dc.DrawRectangle( w, h, width, height );
 
@@ -9192,7 +9234,7 @@ void ChartCanvas::DrawAllCurrentsInBBox( ocpnDC& dc, LLBBox& BBox )
                     GetCanvasPointPix( lat, lon, &r );
 
                     wxPoint d[4]; // points of a diamond at the current station location
-                    int dd = (int) (6.0 * current_draw_scaler);  
+                    int dd = (int) (5.0 * current_draw_scaler + 0.5);  
                     d[0].x = r.x;
                     d[0].y = r.y + dd;
                     d[1].x = r.x + dd;
@@ -9203,7 +9245,7 @@ void ChartCanvas::DrawAllCurrentsInBBox( ocpnDC& dc, LLBBox& BBox )
                     d[3].y = r.y;
 
                     if( ptcmgr->GetTideOrCurrent15( now, i, tcvalue, dir, bnew_val ) ) {
-                        pblack_pen->SetWidth( 1 );
+		      pblack_pen->SetWidth( wxMax(1, (int) (current_draw_scaler + 0.5)) );
                         dc.SetPen( *pblack_pen );
                         dc.SetBrush( *porange_brush );
                         dc.DrawPolygon( 4, d );
@@ -9231,10 +9273,10 @@ void ChartCanvas::DrawAllCurrentsInBBox( ocpnDC& dc, LLBBox& BBox )
                                 double a2 = log10( a1 );
 
 				// scale to pass to DrawArrow. 0.4 is a reasonable factor here.
-				// adjust value of CurrentArrowScale in config file as needed
+				// users can adjust value of CurrentArrowScale in config file as needed
                                 float cscale = current_draw_scaler * a2 * 0.4;
 
-                                porange_pen->SetWidth( 2 );
+                                porange_pen->SetWidth( wxMax(1, (int) (current_draw_scaler + 0.5)) );
                                 dc.SetPen( *porange_pen );
                                 DrawArrow( dc, pixxc, pixyc,
                                            dir - 90 + ( skew_angle * 180. / PI ), cscale );

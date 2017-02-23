@@ -1379,12 +1379,18 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
 
             //      Draw RateOfTurn Vector
             if( ( td->ROTAIS != 0 ) && ( td->ROTAIS != -128 ) && (!g_bShowScaled) ) {
+                float cog_angle = td->COG *PI/180.;
+                
+                float theta2 = theta;           // ownship drawn angle
+                 if (td->SOG >= g_ShowMoored_Kts )
+                     theta2 = cog_angle - (PI / 2);    // actual cog angle    
+                
                 float nv = 10;
-                float theta2 = theta;
-                if( td->ROTAIS > 0 ) theta2 += (float)PI / 2.;
-                else
-                    theta2 -= (float)PI / 2.;
-
+                 if( td->ROTAIS > 0 )
+                      theta2 += (float)PI / 2;
+                 else
+                     theta2 -= (float)PI / 2;
+                 
                 int xrot = (int) round ( pixx1 + ( nv * cosf ( theta2 ) ) );
                 int yrot = (int) round ( pixy1 + ( nv * sinf ( theta2 ) ) );
                 dc.StrokeLine( pixx1, pixy1, xrot, yrot );
@@ -1535,10 +1541,16 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
 #endif
         }
 
-        if (g_bDrawAISSize && bcan_draw_size)
-        {
+        if (g_bDrawAISSize && bcan_draw_size){
             dc.SetBrush( wxBrush( UBLCK, wxBRUSHSTYLE_TRANSPARENT ) );
-            dc.StrokePolygon( 6, ais_real_size, TargetPoint.x, TargetPoint.y, 1.0 );
+            if(!g_bInlandEcdis){
+                 dc.StrokePolygon( 6, ais_real_size, TargetPoint.x, TargetPoint.y, 1.0 );
+            }
+            else{
+                if(b_hdgValid){
+                    dc.StrokePolygon( 6, ais_real_size, TargetPoint.x, TargetPoint.y, 1.0 );
+                }
+            }
         }
 
         dc.SetBrush( wxBrush( GetGlobalColor( _T ( "SHIPS" ) ) ) );
@@ -1622,27 +1634,26 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
 
         //    European Inland AIS define a "stbd-stbd" meeting sign, a blue paddle.
         //    Symbolize it if set by most recent message
-        if( td->b_blue_paddle ) {
+        if( td->blue_paddle) { //if blue paddle info is available blue_paddle > 0
             wxPoint ais_flag_icon[4];
             int penWidth = 2;
             
             if(g_bInlandEcdis){
                 if(b_hdgValid){
-                    ais_flag_icon[0] = wxPoint( -6,9);
-                    ais_flag_icon[1] = wxPoint( -11,12);
-                    ais_flag_icon[2] = wxPoint( -14,8);
-                    ais_flag_icon[3] = wxPoint( -8,4);
+                    ais_flag_icon[0] = wxPoint( -4,4);
+                    ais_flag_icon[1] = wxPoint( -4,11);
+                    ais_flag_icon[2] = wxPoint( -11,11);
+                    ais_flag_icon[3] = wxPoint( -11,4);
+                    transrot_pts(4, ais_flag_icon, sin_theta, cos_theta, TargetPoint);
                 }
                 else{
-                    ais_flag_icon[0] = wxPoint( -3,0);
-                    ais_flag_icon[1] = wxPoint( 0,3);
-                    ais_flag_icon[2] = wxPoint( 3,0);
-                    ais_flag_icon[3] = wxPoint( 0,-3);
+                    ais_flag_icon[0] = wxPoint( TargetPoint.x-4, TargetPoint.y+4);
+                    ais_flag_icon[1] = wxPoint( TargetPoint.x-4, TargetPoint.y-3);
+                    ais_flag_icon[2] = wxPoint( TargetPoint.x+3, TargetPoint.y-3);
+                    ais_flag_icon[3] = wxPoint( TargetPoint.x+3, TargetPoint.y+4);
                 }
-                
-                transrot_pts(4, ais_flag_icon, sin_theta, cos_theta, TargetPoint);
-                
-                dc.SetPen( wxPen( GetGlobalColor( _T ( "UINFB" ) ), penWidth ) );
+
+                dc.SetPen( wxPen( GetGlobalColor( _T ( "CHWHT" ) ), penWidth ) );
                 
             }
             else{
@@ -1650,14 +1661,18 @@ static void AISDrawTarget( AIS_Target_Data *td, ocpnDC& dc )
                 ais_flag_icon[1] = wxPoint( (int)-2*targetscale/100, (int)18*targetscale/100);
                 ais_flag_icon[2] = wxPoint( (int)-2*targetscale/100, 0);
                 ais_flag_icon[3] = wxPoint( (int)-2*targetscale/100, (int)-6*targetscale/100);
-            
                 transrot_pts(4, ais_flag_icon, sin_theta, cos_theta, TargetPoint);
+                
 
                 if(targetscale < 100)
                     penWidth = 1;
                 dc.SetPen( wxPen( GetGlobalColor( _T ( "CHWHT" ) ), penWidth ) );
                 
             }
+            if( td->blue_paddle == 1) {
+                    ais_flag_icon[1] = ais_flag_icon[0];
+                    ais_flag_icon[2] = ais_flag_icon[3];
+                }
             
             dc.SetBrush( wxBrush( GetGlobalColor( _T ( "UINFB" ) ) ) );
             dc.StrokePolygon( 4, ais_flag_icon);
