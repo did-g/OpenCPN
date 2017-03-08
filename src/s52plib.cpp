@@ -2356,6 +2356,8 @@ bool s52plib::RenderHPGL( ObjRazRules *rzRules, Rule *prule, wxPoint &r, ViewPor
         fsf *= xscale;
     }
     
+    xscale *= g_ChartScaleFactorExp;
+    
     //  Special case for GEO_AREA objects with centred symbols
     if( rzRules->obj->Primitive_type == GEO_AREA ) {
         wxPoint r;
@@ -5901,45 +5903,8 @@ int s52plib::DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp )
 //        if(!strncmp(rzRules->obj->FeatureName, "berths", 6))
 //            int yyp = 0;
 
-    if( !ObjectRenderCheckPos( rzRules, vp ) )
+    if( !ObjectRenderCheckRules( rzRules, vp, true ) )
         return 0;
-    
-    if( IsObjNoshow( rzRules->LUP->OBCL) )
-        return 0;
-        
-    if( !ObjectRenderCheckCat( rzRules, vp ) ) {
-
-        //  If this object cannot be moved to a higher category by CS procedures,
-        //  then we are done here
-        if(!rzRules->obj->m_bcategory_mutable)
-            return 0;
-
-        // already added, nothing below can change its display category        
-        if(rzRules->obj->bCS_Added ) 
-            return 0;
-
-        //  Otherwise, make sure the CS, if present, has been evaluated,
-        //  and then check the category again    
-        //  no rules 
-        if( !ObjectRenderCheckCS( rzRules, vp ) )
-            return 0;
-
-
-        rzRules->obj->CSrules = NULL;
-        Rules *rules = rzRules->LUP->ruleList;
-        while( rules != NULL ) {
-            if( RUL_CND_SY ==  rules->ruleType ){
-                GetAndAddCSRules( rzRules, rules );
-                rzRules->obj->bCS_Added = 1; // mark the object
-                break;
-            }
-            rules = rules->next;
-        }
-        
-        // still not displayable    
-        if( !ObjectRenderCheckCat( rzRules, vp ) ) 
-            return 0;
-    }
 
     m_pdc = pdcin; // use this DC
     Rules *rules = rzRules->LUP->ruleList;
@@ -6039,46 +6004,9 @@ int s52plib::DoRenderObjectTextOnly( wxDC *pdcin, ObjRazRules *rzRules, ViewPort
 //    if(rzRules->obj->Index != 636)
 //        return 0;
     
-    if( !ObjectRenderCheckPos( rzRules, vp ) )
+    if( !ObjectRenderCheckRules( rzRules, vp, true ) )
         return 0;
-    
-    if( IsObjNoshow( rzRules->LUP->OBCL) )
-        return 0;
-    
-    if( !ObjectRenderCheckCat( rzRules, vp ) ) {
-        
-        //  If this object cannot be moved to a higher category by CS procedures,
-        //  then we are done here
-        if(!rzRules->obj->m_bcategory_mutable)
-            return 0;
-        
-        // already added, nothing below can change its display category        
-            if(rzRules->obj->bCS_Added ) 
-                return 0;
-            
-            //  Otherwise, make sure the CS, if present, has been evaluated,
-                //  and then check the category again    
-                //  no rules 
-                if( !ObjectRenderCheckCS( rzRules, vp ) )
-                    return 0;
-                
-                
-                rzRules->obj->CSrules = NULL;
-                Rules *rules = rzRules->LUP->ruleList;
-                while( rules != NULL ) {
-                    if( RUL_CND_SY ==  rules->ruleType ){
-                        GetAndAddCSRules( rzRules, rules );
-                        rzRules->obj->bCS_Added = 1; // mark the object
-                        break;
-                    }
-                    rules = rules->next;
-                }
-                
-                // still not displayable    
-                if( !ObjectRenderCheckCat( rzRules, vp ) ) 
-                    return 0;
-    }
-    
+
     m_pdc = pdcin; // use this DC
     Rules *rules = rzRules->LUP->ruleList;
     
@@ -8173,42 +8101,8 @@ void s52plib::RenderPolytessGL(ObjRazRules *rzRules, ViewPort *vp, double z_clip
 
 int s52plib::RenderAreaToGL( const wxGLContext &glcc, ObjRazRules *rzRules, ViewPort *vp )
 {
-    if( !ObjectRenderCheckPos( rzRules, vp ) )
+    if( !ObjectRenderCheckRules( rzRules, vp ) )
         return 0;
-
-    if( !ObjectRenderCheckCat( rzRules, vp ) ) {
-
-        //  If this object cannot be moved to a higher category by CS procedures,
-        //  then we are done here
-        if(!rzRules->obj->m_bcategory_mutable)
-            return 0;
-
-        // already added, nothing below can change its display category        
-        if(rzRules->obj->bCS_Added ) 
-            return 0;
-
-        //  Otherwise, make sure the CS, if present, has been evaluated,
-        //  and then check the category again    
-        //  no rules 
-        if( !ObjectRenderCheckCS( rzRules, vp ) )
-            return 0;
-
-
-        rzRules->obj->CSrules = NULL;
-        Rules *rules = rzRules->LUP->ruleList;
-        while( rules != NULL ) {
-            if( RUL_CND_SY ==  rules->ruleType ){
-                GetAndAddCSRules( rzRules, rules );
-                rzRules->obj->bCS_Added = 1; // mark the object
-                break;
-            }
-            rules = rules->next;
-        }
-        
-        // still not displayable    
-        if( !ObjectRenderCheckCat( rzRules, vp ) ) 
-            return 0;
-    }
 
     Rules *rules = rzRules->LUP->ruleList;
 
@@ -8542,41 +8436,8 @@ int s52plib::RenderAreaToDC( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp,
         render_canvas_parms *pb_spec )
 {
 
-    if( !ObjectRenderCheckPos( rzRules, vp ) )
+    if( !ObjectRenderCheckRules( rzRules, vp ) )
         return 0;
-
-    if( !ObjectRenderCheckCat( rzRules, vp ) ) {
-
-        //  If this object cannot be moved to a higher category by CS procedures,
-        //  then we are done here
-        if(!rzRules->obj->m_bcategory_mutable)
-            return 0;
-
-        // already added, nothing below can change its display category        
-        if(rzRules->obj->bCS_Added ) 
-            return 0;
-
-        //  Otherwise, make sure the CS, if present, has been evaluated,
-        //  and then check the category again    
-        //  no rules 
-        if( !ObjectRenderCheckCS( rzRules, vp ) )
-            return 0;
-
-        rzRules->obj->CSrules = NULL;
-        Rules *rules = rzRules->LUP->ruleList;
-        while( rules != NULL ) {
-            if( RUL_CND_SY ==  rules->ruleType ){
-                GetAndAddCSRules( rzRules, rules );
-                rzRules->obj->bCS_Added = 1; // mark the object
-                break;
-            }
-            rules = rules->next;
-        }
-        
-        // still not displayable    
-        if( !ObjectRenderCheckCat( rzRules, vp ) ) 
-            return 0;
-    }
 
     m_pdc = pdcin; // use this DC
     Rules *rules = rzRules->LUP->ruleList;
@@ -8733,7 +8594,8 @@ bool s52plib::ObjectRenderCheckCS( ObjRazRules *rzRules, ViewPort *vp )
 
 bool s52plib::ObjectRenderCheckPos( ObjRazRules *rzRules, ViewPort *vp )
 {
-    if( rzRules->obj == NULL ) return false;
+    if( rzRules->obj == NULL ) 
+        return false;
 
     // Of course, the object must be at least partly visible in the viewport
     const LLBBox &vpBox = vp->GetBBox(), &testBox = rzRules->obj->BBObj;
@@ -8871,6 +8733,51 @@ bool s52plib::ObjectRenderCheckCat( ObjRazRules *rzRules, ViewPort *vp )
 
     return b_visible;
 }
+
+bool s52plib::ObjectRenderCheckRules( ObjRazRules *rzRules, ViewPort *vp, bool check_noshow )
+{
+    if( !ObjectRenderCheckPos( rzRules, vp ) ) 
+        return false;
+
+    if( check_noshow && IsObjNoshow( rzRules->LUP->OBCL) )
+        return false;
+
+    if( ObjectRenderCheckCat( rzRules, vp ) ) 
+        return true;
+
+    //  If this object cannot be moved to a higher category by CS procedures,
+    //  then we are done here
+    if(!rzRules->obj->m_bcategory_mutable)
+        return false;
+
+    // already added, nothing below can change its display category        
+    if(rzRules->obj->bCS_Added ) 
+        return false;
+
+    //  Otherwise, make sure the CS, if present, has been evaluated,
+    //  and then check the category again    
+    //  no rules 
+    if( !ObjectRenderCheckCS( rzRules, vp ) )
+        return false;
+
+    rzRules->obj->CSrules = NULL;
+    Rules *rules = rzRules->LUP->ruleList;
+    while( rules != NULL ) {
+        if( RUL_CND_SY ==  rules->ruleType ){
+            GetAndAddCSRules( rzRules, rules );
+            rzRules->obj->bCS_Added = 1; // mark the object
+            break;
+        }
+        rules = rules->next;
+    }
+    
+    // still not displayable    
+    if( !ObjectRenderCheckCat( rzRules, vp ) ) 
+        return false;
+
+    return true;
+}
+
 
 void s52plib::SetDisplayCategory(enum _DisCat cat)
 {
@@ -9151,13 +9058,17 @@ void RenderFromHPGL::SetPen()
     }
 #ifdef ocpnUSE_GL
     if( renderToOpenGl ) {
-        glEnable( GL_LINE_SMOOTH );
+    //    glEnable( GL_LINE_SMOOTH );
         glEnable( GL_POLYGON_SMOOTH );
-        glEnable( GL_BLEND );
         
         glColor4ub( penColor.Red(), penColor.Green(), penColor.Blue(), transparency );
-        glLineWidth( wxMax(g_GLMinSymbolLineWidth, (float) penWidth * 0.7) );
+        int line_width = wxMax(g_GLMinSymbolLineWidth, (float) penWidth * 0.7);
+        glLineWidth( line_width );
 #ifndef __OCPN__ANDROID__
+        if(line_width >= 2)
+            glEnable( GL_LINE_SMOOTH );
+        else
+            glDisable( GL_LINE_SMOOTH );
         glEnable( GL_BLEND );
 #endif        
     }
