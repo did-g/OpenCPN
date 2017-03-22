@@ -1299,7 +1299,7 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
 
                     QuiltCandidate *qcnew = new QuiltCandidate;
                     qcnew->dbIndex = sure_index;
-                    qcnew->ChartScale = scale;
+                    qcnew->SetScale ( ChartData->GetDBChartScale( sure_index ) );
                     m_pcandidate_array->Add( qcnew );               // auto-sorted on scale
 
                     b_need_resort = true;
@@ -1701,7 +1701,6 @@ bool Quilt::Compose( const ViewPort &vp_in )
         if( !pqc->b_include ) {
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( pqc->dbIndex );
             if( cte.Scale_ge( m_reference_scale) ) {
->>>>>>> use rounded chart scale
                 m_eclipsed_stack_array.Add( pqc->dbIndex );
                 pqc->b_eclipsed = true;
             }
