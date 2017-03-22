@@ -1321,7 +1321,7 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
 
                     QuiltCandidate *qcnew = new QuiltCandidate;
                     qcnew->dbIndex = sure_index;
-                    qcnew->ChartScale = scale;
+                    qcnew->SetScale ( ChartData->GetDBChartScale( sure_index ) );
                     m_pcandidate_array->Add( qcnew );               // auto-sorted on scale
                     m_pcandidate_array->push_back( qcnew );               // auto-sorted on scale
 
