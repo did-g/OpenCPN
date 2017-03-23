@@ -1287,7 +1287,7 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
                 // but only if if it's visible if selected with the piano
                 // use a rough estimate of the full logic
                 // XXX add all visible charts with the same scale?
-                ViewPort vp_local = m_vp_quilt; 
+                ViewPort vp_local = vp_in; 
                 int scale = ChartData->GetDBChartScale( sure_index );
                 vp_local.view_scale_ppm = cc1->GetCanvasScaleFactor() / (scale *2.);
                 vp_local.SetBoxes();
