@@ -1202,8 +1202,20 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
             //    Take note here, and keep track of the smallest scale chart that is larger scale than reference....
             if( ! cte.Scale_ge( reference_scale) ) {
                 if( cte.Scale_gt( sure_index_scale ) ) {
-                    sure_index = i;
-                    sure_index_scale = candidate_chart_scale;
+                    // but only if if it's visible if selected with the piano
+                    // use a rough estimate of the full logic
+                    // XXX add all visible charts with the same scale?
+                    ViewPort vp_local = vp_in; 
+                    int scale = ChartData->GetDBChartScale( i );
+                    vp_local.view_scale_ppm = cc1->GetCanvasScaleFactor() / (scale *2.);
+                    vp_local.SetBoxes();
+                    LLBBox viewbox = vp_local.GetBBox();
+                    const ChartTableEntry &cte = ChartData->GetChartTableEntry( i );
+                    const LLBBox &chart_box = cte.GetBBox();
+                    if( ( !viewbox.IntersectOut( chart_box ) ) ) {
+                        sure_index = i;
+                        sure_index_scale = candidate_chart_scale;
+                    }
                 }
             }
 
@@ -1284,26 +1296,14 @@ bool Quilt::BuildExtendedChartStackAndCandidateArray(bool b_fullscreen, int ref_
 
             //    If not already added, do so now
             if( !sure_exists ) {
-                // but only if if it's visible if selected with the piano
-                // use a rough estimate of the full logic
-                // XXX add all visible charts with the same scale?
-                ViewPort vp_local = vp_in; 
-                int scale = ChartData->GetDBChartScale( sure_index );
-                vp_local.view_scale_ppm = cc1->GetCanvasScaleFactor() / (scale *2.);
-                vp_local.SetBoxes();
-                LLBBox viewbox = vp_local.GetBBox();
-                const ChartTableEntry &cte = ChartData->GetChartTableEntry( sure_index );
-                const LLBBox &chart_box = cte.GetBBox();
-                if( ( !viewbox.IntersectOut( chart_box ) ) ) {
-                    m_extended_stack_array.Add( sure_index );
+                m_extended_stack_array.Add( sure_index );
 
-                    QuiltCandidate *qcnew = new QuiltCandidate;
-                    qcnew->dbIndex = sure_index;
-                    qcnew->SetScale ( ChartData->GetDBChartScale( sure_index ) );
-                    m_pcandidate_array->Add( qcnew );               // auto-sorted on scale
+                QuiltCandidate *qcnew = new QuiltCandidate;
+                qcnew->dbIndex = sure_index;
+                qcnew->SetScale ( ChartData->GetDBChartScale( sure_index ) );
+                m_pcandidate_array->Add( qcnew );               // auto-sorted on scale
 
-                    b_need_resort = true;
-                }
+                b_need_resort = true;
             }
         }
     }   // fullscreen
