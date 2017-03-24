@@ -2655,7 +2655,7 @@ void ChartCanvas::DoZoomCanvas( double factor,  bool can_zoom_to_cursor )
     double zlat = m_cursor_lat;
     double zlon = m_cursor_lon;
 
-    double proposed_scale_onscreen = GetCanvasScaleFactor() / ( GetVPScale() * factor );
+    double proposed_scale_onscreen = GetVP().chart_scale / factor; // GetCanvasScaleFactor() / ( GetVPScale() * factor );
     bool b_do_zoom = false;
     
     if(factor > 1)
@@ -2678,8 +2678,8 @@ void ChartCanvas::DoZoomCanvas( double factor,  bool can_zoom_to_cursor )
         }
 
         if( pc ) {
-            double target_scale_ppm = GetVPScale() * zoom_factor;
-            proposed_scale_onscreen = GetCanvasScaleFactor() / target_scale_ppm;
+//             double target_scale_ppm = GetVPScale() * zoom_factor;
+//             proposed_scale_onscreen = GetCanvasScaleFactor() / target_scale_ppm;
             
             //  Query the chart to determine the appropriate zoom range
             double min_allowed_scale = 800;    // Roughly, latitude dependent for mercator charts
@@ -2751,10 +2751,11 @@ void ChartCanvas::DoZoomCanvas( double factor,  bool can_zoom_to_cursor )
             b_do_zoom = false;
     }
 
+    double new_scale = GetVPScale() * (GetVP().chart_scale / proposed_scale_onscreen);
     if( b_do_zoom ) {
         if( can_zoom_to_cursor && g_bEnableZoomToCursor) {
             //  Arrange to combine the zoom and pan into one operation for smoother appearance
-            SetVPScale( GetCanvasScaleFactor() / proposed_scale_onscreen, false );   // adjust, but deferred refresh
+            SetVPScale( new_scale, false );   // adjust, but deferred refresh
  
             wxPoint r;
             GetCanvasPointPix( zlat, zlon, &r );
@@ -2763,7 +2764,7 @@ void ChartCanvas::DoZoomCanvas( double factor,  bool can_zoom_to_cursor )
             ClearbFollow();      // update the follow flag
         }
         else
-            SetVPScale( GetCanvasScaleFactor() / proposed_scale_onscreen );
+            SetVPScale( new_scale );
         
     }
     
@@ -3335,6 +3336,8 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
     }
 
     parent_frame->UpdateControlBar();
+
+    VPoint.chart_scale = 1.0;           // fallback default value
     
     if( !VPoint.GetBBox().GetValid() ) VPoint.SetBoxes();
 
@@ -3975,21 +3978,28 @@ void CalcGridSpacing( float view_scale_ppm, float& MajorSpacing, float&MinorSpac
     // [1] spacing between major grid lines in degrees
     // [2] spacing between minor grid lines in degrees
     const float lltab[][3] =
-        { { 0.0f, 90.0f, 30.0f },                  { 1e-5f, 45.0f, 15.0f },
-          { 2e-4f, 30.0f, 10.0f },                 { 3e-4f, 10.0f, 2.0f  },
-          { 6e-4f, 5.0f, 1.0f },                   { 2e-3f, 2.0f, 30.0f / 60.0f },
-          { 3e-3f, 1.0f, 20.0f / 60.0f },          { 6e-3f, 0.5f, 10.0f / 60.0f },
-          { 1e-2f, 15.0f / 60.0f, 5.0f / 60.0f },  { 2e-2f, 10.0f / 60.0f, 2.0f / 60.0f },
-          { 3e-2f, 5.0f / 60.0f, 1.0f / 60.0f },   { 6e-2f, 2.0f / 60.0f, 0.5f / 60.0f },
-          { 1e-1f, 1.0f / 60.0f, 0.2f / 60.0f },   { 4e-1f, 0.5f / 60.0f, 0.1f / 60.0f },
-          { 8e-1f, 0.2f / 60.0f, 0.05f / 60.0f },  { 1e10f, 0.1f / 60.0f, 0.02f / 60.0f }
+        { {  0.0f, 90.0f, 30.0f },
+          { .000001f, 45.0f, 15.0f },
+          { .0002f,   30.0f, 10.0f },
+          { .0003f,   10.0f, 2.0f  },
+          { .0008f,   5.0f, 1.0f },
+          { .001f,    2.0f,          30.0f / 60.0f },
+          { .003f,    1.0f,          20.0f / 60.0f },
+          { .006f,    0.5f,          10.0f / 60.0f },
+          { .03f,     15.0f / 60.0f, 5.0f / 60.0f },
+          { .01f,     10.0f / 60.0f, 2.0f / 60.0f },
+          { .06f,     5.0f / 60.0f,  1.0f / 60.0f },
+          { .1f,      2.0f / 60.0f,  1.0f / 60.0f },
+          { .4f,      1.0f / 60.0f,  0.5f / 60.0f },
+          { .6f,      0.5f / 60.0f,  0.1f / 60.0f },
+          { 1.0f,     0.2f / 60.0f,  0.1f / 60.0f },
+          { 1e10f,    0.1f / 60.0f,  0.05f / 60.0f }
     };
 
     unsigned int tabi;
     for( tabi = 0; tabi < (sizeof lltab) / (sizeof *lltab); tabi++ )
         if( view_scale_ppm < lltab[tabi][0] )
             break;
-
     MajorSpacing = lltab[tabi][1]; // major latitude distance
     MinorSpacing = lltab[tabi][2]; // minor latitude distance
     return;
@@ -6854,7 +6864,6 @@ void ChartCanvas::ShowTrackPropertiesDialog( Track* selected )
 
 void pupHandler_PasteWaypoint() {
     Kml kml;
-    OCPNPlatform::ShowBusySpinner();
 
     int pasteBuffer = kml.ParsePasteBuffer();
     RoutePoint* pasted = kml.GetParsedRoutePoint();
@@ -6894,7 +6903,6 @@ void pupHandler_PasteWaypoint() {
 
 void pupHandler_PasteRoute() {
     Kml kml;
-    OCPNPlatform::ShowBusySpinner();
 
     int pasteBuffer = kml.ParsePasteBuffer();
     Route* pasted = kml.GetParsedRoute();
@@ -7011,7 +7019,6 @@ void pupHandler_PasteRoute() {
 
 void pupHandler_PasteTrack() {
     Kml kml;
-    OCPNPlatform::ShowBusySpinner();
 
     int pasteBuffer = kml.ParsePasteBuffer();
     Track* pasted = kml.GetParsedTrack();
@@ -7025,7 +7032,7 @@ void pupHandler_PasteTrack() {
 
     newTrack->m_TrackNameString = pasted->m_TrackNameString;
 
-    for( int i = 1; i <= pasted->GetnPoints(); i++ ) {
+    for( int i = 0; i < pasted->GetnPoints(); i++ ) {
         curPoint = pasted->GetPoint( i );
 
         newPoint = new TrackPoint( curPoint );
@@ -8087,6 +8094,18 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
                 
                 //  Render the text directly to the scratch bitmap
                 OCPNRegion chart_all_text_region( wxRect( 0, 0, GetVP().pix_width, GetVP().pix_height ) );
+                
+                if(g_bShowChartBar && g_Piano) {
+                    wxRect chart_bar_rect(0, GetVP().pix_height - g_Piano->GetHeight(),
+                                          GetVP().pix_width, g_Piano->GetHeight());
+                    
+                    ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
+                    if(!style->chartStatusWindowTransparent)
+                        chart_all_text_region.Subtract(chart_bar_rect);
+                }
+                
+                mscratch_dc.DestroyClippingRegion();
+                
                 m_pQuilt->RenderQuiltRegionViewOnDCTextOnly( mscratch_dc, svp, chart_all_text_region );
                 
             }

@@ -988,7 +988,7 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                             outfile.close();
                         }
                         else{               // there is an entry in the cache for this MMSI
-                                            // Verify that the cached name matches the name just received.
+                                            // Check to see if the cached name matches the name just received.
                             wxString ship_name = trimAISField( pTargetData->ShipName );
                             if( it->second != ship_name){
                                 ( *AISTargetNames )[mmsi] = ship_name;  // update the in-core cache
@@ -999,11 +999,26 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                                 //   (i.e. this one), takes precedence.
                                 // This also means that duplicates may be present in the cache file over time.
                                 //   A subject for later analysis...
-                                std::ofstream outfile( AISTargetNameFileName.mb_str(), std::ios_base::app );
-                                if( outfile.is_open() ) {
-                                    outfile << mmsi << "," << ship_name.mb_str() << ",Mismatch" << "\r\n";
+
+                                //  To avoid perverse behaviour if there are repeated name changes from a single target,
+                                //  only allow one name change per MMSI per session.
+                                bool bFound = false;
+                                for( unsigned int i=0; i<m_MMSI_MismatchVec.size(); i++ ) {
+                                    if(m_MMSI_MismatchVec[i] == mmsi ){
+                                        bFound = true;
+                                        break;
+                                    }
                                 }
-                                outfile.close();
+                                    
+                                if(!bFound){    //  Write an entry to the cache file, tagged with "Mismatch"
+                                    std::ofstream outfile( AISTargetNameFileName.mb_str(), std::ios_base::app );
+                                    if( outfile.is_open() ) {
+                                        outfile << mmsi << "," << ship_name.mb_str() << ",Mismatch" << "\r\n";
+                                    }
+                                    outfile.close();
+                                
+                                    m_MMSI_MismatchVec.push_back(mmsi);
+                                }
                             }
                         }
                     }

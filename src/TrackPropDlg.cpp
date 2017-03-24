@@ -1264,12 +1264,12 @@ void TrackPropDlg::OnTrackPropListClick( wxListEvent& event )
     else
         selected_no = itemno;
 
-    m_pTrack->ClearHighlights();
+    m_pTrack->m_HighlightedTrackPoint = -1;
 
     if( itemno >= 0 ) {
         TrackPoint *prp = m_pTrack->GetPoint(itemno);
         if( prp ) {
-            prp->m_bPtIsSelected = true;                // highlight the trackpoint
+            m_pTrack->m_HighlightedTrackPoint = itemno; // highlight the trackpoint
 
             if( !( m_pTrack->m_bIsInLayer ) && !( m_pTrack == g_pActiveTrack ) ) {
                 m_nSelected = selected_no + 1;
@@ -1568,7 +1568,7 @@ void TrackPropDlg::OnOKBtnClick( wxCommandEvent& event )
 
     if( b_found_track ) {
         SaveChanges();              // write changes to globals and update config
-//        m_pRoute->ClearHighlights();
+        m_pTrack->ClearHighlights();
     }
 
     m_bStartNow = false;
@@ -1585,7 +1585,23 @@ void TrackPropDlg::OnOKBtnClick( wxCommandEvent& event )
 
 void TrackPropDlg::OnCancelBtnClick( wxCommandEvent& event )
 {
+    bool b_found_track = false;
+    wxTrackListNode *node = pTrackList->GetFirst();
+    while( node ) {
+        Track *ptrack = node->GetData();
+        
+        if( ptrack == m_pTrack ) {
+            b_found_track = true;
+            break;
+        }
+        node = node->GetNext();
+    }
+    
+    if( b_found_track )
+        m_pTrack->ClearHighlights();
+        
     Hide();
+    cc1->InvalidateGL();
     cc1->Refresh( false );
 
     event.Skip();

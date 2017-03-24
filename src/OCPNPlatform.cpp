@@ -256,6 +256,12 @@ extern wxArrayString             g_locale_catalog_array;
 
 OCPNPlatform::OCPNPlatform()
 {
+    m_pt_per_pixel = 0;                 // cached value
+    m_bdisableWindowsDisplayEnum = false;
+    m_displaySize = wxSize(0,0);
+    m_displaySizeMM = wxSize(0,0);
+    m_monitorWidth = m_monitorHeight = 0;
+    
 }
 
 OCPNPlatform::~OCPNPlatform()
@@ -609,6 +615,8 @@ void OCPNPlatform::SetLocaleSearchPrefixes( void )
 
 wxString OCPNPlatform::GetDefaultSystemLocale()
 {
+    wxLogMessage(_T("Getting DefaultSystemLocale..."));
+    
     wxString retval = _T("en_US");
     
 #if wxUSE_XLOCALE
@@ -616,18 +624,30 @@ wxString OCPNPlatform::GetDefaultSystemLocale()
     const wxLanguageInfo* languageInfo = wxLocale::GetLanguageInfo(wxLANGUAGE_DEFAULT);
     if (languageInfo)
         retval = languageInfo->CanonicalName;
-    
+
     #if defined(__WXMSW__) 
-    LANGID lang_id = GetUserDefaultUILanguage();
-    wxChar lngcp[100];
-    const wxLanguageInfo* languageInfoW = 0;
-    if (0 != GetLocaleInfo(MAKELCID(lang_id, SORT_DEFAULT), LOCALE_SENGLANGUAGE, lngcp, 100)){
-        languageInfoW = wxLocale::FindLanguageInfo(lngcp);
-    }
-    else
-        languageInfoW = wxLocale::GetLanguageInfo(wxLANGUAGE_DEFAULT);
-    retval = languageInfoW->CanonicalName;
-    #endif
+        LANGID lang_id = GetUserDefaultUILanguage();
+        
+        wchar_t lngcp[101];
+        const wxLanguageInfo* languageInfoW = 0;
+        if (0 != GetLocaleInfo(MAKELCID(lang_id, SORT_DEFAULT), LOCALE_SENGLANGUAGE, lngcp, 100)){
+            wxString lstring = wxString(lngcp);
+            
+            languageInfoW = wxLocale::FindLanguageInfo(lngcp);
+            if(languageInfoW)
+                wxLogMessage(_T("Found LanguageInfo for: ") + lstring);
+            else
+                wxLogMessage(_T("Could not find LanguageInfo for: ") + lstring);
+        }
+        else{
+            wxLogMessage(_T("Could not get LocaleInfo, using wxLANGUAGE_DEFAULT"));
+            languageInfoW = wxLocale::GetLanguageInfo(wxLANGUAGE_DEFAULT);
+        }
+        
+        if(languageInfoW)
+            retval = languageInfoW->CanonicalName;
+     #endif
+            
     
     #if defined(__OCPN__ANDROID__)
     retval = androidGetAndroidSystemLocale();
@@ -807,7 +827,7 @@ void OCPNPlatform::SetDefaultOptions( void )
         pConfig->Write( _T ( "bDeClutterText" ), true );
         pConfig->Write( _T ( "bShowNationalText" ), true );
         
-        pConfig->Write( _T ( "S52_MAR_SAFETY_CONTOUR" ), 4 );
+        pConfig->Write( _T ( "S52_MAR_SAFETY_CONTOUR" ), 3 );
         pConfig->Write( _T ( "S52_MAR_SHALLOW_CONTOUR" ), 4 );
         pConfig->Write( _T ( "S52_MAR_DEEP_CONTOUR" ), 6 );
         pConfig->Write( _T ( "S52_MAR_TWO_SHADES" ), 0  );
@@ -1502,20 +1522,25 @@ double OCPNPlatform::getFontPointsperPixel( void )
     //  For reference, see http://pixplicity.com/dp-px-converter/
     pt_per_pixel = 14.0 / (31.11 * getAndroidDisplayDensity()) ;
     
-#else    
+#else 
+    
+    if(m_pt_per_pixel == 0){
     //  Make a measurement...
-    wxScreenDC dc;
+        wxScreenDC dc;
     
-    wxFont *f = FontMgr::Get().FindOrCreateFont( 12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, FALSE,
+        wxFont *f = FontMgr::Get().FindOrCreateFont( 12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, FALSE,
                                                 wxString( _T ( "" ) ), wxFONTENCODING_SYSTEM );
-    dc.SetFont(*f);
+        dc.SetFont(*f);
     
-    wxSize sz = dc.GetTextExtent(_T("H"));
-    pt_per_pixel = 12.0 / (double)sz.y;
+        wxSize sz = dc.GetTextExtent(_T("H"));
+        if(sz.y > 0)
+            m_pt_per_pixel = 12.0 / (double)sz.y;
+    }
+    if(m_pt_per_pixel > 0)
+        pt_per_pixel = m_pt_per_pixel;
 #endif
     
     return pt_per_pixel;
-    
     
 }
 
@@ -1524,24 +1549,32 @@ wxSize OCPNPlatform::getDisplaySize()
 #ifdef __OCPN__ANDROID__
     return getAndroidDisplayDimensions();
 #else
-    return (::wxGetDisplaySize());               // default, for most platforms
+    if(m_displaySize.x < 10)
+        m_displaySize = ::wxGetDisplaySize();               // default, for most platforms
+    return m_displaySize;
 #endif
 
 }
 
 double  OCPNPlatform::GetDisplaySizeMM()
 {
-    double ret = wxGetDisplaySizeMM().GetWidth();
+    if(m_displaySizeMM.x < 1)
+        m_displaySizeMM = wxGetDisplaySizeMM();
+
+    double ret = m_displaySizeMM.GetWidth();
     
 #ifdef __WXMSW__    
     int w,h;
     
-    bool GetWindowsMonitorSize( int *w, int *h );
-       
-    if( GetWindowsMonitorSize( &w, &h) ){
-        if(w > 100)             // sanity check
+    if( !m_bdisableWindowsDisplayEnum){
+        if(GetWindowsMonitorSize( &w, &h) && (w > 100) ){             // sanity check
+            m_displaySizeMM == wxSize(w, h);
             ret = w;
+        }
+        else
+            m_bdisableWindowsDisplayEnum = true;        // disable permanently
     }
+    
 #endif
 
 #ifdef __WXOSX__
@@ -1564,7 +1597,7 @@ double OCPNPlatform::GetDisplayDPmm()
 #ifdef __OCPN__ANDROID__
     return getAndroidDPmm();
 #else
-    double r = ::wxGetDisplaySize().x;            // dots
+    double r = getDisplaySize().x;            // dots
     return r / GetDisplaySizeMM();
 #endif    
 }
@@ -1918,51 +1951,60 @@ bool GetSizeForDevID(wxString &TargetDevID, int *WidthMm, int *HeightMm)
     return bRes;
 }
 
-bool GetWindowsMonitorSize( int *width, int *height)
+bool OCPNPlatform::GetWindowsMonitorSize( int *width, int *height)
 {
-    int WidthMm = 0;
-    int HeightMm = 0;
+    bool bFoundDevice = true;
     
-    DISPLAY_DEVICE dd;
-    dd.cb = sizeof(dd);
-    DWORD dev = 0; // device index
-    int id = 1; // monitor number, as used by Display Properties > Settings
-    
-    wxString DeviceID;
-    bool bFoundDevice = false;
-    while (EnumDisplayDevices(0, dev, &dd, 0) && !bFoundDevice)
-    {
-        DISPLAY_DEVICE ddMon;
-        ZeroMemory(&ddMon, sizeof(ddMon));
-        ddMon.cb = sizeof(ddMon);
-        DWORD devMon = 0;
-        
-        while (EnumDisplayDevices(dd.DeviceName, devMon, &ddMon, 0) && !bFoundDevice)
-        {
-            if (ddMon.StateFlags & DISPLAY_DEVICE_ACTIVE &&
-                !(ddMon.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
-            {
-                DeviceID = wxString(ddMon.DeviceID, wxConvUTF8);
-                DeviceID = DeviceID.Mid (8);
-                DeviceID = DeviceID.Mid (0, DeviceID.Find ( '\\' ));
-                
-                bFoundDevice = GetSizeForDevID(DeviceID, &WidthMm, &HeightMm);
-            }
-            devMon++;
+    if(m_monitorWidth < 10){
             
+        int WidthMm = 0;
+        int HeightMm = 0;
+        
+        DISPLAY_DEVICE dd;
+        dd.cb = sizeof(dd);
+        DWORD dev = 0; // device index
+        int id = 1; // monitor number, as used by Display Properties > Settings
+        
+        wxString DeviceID;
+        bFoundDevice = false;
+        while (EnumDisplayDevices(0, dev, &dd, 0) && !bFoundDevice)
+        {
+            DISPLAY_DEVICE ddMon;
             ZeroMemory(&ddMon, sizeof(ddMon));
             ddMon.cb = sizeof(ddMon);
+            DWORD devMon = 0;
+            
+            while (EnumDisplayDevices(dd.DeviceName, devMon, &ddMon, 0) && !bFoundDevice)
+            {
+                if (ddMon.StateFlags & DISPLAY_DEVICE_ACTIVE &&
+                    !(ddMon.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
+                {
+                    DeviceID = wxString(ddMon.DeviceID, wxConvUTF8);
+                    DeviceID = DeviceID.Mid (8);
+                    DeviceID = DeviceID.Mid (0, DeviceID.Find ( '\\' ));
+                    
+                    bFoundDevice = GetSizeForDevID(DeviceID, &WidthMm, &HeightMm);
+                }
+                devMon++;
+                
+                ZeroMemory(&ddMon, sizeof(ddMon));
+                ddMon.cb = sizeof(ddMon);
+            }
+            
+            ZeroMemory(&dd, sizeof(dd));
+            dd.cb = sizeof(dd);
+            dev++;
+            
         }
+        m_monitorWidth = WidthMm;
+        m_monitorHeight = HeightMm;
         
-        ZeroMemory(&dd, sizeof(dd));
-        dd.cb = sizeof(dd);
-        dev++;
     }
     
     if(width)
-        *width = WidthMm;
+        *width = m_monitorWidth;
     if(height)
-        *height = HeightMm;
+        *height = m_monitorHeight;
     
     return bFoundDevice;
 }
