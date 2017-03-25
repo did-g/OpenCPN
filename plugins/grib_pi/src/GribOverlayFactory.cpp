@@ -520,25 +520,20 @@ static inline bool isClearSky(int settings, double v) {
 }
 
 #ifdef ocpnUSE_GL
-void GRIBOverlayFactory::GetCalibratedGraphicColor(int settings, double v, unsigned char *data)
+void GRIBOverlayFactory::GetCalibratedGraphicColor(int settings, double val_in, unsigned char *data)
 {
     unsigned char r, g, b, a;
-    if( v != GRIB_NOTDEF ) {
-        v = m_Settings.CalibrateValue(settings, v);
+    a = m_Settings.m_iOverlayTransparency;
+
+    if( val_in != GRIB_NOTDEF ) {
+        val_in = m_Settings.CalibrateValue(settings, val_in);
         //set full transparency if no rain or no clouds at all
         // TODO: make map support this
         if (( settings == GribOverlaySettings::PRECIPITATION ||
-              settings == GribOverlaySettings::CLOUD ) && v < 0.01) 
-        {
-            r = g = b = 255;
+              settings == GribOverlaySettings::CLOUD ) && val_in < 0.01) 
             a = 0;
-        } else {
-            a = m_Settings.m_iOverlayTransparency;
-            wxColour c = GetGraphicColor(settings, v);
-            r = c.Red();
-            g = c.Green();
-            b = c.Blue();
-        }
+
+        GetGraphicColor(settings, val_in, r, g, b);
     } else
         r = 255, g = 255, b = 255, a = 0;
 
@@ -550,103 +545,83 @@ void GRIBOverlayFactory::GetCalibratedGraphicColor(int settings, double v, unsig
     data[3] = a;
 }
 
-bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, GribRecord *pGR,
-                                              PlugIn_ViewPort *vp, int grib_pixel_size )
+bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, GribRecord *pGR)
 {
-    const double scalef = 0.00005;
-    PlugIn_ViewPort uvp = *vp;
-    uvp.rotation = uvp.skew = 0;
-    uvp.view_scale_ppm = scalef;
-    double tp_scale = scalef;
-    wxPoint porg;
-    wxPoint pmin;
-    wxPoint pmax;
-    int width;
-    int height;
-#if 0
-printf("Overlay %d %d %f %f\n", pGR->getNi(), pGR->getNj(), pGR->getDi(), pGR->getDj());
-printf("LatMin %f, %f Max %f %f\n", pGR->getLatMin(), pGR->getLonMin() , pGR->getLatMax(), pGR->getLonMax() );
-//printf("LatMin %f, %f Max %f %f\n", pGR->getLatMin(), pGR->getLonMin() , pGR->getLatMax(), pGR->getLonMax());
-for (int h = 0; h < pGR->getNj(); h++) {
-    for (int w = 0; w < pGR->getNi(); w++) {
-        double lon, lat;
-        pGR->getXY(w, h, &lon, &lat);
-        if (lon > 180)
-            lon -= 360;
-        printf("%f %f   %f\n", lat, lon, pGR->getValue(w,h));        
-    }
-}
-printf("=============\n");
-#endif
-    int maxx = wxMin(1024, pGR->getNi() );
-    int maxy = wxMin(1024, pGR->getNj() );
-    int maxt = wxMax(maxx, maxy);
-    maxt = wxMax(256, maxt);
-    // find the biggest texture
-    do {
-        GetCanvasPixLL( &uvp, &porg, pGR->getLatMax(), pGR->getLonMin() );
-        GetCanvasPixLL( &uvp, &pmin, pGR->getLatMin(), pGR->getLonMin() );
-        GetCanvasPixLL( &uvp, &pmax, pGR->getLatMax(), pGR->getLonMax() );
-        width = abs( pmax.x - pmin.x );
-        height = abs( pmax.y - pmin.y );
-#if 0        
-        if (settings != GribOverlaySettings::CURRENT && settings != GribOverlaySettings::WAVE)
-            break;
-#endif
-        if( width > maxt || height > maxt || tp_scale > scalef * 1000.) { // arbitrary limit to loop
-            if (tp_scale == scalef)
-                break;
-            tp_scale /= 2.0;
-            uvp.view_scale_ppm = tp_scale;
-            GetCanvasPixLL( &uvp, &porg, pGR->getLatMax(), pGR->getLonMin() );
-            GetCanvasPixLL( &uvp, &pmin, pGR->getLatMin(), pGR->getLonMin() );
-            GetCanvasPixLL( &uvp, &pmax, pGR->getLatMax(), pGR->getLonMax() );
-            width = abs( pmax.x - pmin.x );
-            height = abs( pmax.y - pmin.y );
-            break;
-        samples *= 2;
-    }
+    bool repeat = pGR->getLonMin() == 0 && pGR->getLonMax() + pGR->getDi() >= 360.;
 
+    // create the texture to the size of the grib data plus a transparent border
+    int tw = pGR->getNi()+2*!repeat, th = pGR->getNj()+2;
+    
     //    Dont try to create enormous GRIB textures
     if( tw > 1024 || th > 1024 )
         return false;
 
-    unsigned char *data = new unsigned char[width*height*4];
-    // lambert , XXX mercator missing?
-    if (pGR->getGridType() == 30) {
-        double dx = width/(double)pGR->getNi();
-        double dy = height/(double)pGR->getNi();
-        for (int w = 0, ipix = 0; w < pGR->getNi(); w++, ipix = (double)w *dx) {
-            for (int h = 0, jpix = 0; h < pGR->getNj(); h++, jpix = (double)h *dy) {
-            #if 0
-                // XXX FIXME
-                double lon;
-                double lat;
-                pGR->getXY( w, h, &lon, &lat);
+    unsigned char *data = new unsigned char[tw*th*4];
+    memset(data, 0, tw*th*4); // ensure transparent
+    for( int y = 0; y < pGR->getNj(); y++ ) {
+        for( int x = 0; x < pGR->getNi(); x++ ) {
+            double v = pGR->getValue(x, y);
+            unsigned char r, g, b, a;
+            if( v != GRIB_NOTDEF ) {
+                v = m_Settings.CalibrateValue(settings, v);
+                //set full transparency if no rain or no clouds at all
+                if (( settings == GribOverlaySettings::PRECIPITATION || settings == GribOverlaySettings::CLOUD ) && v < 0.01) 
+                {
+                    r = g = b = 255;
+                    a = 0;
+                }
+                if(j < pGR->getNj()-1)
+                    v10 = pGR->getValue(i,   j+1);
 
-                wxPoint p;
-                GetCanvasPixLL( vp, &p, lat, lon );
-            #endif
-                wxPoint p;
-                p.x = grib_pixel_size*ipix + porg.x;
-                p.y = grib_pixel_size*jpix + porg.y;
-                double v =  pGR->getValue( w, h );
-                int doff = 4*(jpix*width + ipix);
-                GetCalibratedGraphicColor(settings, v, &data[doff]);
-            }
-        }
-    }
-    else {
-        for( int ipix = 0; ipix < width; ipix++ ) {
-            for( int jpix = 0; jpix < height; jpix++ ) {
-                wxPoint p;
-                p.x = grib_pixel_size*ipix + porg.x;
-                p.y = grib_pixel_size*jpix + porg.y;
-                double lat, lon;
-                GetCanvasLLPix( &uvp, p, &lat, &lon );
-                double v = pGR->getInterpolatedValue(lon, lat);
-                int doff = 4*(jpix*width + ipix);
-                GetCalibratedGraphicColor(settings, v, &data[doff]);
+                for( int ys = 0; ys<samples; ys++) {
+                    int y = j * samples + ys + 1;
+                    double yd = (double)ys/samples;
+                    double v0, v1;
+                    double a0 = 1, a1 = 1;
+                    if(v10 == GRIB_NOTDEF) {
+                        v0 = v00;
+                        if(v00 == GRIB_NOTDEF)
+                            a0 = 0;
+                        else
+                            a0 = 1-yd;
+                    } else if(v00 == GRIB_NOTDEF)
+                        v0 = v10, a0 = yd;
+                    else
+                        v0 = (1-yd)*v00 + yd*v10;
+                    if(v11 == GRIB_NOTDEF) {
+                        v1 = v01;
+                        if(v01 == GRIB_NOTDEF)
+                            a1 = 0;
+                        else
+                            a1 = 1-yd;
+                    } else if(v01 == GRIB_NOTDEF)
+                        v1 = v11, a1 = yd;
+                    else
+                        v1 = (1-yd)*v01 + yd*v11;
+
+                    for( int xs = 0; xs<samples; xs++) {
+                        int x = i * samples + xs + !repeat;
+                        double xd = (double)xs/samples;
+                        double v, a;
+                        if(v1 == GRIB_NOTDEF)
+                            v = v0, a = (1-xd)*a0;
+                        else if(v0 == GRIB_NOTDEF)
+                            v = v1, a = xd*a1;
+                        else {
+                            v = (1-xd)*v0 + xd*v1;
+                            a = (1-xd)*a0 + xd*a1;
+                        }
+
+                        int doff = 4*(y*tw + x);
+                        GetCalibratedGraphicColor(settings, v, data + doff);
+                        data[doff+3] *= a;
+
+                        if(i == pGR->getNi()-1)
+                            break;
+                    }
+                    if(j == pGR->getNj()-1)
+                        break;
+                }
             }
         }
     }
