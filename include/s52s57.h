@@ -337,7 +337,7 @@ public:
       S57Obj( const char* featureName );
       
       wxString GetAttrValueAsString ( const char *attr );
-      int GetAttributeIndex( const char *AttrSeek );
+      int GetAttributeIndex( const char *AttrSeek ) const;
       
       bool AddIntegerAttribute( const char *acronym, int val );
       bool AddIntegerListAttribute( const char *acronym, int *pval, int nValue );
