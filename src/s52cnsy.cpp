@@ -182,7 +182,7 @@ bool GetIntAttr(S57Obj *obj, const char *AttrName, int &val)
         S57attVal *v = obj->attVal->Item(idx);
 
         assert(v->valType == OGR_INT);
-        val = *(int*)(v->value);
+        val = v->value.integer;
         
         return true;
     }
@@ -275,7 +275,7 @@ bool GetDoubleAttr(S57Obj *obj, const char *AttrName, double &val)
 
         S57attVal *v = obj->attVal->Item(idx);
         assert(v->valType == OGR_REAL);
-        val = *(double*)(v->value);
+        val = *(double*)(v->value.ptr);
 
         return true;
     }
@@ -293,7 +293,7 @@ bool GetStringAttr(S57Obj *obj, const char *AttrName, char *pval, int nc)
         S57attVal *v = obj->attVal->Item(idx);
 
         assert(v->valType == OGR_STR);
-        char *val = (char *)(v->value);
+        char *val = (char *)(v->value.ptr);
 
         strncpy(pval, val, nc);
 
@@ -312,7 +312,7 @@ wxString *GetStringAttrWXS(S57Obj *obj, const char *AttrName)
         S57attVal *v = obj->attVal->Item(idx);
         
         assert(v->valType == OGR_STR);
-        char *val = (char *)(v->value);
+        char *val = (char *)(v->value.ptr);
         
         return new wxString(val,  wxConvUTF8);
     }
