@@ -4826,8 +4826,8 @@ wxString s57chart::GetObjectAttributeValueAsString( S57Obj *obj, int iatt, wxStr
     pval = obj->attVal->Item( iatt );
     switch( pval->valType ){
         case OGR_STR: {
-            if( pval->value ) {
-                wxString val_str( (char *) ( pval->value ), wxConvUTF8 );
+            if( pval->value.ptr ) {
+                wxString val_str( (char *) ( pval->value.ptr ), wxConvUTF8 );
                 long ival;
                 if( val_str.ToLong( &ival ) ) {
                     if( 0 == ival )
@@ -4886,7 +4886,7 @@ wxString s57chart::GetObjectAttributeValueAsString( S57Obj *obj, int iatt, wxStr
         }
 
         case OGR_INT: {
-            int ival = *( (int *) pval->value );
+            int ival = pval->value.integer;
             wxString decode_val = GetAttributeDecode( curAttrName, ival );
 
             if( !decode_val.IsEmpty() ) {
@@ -4903,7 +4903,7 @@ wxString s57chart::GetObjectAttributeValueAsString( S57Obj *obj, int iatt, wxStr
             break;
 
         case OGR_REAL: {
-            double dval = *( (double *) pval->value );
+            double dval = *( (double *) pval->value.ptr );
             wxString val_suffix = _T(" m");
 
             //    As a special case, convert some attribute values to feet.....
@@ -4970,8 +4970,8 @@ wxString s57chart::GetAttributeValueAsString( S57attVal *pAttrVal, wxString Attr
     wxString value;
     switch( pAttrVal->valType ){
         case OGR_STR: {
-            if( pAttrVal->value ) {
-                wxString val_str( (char *) ( pAttrVal->value ), wxConvUTF8 );
+            if( pAttrVal->value.ptr ) {
+                wxString val_str( (char *) ( pAttrVal->value.ptr ), wxConvUTF8 );
                 long ival;
                 if( val_str.ToLong( &ival ) ) {
                     if( 0 == ival )
@@ -5019,7 +5019,7 @@ wxString s57chart::GetAttributeValueAsString( S57attVal *pAttrVal, wxString Attr
         }
 
         case OGR_INT: {
-            int ival = *( (int *) pAttrVal->value );
+            int ival = pAttrVal->value.integer;
             wxString decode_val = GetAttributeDecode( AttrName, ival );
 
             if( !decode_val.IsEmpty() ) {
@@ -5036,7 +5036,7 @@ wxString s57chart::GetAttributeValueAsString( S57attVal *pAttrVal, wxString Attr
             break;
 
         case OGR_REAL: {
-            double dval = *( (double *) pAttrVal->value );
+            double dval = *( (double *) pAttrVal->value.ptr );
             wxString val_suffix = _T(" m");
 
             //    As a special case, convert some attribute values to feet.....
