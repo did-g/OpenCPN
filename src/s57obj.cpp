@@ -402,7 +402,7 @@ bool S57Obj::SetMultipointGeometry( MultipointGeometryDescriptor *pGeo, double r
 }
 
 
-int S57Obj::GetAttributeIndex( const char *AttrSeek ) {
+int S57Obj::GetAttributeIndex( const char *AttrSeek ) const {
     char *patl = att_array;
 
     for(int i=0 ; i < n_attr ; i++) {
