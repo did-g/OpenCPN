@@ -4818,6 +4818,7 @@ wxString s57chart::GetObjectAttributeValueAsString( S57Obj *obj, int iatt, wxStr
 
     pval = obj->attVal->Item( iatt );
     switch( pval->valType ){
+        case OGR_CONST_STR:
         case OGR_STR: {
             if( pval->value.ptr ) {
                 wxString val_str( (char *) ( pval->value.ptr ), wxConvUTF8 );
@@ -4962,6 +4963,7 @@ wxString s57chart::GetAttributeValueAsString( S57attVal *pAttrVal, wxString Attr
 
     wxString value;
     switch( pAttrVal->valType ){
+        case OGR_CONST_STR: 
         case OGR_STR: {
             if( pAttrVal->value.ptr ) {
                 wxString val_str( (char *) ( pAttrVal->value.ptr ), wxConvUTF8 );
