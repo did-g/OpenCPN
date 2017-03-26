@@ -251,10 +251,12 @@ typedef enum _OGRatt_t{
    OGR_REAL,
    OGR_REAL_LST,
    OGR_STR,
+   OGR_CONST_STR,
 }OGRatt_t;
 
 typedef struct _S57attVal {
     union {
+        const char *str;
         void *ptr;
         int  integer;
     } value;
