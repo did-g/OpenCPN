@@ -693,6 +693,8 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                                 break;
                             }
                             
+
+                            case OGR_CONST_STR:
                             case OGR_STR: // S57 attribute type'A' code string, 'S' free text
                             {
                                 //    Strings must be exact match
