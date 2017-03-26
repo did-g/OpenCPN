@@ -110,7 +110,7 @@ S57Obj::~S57Obj()
             for( unsigned int iv = 0; iv < attVal->GetCount(); iv++ ) {
                 S57attVal *vv = attVal->Item( iv );
                 void *v2 = vv->value.ptr;
-                if (vv->valType != OGR_INT)
+                if (vv->valType != OGR_INT && vv->valType != OGR_CONST_STR)
                     free( v2 );
                 delete vv;
             }
@@ -429,6 +429,10 @@ wxString S57Obj::GetAttrValueAsString( const char *AttrName )
         S57attVal *v = attVal->Item( idx );
 
         switch( v->valType ){
+            case OGR_CONST_STR: {
+                str.Append( wxString( v->value.str, wxConvUTF8 ) );
+                break;
+            }
             case OGR_STR: {
                 char *val = (char *) ( v->value.ptr );
                 str.Append( wxString( val, wxConvUTF8 ) );
