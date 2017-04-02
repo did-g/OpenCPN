@@ -2168,8 +2168,7 @@ IsoChron::~IsoChron()
 
     /* done with grib */
     if(m_Grib) {
-        for(int i=0; i<Idx_COUNT; i++)
-            delete m_Grib->m_GribRecordPtrArray[i];
+        m_Grib->RemoveGribRecords();
         delete m_Grib;
     }
 }
@@ -2444,8 +2443,7 @@ bool RouteMap::Propagate()
     if(routelist.empty()) {
         update = NULL;
         if(grib) { // grib data isn't used after all
-            for(int i=0; i<Idx_COUNT; i++)
-                delete grib->m_GribRecordPtrArray[i];
+            grib->RemoveGribRecords();
             delete grib;
         }
     } else {
@@ -2546,7 +2544,6 @@ void RouteMap::SetNewGrib(GribRecordSet *grib)
     m_NewGrib = new GribRecordSet;
     m_NewGrib->m_Reference_Time = grib->m_Reference_Time;
     for(int i=0; i<Idx_COUNT; i++) {
-        m_NewGrib->m_GribRecordPtrArray[i] = NULL;
         switch (i) {
         case Idx_HTSIGW:
         case Idx_WIND_VX:
