@@ -963,6 +963,9 @@ static bool unpackDS(GRIBMessage *grib_msg,int grid_num)
 	free(jvals);
 	break;
 #endif
+    default:
+        erreur("Unknown packing %d", grib_msg->md.drs_templ_num);
+        break;
   }
   return true;
 }
@@ -1066,7 +1069,7 @@ static zuchar GRBV2_TO_DATA(int productDiscipline, int dataCat, int dataNum)
     }
 #if 1
     if (ret == 255) {
-        erreur("unknown %d %d %d\n", productDiscipline,  dataCat,dataNum);
+        erreur("unknown %d %d %d", productDiscipline,  dataCat,dataNum);
     }
 #endif    
     return ret;    
