@@ -4689,14 +4689,14 @@ void options::CreateControls(void) {
   int flags = 0;
 
 #ifdef __OCPN__OPTIONS_USE_LISTBOOK__
-  flags = wxLB_TOP;
+  flags = wxLB_LEFT;
   m_pListbook = new wxListbook(itemDialog1, ID_NOTEBOOK, wxDefaultPosition,
                                wxSize(-1, -1), flags);
   m_pListbook->Connect(wxEVT_COMMAND_LISTBOOK_PAGE_CHANGED,
                        wxListbookEventHandler(options::OnPageChange), NULL,
                        this);
 #else
-  flags = wxNB_TOP;
+  flags = wxNB_LEFT;
   m_pListbook = new wxNotebook(itemDialog1, ID_NOTEBOOK, wxDefaultPosition,
                                wxSize(-1, -1), flags);
   m_pListbook->Connect(wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED,
