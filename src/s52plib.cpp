@@ -2119,12 +2119,12 @@ bool s52plib::TextRenderCheck( ObjRazRules *rzRules )
             || ( rzRules->obj->m_chart_context->chart->GetChartType() == CHART_TYPE_CM93COMP ) ) {
             if( !strncmp( rzRules->obj->FeatureName, "BUAARE", 6 ) )
                 return false;
-            else
-                if( !strncmp( rzRules->obj->FeatureName, "SEAARE", 6 ) )
-                    return false;
-                else
-                    if( !strncmp( rzRules->obj->FeatureName, "LNDRGN", 6 ) )
-                        return false;
+            else if( !strncmp( rzRules->obj->FeatureName, "SEAARE", 6 ) )
+                return false;
+            else if( !strncmp( rzRules->obj->FeatureName, "LNDRGN", 6 ) )
+                return false;
+            else if( !strncmp( rzRules->obj->FeatureName, "LNDARE", 6 ) )
+                return false;
         }
     }
 
@@ -2568,18 +2568,22 @@ bool s52plib::RenderRasterSymbol( ObjRazRules *rzRules, Rule *prule, wxPoint &r,
     }
 
     // a few special cases here
-    if( (!strncmp(rzRules->obj->FeatureName, "notmrk", 6))
-        || (!strncmp(rzRules->obj->FeatureName, "NOTMRK", 6))
-    ){
+    if( !strncmp(rzRules->obj->FeatureName, "notmrk", 6 )
+        || !strncmp(rzRules->obj->FeatureName, "NOTMRK", 6)
+        || !strncmp(prule->name.SYNM, "ADDMRK", 6)    
+        )
+    {
         // get the symbol size
         wxRect trect;
         ChartSymbols::GetGLTextureRect( trect, prule->name.SYNM );
         
-        double scaled_length = trect.width / vp->view_scale_ppm;
+        int scale_dim = wxMax(trect.width, trect.height);
         
-        double target_length = 100;
+        double scaled_size = scale_dim / vp->view_scale_ppm;
         
-        double xscale = target_length / scaled_length;
+        double target_size = 100;               // roughly, meters maximum scaled size for these inland signs
+        
+        double xscale = target_size / scaled_size;
         xscale = wxMin(xscale, 1.0);
         xscale = wxMax(.2, xscale);
         
@@ -2635,9 +2639,10 @@ bool s52plib::RenderRasterSymbol( ObjRazRules *rzRules, Rule *prule, wxPoint &r,
             // delete any old private data
             ClearRulesCache( prule );
 
-            int w0 = Image.GetWidth();
-            int h0 = Image.GetHeight();
-            Image.Rescale(w0 * scale_factor, h0 * scale_factor, wxIMAGE_QUALITY_HIGH);
+            // always display something, TMARDEF1 as width of 2
+            int w0 = wxMax(1, Image.GetWidth() * scale_factor);
+            int h0 = wxMax(1, Image.GetHeight() * scale_factor);
+            Image.Rescale(w0 , h0 , wxIMAGE_QUALITY_HIGH);
             
             int w = Image.GetWidth();
             int h = Image.GetHeight();

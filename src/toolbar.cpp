@@ -1030,55 +1030,6 @@ void ocpnFloatingToolbarDialog::Realize()
 
 void ocpnFloatingToolbarDialog::OnToolLeftClick( wxCommandEvent& event )
 {
-    // First see if it was actually the context menu that was clicked.
-
-    
-    if( m_FloatingToolbarConfigMenu &&( event.GetId() >= ID_PLUGIN_BASE + 100 )) {
-
-        int itemId = event.GetId() - ID_PLUGIN_BASE - 100;
-        wxMenuItem *item = m_FloatingToolbarConfigMenu->FindItem( event.GetId() );
-
-        if(item){
-            bool toolIsChecked = item->IsChecked();
-
-            if( toolIsChecked ) {
-                g_toolbarConfig.SetChar( itemId, _T('X') );
-            } else {
-
-                if( itemId + ID_ZOOMIN == ID_MOB ) {
-                    ToolbarMOBDialog mdlg( this );
-                    int dialog_ret = mdlg.ShowModal();
-                    int answer = mdlg.GetSelection();
-
-                    if( answer == 0 || answer == 1 || dialog_ret == wxID_CANCEL ) {
-                        m_FloatingToolbarConfigMenu->FindItem( event.GetId() )->Check( true );
-                        if( answer == 1 && dialog_ret == wxID_OK ) {
-                            g_bPermanentMOBIcon = true;
-                            delete m_FloatingToolbarConfigMenu;
-                            m_FloatingToolbarConfigMenu = new wxMenu();
-                            toolbarConfigChanged = true;
-                        }
-                        return;
-                    }
-                }
-
-                if( m_ptoolbar->GetVisibleToolCount() == 1 ) {
-                    OCPNMessageBox( this,
-                            _("You can't hide the last tool from the toolbar\nas this would make it inaccessible."),
-                            _("OpenCPN Alert"), wxOK );
-                    m_FloatingToolbarConfigMenu->FindItem( event.GetId() )->Check( true );
-                    return;
-                }
-
-                g_toolbarConfig.SetChar( itemId, _T('.') );
-            }
-        }
-
-        toolbarConfigChanged = true;
-        return;
-    }
-
-    // No it was a button that was clicked.
     // Since Dialog events don't propagate automatically, we send it explicitly
     // (instead of relying on event.Skip()). Send events up the window hierarchy
 
@@ -1935,7 +1886,13 @@ void ocpnToolBarSimple::OnMouseEvent( wxMouseEvent & event )
     // If the button is enabled and it is not a toggle tool and it is
     // in the pressed state, then raise the button and call OnLeftClick.
     //
-    if( event.LeftUp() && tool->IsEnabled() && m_leftDown) {
+    // Unfortunately, some touch screen drivers do not send "LeftIsDown" events.
+    // Nor do they report "LeftIsDown" in any state.
+    // c.f rPI "official" 7" panel.
+    
+    // So, for this logic, assume in touch mode that the m_leftDown flag may not be set,
+    // and process the left-up event anyway.
+    if( event.LeftUp() && tool->IsEnabled() && (m_leftDown || g_btouch) ) {
         // Pass the OnLeftClick event to tool
         if( !OnLeftClick( tool->GetId(), tool->IsToggled() ) && tool->CanBeToggled() ) {
             // If it was a toggle, and OnLeftClick says No Toggle allowed,
@@ -2727,9 +2684,11 @@ END_EVENT_TABLE()
     int max_width = -1;
     if(m_configMenu){
         nitems = m_configMenu->GetMenuItemCount();
-        
+
         cboxes.clear();
         for (int i=0 ; i < nitems ; i++){
+            if ( i + ID_ZOOMIN == ID_MOB && g_bPermanentMOBIcon )
+                continue;
             wxMenuItem *item = m_configMenu->FindItemByPosition( i );
             
             wxString label = item->GetItemLabel();
@@ -2790,19 +2749,35 @@ END_EVENT_TABLE()
  void ToolbarChoicesDialog::OnOkClick( wxCommandEvent& event )
  {
      unsigned int ncheck = 0;
+     wxString g_toolbarConfigSave = g_toolbarConfig;
      for(unsigned int i=0 ; i < cboxes.size() ; i++){
-         
          wxCheckBox *cb = cboxes[i];
-         if( cb->IsChecked() )
-            g_toolbarConfig.SetChar( i, _T('X') );
-         else
-             g_toolbarConfig.SetChar( i, _T('.') );
-        
+         if ( i + ID_ZOOMIN == ID_MOB && !cb->IsChecked( ) ) {
+             // Ask if really want to disable MOB button
+             ToolbarMOBDialog mdlg( this );
+             int dialog_ret = mdlg.ShowModal( );
+             int answer = mdlg.GetSelection( );
+             if ( dialog_ret == wxID_OK )
+                 if ( answer == 1 ) {
+                     g_bPermanentMOBIcon = true;
+                     cb->SetValue( true );
+                 }
+                 else if ( answer == 0 ) {
+                     cb->SetValue( true );
+                 }
+                 else
+                     ;
+             else { // wxID_CANCEL
+                 g_toolbarConfig = g_toolbarConfigSave;
+                 return;
+             }
+         }
          if(m_configMenu){
              wxMenuItem *item = m_configMenu->FindItemByPosition( i );
-            item->Check( cb->IsChecked() );
-            if(cb->IsChecked())
-                ncheck++;
+             g_toolbarConfig.SetChar( i, cb->IsChecked( ) ? _T( 'X' ) : _T( '.' ) );
+             item->Check( cb->IsChecked() );
+             if(cb->IsChecked())
+                 ncheck++;
          }
      }
      
