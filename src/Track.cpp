@@ -120,6 +120,12 @@ private:
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST ( TrackList );
 
+TrackPoint::TrackPoint(double lat, double lon)
+{
+    m_lat = lat;
+    m_lon = lon;
+}
+
 // Copy Constructor
 TrackPoint::TrackPoint( TrackPoint* orig )
 {
@@ -198,6 +204,7 @@ Track::Track()
 
     m_HyperlinkList = new HyperlinkList;
     m_HighlightedTrackPoint = -1;
+    m_bisTrack = true;
 }
 
 Track::~Track( void )
@@ -509,7 +516,7 @@ void ActiveTrack::AddPointNow( bool do_add_point )
 void Track::AddPointToList(std::list< std::list<wxPoint> > &pointlists, int n)
 {
     wxPoint r(INVALID_COORD, INVALID_COORD);
-    if ( n < TrackPoints.size() )
+    if ( (size_t)n < TrackPoints.size() )
         cc1->GetCanvasPointPix( TrackPoints[n]->m_lat, TrackPoints[n]->m_lon, &r );
 
     std::list<wxPoint> &pointlist = pointlists.back();

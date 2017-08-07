@@ -68,6 +68,7 @@ extern GLuint g_raster_format;
 #include "OCPN_Sound.h"
 #include "NMEALogWindow.h"
 #include "wx28compat.h"
+#include "routeman.h"
 
 #include "ais.h"
 #include "AIS_Decoder.h"
@@ -95,6 +96,7 @@ wxString GetOCPNKnownLanguage(const wxString lang_canonical);
 extern OCPNPlatform* g_Platform;
 
 extern MyFrame* gFrame;
+extern WayPointman *pWayPointMan;
 extern ChartCanvas* cc1;
 extern wxString g_PrivateDataDir;
 
@@ -5133,7 +5135,14 @@ void options::SetInitialSettings(void) {
 
   s.Printf(_T("%d"), g_nAutoHideToolbar);
   pToolbarHideSecs->SetValue(s);
-  
+
+  m_cbNMEADebug->SetValue(false);
+  if(NMEALogWindow::Get().GetTTYWindow()){
+      if(NMEALogWindow::Get().GetTTYWindow()->IsShown()){
+          m_cbNMEADebug->SetValue(true);
+      }
+  }
+      
   //  Serial ports
   
   delete m_pSerialArray;
@@ -5396,6 +5405,16 @@ void options::OnShowGpsWindowCheckboxClick(wxCommandEvent& event) {
     NMEALogWindow::Get().DestroyWindow();
   } else {
     NMEALogWindow::Get().Create(pParent, 35);
+    
+    // Try to ensure that the log window is a least a little bit visible
+    wxRect logRect(NMEALogWindow::Get().GetPosX(), NMEALogWindow::Get().GetPosY(),
+                   NMEALogWindow::Get().GetSizeW(), NMEALogWindow::Get().GetSizeH());
+                   
+    if(GetRect().Contains(logRect)){
+        NMEALogWindow::Get().SetPos(GetRect().x/2, (GetRect().y + (GetRect().height - logRect.height)/2) );
+        NMEALogWindow::Get().Move();
+    }
+        
     Raise();
   }
 }
@@ -6105,6 +6124,10 @@ void options::OnApplyClick(wxCommandEvent& event) {
   g_ChartScaleFactorExp =
       g_Platform->getChartScaleFactorExp(g_ChartScaleFactor);
 
+  //  Only reload the icons if user has actually visted the UI page    
+  if(m_bVisitLang)    
+    pWayPointMan->ReloadAllIcons();
+  
   g_NMEAAPBPrecision = m_choicePrecision->GetCurrentSelection();
 
   g_TalkerIdText = m_TalkerIdText->GetValue().MakeUpper();

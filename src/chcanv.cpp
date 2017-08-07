@@ -2260,7 +2260,7 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
                 showAISRollover = true;
 
                 if( NULL == m_pAISRolloverWin ) {
-                    m_pAISRolloverWin = new RolloverWin( this, 10 );
+                    m_pAISRolloverWin = new RolloverWin( this );
                     m_pAISRolloverWin->IsActive( false );
                     b_need_refresh = true;
                 }
@@ -2329,7 +2329,7 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
                 showRollover = true;
 
                 if( NULL == m_pRouteRolloverWin ) {
-                    m_pRouteRolloverWin = new RolloverWin( this );
+                    m_pRouteRolloverWin = new RolloverWin( this, 10 );
                     m_pRouteRolloverWin->IsActive( false );
                 }
 
@@ -2402,9 +2402,11 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
                 node = node->GetNext();
         }
     } else {
-        //    Is the cursor still in select radius?
-        if( !pSelect->IsSelectableSegmentSelected( m_cursor_lat, m_cursor_lon,
-                m_pRolloverRouteSeg ) ) showRollover = false;
+        //    Is the cursor still in select radius, and not timed out?
+        if( !pSelect->IsSelectableSegmentSelected( m_cursor_lat, m_cursor_lon, m_pRolloverRouteSeg ) )
+            showRollover = false;
+        else if(m_pRouteRolloverWin && !m_pRouteRolloverWin->IsActive())
+            showRollover = false;
         else
             showRollover = true;
     }
@@ -2417,7 +2419,7 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
     if( m_pAISRolloverWin && m_pAISRolloverWin->IsActive() )
         showRollover = false;
 
-    if( m_pRouteRolloverWin && m_pRouteRolloverWin->IsActive() && !showRollover ) {
+    if( m_pRouteRolloverWin /*&& m_pRouteRolloverWin->IsActive()*/ && !showRollover ) {
         m_pRouteRolloverWin->IsActive( false );
         m_pRolloverRouteSeg = NULL;
         m_pRouteRolloverWin->Destroy();
@@ -3570,24 +3572,38 @@ void ChartCanvas::ShipIndicatorsDraw( ocpnDC& dc, float lpp,
             }
 
             //      COG Predictor
+            float dash_length = 10.0;
+#ifdef __OCPN__ANDROID__
+            dash_length = 6.0;
+#endif            
             wxDash dash_long[2];
-            dash_long[0] = (int) ( 3.0 * m_pix_per_mm );  //8// Long dash  <---------+
-            dash_long[1] = (int) ( 1.5 * m_pix_per_mm );  //2// Short gap            |
-
-            wxPen ppPen2( PredColor(), g_cog_predictor_width, wxPENSTYLE_USER_DASH );
+            dash_long[0] = (int) ( floor(g_Platform->GetDisplayDPmm() * dash_length) / g_cog_predictor_width );  // Long dash , in mm <---------+
+            dash_long[1] = dash_long[0] / 2.0;                                                                   // Short gap 
+            
+            // On ultra-hi-res displays, do not allow the dashes to be greater than 250, since it is defined as (char)
+            if( dash_length > 250.){
+                dash_long[0] = 250. /g_cog_predictor_width;
+                dash_long[1] = dash_long[0] / 2;
+            }
+                
+            float pw1 = g_cog_predictor_width;
+            float pw2 = wxRound(wxMax(1, g_cog_predictor_width/(float)3.));
+            
+            wxPen ppPen2( PredColor(), pw1, wxPENSTYLE_USER_DASH );
             ppPen2.SetDashes( 2, dash_long );
             dc.SetPen( ppPen2 );
             dc.StrokeLine( lGPSPoint.x + GPSOffsetPixels.x, lGPSPoint.y + GPSOffsetPixels.y,
                            lPredPoint.x + GPSOffsetPixels.x, lPredPoint.y + GPSOffsetPixels.y );
 
             wxDash dash_long3[2];
-            dash_long3[0] = g_cog_predictor_width * dash_long[0];
-            dash_long3[1] = g_cog_predictor_width * dash_long[1];
-
+            dash_long3[0] = pw1 / pw2 * dash_long[0];
+            dash_long3[1] = pw1 / pw2 * dash_long[1];
+            
             if( g_cog_predictor_width > 1 ) {
-                wxPen ppPen3( GetGlobalColor( _T ( "UBLCK" ) ), 1, wxPENSTYLE_USER_DASH );
+                wxPen ppPen3( GetGlobalColor( _T ( "UBLCK" ) ), pw2, wxPENSTYLE_USER_DASH );
                 ppPen3.SetDashes( 2, dash_long3 );
                 dc.SetPen( ppPen3 );
+                
                 dc.StrokeLine( lGPSPoint.x + GPSOffsetPixels.x, lGPSPoint.y + GPSOffsetPixels.y,
                                lPredPoint.x + GPSOffsetPixels.x, lPredPoint.y + GPSOffsetPixels.y );
             }

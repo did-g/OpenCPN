@@ -1742,13 +1742,17 @@ bool MyApp::OnInit()
     pWayPointMan = NULL;
 
     g_display_size_mm = wxMax(100, g_Platform->GetDisplaySizeMM());
-
+    wxString msg;
+    msg.Printf(_T("Detected display size (horizontal): %d mm"), (int) g_display_size_mm);
+    wxLogMessage(msg);
+    
     // User override....
     if((g_config_display_size_mm > 0) &&(g_config_display_size_manual)){
         g_display_size_mm = g_config_display_size_mm;
         wxString msg;
         msg.Printf(_T("Display size (horizontal) config override: %d mm"), (int) g_display_size_mm);
         wxLogMessage(msg);
+        g_Platform->SetDisplaySizeMM(g_display_size_mm);
     }
 
     if(g_btouch){
@@ -2882,7 +2886,9 @@ void MyFrame::SetAndApplyColorScheme( ColorScheme cs )
     if( g_pRouteMan ) g_pRouteMan->SetColorScheme( cs );
 
     if( pMarkPropDialog ) pMarkPropDialog->SetColorScheme( cs );
-
+    
+    if( pRoutePropDialog ) pRoutePropDialog->SetColorScheme( cs );
+    
     //    For the AIS target query dialog, we must rebuild it to incorporate the style desired for the colorscheme selected
     if( g_pais_query_dialog_active ) {
         bool b_isshown = g_pais_query_dialog_active->IsShown();
@@ -3370,6 +3376,13 @@ void MyFrame::SetGPSCompassScale()
 }
 
 
+void MyFrame::FastClose(){
+    
+    FrameTimer1.Stop();
+    quitflag++;                             // signal to the timer loop
+    FrameTimer1.Start(1);                    // real quick now...
+}
+
 // Intercept menu commands
 void MyFrame::OnExit( wxCommandEvent& event )
 {
@@ -3441,7 +3454,9 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
 
     cc1->Refresh( true );
     cc1->Update();
-    wxYield();
+    
+    //  This yield is not necessary, since the Update() proceeds syncronously...
+    //wxYield();
 
     //   Save the saved Screen Brightness
     RestoreScreenBrightness();
@@ -4880,7 +4895,7 @@ void MyFrame::ToggleCourseUp( void )
 
     if( g_bCourseUp ) {
         //    Stuff the COGAvg table in case COGUp is selected
-        double stuff = NAN;
+        double stuff = 0;
         if( !wxIsNaN(gCog) ) stuff = gCog;
 
         if( g_COGAvgSec > 0) {
@@ -5530,7 +5545,9 @@ int MyFrame::DoOptionsDialog()
         return 0;
 
     g_boptionsactive = true;
-
+    int last_ChartScaleFactorExp = g_ChartScaleFactor;
+        
+    
     if(NULL == g_options) {
         g_Platform->ShowBusySpinner();
         g_options = new options( this, -1, _("Options") );
@@ -5613,8 +5630,13 @@ int MyFrame::DoOptionsDialog()
     Raise();                      // I dunno why...
 #endif
 
+    
     bool ret_val = false;
     rr = g_options->GetReturnCode();
+    
+    if(last_ChartScaleFactorExp != g_ChartScaleFactor)
+        rr |= S52_CHANGED;
+    
     if( rr ) {
         ProcessOptionsDialog( rr,  g_options->GetWorkDirListPtr() );
         ChartData->GetChartDirArray() = *(g_options->GetWorkDirListPtr()); // Perform a deep copy back to main database.
@@ -5730,6 +5752,13 @@ int MyFrame::ProcessOptionsDialog( int rr, ArrayOfCDI *pNewDirArray )
         LoadHarmonics();
     }
 
+    //  S52_CHANGED is a byproduct of a change in the chart object render scale
+    //  So, applies to RoutePoint icons also
+    if( rr & S52_CHANGED){
+        //  Reload Icons
+        pWayPointMan->ReloadAllIcons( );
+    }
+    
     pConfig->UpdateSettings();
 
     if( g_pActiveTrack ) {
@@ -6718,7 +6747,7 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
 
 //      Listen for quitflag to be set, requesting application close
     if( quitflag ) {
-        wxLogMessage( _T("Got quitflag from SIGUSR1") );
+        wxLogMessage( _T("Got quitflag from SIGNAL") );
         FrameTimer1.Stop();
         Close();
         return;
@@ -7084,7 +7113,7 @@ double MyFrame::GetMag(double a, double lat, double lon)
         // In the case of rollover windows, the value is requested continuously, so will be correct very soon.
         wxDateTime now = wxDateTime::Now();
         SendJSON_WMM_Var_Request(lat, lon, now);
-        if ( abs(gQueryVar) < 360.0 )   // Don't use WMM variance if not updated yet
+        if ( fabs(gQueryVar) < 360.0 )   // Don't use WMM variance if not updated yet
             Variance = gQueryVar;
     }
     if((a - Variance ) > 360.)

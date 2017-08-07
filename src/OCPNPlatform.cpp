@@ -83,6 +83,10 @@
 #include "macutils.h"
 #endif
 
+#ifdef __WXGTK__
+#include <gdk/gdk.h>
+#endif
+
 DECLARE_APP(MyApp)
 
 void appendOSDirSlash( wxString* pString );
@@ -261,7 +265,7 @@ OCPNPlatform::OCPNPlatform()
     m_displaySize = wxSize(0,0);
     m_displaySizeMM = wxSize(0,0);
     m_monitorWidth = m_monitorHeight = 0;
-    
+    m_displaySizeMMOverride = 0;
 }
 
 OCPNPlatform::~OCPNPlatform()
@@ -294,6 +298,8 @@ int MyNewHandler( size_t size )
 //      SIGSEGV
 //      Some undefined segfault......
 
+int s_inhup;
+
 void
 catch_signals(int signo)
 {
@@ -307,8 +313,19 @@ catch_signals(int signo)
             siglongjmp(env, 1);// jump back to the setjmp() point
             break;
             
+        case SIGHUP:
+            if(!s_inhup){
+                s_inhup++;                  // incase SIGHUP is closely followed by SIGTERM
+                gFrame->FastClose();
+            }
+            break;             
+            
         case SIGTERM:
-            gFrame->Close();
+            if(!s_inhup){
+                s_inhup++;                  // incase SIGHUP is closely followed by SIGTERM
+                gFrame->FastClose();
+            }
+                
             break;
             
         default:
@@ -529,11 +546,14 @@ void OCPNPlatform::Initialize_1( void )
             
             //      Register my request for some signals
             sigaction(SIGUSR1, &sa_all, NULL);
-            
             sigaction(SIGUSR1, NULL, &sa_all_old);// inspect existing action for this signal
             
             sigaction(SIGTERM, &sa_all, NULL);
             sigaction(SIGTERM, NULL, &sa_all_old);
+            
+            sigaction(SIGHUP, &sa_all, NULL);
+            sigaction(SIGHUP, NULL, &sa_all_old);
+            
 #endif
 
 #ifdef __OCPN__ANDROID__
@@ -570,7 +590,7 @@ void OCPNPlatform::OnExit_2( void ){
 #ifdef OCPN_USE_CRASHRPT
 #ifndef _DEBUG
         // Uninstall Windows crash reporting
-    crUninstall();
+//    crUninstall();
 #endif
 #endif
     
@@ -1558,10 +1578,19 @@ wxSize OCPNPlatform::getDisplaySize()
 
 double  OCPNPlatform::GetDisplaySizeMM()
 {
+    if(m_displaySizeMMOverride > 0)
+        return m_displaySizeMMOverride;
+    
     if(m_displaySizeMM.x < 1)
         m_displaySizeMM = wxGetDisplaySizeMM();
 
     double ret = m_displaySizeMM.GetWidth();
+    
+#ifdef __WXGTK__
+    GdkScreen *screen = gdk_screen_get_default();
+    ret = (double)gdk_screen_get_monitor_width_mm(screen, 0);
+#endif    
+    
     
 #ifdef __WXMSW__    
     int w,h;
@@ -1591,6 +1620,12 @@ double  OCPNPlatform::GetDisplaySizeMM()
     
     return ret;
 }
+
+void OCPNPlatform::SetDisplaySizeMM( double sizeMM)
+{
+    m_displaySizeMMOverride = sizeMM;
+}
+
 
 double OCPNPlatform::GetDisplayDPmm()
 {
