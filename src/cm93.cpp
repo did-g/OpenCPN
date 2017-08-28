@@ -3552,7 +3552,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                   else if ( sattr.IsSameAs ( _T ( "_wgsoy" ) ) )
                   {
                         tmp_transform_y = * ( double * ) pattValTmp->value.ptr;
-                        if ( fabs ( tmp_transform_x ) > 1.0 )
+                        if ( fabs ( tmp_transform_y ) > 1.0 )
                               m_CIB.b_have_offsets = true;
                   }
             }
