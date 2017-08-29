@@ -496,6 +496,10 @@ bool GribV1Record::readGribSection3_BMS(ZUFILE* file) {
     if (bitMapFollows != 0) {
         return ok;
     }
+    if (sectionSize3 <= 6) {
+        ok = false;
+        return ok;
+    }
     BMSsize = sectionSize3-6;
     BMSbits = new zuchar[BMSsize];
 
@@ -541,9 +545,10 @@ bool GribV1Record::readGribSection4_BDS(ZUFILE* file) {
         return ok;
     }
 
-    // Allocate memory for the data
-    data = new double[Ni*Nj];
-
+    if (sectionSize4 <= 11 || sectionSize4 > INT_MAX -4) {
+        ok = false;
+        return ok;
+    }
     zuint  startbit  = 0;
     int  datasize = sectionSize4-11;
     zuchar *buf = new zuchar[datasize+4]();  // +4 pour simplifier les décalages ds readPackedBits
@@ -557,6 +562,9 @@ bool GribV1Record::readGribSection4_BDS(ZUFILE* file) {
         delete [] buf;
         return ok;
     }
+
+    // Allocate memory for the data
+    data = new double[Ni*Nj];
 
     // Read data in the order given by isAdjacentI
     zuint i, j, x;
