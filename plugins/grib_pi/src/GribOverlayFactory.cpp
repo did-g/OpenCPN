@@ -679,8 +679,8 @@ wxImage GRIBOverlayFactory::CreateGribImage( int settings, GribRecord *pGR,
                 wxColour c = GetGraphicColor(settings, v);
 
                 //set full transparency if no rain or no clouds at all
-                unsigned char a = ( ( settings == GribOverlaySettings::PRECIPITATION || GribOverlaySettings::CLOUD ) && v < 0.01 ) ? 0 :
-                            m_Settings.m_iOverlayTransparency;
+                unsigned char a = ( ( settings == GribOverlaySettings::PRECIPITATION || settings == GribOverlaySettings::CLOUD ) && v < 0.01 ) 
+                    ? 0 : m_Settings.m_iOverlayTransparency;
 
                 unsigned char r = c.Red();
                 unsigned char g = c.Green();
