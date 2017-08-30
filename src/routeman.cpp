@@ -1701,6 +1701,7 @@ wxBitmap *WayPointman::GetIconBitmap( const wxString& icon_key )
             break;
     }
 
+#if 0
     if( i == m_pIconArray->GetCount() )              // key not found
     {
         // find and return bitmap for "circle"
@@ -1710,6 +1711,7 @@ wxBitmap *WayPointman::GetIconBitmap( const wxString& icon_key )
 //                break;
         }
     }
+#endif
 
     if( i == m_pIconArray->GetCount() )              // "circle" not found
         pmi = (MarkIcon *) m_pIconArray->Item( 0 );       // use item 0
@@ -1737,7 +1739,8 @@ bool WayPointman::GetIconPrescaled( const wxString& icon_key )
         if( pmi->icon_name.IsSameAs( icon_key ) )
             break;
     }
-    
+
+#if 0
     if( i == m_pIconArray->GetCount() )              // key not found
     {
         // find and return bitmap for "circle"
@@ -1747,6 +1750,7 @@ bool WayPointman::GetIconPrescaled( const wxString& icon_key )
             //                break;
         }
     }
+#endif
     
     if( i == m_pIconArray->GetCount() )              // "circle" not found
         pmi = (MarkIcon *) m_pIconArray->Item( 0 );       // use item 0
