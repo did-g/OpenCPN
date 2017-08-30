@@ -259,7 +259,7 @@ static TrackPoint * GPXLoadTrackPoint1( pugi::xml_node &wpt_node )
 {
 
     wxString TimeString;
-    TrackPoint *pWP = NULL;
+    TrackPoint *pWP;
     
     double rlat = wpt_node.attribute( "lat" ).as_double();
     double rlon = wpt_node.attribute( "lon" ).as_double();
@@ -291,7 +291,7 @@ static TrackPoint * GPXLoadTrackPoint1( pugi::xml_node &wpt_node )
         pWP->SetCreateTime(wxInvalidDateTime);          // cause deferred timestamp parsing
     }
 
-    return ( pWP );
+    return pWP;
 }
 
 static Track *GPXLoadTrack1( pugi::xml_node &trk_node, bool b_fullviz,
@@ -1562,7 +1562,7 @@ bool NavObjectChanges::ApplyChanges(void)
                         if( !pExisting )
                             ::InsertTrack( pTrack );
                     }
-                
+
                     else
                         delete pTrack;
                 }
@@ -1601,31 +1601,27 @@ bool NavObjectChanges::ApplyChanges(void)
                 if( !strcmp(object.name(), "tkpt") && pWayPointMan) {
                     TrackPoint *pWp = ::GPXLoadTrackPoint1( object );
                     
-                    if(pWp ) {
 //                        RoutePoint *pExisting = WaypointExists( pWp->GetName(), pWp->m_lat, pWp->m_lon );
                         
-                        pugi::xml_node xchild = object.child("extensions");
-                        pugi::xml_node child = xchild.child("opencpn:action");
+                    pugi::xml_node xchild = object.child("extensions");
+                    pugi::xml_node child = xchild.child("opencpn:action");
 
-                        pugi::xml_node guid_child = xchild.child("opencpn:track_GUID");
-                        wxString track_GUID(guid_child.first_child().value(), wxConvUTF8);
+                    pugi::xml_node guid_child = xchild.child("opencpn:track_GUID");
+                    wxString track_GUID(guid_child.first_child().value(), wxConvUTF8);
 
-                        Track *pExistingTrack = TrackExists( track_GUID );
+                    Track *pExistingTrack = TrackExists( track_GUID );
                         
-                        if(!strcmp(child.first_child().value(), "add") ){
-                            if( pExistingTrack ) {
-                                pExistingTrack->AddPoint( pWp );
-                                pWp->m_GPXTrkSegNo = pExistingTrack->GetCurrentTrackSeg() + 1;
-                            }                                
-                        }                    
-                        
-                        else
-                            delete pWp;
+                    if(!strcmp(child.first_child().value(), "add") ){
+                        if( pExistingTrack ) {
+                            pExistingTrack->AddPoint( pWp );
+                            pWp->m_GPXTrkSegNo = pExistingTrack->GetCurrentTrackSeg() + 1;
+                        }
                     }
-        }
-    
+                    else
+                        delete pWp;
+                }
+
         object = object.next_sibling();
-                
     }
 
     return true;
