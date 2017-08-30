@@ -2233,12 +2233,6 @@ bool s57chart::DCRenderLPB( wxMemoryDC& dcinput, const ViewPort& vp, wxRect* rec
     ViewPort tvp = vp;                    // undo const  TODO fix this in PLIB
 
     for( i = 0; i < PRIO_NUM; ++i ) {
-//      Set up a Clipper for Lines
-        wxDCClipper *pdcc = NULL;
-        if( rect ) {
-            wxRect nr = *rect;
-//         pdcc = new wxDCClipper(dcinput, nr);
-        }
 
         if( ps52plib->m_nBoundaryStyle == SYMBOLIZED_BOUNDARIES ) 
             top = razRules[i][4]; // Area Symbolized Boundaries
@@ -2271,8 +2265,6 @@ bool s57chart::DCRenderLPB( wxMemoryDC& dcinput, const ViewPort& vp, wxRect* rec
             ps52plib->RenderObjectToDC( &dcinput, crnt, &tvp );
         }
 
-        //      Destroy Clipper
-        if( pdcc ) delete pdcc;
     }
 
     /*
