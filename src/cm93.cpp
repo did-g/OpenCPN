@@ -3358,10 +3358,8 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
 
       pobj->Index = iobject;
 
-      char u[201];
-      strncpy ( u, sclass_sub.mb_str(), 199 );
-      u[200] = '\0';
-      strncpy ( pobj->FeatureName, u, 7 );
+      strncpy ( pobj->FeatureName, sclass_sub.mb_str(), 7 );
+      pobj->FeatureName[7] = 0;
 
       //  Touch up the geom types
       int geomtype_sub = geomtype;
@@ -4476,10 +4474,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
 
       if ( g_bDebugCM93 )
       {
-            char sfile[200];
-            strncpy ( sfile, file.mb_str(), 199 );
-            sfile[199] = 0;
-            printf ( "    filename: %s\n", sfile );
+            printf ( "    filename: %s\n", ( const char * ) file.mb_str());
       }
 
       bool bfound = false;
@@ -4575,10 +4570,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
 
             if ( g_bDebugCM93 )
             {
-                  char sfile[200];
-                  strncpy ( sfile, file1.mb_str(), 199 );
-                  sfile[199] = 0;
-                  printf ( "    alternate filename: %s\n", sfile );
+                  printf ( "    alternate filename: %s\n", ( const char * ) file1.mb_str() );
             }
 
             if ( !::wxFileExists ( file1 ) ) {
@@ -4625,10 +4617,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
 
       if ( g_bDebugCM93 )
       {
-            char str[256];
-            strncpy ( str, msg.mb_str(), 255 );
-            str[255] = 0;
-            printf ( "   %s\n", str );
+            printf ( "   %s\n", ( const char * ) msg.mb_str()  );
       }
 
       //    Ingest it
@@ -4767,10 +4756,10 @@ cm93_dictionary *cm93manager::FindAndLoadDict ( const wxString &file )
             }
             i++;
       }
-
+#if 0
       char t[100];
       strncpy ( t, target.mb_str(), 99 );
-
+#endif
       if ( retval == NULL )
             delete pdict;
 
