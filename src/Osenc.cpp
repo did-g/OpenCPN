@@ -1928,19 +1928,21 @@ bool Osenc::CreateMultiPointFeatureGeometryRecord200( OGRFeature *pFeature, Osen
     //  Write the base record
     size_t targetCount = sizeof(record);
     if(!stream->Write(&record, targetCount).IsOk())
-        return false;
-    
+        goto failure;
     //  Write the 3D point array
     targetCount = nPoints * 3 * sizeof(float);
     if(!stream->Write(psb_buffer, targetCount).IsOk())
-        return false;
-        
+        goto failure;
 
     //  Free the buffers
     free( psb_buffer );
     free( pwkb_buffer );
-    
     return true;
+failure:
+    //  Free the buffers
+    free( psb_buffer );
+    free( pwkb_buffer );
+    return false;
 }
 
 
@@ -2965,8 +2967,10 @@ bool Osenc::CreateSENCRecord200( OGRFeature *pFeature, Osenc_outstream *stream, 
                     
                     // Write the record out....
                     size_t targetCount = recordLength;
-                    if(!stream->Write(pBuffer, targetCount).IsOk())
+                    if(!stream->Write(pBuffer, targetCount).IsOk()) {
+                        free( payloadBuffer );
                         return false;
+                    }
                     
                 }
 
@@ -3004,8 +3008,10 @@ bool Osenc::CreateSENCRecord200( OGRFeature *pFeature, Osenc_outstream *stream, 
                     
                 // Write the record out....
                 size_t targetCount = recordLength;
-                if(!stream->Write(pBuffer, targetCount).IsOk())
+                if(!stream->Write(pBuffer, targetCount).IsOk()) {
+                        free( payloadBuffer );
                         return false;
+                }
             }
         }
     }
