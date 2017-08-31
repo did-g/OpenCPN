@@ -539,9 +539,8 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
         token = tkz.GetNextToken(); //11) Target name
         if ( token == wxEmptyString )
             token = wxString::Format( _T("ARPA %d"), arpa_tgt_num );
-        int len = token.Length();
-        strncpy( arpa_name_str, token.mb_str(), len );
-        arpa_name_str[len] = 0;
+        strncpy( arpa_name_str, token.mb_str(), sizeof arpa_name_str );
+        arpa_name_str[sizeof arpa_name_str -1] = 0;
         arpa_status = tkz.GetNextToken(); //12) Target Status
         if ( arpa_status != _T( "L" ) ) {
             arpa_lost = false;
@@ -601,9 +600,8 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
         token = tkz.GetNextToken(); //4) Target name
         if ( token == wxEmptyString )
             token = wxString::Format( _T("ARPA %d"), arpa_tgt_num );
-        int len = token.Length();
-        strncpy( arpa_name_str, token.mb_str(), len );
-        arpa_name_str[len] = 0;
+        strncpy( arpa_name_str, token.mb_str(), sizeof arpa_name_str );
+        arpa_name_str[sizeof arpa_name_str -1] = 0;
         token = tkz.GetNextToken(); //5) UTC of data
         token.ToDouble( &arpa_utc_time );
         arpa_utc_hour = (int) ( arpa_utc_time / 10000.0 );
@@ -657,18 +655,18 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
         if( token.Mid( 0, 1 ).Contains( _T("W") ) == true || token.Mid( 0, 1 ).Contains( _T("w") ) == true )
             aprs_lon = 0. - aprs_lon;
         token = tkz.GetNextToken(); //5) Target name
-        int len = token.Length();
+
         int i, hash = 0;
-        strncpy( aprs_name_str, token.mb_str(), len );
-        aprs_name_str[len] = 0;
-        hash = 0;
-        for( i = 0; i < len; i++ ) {
+        strncpy( aprs_name_str, token.mb_str(), sizeof aprs_name_str );
+        aprs_name_str[sizeof arpa_name_str -1] = 0;
+        for( i = 0; aprs_name_str[i]; i++ ) {
             hash = hash * 10;
             hash += (int) ( aprs_name_str[i] );
             while( hash >= 100000 )
                 hash = hash / 100000;
         }
         mmsi = aprs_mmsi = 199300000 + hash; // 199 is INMARSAT-A MID, should not occur ever in AIS stream + we make sure we are out of the hashes for GPSGate buddies and ARPA by being above 1993*
+
     } else if( str.Mid( 1, 5 ).IsSameAs( _T("FRPOS") ) ) {
         // parse a GpsGate Position message            $FRPOS,.....
 
@@ -718,13 +716,12 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
         // now comes the name, followed by in * and NMEA checksum
 
         token = tkz.GetNextToken();
-        int i, len, hash = 0;
-        len = wxMin(wxStrlen(token),20);
-        strncpy( gpsg_name_str, token.mb_str(), len );
-        gpsg_name_str[len] = 0;
-        for( i = 0; i < len; i++ ) {
+        int i, hash = 0;
+        strncpy( gpsg_name_str, token.mb_str(), sizeof gpsg_name_str );
+        gpsg_name_str[sizeof gpsg_name_str -1] = 0;
+        for( i = 0; gpsg_name_str[i]; i++ ) {
             hash = hash * 10;
-            hash += (int) ( token[i] );
+            hash += (int) ( gpsg_name_str[i] );
             while( hash >= 100000 )
                 hash = hash / 100000;
         }
@@ -849,7 +846,7 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 pTargetData->SOG = gpsg_sog;
                 pTargetData->ShipType = 52; // buddy
                 pTargetData->Class = AIS_GPSG_BUDDY;
-                strncpy( pTargetData->ShipName, gpsg_name_str, strlen( gpsg_name_str ) + 1 );
+                strcpy( pTargetData->ShipName, gpsg_name_str );
                 pTargetData->b_nameValid = true;
                 pTargetData->b_active = true;
                 pTargetData->b_lost = false;
@@ -885,7 +882,7 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 pTargetData->ShipType = 55; // arpa
                 pTargetData->Class = AIS_ARPA;
 
-                strncpy( pTargetData->ShipName, arpa_name_str, strlen( arpa_name_str ) + 1 );
+                strcpy( pTargetData->ShipName, arpa_name_str);
                 if( arpa_status != _T("Q") )
                     pTargetData->b_nameValid = true;
                 else
@@ -914,7 +911,7 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 pTargetData->b_positionOnceValid = true;
                 pTargetData->ShipType = 56; // aprs
                 pTargetData->Class = AIS_APRS;
-                strncpy( pTargetData->ShipName, aprs_name_str, strlen( aprs_name_str ) + 1 );
+                strcpy( pTargetData->ShipName, aprs_name_str);
                 pTargetData->b_nameValid = true;
                 pTargetData->b_active = true;
                 pTargetData->b_lost = false;
@@ -967,7 +964,8 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                         if(  it != AISTargetNames->end()  ) {
                         // If we don't have a name yet but have one in the MMSI->ShipName hash, use the one in the hash
                             wxString ship_name = ( *AISTargetNames )[mmsi];
-                            strncpy( pTargetData->ShipName, ship_name.mb_str(), ship_name.length() + 1 );
+                            strncpy( pTargetData->ShipName, ship_name.mb_str(), sizeof pTargetData->ShipName );
+                            pTargetData->ShipName[sizeof pTargetData->ShipName -1] = 0;
                             pTargetData->b_nameValid = true;
                             pTargetData->b_nameFromCache = true;
                         }
@@ -1205,10 +1203,10 @@ AIS_Target_Data *AIS_Decoder::ProcessDSx( const wxString& str, bool b_take_dsc )
         m_ptentative_dsctarget->Class = AIS_DSC;
         m_ptentative_dsctarget->b_nameValid = true;
         if( dsc_fmt == 12 ) {
-            strncpy( m_ptentative_dsctarget->ShipName, "DISTRESS            ", 21 );
+            strcpy( m_ptentative_dsctarget->ShipName, "DISTRESS           "); // 20 +1
         }
         else
-            strncpy( m_ptentative_dsctarget->ShipName, "POSITION REPORT     ", 21 );
+            strcpy( m_ptentative_dsctarget->ShipName, "POSITION REPORT    "); // 20 +1
         
         m_ptentative_dsctarget->b_active = true;
         m_ptentative_dsctarget->b_lost = false;
