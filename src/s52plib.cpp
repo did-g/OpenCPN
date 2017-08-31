@@ -5173,6 +5173,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     int bm_height;
     int bm_orgx;
     int bm_orgy;
+    wxDC *pdc = m_pdc; // help static analyser, m_dpc is constant
 
     Rule *prule = rules->razRule;
 
@@ -5218,7 +5219,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     xs.Printf( _T("%5g"), xscale );
     carc_hash += xs;
 
-    if(m_pdc){          // DC rendering
+    if(pdc){          // DC rendering
         if(fabs(prule->parm7 - xscale) > .00001){
             if(prule->pixelPtr){
                 switch( prule->parm0 ){
@@ -5395,7 +5396,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     CARC_Buffer buffer;
 
     
-    if( !m_pdc ) // opengl
+    if( !pdc ) // opengl
     {
         //    Is there not already an generated vbo the CARC_hashmap for this object?
         rad = (int) ( radius * canvas_pix_per_mm );
@@ -5489,7 +5490,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     GetPointPixSingle( rzRules, rzRules->obj->y, rzRules->obj->x, &r, vp );
 
     //      Now render the symbol
-    if( !m_pdc ) // opengl
+    if( !pdc ) // opengl
     {
 #ifdef ocpnUSE_GL
         glPushMatrix();
@@ -5564,7 +5565,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         mdc.SelectObject( (wxBitmap &) ( *( (wxBitmap *) ( rules->razRule->pixelPtr ) ) ) );
 
         //      Blit it into the target dc, using mask
-        m_pdc->Blit( r.x + rules->razRule->parm2, r.y + rules->razRule->parm3, b_width, b_height,
+        pdc->Blit( r.x + rules->razRule->parm2, r.y + rules->razRule->parm3, b_width, b_height,
                 &mdc, 0, 0, wxCOPY, true );
 
         mdc.SelectObject( wxNullBitmap );
@@ -5591,12 +5592,12 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
             float a = ( sectr1 - 90 ) * PI / 180;
             int x = r.x + (int) ( leg_len * cosf( a ) );
             int y = r.y + (int) ( leg_len * sinf( a ) );
-            DrawAALine( m_pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
+            DrawAALine( pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
 
             a = ( sectr2 - 90 ) * PI / 180.;
             x = r.x + (int) ( leg_len * cosf( a ) );
             y = r.y + (int) ( leg_len * sinf( a ) );
-            DrawAALine( m_pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
+            DrawAALine( pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
         }
         
         // Debug the symbol bounding box.....
