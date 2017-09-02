@@ -79,14 +79,6 @@ bool GetMemoryStatus(int *mem_total, int *mem_used);
 // ChartStack implementation
 // ============================================================================
 
-int ChartStack::GetCurrentEntrydbIndex(void)
-{
-      if(nEntry /*&& b_valid*/)
-            return DBIndex[CurrentStackEntry];
-      else
-            return -1;
-}
-
 void ChartStack::SetCurrentEntryFromdbIndex(int current_db_index)
 {
       for(int i=0 ; i < nEntry ; i++)
@@ -96,19 +88,6 @@ void ChartStack::SetCurrentEntryFromdbIndex(int current_db_index)
       }
 }
 
-int ChartStack::GetDBIndex(int stack_index)
-{
-      if((stack_index >= 0) && (stack_index < nEntry) && (stack_index < MAXSTACK))
-            return DBIndex[stack_index];
-      else
-            return -1;
-}
-
-void ChartStack::SetDBIndex(int stack_index, int db_index)
-{
-      if((stack_index >= 0) && (stack_index < nEntry) && (stack_index < MAXSTACK))
-            DBIndex[stack_index] = db_index;
-}
 
 
 bool ChartStack::DoesStackContaindbIndex(int db_index)
