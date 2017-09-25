@@ -5105,7 +5105,8 @@ int PI_GetPLIBStateHash()
 
 void CreateCompatibleS57Object( PI_S57Obj *pObj, S57Obj *cobj, chart_context *pctx )
 {
-    strncpy(cobj->FeatureName, pObj->FeatureName, 8);
+    assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
+    memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
     cobj->Primitive_type = (GeoPrim_t)pObj->Primitive_type;
     cobj->att_array = pObj->att_array;
     cobj->attVal = pObj->attVal;
