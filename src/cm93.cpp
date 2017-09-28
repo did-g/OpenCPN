@@ -203,7 +203,7 @@ int M_COVR_Desc:: ReadWKB ( wxFFileInputStream &ifs )
             ifs.Read ( &m_subcell, sizeof ( int ) );
 
             ifs.Read ( &m_nvertices, sizeof ( int ) );
-
+            assert(m_nvertices > 0);
             pvertices = new float_2Dpt[m_nvertices];
 
             ifs.Read ( pvertices,m_nvertices * sizeof ( float_2Dpt ) );
@@ -3713,6 +3713,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
 
                         // Update the covr region
                         unsigned int n = pmcd->m_nvertices;
+                        assert(n != 0);	
                         double *pts = new double[2*n];
                         
                         // copy into array of doubles
