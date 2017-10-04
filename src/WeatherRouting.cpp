@@ -1409,7 +1409,7 @@ void WeatherRouting::UpdateDialogs()
         m_PlotDialog.SetRouteMapOverlay(FirstCurrentRouteMap());
 }
 
-void WeatherRouting::AddConfiguration(RouteMapConfiguration configuration)
+void WeatherRouting::AddConfiguration(const RouteMapConfiguration &configuration)
 {
     WeatherRoute *weatherroute = new WeatherRoute;
     RouteMapOverlay *routemapoverlay = weatherroute->routemapoverlay;
