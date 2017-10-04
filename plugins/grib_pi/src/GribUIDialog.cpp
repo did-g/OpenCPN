@@ -1712,6 +1712,7 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
                     switch(pRec->getDataType()) {
                     case GRB_WIND_DIR:
                         polarWind = true;
+                        // fall through
                     case GRB_WIND_VX:
                         if(pRec->getLevelType() == LV_ISOBARIC){
                             switch(pRec->getLevelValue()){
@@ -1725,6 +1726,7 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
                         break;
                     case GRB_WIND_SPEED:
                         polarWind = true;
+                        // fall through
                     case GRB_WIND_VY:
                         if(pRec->getLevelType() == LV_ISOBARIC){
                             switch(pRec->getLevelValue()){
