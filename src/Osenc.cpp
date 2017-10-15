@@ -1710,26 +1710,27 @@ int Osenc::ingest200(const wxString &senc_file_name,
                 if(!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base)).IsOk()){
                     dun = 1; break;
                 }
+                if(obj) {
 
-                // Get the payload & parse it
-                OSENC_MultipointGeometry_Record_Payload *pPayload = (OSENC_MultipointGeometry_Record_Payload *)buf;
+                    // Get the payload & parse it
+                    OSENC_MultipointGeometry_Record_Payload *pPayload = (OSENC_MultipointGeometry_Record_Payload *)buf;
 
-                //  Set the Multipoint geometry for the Feature
-                MultipointGeometryDescriptor *pDescriptor = (MultipointGeometryDescriptor *)malloc(sizeof(MultipointGeometryDescriptor));
+                    //  Set the Multipoint geometry for the Feature
+                    MultipointGeometryDescriptor *pDescriptor = (MultipointGeometryDescriptor *)malloc(sizeof(MultipointGeometryDescriptor));
                 
-                //  Copy some simple stuff
-                pDescriptor->extent_e_lon = pPayload->extent_e_lon;
-                pDescriptor->extent_w_lon = pPayload->extent_w_lon;
-                pDescriptor->extent_s_lat = pPayload->extent_s_lat;
-                pDescriptor->extent_n_lat = pPayload->extent_n_lat;
+                    //  Copy some simple stuff
+                    pDescriptor->extent_e_lon = pPayload->extent_e_lon;
+                    pDescriptor->extent_w_lon = pPayload->extent_w_lon;
+                    pDescriptor->extent_s_lat = pPayload->extent_s_lat;
+                    pDescriptor->extent_n_lat = pPayload->extent_n_lat;
                 
-                pDescriptor->pointCount = pPayload->point_count;
-                pDescriptor->pointTable = &pPayload->payLoad;
+                    pDescriptor->pointCount = pPayload->point_count;
+                    pDescriptor->pointTable = &pPayload->payLoad;
                 
-                obj->SetMultipointGeometry( pDescriptor, m_ref_lat, m_ref_lon);
+                    obj->SetMultipointGeometry( pDescriptor, m_ref_lat, m_ref_lon);
                 
-                free( pDescriptor );
-                
+                    free( pDescriptor );
+                }
                 break;
             }
                 
