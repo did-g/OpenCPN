@@ -3574,6 +3574,7 @@ int eSENCChart::BuildRAZFromSENCFile( const wxString& FullPath, wxString& userKe
             // Give user one chance to fix the key, then bail out..
             if(!validateUserKey( FullPath )){
                 if(g_debugLevel) wxLogMessage(_T("BuildRAZFromSENCFile Bad UserKey, return ERROR_SIGNATURE_FAILURE"));
+                delete sencfile;
                 return ERROR_SIGNATURE_FAILURE;
             }
             else{
