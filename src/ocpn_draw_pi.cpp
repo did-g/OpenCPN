@@ -3785,9 +3785,7 @@ void ocpn_draw_pi::AlphaBlending( ODDC &dc, int x, int y, int size_x, int size_y
         
         //  Sometimes, on Windows, the destination image is corrupt...
         if(NULL == box) {
-#ifdef __WXOSX__
             free(d);
-#endif
             return;
         }
         
