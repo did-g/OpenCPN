@@ -7879,35 +7879,10 @@ PI_S57Obj::~PI_S57Obj()
 
 PI_S57ObjX::PI_S57ObjX()
 {
-    att_array = NULL;
-    attVal = NULL;
-    n_attr = 0;
     m_bcategory_mutable = false;
     
-    geoPtMulti = NULL;
-    geoPtz = NULL;
-    geoPt = NULL;
-    bIsClone = false;
-    Scamin = 10000000;                              // ten million enough?
-    nRef = 0;
-
-    bIsAton = false;
-    bIsAssociable = false;
-    m_n_lsindex = 0;
-    m_lsindex_array = NULL;
-    m_n_edge_max_points = 0;
-
-    //        Set default (unity) auxiliary transform coefficients
-    x_rate = 1.0;
-    y_rate = 1.0;
-    x_origin = 0.0;
-    y_origin = 0.0;
-
-    S52_Context = NULL;
     child = NULL;
     next = NULL;
-    pPolyTessGeo = NULL;
-    
 }
 
 //----------------------------------------------------------------------------------
