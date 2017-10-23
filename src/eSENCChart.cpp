@@ -7891,27 +7891,6 @@ PI_S57ObjX::PI_S57ObjX()
 
 PI_S57ObjX::~PI_S57ObjX()
 {
-    //  Don't delete any allocated records of simple copy clones
-    if( !bIsClone ) {
-        if( attVal ) {
-            for( unsigned int iv = 0; iv < attVal->GetCount(); iv++ ) {
-                S57attVal *vv = attVal->Item( iv );
-                void *v2 = vv->value;
-                free( v2 );
-                delete vv;
-            }
-            delete attVal;
-        }
-        free( att_array );
-
-        if( geoPt ) free( geoPt );
-        if( geoPtz ) free( geoPtz );
-        if( geoPtMulti ) free( geoPtMulti );
-
-        if( pPolyTessGeo ) delete (PolyTessGeo*)pPolyTessGeo;
-        
-        if( m_lsindex_array ) free( m_lsindex_array );
-    }
 }
 
 //----------------------------------------------------------------------------------
