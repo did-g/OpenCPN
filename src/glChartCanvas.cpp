@@ -3855,7 +3855,7 @@ void glChartCanvas::Render()
 
 
 
-void glChartCanvas::RenderCanvasBackingChart( ocpnDC dc, OCPNRegion valid_region)
+void glChartCanvas::RenderCanvasBackingChart( ocpnDC &dc, OCPNRegion valid_region)
 {
  
     glPushMatrix();
