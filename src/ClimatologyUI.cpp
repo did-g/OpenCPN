@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Dec  8 2015)
+// C++ code generated with wxFormBuilder (version Aug 18 2015)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -33,16 +33,16 @@ ClimatologyDialogBase::ClimatologyDialogBase( wxWindow* parent, wxWindowID id, c
 	int m_cMonthNChoices = sizeof( m_cMonthChoices ) / sizeof( wxString );
 	m_cMonth = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxSize( 80,-1 ), m_cMonthNChoices, m_cMonthChoices, 0 );
 	m_cMonth->SetSelection( 0 );
-	fgSizer23->Add( m_cMonth, 0, wxALL|wxEXPAND, 5 );
+	fgSizer23->Add( m_cMonth, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 	
 	m_sDay = new wxSpinCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 50,-1 ), wxSP_ARROW_KEYS, 1, 31, 1 );
-	fgSizer23->Add( m_sDay, 0, wxALL, 5 );
+	fgSizer23->Add( m_sDay, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_cbAll = new wxCheckBox( this, wxID_ANY, _("All"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer23->Add( m_cbAll, 0, wxALL, 0 );
 	
 	m_bpNow = new wxBitmapButton( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW );
-	fgSizer23->Add( m_bpNow, 0, wxALL, 0 );
+	fgSizer23->Add( m_bpNow, 0, wxALIGN_CENTER_VERTICAL|wxALL, 0 );
 	
 	
 	sbSizer21->Add( fgSizer23, 1, wxEXPAND, 5 );
@@ -293,7 +293,7 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	
 	m_staticText3 = new wxStaticText( m_panel5, wxID_ANY, _("Units"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText3->Wrap( -1 );
-	fgSizer18->Add( m_staticText3, 0, wxALL, 5 );
+	fgSizer18->Add( m_staticText3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	wxArrayString m_cDataUnitsChoices;
 	m_cDataUnits = new wxChoice( m_panel5, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_cDataUnitsChoices, 0 );
@@ -301,7 +301,7 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	fgSizer18->Add( m_cDataUnits, 0, wxALL, 5 );
 	
 	m_cbEnabled = new wxCheckBox( m_panel5, wxID_ANY, _("Enabled"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer18->Add( m_cbEnabled, 0, wxALL, 5 );
+	fgSizer18->Add( m_cbEnabled, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
 	fgSizer7->Add( fgSizer18, 1, wxEXPAND, 5 );
@@ -313,14 +313,14 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	fgSizer19->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	m_cbOverlayMap = new wxCheckBox( m_panel5, wxID_ANY, _("OverlayMap"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer19->Add( m_cbOverlayMap, 0, wxALL, 5 );
+	fgSizer19->Add( m_cbOverlayMap, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_staticText18 = new wxStaticText( m_panel5, wxID_ANY, _("Transparency"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText18->Wrap( -1 );
-	fgSizer19->Add( m_staticText18, 0, wxALL, 5 );
+	fgSizer19->Add( m_staticText18, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_sOverlayTransparency = new wxSlider( m_panel5, wxID_ANY, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL );
-	fgSizer19->Add( m_sOverlayTransparency, 0, wxALL|wxEXPAND, 5 );
+	fgSizer19->Add( m_sOverlayTransparency, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 	
 	m_cbOverlayInterpolation = new wxCheckBox( m_panel5, wxID_ANY, _("Interpolation"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer19->Add( m_cbOverlayInterpolation, 0, wxALL, 5 );
@@ -334,18 +334,18 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	fgSizer20->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	m_cbIsoBars = new wxCheckBox( m_panel5, wxID_ANY, _("Iso Bars"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer20->Add( m_cbIsoBars, 0, wxALL, 5 );
+	fgSizer20->Add( m_cbIsoBars, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_staticText41 = new wxStaticText( m_panel5, wxID_ANY, _("Spacing"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText41->Wrap( -1 );
-	fgSizer20->Add( m_staticText41, 0, wxALL, 5 );
+	fgSizer20->Add( m_staticText41, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_sIsoBarSpacing = new wxSpinCtrl( m_panel5, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 10000, 1 );
-	fgSizer20->Add( m_sIsoBarSpacing, 0, wxALL, 5 );
+	fgSizer20->Add( m_sIsoBarSpacing, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_staticText17 = new wxStaticText( m_panel5, wxID_ANY, _("Step"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText17->Wrap( -1 );
-	fgSizer20->Add( m_staticText17, 0, wxALL, 5 );
+	fgSizer20->Add( m_staticText17, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	wxString m_cIsoBarStepChoices[] = { _("Very Course"), _("Course"), _("Normal"), _("Fine"), _("Very Fine") };
 	int m_cIsoBarStepNChoices = sizeof( m_cIsoBarStepChoices ) / sizeof( wxString );
@@ -366,7 +366,7 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	
 	m_staticText6 = new wxStaticText( m_panel5, wxID_ANY, _("Spacing"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText6->Wrap( -1 );
-	fgSizer21->Add( m_staticText6, 0, wxALL, 5 );
+	fgSizer21->Add( m_staticText6, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_sNumbersSpacing = new wxSpinCtrl( m_panel5, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 10, 1000, 50 );
 	fgSizer21->Add( m_sNumbersSpacing, 0, wxALL, 5 );
@@ -566,7 +566,7 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	
 	m_staticText30 = new wxStaticText( m_panel2, wxID_ANY, _("days"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText30->Wrap( -1 );
-	fgSizer291->Add( m_staticText30, 0, wxALL, 5 );
+	fgSizer291->Add( m_staticText30, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
 	sbSizer11->Add( fgSizer291, 1, wxEXPAND, 5 );
@@ -575,34 +575,26 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	fgSizer30->Add( sbSizer11, 1, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer28;
-	fgSizer28 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer28 = new wxFlexGridSizer( 2, 2, 0, 0 );
 	fgSizer28->SetFlexibleDirection( wxBOTH );
 	fgSizer28->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	m_staticText4 = new wxStaticText( m_panel2, wxID_ANY, _("Min Windspeed"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText4->Wrap( -1 );
-	fgSizer28->Add( m_staticText4, 0, wxALL, 5 );
+	fgSizer28->Add( m_staticText4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_sMinWindSpeed = new wxSpinCtrl( m_panel2, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 200, 60 );
-	fgSizer28->Add( m_sMinWindSpeed, 0, wxALL, 5 );
-	
-	
-	fgSizer30->Add( fgSizer28, 1, wxEXPAND, 5 );
-	
-	wxFlexGridSizer* fgSizer29;
-	fgSizer29 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer29->SetFlexibleDirection( wxBOTH );
-	fgSizer29->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	fgSizer28->Add( m_sMinWindSpeed, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 	
 	m_staticText5 = new wxStaticText( m_panel2, wxID_ANY, _("Max Pressure"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText5->Wrap( -1 );
-	fgSizer29->Add( m_staticText5, 0, wxALL, 5 );
+	fgSizer28->Add( m_staticText5, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_sMaxPressure = new wxSpinCtrl( m_panel2, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 1200, 1000 );
-	fgSizer29->Add( m_sMaxPressure, 0, wxALL, 5 );
+	fgSizer28->Add( m_sMaxPressure, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 	
 	
-	fgSizer30->Add( fgSizer29, 1, wxEXPAND, 5 );
+	fgSizer30->Add( fgSizer28, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer5->Add( fgSizer30, 1, wxEXPAND, 5 );
@@ -776,10 +768,10 @@ ClimatologyConfigDialogBase::ClimatologyConfigDialogBase( wxWindow* parent, wxWi
 	
 	m_staticText16 = new wxStaticText( m_panel4, wxID_ANY, _("Climatology Data Directory"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText16->Wrap( -1 );
-	fgSizer161->Add( m_staticText16, 0, wxALL, 5 );
+	fgSizer161->Add( m_staticText16, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_tDataDirectory = new wxTextCtrl( m_panel4, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY );
-	fgSizer161->Add( m_tDataDirectory, 0, wxALL|wxEXPAND, 5 );
+	fgSizer161->Add( m_tDataDirectory, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 	
 	
 	fgSizer171->Add( fgSizer161, 1, wxEXPAND, 5 );
