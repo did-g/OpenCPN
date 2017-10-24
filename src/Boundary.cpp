@@ -111,7 +111,8 @@ void Boundary::Draw( ODDC& dc, PlugIn_ViewPort &piVP )
                 wxClientDC *pcdc = wxDynamicCast(dc.GetDC(), wxClientDC);
                 if( pcdc ) wxGC = wxGraphicsContext::Create( *pcdc );
             }
-            
+            assert(wxGC);
+
             wxGC->SetPen(*wxTRANSPARENT_PEN);
             wxColour tCol;
             tCol.Set(m_fillcol.Red(), m_fillcol.Green(), m_fillcol.Blue(), m_uiFillTransparency);
@@ -172,6 +173,7 @@ void Boundary::Draw( ODDC& dc, PlugIn_ViewPort &piVP )
                 wxClientDC *pcdc = wxDynamicCast(dc.GetDC(), wxClientDC);
                 if( pcdc ) wxGC = wxGraphicsContext::Create( *pcdc );
             }
+            assert(wxGC);
             
             wxGC->SetPen(*wxTRANSPARENT_PEN);
             wxColour tCol;
