@@ -137,7 +137,6 @@ void GribReader::readAllGribRecords()
             }
         }
         else {
-            is_v2 = false;
             assert (!rec || dynamic_cast<GribV2Record *>(rec));
             if (rec && dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet())  {
                 rec = static_cast<GribV2Record *>(rec)->GribV2NextDataSet(file, id);
@@ -165,8 +164,7 @@ void GribReader::readAllGribRecords()
         prevDataSet = 0;
         if (!rec->isDataKnown())
         {
-            assert (!is_v2 || dynamic_cast<GribV2Record *>(rec));
-            if (!is_v2 || !dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet()) {
+            if (dynamic_cast<GribV2Record *>(rec) == 0 || !dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet()) {
                 delete rec;
                 rec = 0;
             }
@@ -267,8 +265,7 @@ void GribReader::readAllGribRecords()
                        rec->getIdCenter(), rec->getIdModel(), rec->getIdGrid()
                 );
 #endif
-            assert (!is_v2 || dynamic_cast<GribV2Record *>(rec));
-            if (!is_v2 || !dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet()) {
+            if ( dynamic_cast<GribV2Record *>(rec) == 0 || !dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet()) {
                 delete rec;
                 rec = 0;
             }
