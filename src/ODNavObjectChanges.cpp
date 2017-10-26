@@ -1319,7 +1319,7 @@ ODPath *ODNavObjectChanges::GPXLoadPath1( pugi::xml_node &odpoint_node  , bool b
     DR          *pTentDR = NULL;
     GZ          *pTentGZ = NULL;
     PIL         *pTentPIL = NULL;
-    ODPath        *pTentPath = NULL;
+    ODPath        *pTentPath;
     HyperlinkList *linklist = NULL;
     
     if (!strcmp(pPathType->mb_str(), "Boundary" ) ) {
@@ -1559,7 +1559,7 @@ ODPath *ODNavObjectChanges::GPXLoadPath1( pugi::xml_node &odpoint_node  , bool b
                         plNewLine.dWidth = attr.as_double();
                 }
                 pTentPIL->AddLine(plNewLine);
-            }
+             }
         }
     }   
     pTentPath->m_PathNameString = PathName;
