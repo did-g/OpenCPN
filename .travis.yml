@@ -35,5 +35,5 @@ addons:
       description: "Build submitted via Travis CI"
     notification_email: didier@users.sourceforge.net
     build_command_prepend: "mkdir build_s && cd build_s && cmake -DCMAKE_BUILD_TYPE=Debug ../"
-    build_command:   "make -s && ls -l && cat /home/travis/build/did-g/OpenCPN/build_s/cov-int/build-log.txt"
+    build_commandd:   "../scripts/coverity.sh"
     branch_pattern: integration
