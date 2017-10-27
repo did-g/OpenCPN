@@ -2,10 +2,16 @@ language: cpp
 install:
     - sudo apt-get install libwxgtk3.0-dev libwxgtk3.0-0 libgps-dev libglu1-mesa-dev libgtk2.0-dev libbz2-dev libtinyxml-dev 
     - sudo apt-get install libportaudio2 portaudio19-dev libcurl4-openssl-dev libexpat1-dev libcairo2-dev
+
 script:
-    - mkdir build && cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug ../
-    - make -s
+  - if [[ "${COVERITY_SCAN_BRANCH}" == 1 ]];
+    then
+      echo "Don't build on coverty_scan branch.";
+      exit 0;
+    fi
+  - mkdir build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug ../
+  - make -s
 
 notifications:
     email: false
