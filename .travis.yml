@@ -16,9 +16,14 @@ install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cairo libexif libarchive wxmac; export PATH="/usr/local/opt/gettext/bin:$PATH";  echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> ~/.bash_profile; fi
 
 script:
-    - mkdir build && cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug ../
-    - make -s
+  - if [[ "${COVERITY_SCAN_BRANCH}" == 1 ]];
+    then
+      echo "Don't build on coverty_scan branch.";
+      exit 0;
+    fi
+  - mkdir build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug ../
+  - make -s
 
 notifications:
     email: false
