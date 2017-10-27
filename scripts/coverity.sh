@@ -1,4 +1,4 @@
 #!/bin/bash
-make
+make -s
 ls -l 
-cat /home/travis/build/did-g/OpenCPN/build_s/cov-int/build-log.txt
+head -n 7000 /home/travis/build/did-g/OpenCPN/build_s/cov-int/build-log.txt
