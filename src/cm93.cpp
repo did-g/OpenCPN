@@ -203,7 +203,7 @@ int M_COVR_Desc:: ReadWKB ( wxFFileInputStream &ifs )
             ifs.Read ( &m_subcell, sizeof ( int ) );
 
             ifs.Read ( &m_nvertices, sizeof ( int ) );
-
+            assert(m_nvertices > 0);
             pvertices = new float_2Dpt[m_nvertices];
 
             ifs.Read ( pvertices,m_nvertices * sizeof ( float_2Dpt ) );
@@ -1080,7 +1080,7 @@ static int   read_and_decode_bytes ( FILE *stream, void *p, int nbytes )
             return 1;
 
       //    read into callers buffer
-      if ( !fread ( p, nbytes, 1, stream ) )
+      if ( fread ( p, nbytes, 1, stream ) != 1)
             return 0;
 
       //    decode inplace
@@ -1103,7 +1103,7 @@ static int read_and_decode_double ( FILE *stream, double *p )
 {
       double t;
       //    read into temp buffer
-      if ( !fread ( &t, sizeof ( double ), 1, stream ) )
+      if ( fread ( &t, sizeof ( double ), 1, stream ) != 1)
             return 0;
 
       //    decode inplace
@@ -1129,7 +1129,7 @@ static int read_and_decode_int ( FILE *stream, int *p )
 {
       int t;
       //    read into temp buffer
-      if ( !fread ( &t, sizeof ( int ), 1, stream ) )
+      if ( fread ( &t, sizeof ( int ), 1, stream ) != 1)
             return 0;
 
       //    decode inplace
@@ -1155,7 +1155,7 @@ static int read_and_decode_ushort ( FILE *stream, unsigned short *p )
 {
       unsigned short t;
       //    read into temp buffer
-      if ( !fread ( &t, sizeof ( unsigned short ), 1, stream ) )
+      if ( fread ( &t, sizeof ( unsigned short ), 1, stream ) != 1)
             return 0;
 
       //    decode inplace
@@ -3263,41 +3263,37 @@ wxString ParseTEXTA ( wxString& val )
 
 void cm93chart::translate_colmar(const wxString &sclass, S57attVal *pattValTmp)
 {
-      int *pcur_attr = ( int * ) pattValTmp->value;
-      int cur_attr = *pcur_attr;
+      int cur_attr = pattValTmp->value.integer;
 
-      wxString lstring;
+      const char *lstring = "";
 
       switch ( cur_attr )
       {
-            case 1: lstring = _T ( "4" ); break;            // green
-            case 2: lstring = _T ( "2" ); break;            // black
-            case 3: lstring = _T ( "3" ); break;            // red
-            case 4: lstring = _T ( "6" ); break;            // yellow
-            case 5: lstring = _T ( "1" ); break;            // white
-            case 6: lstring = _T ( "11" ); break;           // orange
-            case 7: lstring = _T ( "2,6" ); break;          // black/yellow
-            case 8: lstring = _T ( "2,6,2" ); break;        // black/yellow/black
-            case 9: lstring = _T ( "6,2" ); break;           // yellow/black
-            case 10: lstring = _T ( "6,2,6" ); break;        // yellow/black/yellow
-            case 11: lstring = _T ( "3,1" ); break;          // red/white
-            case 12: lstring = _T ( "4,3,4" ); break;        // green/red/green
-            case 13: lstring = _T ( "3,4,3" ); break;        // red/green/red
-            case 14: lstring = _T ( "2,3,2" ); break;        // black/red/black
-            case 15: lstring = _T ( "6,3,6" ); break;        // yellow/red/yellow
-            case 16: lstring = _T ( "4,3" ); break;          // green/red
-            case 17: lstring = _T ( "3,4" ); break;          // red/green
-            case 18: lstring = _T ( "4,1" ); break;          // green/white
+            case 1: lstring = "4"; break;            // green
+            case 2: lstring = "2"; break;            // black
+            case 3: lstring = "3"; break;            // red
+            case 4: lstring = "6"; break;            // yellow
+            case 5: lstring = "1"; break;            // white
+            case 6: lstring = "11"; break;           // orange
+            case 7: lstring = "2,6"; break;          // black/yellow
+            case 8: lstring = "2,6,2"; break;        // black/yellow/black
+            case 9: lstring = "6,2"; break;           // yellow/black
+            case 10: lstring = "6,2,6"; break;        // yellow/black/yellow
+            case 11: lstring = "3,1"; break;          // red/white
+            case 12: lstring = "4,3,4"; break;        // green/red/green
+            case 13: lstring = "3,4,3"; break;        // red/green/red
+            case 14: lstring = "2,3,2"; break;        // black/red/black
+            case 15: lstring = "6,3,6"; break;        // yellow/red/yellow
+            case 16: lstring = "4,3"; break;          // green/red
+            case 17: lstring = "3,4"; break;          // red/green
+            case 18: lstring = "4,1"; break;          // green/white
             default: break;
       }
 
-      if ( lstring.Len() )
+      if ( *lstring != 0) 
       {
-            free ( pattValTmp->value );                       // free the old int pointer
-
-            pattValTmp->valType = OGR_STR;
-            pattValTmp->value = ( char * ) malloc ( lstring.Len() + 1 );      // create a new Lstring attribute
-            strcpy ( ( char * ) pattValTmp->value, lstring.mb_str() );
+            pattValTmp->valType = OGR_CONST_STR;
+            pattValTmp->value.str = lstring;
 
       }
 }
@@ -3359,10 +3355,8 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
 
       pobj->Index = iobject;
 
-      char u[201];
-      strncpy ( u, sclass_sub.mb_str(), 199 );
-      u[200] = '\0';
-      strncpy ( pobj->FeatureName, u, 7 );
+      strncpy ( pobj->FeatureName, sclass_sub.mb_str(), 7 );
+      pobj->FeatureName[7] = 0;
 
       //  Touch up the geom types
       int geomtype_sub = geomtype;
@@ -3409,17 +3403,13 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             {
                   case 'I':                           // never seen?
                         pi = ( int * ) aval;
-                        pAVI = ( int * ) malloc ( sizeof ( int ) );         //new int;
-                        *pAVI = *pi;
                         pattValTmp->valType = OGR_INT;
-                        pattValTmp->value   = pAVI;
+                        pattValTmp->value.integer  = *pi;
                         break;
                   case 'B':
                         pb = ( unsigned char * ) aval;
-                        pAVI = ( int * ) malloc ( sizeof ( int ) );         //new int;
-                        *pAVI = ( int ) ( *pb );
                         pattValTmp->valType = OGR_INT;
-                        pattValTmp->value   = pAVI;
+                        pattValTmp->value.integer = ( int ) ( *pb );
                         break;
                   case 'W':                                       // aWORD10
                         pw = ( unsigned short * ) aval;
@@ -3429,14 +3419,12 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVR = ( double * ) malloc ( sizeof ( double ) );   //new double;
                         *pAVR = dival/10.;
                         pattValTmp->valType = OGR_REAL;
-                        pattValTmp->value   = pAVR;
+                        pattValTmp->value.ptr = pAVR;
                         break;
                   case 'G':
                         pi = ( int * ) aval;
-                        pAVI = ( int * ) malloc ( sizeof ( int ) );         //new int;
-                        *pAVI = ( int ) ( *pi );
                         pattValTmp->valType = OGR_INT;
-                        pattValTmp->value   = pAVI;
+                        pattValTmp->value.integer = *pi;
                         break;
 
                   case 'S':
@@ -3444,7 +3432,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVS = ( char * ) malloc ( nlen + 1 );          ;
                         strcpy ( pAVS, ( char * ) aval );
                         pattValTmp->valType = OGR_STR;
-                        pattValTmp->value   = pAVS;
+                        pattValTmp->value.ptr = pAVS;
                         break;
 
                   case 'C':
@@ -3452,7 +3440,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVS = ( char * ) malloc ( nlen + 1 );          ;
                         strcpy ( pAVS, ( const char * ) &aval[3] );
                         pattValTmp->valType = OGR_STR;
-                        pattValTmp->value   = pAVS;
+                        pattValTmp->value.ptr = pAVS;
                         break;
                   case 'L':
                   {
@@ -3472,7 +3460,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         pAVS = ( char * ) malloc ( nlen + 1 );          ;
                         strcpy ( pAVS, val );
                         pattValTmp->valType = OGR_STR;
-                        pattValTmp->value   = pAVS;
+                        pattValTmp->value.ptr = pAVS;
                         break;
                   }
                   case 'R':
@@ -3486,7 +3474,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         *pAVR = *pf;
 #endif
                         pattValTmp->valType = OGR_REAL;
-                        pattValTmp->value   = pAVR;
+                        pattValTmp->value.ptr = pAVR;
                         break;
                   default:
                         sattr.Clear();               // Unknown, TODO track occasional case '?'
@@ -3505,24 +3493,24 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                   (sattr.IsSameAs ( _T ( "QUASOU" ) ) || sattr.IsSameAs ( _T ( "CATLIT" ) ))
                ) 
             {
-                  int v = *(int*)pattValTmp->value;
-                  free(pattValTmp->value);
+                  int v = pattValTmp->value.integer;
                   sprintf ( val, "%d", v );
                   int nlen = strlen ( val );
-                  pAVS = ( char * ) malloc ( nlen + 1 );          ;
+                  pAVS = ( char * ) malloc ( nlen + 1 );
                   strcpy ( pAVS, val );
                   pattValTmp->valType = OGR_STR;
-                  pattValTmp->value   = pAVS;
+                  pattValTmp->value.ptr = pAVS;
             }
 
             //    Do CM93 $SCODE attribute substitutions
             if ( sclass.IsSameAs ( _T ( "$AREAS" ) ) && ( vtype == 'S' ) && sattr.IsSameAs ( _T ( "$SCODE" ) ) )
             {
-                  if ( !strcmp ( ( char * ) pattValTmp->value, "II25" ) )
+                  if ( !strcmp ( ( char * ) pattValTmp->value.ptr, "II25" ) )
                   {
-                        free ( pattValTmp->value );
-                        pattValTmp->value   = ( char * ) malloc ( strlen ( "BACKGROUND" ) + 1 );
-                        strcpy ( ( char * ) pattValTmp->value, "BACKGROUND" );
+                        if (pattValTmp->valType != OGR_INT && pattValTmp->valType != OGR_CONST_STR)
+                              free ( pattValTmp->value.ptr );
+                        pattValTmp->valType = OGR_CONST_STR;
+                        pattValTmp->value.str = "BACKGROUND";
                   }
             }
 
@@ -3532,7 +3520,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             {
                   if ( sclass_sub.IsSameAs ( _T ( "M_COVR" ) ) && ( vtype == 'S' ) )
                   {
-                        wxString pub_date ( ( char * ) pattValTmp->value, wxConvUTF8 );
+                        wxString pub_date ( ( char * ) pattValTmp->value.ptr, wxConvUTF8 );
 
                         wxDateTime upd;
                         upd.ParseFormat ( pub_date, _T ( "%Y%m%d" ) );
@@ -3555,14 +3543,14 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             {
                   if ( sattr.IsSameAs ( _T ( "_wgsox" ) ) )
                   {
-                        tmp_transform_x = * ( double * ) pattValTmp->value;
+                        tmp_transform_x = * ( double * ) pattValTmp->value.ptr;
                         if ( fabs ( tmp_transform_x ) > 1.0 )                 // metres
                               m_CIB.b_have_offsets = true;
                   }
                   else if ( sattr.IsSameAs ( _T ( "_wgsoy" ) ) )
                   {
-                        tmp_transform_y = * ( double * ) pattValTmp->value;
-                        if ( fabs ( tmp_transform_x ) > 1.0 )
+                        tmp_transform_y = * ( double * ) pattValTmp->value.ptr;
+                        if ( fabs ( tmp_transform_y ) > 1.0 )
                               m_CIB.b_have_offsets = true;
                   }
             }
@@ -3725,6 +3713,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
 
                         // Update the covr region
                         unsigned int n = pmcd->m_nvertices;
+                        assert(n != 0);	
                         double *pts = new double[2*n];
                         
                         // copy into array of doubles
@@ -4481,10 +4470,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
 
       if ( g_bDebugCM93 )
       {
-            char sfile[200];
-            strncpy ( sfile, file.mb_str(), 199 );
-            sfile[199] = 0;
-            printf ( "    filename: %s\n", sfile );
+            printf ( "    filename: %s\n", ( const char * ) file.mb_str());
       }
 
       wxString compfile;
@@ -4511,10 +4497,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
 
             if ( g_bDebugCM93 )
             {
-                  char sfile[200];
-                  strncpy ( sfile, file1.mb_str(), 199 );
-                  sfile[199] = 0;
-                  printf ( "    alternate filename: %s\n", sfile );
+                  printf ( "    alternate filename: %s\n", ( const char * ) file1.mb_str() );
             }
 
             if ( !::wxFileExists ( file1 ) ) {
@@ -4558,10 +4541,7 @@ int cm93chart::loadsubcell ( int cellindex, wxChar sub_char )
 
       if ( g_bDebugCM93 )
       {
-            char str[256];
-            strncpy ( str, msg.mb_str(), 255 );
-            str[255] = 0;
-            printf ( "   %s\n", str );
+            printf ( "   %s\n", ( const char * ) msg.mb_str()  );
       }
 
       //    Ingest it
@@ -4700,10 +4680,10 @@ cm93_dictionary *cm93manager::FindAndLoadDict ( const wxString &file )
             }
             i++;
       }
-
+#if 0
       char t[100];
       strncpy ( t, target.mb_str(), 99 );
-
+#endif
       if ( retval == NULL )
             delete pdict;
 
@@ -5380,7 +5360,9 @@ bool cm93compchart::DoRenderRegionViewOnGL (const wxGLContext &glc, const ViewPo
       ViewPort vp = VPoint;
 
       bool render_return = false;
-      if ( m_pcm93chart_current )
+      if ( m_pcm93chart_current == 0)
+            return render_return;
+
       {
             m_pcm93chart_current->SetVPParms ( vp );
 
@@ -5773,7 +5755,7 @@ bool cm93compchart::DoRenderRegionViewOnDC ( wxMemoryDC& dc, const ViewPort& VPo
 //      CALLGRIND_STOP_INSTRUMENTATION
 
       //    Render the cm93 cell's M_COVR outlines if called for
-      if ( m_cell_index_special_outline )
+      if ( m_cell_index_special_outline && m_pcm93chart_current)
       {
             covr_set *pcover = m_pcm93chart_current->GetCoverSet();
 

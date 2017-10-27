@@ -33,6 +33,7 @@
 void make_hash_ERI(int key, const wxString & description);
 void clear_hash_ERI( void );
 
+#define AIS_NAME_DST_LEN 20
 class AIS_Target_Data
 {
 public:
@@ -65,7 +66,7 @@ public:
     int                       ROTAIS;
     int                       ROTIND;
     char                      CallSign[8];                // includes terminator
-    char                      ShipName[21];
+    char                      ShipName[AIS_NAME_DST_LEN +1];
     char                      ShipNameExtension[15];
     unsigned char             ShipType;
     int                       IMO;
@@ -78,7 +79,7 @@ public:
     double                    Euro_Length;            // Extensions for European Inland AIS
     double                    Euro_Beam;
     double                    Euro_Draft;
-    char                      Euro_VIN[8];
+    char                      Euro_VIN[9];	      // includes terminator
     int                       UN_shiptype;
     bool                      b_isEuroInland;
     bool                      b_blue_paddle;
@@ -91,7 +92,7 @@ public:
 
     double                    Draft;
 
-    char                      Destination[21];
+    char                      Destination[AIS_NAME_DST_LEN +1];
 
     time_t                    PositionReportTicks;
     time_t                    StaticReportTicks;

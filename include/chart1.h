@@ -368,7 +368,7 @@ class MyFrame: public wxFrame
     void SelectdbChart(int dbindex);
     void SelectQuiltRefChart(int selected_index);
     void SelectQuiltRefdbChart(int db_index, bool b_autoscale = true);
-
+    void CenterView(const LLBBox& bbox);
     void JumpToPosition(double lat, double lon, double scale);
 
     void ProcessCanvasResize(void);
@@ -388,12 +388,14 @@ class MyFrame: public wxFrame
     void ToggleChartBar();
     void SetbFollow(void);
     void ClearbFollow(void);
+    void ToggleGrid();
     void ToggleChartOutlines(void);
     void ToggleENCText(void);
     void ToggleSoundings(void);
     void ToggleRocks(void);
     bool ToggleLights( bool doToggle = true, bool temporary = false );
     void ToggleAnchor(void);
+    void ToggleTestPause(void);
     void TrackOn(void);
     void SetENCDisplayCategory( enum _DisCat nset );
     

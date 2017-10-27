@@ -513,7 +513,8 @@ bool PlugInManager::CallLateInit(void)
                     wxLogMessage(msg);
 
                     opencpn_plugin_110* ppi = dynamic_cast<opencpn_plugin_110*>(pic->m_pplugin);
-                    ppi->LateInit();
+                    if (ppi)
+                        ppi->LateInit();
                     }
                 break;
         }
@@ -723,9 +724,10 @@ bool PlugInManager::UnLoadAllPlugIns()
         DeactivatePlugIn( pic );
         
         pic->m_destroy_fn(pic->m_pplugin);
-
+#if 0
+// Valgrind
         delete pic->m_plibrary;            // This will unload the PlugIn
-
+#endif
         pic->m_bInitState = false;
 
         delete pic;
@@ -808,7 +810,7 @@ bool ReadModuleInfoFromELF( const wxString& file, const ModuleInfo::DependencySe
         b_libelf_usable = true;
     }
 
-    int file_handle = 0;
+    int file_handle;
     Elf *elf_handle = NULL;
     GElf_Ehdr elf_file_header;
     Elf_Scn *elf_section_handle = NULL;
@@ -919,7 +921,7 @@ SuccessEpilogue:
 FailureEpilogue:
     if( elf_handle != NULL )
         elf_end( elf_handle );
-    if( file_handle != 0 )
+    if( file_handle >= 0 )
         close( file_handle );
     return false;
 }
@@ -5077,7 +5079,8 @@ int PI_GetPLIBStateHash()
 
 void CreateCompatibleS57Object( PI_S57Obj *pObj, S57Obj *cobj, chart_context *pctx )
 {
-    strncpy(cobj->FeatureName, pObj->FeatureName, 8);
+    assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
+    memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
     cobj->Primitive_type = (GeoPrim_t)pObj->Primitive_type;
     cobj->att_array = pObj->att_array;
     cobj->attVal = pObj->attVal;

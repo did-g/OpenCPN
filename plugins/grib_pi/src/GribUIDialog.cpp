@@ -117,58 +117,10 @@ GribTimelineRecordSet::GribTimelineRecordSet()
     for(int i=0; i<Idx_COUNT; i++)
         m_IsobarArray[i] = NULL;
 }
-#if 0
-GribTimelineRecordSet::GribTimelineRecordSet(GribRecordSet &GRS1, GribRecordSet &GRS2, double interp_const)
-{
-    for(int i=0; i<Idx_COUNT; i++) {
-        m_GribRecordPtrArray[i] = NULL;
-        m_IsobarArray[i] = NULL;
-    }
-
-    for(int i=0; i<Idx_COUNT; i++) {
-        if(m_GribRecordPtrArray[i])
-            continue;
-
-        GribRecord *GR1 = GRS1.m_GribRecordPtrArray[i];
-        GribRecord *GR2 = GRS2.m_GribRecordPtrArray[i];
-
-        if(!GR1 || !GR2)
-            continue;
-
-        /* if this is a vector interpolation use the 2d method */
-        if(i < Idx_WIND_VY) {
-            GribRecord *GR1y = GRS1.m_GribRecordPtrArray[i + Idx_WIND_VY];
-            GribRecord *GR2y = GRS2.m_GribRecordPtrArray[i + Idx_WIND_VY];
-            if(GR1y && GR2y) {
-                m_GribRecordPtrArray[i] = GribRecord::Interpolated2DRecord
-                    (m_GribRecordPtrArray[i + Idx_WIND_VY], *GR1, *GR1y, *GR2, *GR2y, interp_const);
-                continue;
-            }
-        } else if(i <= Idx_WIND_VY300)
-            continue;
-        else if(i == Idx_SEACURRENT_VX) {
-            GribRecord *GR1y = GRS1.m_GribRecordPtrArray[Idx_SEACURRENT_VY];
-            GribRecord *GR2y = GRS2.m_GribRecordPtrArray[Idx_SEACURRENT_VY];
-            if(GR1y && GR2y) {
-                m_GribRecordPtrArray[i] = GribRecord::Interpolated2DRecord
-                    (m_GribRecordPtrArray[Idx_SEACURRENT_VY], *GR1, *GR1y, *GR2, *GR2y, interp_const);
-                continue;
-            }
-        } else if(i == Idx_SEACURRENT_VY)
-            continue;
-
-        m_GribRecordPtrArray[i] = GribRecord::InterpolatedRecord(*GR1, *GR2, interp_const, i == Idx_WVDIR);
-    }
-
-    m_Reference_Time = (1-interp_const)*GRS1.m_Reference_Time
-        + interp_const*GRS2.m_Reference_Time;
-}
-#endif
 
 GribTimelineRecordSet::~GribTimelineRecordSet()
 {
-    for(int i=0; i<Idx_COUNT; i++)
-        delete m_GribRecordPtrArray[i]; /* delete these for timeline */
+    RemoveGribRecords();
     ClearCachedData();
 }
 
@@ -1367,7 +1319,8 @@ GribTimelineRecordSet* GRIBUICtrlBar::GetTimeLineRecordSet(wxDateTime time)
 
         double interp_const;
         if(minute1 == minute2) {
-            set->m_GribRecordPtrArray[i] = new GribRecord(*GR1);
+            // with big grib a copy is slow.
+            set->RefGribRecord(i, GR1);
             continue;
         } else
             interp_const = (nminute-minute1) / (minute2-minute1);
@@ -1738,6 +1691,8 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
 
     GribRecord *pRec;
     bool isOK(false);
+    bool polarWind(false);
+
     //    Get the map of GribRecord vectors
     std::map<std::string, std::vector<GribRecord *>*> *p_map = m_pGribReader->getGribMap();
 
@@ -1755,6 +1710,9 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
                 if( m_GribRecordSetArray.Item( j ).m_Reference_Time == thistime ) {
                     int idx = -1, mdx = -1;
                     switch(pRec->getDataType()) {
+                    case GRB_WIND_DIR:
+                        polarWind = true;
+                        // fall through
                     case GRB_WIND_VX:
                         if(pRec->getLevelType() == LV_ISOBARIC){
                             switch(pRec->getLevelValue()){
@@ -1766,6 +1724,9 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
                         } else
                             idx = Idx_WIND_VX;
                         break;
+                    case GRB_WIND_SPEED:
+                        polarWind = true;
+                        // fall through
                     case GRB_WIND_VY:
                         if(pRec->getLevelType() == LV_ISOBARIC){
                             switch(pRec->getLevelValue()){
@@ -1827,15 +1788,73 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
                         break;
 
                     }
+                    if(idx == -1) {
+                        // XXX bug ?
+                        break;
+                    }
 
+                    bool skip = false;
 
-                    if(idx != -1) {
+                    if (m_GribRecordSetArray.Item( j ).m_GribRecordPtrArray[idx]) {
+                        // already one
+                        GribRecord *oRec = m_GribRecordSetArray.Item( j ).m_GribRecordPtrArray[idx];
+                        if (polarWind) {
+                            // we favor UV over DIR/SPEED
+                            if (oRec->getDataType() == GRB_WIND_VY || oRec->getDataType() == GRB_WIND_VX)
+                                skip = true;
+                        }
+                        // favor average aka timeRange == 3 (HRRR subhourly subsets have both 3 and 0 records for winds)
+                        if (!skip && (oRec->getTimeRange() == 3)) {
+                            skip = true;
+                        }
+                    }
+                    if (!skip) {
                         m_GribRecordSetArray.Item( j ).m_GribRecordPtrArray[idx]= pRec;
                         if(m_GribIdxArray.Index(idx) == wxNOT_FOUND ) m_GribIdxArray.Add(idx, 1);
                         if(mdx != -1 && m_GribIdxArray.Index(mdx) == wxNOT_FOUND ) m_GribIdxArray.Add(mdx, 1);
                     }
                     break;
                 }
+            }
+        }
+    }
+
+    if (polarWind) {
+        for( unsigned int j = 0; j < m_GribRecordSetArray.GetCount(); j++ ) {
+            for(unsigned int i=0; i<Idx_COUNT; i++) {
+                GribRecord *GR1 = NULL, *GR2 = NULL;
+                int idx = -1;
+                GribRecord *pRec = m_GribRecordSetArray.Item( j ).m_GribRecordPtrArray[i];
+
+                if ( pRec == 0 || pRec->getDataType() != GRB_WIND_DIR) {
+                    continue;
+                }
+                switch( i ) {
+                case Idx_WIND_VX300:
+                    idx = Idx_WIND_VY300;
+                    break;
+                case Idx_WIND_VX500:
+                    idx = Idx_WIND_VY500;
+                    break;
+                case Idx_WIND_VX700:
+                    idx = Idx_WIND_VY700;
+                    break;
+                case Idx_WIND_VX850:
+                    idx = Idx_WIND_VY850;
+                    break;
+                case Idx_WIND_VX:
+                    idx = Idx_WIND_VY;
+                    break;
+                default:
+                    break;
+                }
+                if (idx == -1)
+                    continue;
+                GribRecord *pRec1 = m_GribRecordSetArray.Item( j ).m_GribRecordPtrArray[idx];
+                if (pRec1 == 0 || pRec1->getDataType() != GRB_WIND_SPEED) {
+                    continue;
+                }
+                GribRecord::Polar2UV(pRec, pRec1);
             }
         }
     }

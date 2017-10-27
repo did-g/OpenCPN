@@ -146,6 +146,15 @@ bool ChartTableHeader::CheckValid()
 // ChartTableEntry
 ///////////////////////////////////////////////////////////////////////
 
+void ChartTableEntry::SetScale( int scale )
+{
+    Scale = scale;
+    rounding = 0;
+    // XXX find the right rounding
+    if (Scale >= 1000)
+       rounding = 5 *pow(10, log10(Scale) -2);
+}
+
 ChartTableEntry::ChartTableEntry(ChartBase &theChart)
 {
     Clear();
@@ -155,10 +164,10 @@ ChartTableEntry::ChartTableEntry(ChartBase &theChart)
     pFullPath = pt;
 
 
+    SetScale(theChart.GetNativeScale());
 
     ChartType = theChart.GetChartType();
     ChartFamily = theChart.GetChartFamily();
-    Scale = theChart.GetNativeScale();
 
     Skew = theChart.GetChartSkew();
     ProjectionType = theChart.GetChartProjectionType();
@@ -351,6 +360,9 @@ ChartTableEntry::ChartTableEntry(ChartBase &theChart)
     //  Get and populate the NoCovr tables
     
     nNoCovrPlyEntries = theChart.GetNoCOVREntries();
+    if (nNoCovrPlyEntries == 0)
+        return;
+
     float **pfpnc = (float **)malloc(nNoCovrPlyEntries * sizeof(float *));
     float **pft0nc = pfpnc;
     int *pipnc = (int *)malloc(nNoCovrPlyEntries * sizeof(int));
@@ -502,7 +514,7 @@ bool ChartTableEntry::Read(const ChartDatabase *pDb, wxInputStream &is)
         Skew = cte.skew;
         ProjectionType = cte.ProjectionType;
         
-        Scale = cte.Scale;
+        SetScale(cte.Scale);
         edition_date = cte.edition_date;
         file_date = cte.file_date;
         
@@ -579,7 +591,7 @@ bool ChartTableEntry::Read(const ChartDatabase *pDb, wxInputStream &is)
         Skew = cte.skew;
         ProjectionType = cte.ProjectionType;
         
-        Scale = cte.Scale;
+        SetScale(cte.Scale);
         edition_date = cte.edition_date;
         file_date = cte.file_date;
         
@@ -657,7 +669,7 @@ bool ChartTableEntry::Read(const ChartDatabase *pDb, wxInputStream &is)
           Skew = cte.skew;
           ProjectionType = cte.ProjectionType;
 
-          Scale = cte.Scale;
+          SetScale(cte.Scale);
           edition_date = cte.edition_date;
           file_date = cte.file_date;
 
@@ -709,7 +721,7 @@ bool ChartTableEntry::Read(const ChartDatabase *pDb, wxInputStream &is)
 
       m_bbox.Set(LatMin, LatMax, LonMin, LonMax);
       
-      Scale = cte.Scale;
+      SetScale(cte.Scale);
       edition_date = cte.edition_date;
       file_date = cte.file_date;
 
@@ -759,7 +771,7 @@ bool ChartTableEntry::Read(const ChartDatabase *pDb, wxInputStream &is)
 
           m_bbox.Set(LatMin, LatMax, LonMin, LonMax);
           
-          Scale = cte.Scale;
+          SetScale(cte.Scale);
           edition_date = cte.edition_date;
           file_date = 0;                        //  file_date does not exist in V14;
           nPlyEntries = cte.nPlyEntries;

@@ -22,7 +22,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6.2)
 # This should be 2.8.0 to have FindGTK2 module
 IF (COMMAND cmake_policy)
-  CMAKE_POLICY(SET CMP0043 NEW)
+  if (POLICY CMP0043)
+    CMAKE_POLICY(SET CMP0043 NEW)
+  endif (POLICY CMP0043)
 ENDIF (COMMAND cmake_policy)
 
 PROJECT(grib_pi)
@@ -168,7 +170,7 @@ ENDIF(QT_ANDROID)
     
     SET(SRC_GRIB ${SRC_GRIB} ${jasper_base_sources} ${jasper_headers} ${jasper_jp2_sources} ${jasper_jp2_headers} ${jasper_jpc_sources} ${jasper_jpc_headers})
 
-    ADD_DEFINITIONS(-DJASPER)
+    ADD_DEFINITIONS(-O3 -DJASPER)
     ADD_DEFINITIONS(-DEXCLUDE_MIF_SUPPORT -DEXCLUDE_PNM_SUPPORT -DEXCLUDE_BMP_SUPPORT -DEXCLUDE_RAS_SUPPORT -DEXCLUDE_JPG_SUPPORT -DEXCLUDE_PGX_SUPPORT)
    
     INCLUDE_DIRECTORIES("src/jasper/include")

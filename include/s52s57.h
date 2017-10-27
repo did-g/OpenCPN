@@ -251,10 +251,16 @@ typedef enum _OGRatt_t{
    OGR_REAL,
    OGR_REAL_LST,
    OGR_STR,
+   OGR_CONST_STR,
 }OGRatt_t;
 
 typedef struct _S57attVal {
-    void * value;
+    union {
+        const char *str;
+        void *ptr;
+        int  integer;
+    } value;
+
     OGRatt_t valType;
 } S57attVal;
 
@@ -337,7 +343,7 @@ public:
       S57Obj( const char* featureName );
       
       wxString GetAttrValueAsString ( const char *attr );
-      int GetAttributeIndex( const char *AttrSeek );
+      int GetAttributeIndex( const char *AttrSeek ) const;
       
       bool AddIntegerAttribute( const char *acronym, int val );
       bool AddIntegerListAttribute( const char *acronym, int *pval, int nValue );
@@ -501,9 +507,6 @@ public:
       unsigned int index;
       float      *pPoint;
 };
-
-WX_DECLARE_OBJARRAY(VE_Element, ArrayOfVE_Elements);
-WX_DECLARE_OBJARRAY(VC_Element, ArrayOfVC_Elements);
 
 typedef std::vector<VE_Element *> VE_ElementVector;
 typedef std::vector<VC_Element *> VC_ElementVector;

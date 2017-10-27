@@ -1090,6 +1090,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
                                   msg += _T(" which is unsupported.  Disabling chart ");
                                   msg += m_FullPath;
                                   wxLogMessage(msg);
+                                  free(pPlyTable);
 
                                   return INIT_FAIL_REMOVE;
                               }
@@ -1317,6 +1318,8 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 
                               char date_string[40];
                               char date_buf[10];
+                              date_string[0] = 0;
+                              date_buf[0] = 0;
                               sscanf(&buffer[i], "%s\r\n", date_string);
                               wxString date_wxstr(date_string,  wxConvUTF8);
 
@@ -3654,6 +3657,7 @@ wxImage *ChartBaseBSB::GetImage()
 
 bool ChartBaseBSB::GetView( wxRect& source, wxRect& dest, ScaleTypeEnum scale_type )
 {
+      assert(pPixCache != 0);
 //      PixelCache *pPixCacheTemp = new PixelCache(dest.width, dest.height, BPP);
 
 //    Get and Rescale the data directly into the temporary PixelCache data buffer

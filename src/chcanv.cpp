@@ -1125,7 +1125,7 @@ int ChartCanvas::FindClosestCanvasChartdbIndex( int scale )
             for( unsigned int is = 0; is < im; is++ ) {
                 const ChartTableEntry &m = ChartData->GetChartTableEntry(
                                                m_pQuilt->GetExtendedStackIndexArray().Item( is ) );
-                if( ( m.GetScale() >= scale )/* && (m_reference_family == m.GetChartFamily())*/) {
+                if( ( m.Scale_ge(scale ) )/* && (m_reference_family == m.GetChartFamily())*/) {
                     new_dbIndex = m_pQuilt->GetExtendedStackIndexArray().Item( is );
                     break;
                 }
@@ -1639,6 +1639,10 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
                 break;
             }
 
+       case 'G':
+            parent_frame->ToggleGrid();
+            break;
+
        case 'L':
             parent_frame->ToggleLights();
             break;
@@ -1666,6 +1670,9 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
             parent_frame->ToggleQuiltMode();
             break;
 
+        case 'P':
+            parent_frame->ToggleTestPause();
+            break;
 #if 0
         case 'R':
             parent_frame->ToggleRocks();
@@ -2139,10 +2146,10 @@ void ChartCanvas::SetColorScheme( ColorScheme cs )
     if( cs == GLOBAL_COLOR_SCHEME_DUSK || cs == GLOBAL_COLOR_SCHEME_NIGHT ) {
         SetBackgroundColour( wxColour(0,0,0) );
         
-        SetWindowStyleFlag( (GetWindowStyleFlag() && !wxSIMPLE_BORDER) || wxNO_BORDER);
+        SetWindowStyleFlag( (GetWindowStyleFlag() & !wxSIMPLE_BORDER) | wxNO_BORDER);
     }
     else{
-        SetWindowStyleFlag( (GetWindowStyleFlag() && !wxNO_BORDER) || wxSIMPLE_BORDER);
+        SetWindowStyleFlag( (GetWindowStyleFlag() & !wxNO_BORDER) | wxSIMPLE_BORDER);
         SetBackgroundColour( wxNullColour );
     }
         
@@ -3095,14 +3102,16 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
         skew -= 2*PI;
 
     //  Any sensible change?
-    if( ( fabs( VPoint.view_scale_ppm - scale_ppm ) / scale_ppm < 1e-5 )
+    if (VPoint.IsValid()) {
+        if( ( fabs( VPoint.view_scale_ppm - scale_ppm )/ scale_ppm < 1e-5 )
             && ( fabs( VPoint.skew - skew ) < 1e-9 )
             && ( fabs( VPoint.rotation - rotation ) < 1e-9 )
             && ( fabs( VPoint.clat - lat ) < 1e-9 )
             && ( fabs( VPoint.clon - lon ) < 1e-9 )
-            && (VPoint.m_projection_type == projection || projection == PROJECTION_UNKNOWN)
-            && VPoint.IsValid() ) return false;
-
+            && (VPoint.m_projection_type == projection || projection == PROJECTION_UNKNOWN) ) 
+                return false;
+    }
+    
     if(VPoint.m_projection_type != projection)
         VPoint.InvalidateTransformCache(); // invalidate
 
@@ -3178,7 +3187,15 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
                 b_ret = true;
             }
         }
-        
+        //  Create the quilt
+        if( ChartData && pCurrentStack ) {
+            int current_db_index;
+            current_db_index = pCurrentStack->GetCurrentEntrydbIndex();       // capture the current
+
+            ChartData->BuildChartStack( pCurrentStack, lat, lon, current_db_index);
+            pCurrentStack->SetCurrentEntryFromdbIndex( current_db_index );
+        }
+
         if(!g_bopengl)
             VPoint.b_MercatorProjectionOverride = false;
     }
@@ -3192,7 +3209,7 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
         if( ChartData /*&& ChartData->IsValid()*/ ) {
             if( !pCurrentStack ) return false;
 
-            int current_db_index = -1;
+            int current_db_index;
             current_db_index = pCurrentStack->GetCurrentEntrydbIndex();       // capture the current
 
             ChartData->BuildChartStack( pCurrentStack, lat, lon );
@@ -4039,7 +4056,7 @@ void CalcGridSpacing( float view_scale_ppm, float& MajorSpacing, float&MinorSpac
     };
 
     unsigned int tabi;
-    for( tabi = 0; tabi < (sizeof lltab) / (sizeof *lltab); tabi++ )
+    for( tabi = 0; tabi < ((sizeof lltab) / (sizeof *lltab)) -1; tabi++ )
         if( view_scale_ppm < lltab[tabi][0] )
             break;
     MajorSpacing = lltab[tabi][1]; // major latitude distance
@@ -6909,6 +6926,7 @@ void pupHandler_PasteWaypoint() {
 
     int pasteBuffer = kml.ParsePasteBuffer();
     RoutePoint* pasted = kml.GetParsedRoutePoint();
+    if( ! pasted ) return;
 
     int nearby_sel_rad_pix = 8;
     double nearby_radius_meters = nearby_sel_rad_pix / cc1->GetCanvasTrueScale();
@@ -7727,7 +7745,8 @@ void ChartCanvas::OnPaint( wxPaintEvent& event )
     //  Blit pan acceleration
     if( VPoint.b_quilt )          // quilted
     {
-        if( m_pQuilt && !m_pQuilt->IsComposed() ) return;
+        if( !m_pQuilt || !m_pQuilt->IsComposed() ) 
+            return;  // not ready
 
         bool busy = false;
         if( cc1->m_pQuilt->IsQuiltVector() &&

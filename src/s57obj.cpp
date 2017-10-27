@@ -109,8 +109,9 @@ S57Obj::~S57Obj()
         if( attVal ) {
             for( unsigned int iv = 0; iv < attVal->GetCount(); iv++ ) {
                 S57attVal *vv = attVal->Item( iv );
-                void *v2 = vv->value;
-                free( v2 );
+                void *v2 = vv->value.ptr;
+                if (vv->valType != OGR_INT && vv->valType != OGR_CONST_STR)
+                    free( v2 );
                 delete vv;
             }
             delete attVal;
@@ -214,11 +215,8 @@ bool S57Obj::AddIntegerAttribute( const char *acronym, int val ){
 
     S57attVal *pattValTmp = new S57attVal;
 
-    int *pAVI = (int *) malloc( sizeof(int) );         //new int;
-    *pAVI = val;
-
     pattValTmp->valType = OGR_INT;
-    pattValTmp->value = pAVI;
+    pattValTmp->value.integer = val;
 
     att_array = (char *)realloc(att_array, 6*(n_attr + 1));
     strncpy(att_array + (6 * sizeof(char) * n_attr), acronym, 6);
@@ -245,7 +243,7 @@ bool S57Obj::AddDoubleAttribute( const char *acronym, double val ){
     *pAVI = val;
 
     pattValTmp->valType = OGR_REAL;
-    pattValTmp->value = pAVI;
+    pattValTmp->value.ptr = pAVI;
 
     att_array = (char *)realloc(att_array, 6*(n_attr + 1));
     strncpy(att_array + (6 * sizeof(char) * n_attr), acronym, 6);
@@ -269,7 +267,7 @@ bool S57Obj::AddStringAttribute( const char *acronym, char *val ){
     strcpy(pAVS, val);
 
     pattValTmp->valType = OGR_STR;
-    pattValTmp->value = pAVS;
+    pattValTmp->value.ptr = pAVS;
 
     att_array = (char *)realloc(att_array, 6*(n_attr + 1));
     strncpy(att_array + (6 * sizeof(char) * n_attr), acronym, 6);
@@ -402,7 +400,7 @@ bool S57Obj::SetMultipointGeometry( MultipointGeometryDescriptor *pGeo, double r
 }
 
 
-int S57Obj::GetAttributeIndex( const char *AttrSeek ) {
+int S57Obj::GetAttributeIndex( const char *AttrSeek ) const {
     char *patl = att_array;
 
     for(int i=0 ; i < n_attr ; i++) {
@@ -431,18 +429,22 @@ wxString S57Obj::GetAttrValueAsString( const char *AttrName )
         S57attVal *v = attVal->Item( idx );
 
         switch( v->valType ){
+            case OGR_CONST_STR: {
+                str.Append( wxString( v->value.str, wxConvUTF8 ) );
+                break;
+            }
             case OGR_STR: {
-                char *val = (char *) ( v->value );
+                char *val = (char *) ( v->value.ptr );
                 str.Append( wxString( val, wxConvUTF8 ) );
                 break;
             }
             case OGR_REAL: {
-                double dval = *(double*) ( v->value );
+                double dval = *(double*) ( v->value.ptr );
                 str.Printf( _T("%g"), dval );
                 break;
             }
             case OGR_INT: {
-                int ival = *( (int *) v->value );
+                int ival = v->value.integer;
                 str.Printf( _T("%d"), ival );
                 break;
             }

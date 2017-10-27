@@ -31,7 +31,6 @@
 //#include "c:\\Program Files\\visual leak detector\\include\\vld.h"
 #endif
 
-
 #include "wx/print.h"
 #include "wx/printdlg.h"
 #include "wx/artprov.h"
@@ -160,6 +159,8 @@ WX_DEFINE_OBJARRAY( ArrayOfCDI );
 void RedirectIOToConsole();
 #endif
 
+#include "wx/ipc.h"
+
 //------------------------------------------------------------------------------
 //      Static variable definition
 //------------------------------------------------------------------------------
@@ -168,10 +169,16 @@ OCPNPlatform              *g_Platform;
 
 bool                      g_bFirstRun;
 
+bool                      g_bPauseTest;
 int                       g_unit_test_1;
+int                       g_unit_test_2;
 bool                      g_start_fullscreen;
 bool                      g_rebuild_gl_cache;
 bool                      g_parse_all_enc;
+
+// Files specified on the command line, if any.
+wxVector<wxString> g_params;
+                
 
 MyFrame                   *gFrame;
 
@@ -315,11 +322,12 @@ bool                      g_bConfirmObjectDelete;
 // Set default color scheme
 ColorScheme               global_color_scheme = GLOBAL_COLOR_SCHEME_DAY;
 
-int                       Usercolortable_index;
-wxArrayPtrVoid            *UserColorTableArray;
-wxArrayPtrVoid            *UserColourHashTableArray;
+static int                Usercolortable_index;
 
-wxColorHashMap            *pcurrent_user_color_hash;
+static wxArrayPtrVoid     *UserColorTableArray;
+static wxArrayPtrVoid     *UserColourHashTableArray;
+
+static wxColorHashMap     *pcurrent_user_color_hash;
 
 int                       gps_watchdog_timeout_ticks;
 int                       sat_watchdog_timeout_ticks;
@@ -744,10 +752,87 @@ static const long long lNaN = 0xfff8000000000000;
 
 //    Some static helpers
 void appendOSDirSlash( wxString* pString );
-void InitializeUserColors( void );
-void DeInitializeUserColors( void );
-void SetSystemColors( ColorScheme cs );
+
+static void InitializeUserColors( void );
+static void DeInitializeUserColors( void );
+static void SetSystemColors( ColorScheme cs );
+
 extern "C" bool CheckSerialAccess( void );
+
+// Connection class, for use by both communicating instances
+class stConnection : public wxConnection
+{
+public:
+    stConnection() {}
+    ~stConnection() {}
+    bool OnExec(const wxString& topic, const wxString& data);
+};
+
+// Opens a file passed from another instance
+bool stConnection::OnExec(const wxString& topic, const wxString& data)
+{
+    // not setup yet
+    if (!gFrame || !cc1) 
+        return false;
+
+    wxString path(data);
+    if (path.IsEmpty()) {
+        cc1->InvalidateGL();
+        gFrame->Refresh( false );
+        gFrame->Raise();
+    }
+    else {
+        NavObjectCollection1 *pSet = new NavObjectCollection1;
+        pSet->load_file(path.fn_str());
+        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), true ); // Import with full vizibility of names and objects
+        if( pRouteManagerDialog && pRouteManagerDialog->IsShown() )
+            pRouteManagerDialog->UpdateLists();
+        
+        LLBBox box = pSet->GetBBox();
+        if (box.GetValid()) {
+            gFrame->CenterView(box);
+        }
+        delete pSet;
+        return true;
+    }
+    return true;
+}
+
+// Server class, for listening to connection requests
+class stServer: public wxServer
+{
+public:
+    wxConnectionBase *OnAcceptConnection(const wxString& topic);
+};
+
+// Accepts a connection from another instance
+wxConnectionBase *stServer::OnAcceptConnection(const wxString& topic)
+{
+    if (topic.Lower() == wxT("opencpn")) 
+    {
+        // Check that there are no modal dialogs active
+	wxWindowList::Node* node = wxTopLevelWindows.GetFirst();
+	while (node) {
+	    wxDialog* dialog = wxDynamicCast(node->GetData(), wxDialog);
+	    if (dialog && dialog->IsModal()) {
+	        return 0;
+            }
+            node = node->GetNext();
+        }
+        return new stConnection();
+    }
+    return 0;
+}
+
+
+// Client class, to be used by subsequent instances in OnInit
+class stClient: public wxClient
+{
+public:
+    stClient() {};
+    wxConnectionBase *OnMakeConnection() { return new stConnection; }
+};
+
 
 
 //------------------------------------------------------------------------------
@@ -918,11 +1003,20 @@ void MyApp::OnInitCmdLine( wxCmdLineParser& parser )
     parser.AddSwitch( _T("rebuild_gl_raster_cache"), wxEmptyString, _T("Rebuild OpenGL raster cache on start.") );
     parser.AddSwitch( _T("parse_all_enc"), wxEmptyString, _T("Convert all S-57 charts to OpenCPN's internal format on start.") );
     parser.AddOption( _T("unit_test_1"), wxEmptyString, _("Display a slideshow of <num> charts and then exit. Zero or negative <num> specifies no limit."), wxCMD_LINE_VAL_NUMBER );
+
+    parser.AddSwitch( _T("unit_test_2") );
+
+    parser.AddParam("import GPX files",
+                        wxCMD_LINE_VAL_STRING,
+                        wxCMD_LINE_PARAM_OPTIONAL );
+                                                
 }
 
 bool MyApp::OnCmdLineParsed( wxCmdLineParser& parser )
 {
     long number;
+
+    g_unit_test_2 = parser.Found( _T("unit_test_2") );
     g_bportable = parser.Found( _T("p") );
     g_start_fullscreen = parser.Found( _T("fullscreen") );
     g_bdisable_opengl = parser.Found( _T("no_opengl") );
@@ -935,6 +1029,9 @@ bool MyApp::OnCmdLineParsed( wxCmdLineParser& parser )
             g_unit_test_1 = -1;
     }
 
+    for (size_t paramNr=0; paramNr < parser.GetParamCount(); ++paramNr)
+            g_params.push_back(parser.GetParam(paramNr));
+            
     return true;
 }
 #endif
@@ -1255,7 +1352,7 @@ static double chart_dist(int index)
     float  clat;
     const ChartTableEntry &cte = ChartData->GetChartTableEntry(index);
     // if the chart contains ownship position set the distance to 0
-    if (cte.GetBBox().Contains(gLon, gLat))
+    if (cte.GetBBox().Contains(gLat, gLon))
         d = 0.;
     else {
         // find the nearest edge 
@@ -1497,6 +1594,8 @@ void ParseAllENC()
 
 bool MyApp::OnInit()
 {
+    m_checker = 0;
+
     if( !wxApp::OnInit() ) return false;
 
 #if defined(__WXGTK__) && defined(__arm__) && defined(ocpnUSE_GLES)
@@ -1511,18 +1610,58 @@ bool MyApp::OnInit()
     dc.DrawText( _T("X"), 0, 0 );
 #endif
 
-    //  On Windows
-    //  We allow only one instance unless the portable option is used
-#ifdef __WXMSW__
-    m_checker = new wxSingleInstanceChecker(_T("OpenCPN"));
-    if(!g_bportable) {
-        if ( m_checker->IsAnotherRunning() )
-            return false;               // exit quietly
-    }
-#endif
-
     // Instantiate the global OCPNPlatform class
     g_Platform = new OCPNPlatform;
+
+    //  On Windows
+    //  We allow only one instance unless the portable option is used
+    if(!g_bportable) {
+        wxChar separator = wxFileName::GetPathSeparator();
+        wxString service_name = g_Platform->GetPrivateDataDir() + separator + _T("opencpn-ipc");
+
+        m_checker = new wxSingleInstanceChecker(_T("OpenCPN"));
+        if ( !m_checker->IsAnotherRunning() )
+        {
+            stServer *m_server = new stServer;
+            if ( !m_server->Create(service_name) ) {
+		wxLogDebug(wxT("Failed to create an IPC service."));
+            }
+        }
+        else {
+    	    wxLogNull logNull;
+    	    stClient* client = new stClient;
+    	    // ignored under DDE, host name in TCP/IP based classes
+    	    wxString hostName = wxT("localhost");
+    	    // Create the connection service, topic
+    	    wxConnectionBase* connection = client->MakeConnection(hostName, service_name, _T("OpenCPN"));
+    	    if (connection) {
+    	        // Ask the other instance to open a file or raise itself
+    	        if ( !g_params.empty() ) {
+                    for ( size_t n = 0; n < g_params.size(); n++ )
+                    {
+                        wxString path = g_params[n];
+                        if( ::wxFileExists( path ) ) 
+                        {
+                            connection->Execute(path);
+                        }
+                    }
+                }
+                connection->Execute(wxT(""));
+    	        connection->Disconnect();
+    	        delete connection;
+            }
+            else {
+                wxMessageBox(wxT("Sorry, the existing instance may be too busy too respond.\nPlease close any open dialogs and retry."),
+                    wxT("OpenCPN"), wxICON_INFORMATION|wxOK);
+            }
+            delete client;
+            return false;               // exit quietly
+        }
+    }
+#if 0
+    // Faster but plugins may need Idle (weather routing does)
+    wxIdleEvent::SetMode(wxIDLE_PROCESS_SPECIFIED);
+#endif    
 
     //  Perform first stage initialization
     OCPNPlatform::Initialize_1( );
@@ -1532,8 +1671,6 @@ bool MyApp::OnInit()
     // This is necessary at least on OS X, for the capitalisation to be correct in the system menus.
     MyApp::SetAppDisplayName("OpenCPN");
 #endif
-
-
 
 
     //  Seed the random number generator
@@ -2091,7 +2228,7 @@ bool MyApp::OnInit()
     cc1->SetQuiltMode( g_bQuiltEnable );                     // set initial quilt mode
     cc1->m_bFollow = pConfig->st_bFollow;               // set initial state
     cc1->SetViewPoint( vLat, vLon, initial_scale_ppm, 0., 0. );
-    
+    g_ChartUpdatePeriod = !!cc1->m_bFollow;
     gFrame->Enable();
 
     cc1->SetFocus();
@@ -2314,6 +2451,8 @@ extern ocpnGLOptions g_GLOptions;
         g_GLOptions.m_bTextureCompression && g_GLOptions.m_bTextureCompressionCaching ) {
 
         cc1->ReloadVP();                  //  Get a nice chart background loaded
+        Yield();
+        
 
         //      Turn off the toolbar as a clear signal that the system is busy right now.
         // Note: I commented this out because the toolbar never comes back for me
@@ -2364,12 +2503,6 @@ extern ocpnGLOptions g_GLOptions;
 
     FontMgr::Get().ScrubList(); // Clean the font list, removing nonsensical entries
 
-//      Start up the ticker....
-    gFrame->FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
-
-//      Start up the ViewPort Rotation angle Averaging Timer....
-    if(g_bCourseUp)
-        gFrame->FrameCOGTimer.Start( 10, wxTIMER_CONTINUOUS );
 
     cc1->ReloadVP();                  // once more, and good to go
 
@@ -2419,6 +2552,13 @@ extern ocpnGLOptions g_GLOptions;
     if(g_MainToolbar)
         g_MainToolbar->Raise();
 #endif
+
+//      Start up the ticker....
+    gFrame->FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
+
+//      Start up the ViewPort Rotation angle Averaging Timer....
+    if(g_bCourseUp)
+        gFrame->FrameCOGTimer.Start( 10, wxTIMER_CONTINUOUS );
 
     // Start delayed initialization chain after 100 milliseconds
     gFrame->InitTimer.Start( 100, wxTIMER_CONTINUOUS );
@@ -2555,10 +2695,7 @@ int MyApp::OnExit()
 
     FontMgr::Shutdown();
 
-#ifdef __WXMSW__
     delete m_checker;
-#endif
-
 
     g_Platform->OnExit_2();
 
@@ -4125,14 +4262,14 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
         case ID_MENU_ZOOM_IN:
         case ID_ZOOMIN: {
             cc1->ZoomCanvas( 2.0, false );
-            DoChartUpdate();
+            //DoChartUpdate();
             break;
         }
 
         case ID_MENU_ZOOM_OUT:
         case ID_ZOOMOUT: {
             cc1->ZoomCanvas( 0.5, false );
-            DoChartUpdate();
+            //DoChartUpdate();
             break;
         }
 
@@ -4386,10 +4523,7 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
             if( pRouteManagerDialog->IsShown() )
                 pRouteManagerDialog->Hide();
             else {
-                pRouteManagerDialog->UpdateRouteListCtrl();
-                pRouteManagerDialog->UpdateTrkListCtrl();
-                pRouteManagerDialog->UpdateWptListCtrl();
-                pRouteManagerDialog->UpdateLayListCtrl();
+                pRouteManagerDialog->UpdateLists();
 
                 pRouteManagerDialog->Show();
 
@@ -5131,6 +5265,7 @@ void MyFrame::SetbFollow( void )
 
     DoChartUpdate();
     cc1->ReloadVP();
+    SetChartUpdatePeriod( cc1->GetVP() );
 }
 
 void MyFrame::ClearbFollow( void )
@@ -5149,6 +5284,19 @@ void MyFrame::ClearbFollow( void )
 
     DoChartUpdate();
     cc1->ReloadVP();
+    SetChartUpdatePeriod( cc1->GetVP() );
+}
+
+void MyFrame::ToggleGrid()
+{
+    g_bDisplayGrid = !g_bDisplayGrid;
+    cc1->Refresh( false );
+
+#ifdef ocpnUSE_GL         // opengl renders chart outlines as part of the chart this needs a full refresh
+    if( g_bopengl )
+        cc1->GetglCanvas()->Invalidate();
+#endif
+    
 }
 
 void MyFrame::ToggleChartOutlines( void )
@@ -5165,6 +5313,11 @@ void MyFrame::ToggleChartOutlines( void )
 #endif
 
     SetMenubarItemState( ID_MENU_CHART_OUTLINES, g_bShowOutlines );
+}
+
+void MyFrame::ToggleTestPause( void )
+{
+    g_bPauseTest = !g_bPauseTest;
 }
 
 void MyFrame::SetMenubarItemState( int item_id, bool state )
@@ -5500,7 +5653,6 @@ void MyFrame::ToggleToolbar( bool b_smooth )
     }
 }
 
-
 void MyFrame::JumpToPosition( double lat, double lon, double scale )
 {
     if (lon > 180.0)
@@ -5537,6 +5689,43 @@ void MyFrame::JumpToPosition( double lat, double lon, double scale )
     if( g_pi_manager ) {
         g_pi_manager->SendViewPortToRequestingPlugIns( cc1->GetVP() );
     }
+}
+
+
+void MyFrame::CenterView(const LLBBox& RBBox)
+{
+    if ( !RBBox.GetValid() )
+        return;
+    // Calculate bbox center
+    double clat = (RBBox.GetMinLat() + RBBox.GetMaxLat()) / 2;
+    double clon = (RBBox.GetMinLon() + RBBox.GetMaxLon()) / 2;
+    double ppm; // final ppm scale to use
+
+    if (RBBox.GetMinLat() == RBBox.GetMaxLat() && RBBox.GetMinLon() == RBBox.GetMaxLon() )
+    {
+        // only one point, (should be a box?)
+        ppm = cc1->GetVPScale();
+    }
+    else
+    {
+        // Calculate ppm
+        double rw, rh; // route width, height
+        int ww, wh; // chart window width, height
+        // route bbox width in nm
+        DistanceBearingMercator( RBBox.GetMinLat(), RBBox.GetMinLon(), RBBox.GetMinLat(),
+                                 RBBox.GetMaxLon(), NULL, &rw );
+                             // route bbox height in nm
+        DistanceBearingMercator( RBBox.GetMinLat(), RBBox.GetMinLon(), RBBox.GetMaxLat(),
+                                RBBox.GetMinLon(), NULL, &rh );
+
+        cc1->GetSize( &ww, &wh );
+
+        ppm = wxMin(ww/(rw*1852), wh/(rh*1852)) * ( 100 - fabs( clat ) ) / 90;
+
+        ppm = wxMin(ppm, 1.0);
+    }
+
+    JumpToPosition( clat, clon, ppm );
 }
 
 int MyFrame::DoOptionsDialog()
@@ -5949,6 +6138,7 @@ void MyFrame::ChartsRefresh( int dbi_hint, ViewPort &vp, bool b_purge )
 
     FrameTimer1.Stop();                  // stop other asynchronous activity
 
+    double old_scale = cc1->GetVPScale();
     cc1->InvalidateQuilt();
     cc1->SetQuiltRefChart( -1 );
 
@@ -6000,6 +6190,13 @@ void MyFrame::ChartsRefresh( int dbi_hint, ViewPort &vp, bool b_purge )
 
     //    Validate the correct single chart, or set the quilt mode as appropriate
     SetupQuiltMode();
+    if( !cc1->GetQuiltMode() && Current_Ch == 0) {
+        // use a dummy like in DoChartUpdate
+        if (NULL == pDummyChart ) 
+            pDummyChart = new ChartDummy;
+        Current_Ch = pDummyChart;
+        cc1->SetVPScale( old_scale );
+    }
 
     cc1->ReloadVP();
 
@@ -6551,6 +6748,29 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
             break;
         }
 
+        case 5:
+        {
+            if ( !g_params.empty() ) {
+                for ( size_t n = 0; n < g_params.size(); n++ )
+                {
+                    wxString path = g_params[n];
+                    if( ::wxFileExists( path ) ) 
+                    {
+                        NavObjectCollection1 *pSet = new NavObjectCollection1;
+                        pSet->load_file(path.fn_str());
+
+                        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), true ); // Import with full vizibility of names and objects
+                        LLBBox box = pSet->GetBBox();
+                        if (box.GetValid()) {
+                            CenterView(box);
+                        }
+                        delete pSet;
+                    }
+                }
+            }
+            break;
+
+        }
         default:
         {
             // Last call....
@@ -6668,7 +6888,8 @@ int ut_index;
 void MyFrame::OnFrameTimer1( wxTimerEvent& event )
 {
 
-    if( g_unit_test_1 ) {
+
+    if( ! g_bPauseTest && (g_unit_test_1 || g_unit_test_2) ) {
 //            if((0 == ut_index) && GetQuiltMode())
 //                  ToggleQuiltMode();
 
@@ -6679,6 +6900,11 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
         int ut_index_max = ( ( g_unit_test_1 > 0 ) ? ( g_unit_test_1 - 1 ) : INT_MAX );
 
         if( ChartData ) {
+            if( g_GroupIndex > 0 ) {
+                while (ut_index < ChartData->GetChartTableEntries() && !ChartData->IsChartInGroup( ut_index, g_GroupIndex ) ) {
+                    ut_index++;
+                }
+            }
             if( ut_index < ChartData->GetChartTableEntries() ) {
                 printf("%d / %d\n", ut_index, ChartData->GetChartTableEntries());
                 const ChartTableEntry *cte = &ChartData->GetChartTableEntry( ut_index );
@@ -6695,8 +6921,25 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
                 } else
                     SelectdbChart( ut_index );
 
-                double ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
-                ppm /= 2;
+                double ppm;
+                if (g_unit_test_1) {
+                    ppm = cc1->GetCanvasScaleFactor() / cte->GetScale();
+                    ppm /= 2;
+                }
+                else {
+                    // for full chart choose use max width or heigh
+                    //ChartBase *pc = ChartData->OpenChartFromDB( ut_index, FULL_INIT );
+                    
+                    //double scale = pc->GetNormalScaleMax( cc1->GetCanvasScaleFactor(), cc1->GetCanvasWidth() );
+                    double dlat = fabs( (cte->GetLatMax() - cte->GetLatMin() ));
+                    double scale = cte->GetScale()*10;
+                    //double ppm1 = dlat
+                    double ppm1 =cc1->GetCanvasScaleFactor() / scale;
+                    //ppm = (dlat*1852.0)/**cc1->GetCanvasScaleFactor() *//;
+                    ppm = (double)cc1->GetCanvasHeight()/(dlat*1852.0*100);
+                    // printf("%f %f %d %f %f %f\n", dlat, cc1->GetCanvasScaleFactor(), cc1->GetCanvasHeight(), scale, ppm, ppm1);
+
+                }
                 cc1->SetVPScale( ppm );
 
                 cc1->ReloadVP();
@@ -6705,8 +6948,9 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
                 if( ut_index > ut_index_max )
                     exit(0);
             }
-            else
-                exit(0);
+            else {
+                _exit(0);
+            }
         }
     }
     g_tick++;
@@ -6965,9 +7209,11 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
 
 //    Do the chart update based on the global update period currently set
 //    If in COG UP mode, the chart update is handled by COG Update timer
-    if( !g_bCourseUp && ( 0 == m_ChartUpdatePeriod-- ) ) {
-        bnew_view = DoChartUpdate();
-        m_ChartUpdatePeriod = g_ChartUpdatePeriod;
+    if( !g_bCourseUp && (0 != g_ChartUpdatePeriod ) ) {
+        if (0 == m_ChartUpdatePeriod--) {
+            bnew_view = DoChartUpdate();
+            m_ChartUpdatePeriod = g_ChartUpdatePeriod;
+        }
     }
 
     nBlinkerTick++;
@@ -7022,7 +7268,6 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
             bnew_view = true;
     }
 
-    FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 
     //  Make sure we get a redraw and alert sound on AnchorWatch excursions.
     if(AnchorAlertOn1 || AnchorAlertOn2)
@@ -7084,6 +7329,10 @@ void MyFrame::OnFrameTimer1( wxTimerEvent& event )
             m_bdefer_resize = false;
         }
     }
+    if (g_unit_test_2)
+        FrameTimer1.Start( TIMER_GFRAME_1*3, wxTIMER_CONTINUOUS );
+    else 
+        FrameTimer1.Start( TIMER_GFRAME_1, wxTIMER_CONTINUOUS );
 }
 
 double MyFrame::GetMag(double a)
@@ -7569,8 +7818,8 @@ double MyFrame::GetBestVPScale( ChartBase *pchart )
             double new_scale_ppm = cc1->GetVPScale();
             proposed_scale_onscreen = cc1->GetCanvasScaleFactor() / new_scale_ppm;
         } else {
-            //  This logic will bring the new chart onscreen at roughly twice the true paper scale equivalent.
-            proposed_scale_onscreen = pchart->GetNativeScale() / 2;
+            //  This logic will bring the new chart onscreen at roughly half the true paper scale equivalent.
+            proposed_scale_onscreen = pchart->GetNativeScale() * 2.;
             double equivalent_vp_scale = cc1->GetCanvasScaleFactor() / proposed_scale_onscreen;
             double new_scale_ppm = pchart->GetNearestPreferredScalePPM( equivalent_vp_scale );
             proposed_scale_onscreen = cc1->GetCanvasScaleFactor() / new_scale_ppm;
@@ -7738,7 +7987,7 @@ void MyFrame::SetChartUpdatePeriod( ViewPort &vp )
 {
     //    Set the chart update period based upon chart skew and skew compensator
 
-    g_ChartUpdatePeriod = 1;            // General default
+    g_ChartUpdatePeriod = !!cc1->m_bFollow;            // General default
 
     if (!g_bopengl && !vp.b_quilt)
         if ( fabs(vp.skew) > 0.0001)
@@ -8181,9 +8430,10 @@ bool MyFrame::DoChartUpdate( void )
                 if( !cc1->IsChartQuiltableRef( initial_db_index ) ) {
                     // If it is not quiltable, then walk the stack up looking for a satisfactory chart
                     // i.e. one that is quiltable and of the same type
+                    // XXX if there's none?
                     int stack_index = g_restore_stackindex;
 
-                    while( ( stack_index < pCurrentStack->nEntry - 1 ) && ( stack_index >= 0 ) ) {
+                    if ( stack_index >= 0 ) while( ( stack_index < pCurrentStack->nEntry - 1 ) ) {
                         int test_db_index = pCurrentStack->GetDBIndex( stack_index );
                         if( cc1->IsChartQuiltableRef( test_db_index )
                                 && ( initial_type == ChartData->GetDBChartType( initial_db_index ) ) ) {
@@ -8194,23 +8444,10 @@ bool MyFrame::DoChartUpdate( void )
                     }
                 }
 
-                if( ChartData ) {
-                    ChartBase *pc = ChartData->OpenChartFromDB( initial_db_index, FULL_INIT );
-                    if( pc ) {
-                        cc1->SetQuiltRefChart( initial_db_index );
-                        pCurrentStack->SetCurrentEntryFromdbIndex( initial_db_index );
-                    }
-                }
-
-                //  Try to bound the initial Viewport scale to something reasonable for the selected reference chart
-                //  Use the last shutdown value if possible
-                if( ChartData ) {
-                    ChartBase *pc = ChartData->OpenChartFromDB( initial_db_index, FULL_INIT );
-                    
-                    if( pc ) {
-                        double best_scale_ppm = GetBestVPScale( pc );
-                        double best_proposed_scale_onscreen = cc1->GetCanvasScaleFactor() / best_scale_ppm;
-                    }
+                ChartBase *pc = ChartData->OpenChartFromDB( initial_db_index, FULL_INIT );
+                if( pc ) {
+                    cc1->SetQuiltRefChart( initial_db_index );
+                    pCurrentStack->SetCurrentEntryFromdbIndex( initial_db_index );
                 }
             }
 
@@ -8219,8 +8456,8 @@ bool MyFrame::DoChartUpdate( void )
                     cc1->GetVPRotation() );
 
         }
-
-        bNewView |= cc1->SetViewPoint( vpLat, vpLon, cc1->GetVPScale(), 0, cc1->GetVPRotation() );
+        // else
+            bNewView |= cc1->SetViewPoint( vpLat, vpLon, cc1->GetVPScale(), 0, cc1->GetVPRotation() );
 
         goto update_finish;
 
@@ -10556,7 +10793,7 @@ int paternFilter (const struct dirent * dir) {
   fd = open(devname, O_RDWR|O_NDELAY|O_NOCTTY);
 
   // device name is pointing to a real device
-  if(fd > 0) {
+  if(fd >= 0) {
     close (fd);
     return 1;
   }
@@ -11167,7 +11404,8 @@ wxColour GetGlobalColor(wxString colorName)
         ret_color.Set( 128, 128, 128 );  // Simple Grey
         wxLogMessage(_T("Warning: Color not found ") + colorName);
         // Avoid duplicate warnings:
-        ( *pcurrent_user_color_hash )[colorName] = ret_color;
+        if (pcurrent_user_color_hash)
+            ( *pcurrent_user_color_hash )[colorName] = ret_color;
     }
 
     return ret_color;
@@ -11327,7 +11565,7 @@ int get_static_line( char *d, const char **p, int index, int n )
     return strlen( d );
 }
 
-void InitializeUserColors( void )
+static void InitializeUserColors( void )
 {
     const char **p = usercolors;
     char buf[80];
@@ -11417,7 +11655,7 @@ void InitializeUserColors( void )
     pcurrent_user_color_hash = (wxColorHashMap *) UserColourHashTableArray->Item( 0 );
 }
 
-void DeInitializeUserColors( void )
+static void DeInitializeUserColors( void )
 {
     unsigned int i;
     for( i = 0; i < UserColorTableArray->GetCount(); i++ ) {

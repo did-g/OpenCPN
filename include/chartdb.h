@@ -66,10 +66,26 @@ public:
       bool        b_valid;
       int         nEntry;
       int         CurrentStackEntry;
-      int         GetCurrentEntrydbIndex(void);
+
+      int         GetCurrentEntrydbIndex(void) {
+            if(nEntry /*&& b_valid*/)
+                  return DBIndex[CurrentStackEntry];
+            return -1;
+      };
+
       void        SetCurrentEntryFromdbIndex(int current_db_index);
-      int         GetDBIndex(int stack_index);
-      void        SetDBIndex(int stack_index, int db_index);
+
+      int         GetDBIndex(int stack_index) {
+            if((stack_index >= 0) && (stack_index < nEntry) && (stack_index < MAXSTACK))
+                  return DBIndex[stack_index];
+            return -1;
+      };
+
+      void        SetDBIndex(int stack_index, int db_index) {
+            if((stack_index >= 0) && (stack_index < nEntry) && (stack_index < MAXSTACK))
+                  DBIndex[stack_index] = db_index;
+      };
+
       bool        DoesStackContaindbIndex(int db_index);
       void        AddChart( int db_add );
 

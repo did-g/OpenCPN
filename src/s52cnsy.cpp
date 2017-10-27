@@ -182,7 +182,7 @@ bool GetIntAttr(S57Obj *obj, const char *AttrName, int &val)
         S57attVal *v = obj->attVal->Item(idx);
 
         assert(v->valType == OGR_INT);
-        val = *(int*)(v->value);
+        val = v->value.integer;
         
         return true;
     }
@@ -275,7 +275,7 @@ bool GetDoubleAttr(S57Obj *obj, const char *AttrName, double &val)
 
         S57attVal *v = obj->attVal->Item(idx);
         assert(v->valType == OGR_REAL);
-        val = *(double*)(v->value);
+        val = *(double*)(v->value.ptr);
 
         return true;
     }
@@ -292,8 +292,8 @@ bool GetStringAttr(S57Obj *obj, const char *AttrName, char *pval, int nc)
         //      using idx to get the attribute value
         S57attVal *v = obj->attVal->Item(idx);
 
-        assert(v->valType == OGR_STR);
-        char *val = (char *)(v->value);
+        assert(v->valType == OGR_STR || v->valType == OGR_CONST_STR);
+        char *val = (char *)(v->value.ptr);
 
         strncpy(pval, val, nc);
 
@@ -311,8 +311,8 @@ wxString *GetStringAttrWXS(S57Obj *obj, const char *AttrName)
         //      using idx to get the attribute value
         S57attVal *v = obj->attVal->Item(idx);
         
-        assert(v->valType == OGR_STR);
-        char *val = (char *)(v->value);
+        assert(v->valType == OGR_STR || v->valType == OGR_CONST_STR);
+        char *val = (char *)(v->value.ptr);
         
         return new wxString(val,  wxConvUTF8);
     }
@@ -2382,7 +2382,7 @@ wxString *CSQUAPNT01(S57Obj *obj)
     wxString quapnt01;
     int accurate  = TRUE;
     int qualty = 10;
-    bool bquapos = GetIntAttr(obj, "QUALTY", qualty);
+    bool bquapos = GetIntAttr(obj, "QUAPOS", qualty);
 
     if (bquapos) {
         if ( 2 <= qualty && qualty < 10)

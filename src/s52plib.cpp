@@ -656,7 +656,7 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                             case OGR_INT: // S57 attribute type 'E' enumerated, 'I' integer
                             {
                                 int LUP_att_val = atoi( slatv );
-                                if( LUP_att_val == *(int*) ( v->value ) )
+                                if( LUP_att_val == v->value.integer )
                                     attValMatch = true;
                                 break;
                             }
@@ -668,8 +668,8 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                                 strncpy( ss, slatv, 39 );
                                 ss[40] = '\0';
                                 char *s = &ss[0];
-                                
-                                int *b = (int*) v->value;
+
+                                int *b = (int*) v->value.ptr;
                                 sscanf( s, "%d", &a );
                                 
                                 while( *s != '\0' ) {
@@ -685,7 +685,7 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                             }
                             case OGR_REAL: // S57 attribute type'F' float
                             {
-                                double obj_val = *(double*) ( v->value );
+                                double obj_val = *(double*) ( v->value.ptr );
                                 float att_val = atof( slatv );
                                 if( fabs( obj_val - att_val ) < 1e-6 )
                                     if( obj_val == att_val  )
@@ -693,6 +693,8 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                                 break;
                             }
                             
+
+                            case OGR_CONST_STR:
                             case OGR_STR: // S57 attribute type'A' code string, 'S' free text
                             {
                                 //    Strings must be exact match
@@ -700,7 +702,7 @@ LUPrec *s52plib::FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex
                                 
                                 //wxString cs( (char *) v->value, wxConvUTF8 ); // Attribute from object
                                 //if( LATTC.Mid( 6 ) == cs )
-                                if( !strcmp((char *) v->value, slatv))
+                                if( !strcmp((char *) v->value.ptr, slatv))
                                     attValMatch = true;
                                 break;
                             }
@@ -4665,24 +4667,14 @@ int s52plib::RenderLCPlugIn( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                 
             ls = ls->next;
         }
-    }
+
+        //  Allocate some storage for converted points
+        wxPoint *ptp = (wxPoint *) malloc( ( nls_max + 2 ) * sizeof(wxPoint) ); // + 2 allows for end nodes
     
-    
-    //  Allocate some storage for converted points
-    wxPoint *ptp = (wxPoint *) malloc( ( nls_max + 2 ) * sizeof(wxPoint) ); // + 2 allows for end nodes
-    
-    
-    if( rzRules->obj->m_ls_list_legacy )
-    {
-        float *ppt;
-        
-        VE_Element *pedge;
-        
-        
         PI_connector_segment *pcs;
         
         unsigned char *vbo_point = (unsigned char *)rzRules->obj->m_chart_context->vertex_buffer;
-        PI_line_segment_element *ls = rzRules->obj->m_ls_list_legacy;
+        ls = rzRules->obj->m_ls_list_legacy;
         
         while(ls){
                 if( ls->priority == priority_current  ) {  
@@ -5194,6 +5186,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     int bm_height;
     int bm_orgx;
     int bm_orgy;
+    wxDC *pdc = m_pdc; // help static analyser, m_dpc is constant
 
     Rule *prule = rules->razRule;
 
@@ -5299,7 +5292,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
 
         //    Do not need to actually render the symbol for OpenGL mode
         //    We just need the extents calculated above...
-        if( m_pdc ) {
+        if( pdc ) {
             //    Draw the outer border
             wxColour color = getwxColour( outline_color );
 
@@ -5362,7 +5355,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
 //         scale_factor *= g_ChartScaleFactorExp;
 //     }
     
-    if( !m_pdc ) // opengl
+    if( !pdc ) // opengl
     {
         //    Is there not already an generated vbo the CARC_hashmap for this object?
         if( m_CARC_hashmap.find( carc_hash ) == m_CARC_hashmap.end() ) {
@@ -5446,7 +5439,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     GetPointPixSingle( rzRules, rzRules->obj->y, rzRules->obj->x, &r, vp );
 
     //      Now render the symbol
-    if( !m_pdc ) // opengl
+    if( !pdc ) // opengl
     {
 #ifdef ocpnUSE_GL
         glPushMatrix();
@@ -5515,7 +5508,7 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         mdc.SelectObject( (wxBitmap &) ( *( (wxBitmap *) ( rules->razRule->pixelPtr ) ) ) );
 
         //      Blit it into the target dc, using mask
-        m_pdc->Blit( r.x + rules->razRule->parm2, r.y + rules->razRule->parm3, b_width, b_height,
+        pdc->Blit( r.x + rules->razRule->parm2, r.y + rules->razRule->parm3, b_width, b_height,
                 &mdc, 0, 0, wxCOPY, true );
 
         mdc.SelectObject( wxNullBitmap );
@@ -5540,12 +5533,12 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
             float a = ( sectr1 - 90 ) * PI / 180;
             int x = r.x + (int) ( leg_len * cosf( a ) );
             int y = r.y + (int) ( leg_len * sinf( a ) );
-            DrawAALine( m_pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
+            DrawAALine( pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
 
             a = ( sectr2 - 90 ) * PI / 180.;
             x = r.x + (int) ( leg_len * cosf( a ) );
             y = r.y + (int) ( leg_len * sinf( a ) );
-            DrawAALine( m_pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
+            DrawAALine( pdc, r.x, r.y, x, y, c, dash1[0], dash1[1] );
         }
         
         // Debug the symbol bounding box.....
@@ -6777,6 +6770,8 @@ int s52plib::dda_tri( wxPoint *ptp, S52color *c, render_canvas_parms *pb_spec,
 
     int lclip = pb_spec->lclip;
     int rclip = pb_spec->rclip;
+    if (y1 == y2 )
+        return 0;
 
     //              Clip the triangle
     if( cw ) {
@@ -7693,7 +7688,7 @@ int s52plib::RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
                                 free(p_tp->p_vertex);
                                 p_tp->p_vertex = (double *)p_run;
                                 
-                                p_run += p_tp->nVert * 2 * sizeof(float);
+                                p_run += p_tp->nVert * 2;
                                 
                                 p_tp = p_tp->p_next; // pick up the next in chain
                             }
@@ -9000,16 +8995,15 @@ void s52plib::AdjustTextList( int dx, int dy, int screenw, int screenh )
     //        2.. Remove any list elements that are off screen after applied offset
 
     TextObjList::Node *node = m_textObjList.GetFirst();
+    TextObjList::Node *next;
     while( node ) {
+        next = node->GetNext();
         wxRect *pcurrent = &( node->GetData()->rText );
         pcurrent->Offset( dx, dy );
-
         if( !pcurrent->Intersects( rScreen ) ) {
             m_textObjList.DeleteNode( node );
-
-            node = m_textObjList.GetFirst();
-        } else
-            node = node->GetNext();
+        }
+        node = next;
     }
 }
 
