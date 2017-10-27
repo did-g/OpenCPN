@@ -6,9 +6,14 @@ install:
     - sudo apt-get install libarchive-dev liblzma-dev libexif-dev
 
 script:
-    - mkdir build && cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug ../
-    - make -s
+  - if [[ "${COVERITY_SCAN_BRANCH}" == 1 ]];
+    then
+      echo "Don't build on coverty_scan branch.";
+      exit 0;
+    fi
+  - mkdir build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug ../
+  - make -s
 
 notifications:
     email: false
