@@ -41,6 +41,6 @@ addons:
       name: "did-g/OpenCPN"
       description: "Build submitted via Travis CI"
     notification_email: didier@users.sourceforge.net
-    build_command_prepend: "mkdir build_s && cd build_s && cmake -DCMAKE_BUILD_TYPE=Debug ../"
+    build_command_prepend: "cov-configure --comptype gcc --compiler /usr/bin/gcc-6 && mkdir build_s && cd build_s && cmake -DCMAKE_BUILD_TYPE=Debug ../"
     build_command:   "../scripts/coverity.sh"
     branch_pattern: integration
