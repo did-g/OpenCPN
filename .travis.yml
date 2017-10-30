@@ -43,4 +43,5 @@ addons:
     notification_email: didier@users.sourceforge.net
     build_command_prepend: "cov-configure -co /usr/bin/g++-6 -- -fPIC -fexceptions -fexceptions && mkdir build_s && cd build_s && cmake -DCMAKE_BUILD_TYPE=Debug ../ && make clean"
     build_command:   "../scripts/coverity.sh"
-    branch_pattern: integration
+# broken for us only debian etch (may by strech?) coverty gcc work
+    branch_pattern: coverty_scan
