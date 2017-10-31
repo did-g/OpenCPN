@@ -468,7 +468,7 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
     char aprs_name_str[21];
     double aprs_mins, aprs_degs;
 
-    AIS_Target_Data *pTargetData;
+    AIS_Target_Data *pTargetData = 0;
     AIS_Target_Data *pStaleTarget = NULL;
     bool bnewtarget = false;
     int last_report_ticks;
@@ -810,9 +810,11 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 bnewtarget = true;
                 m_n_targets++;
             } else {
-                pTargetData = ( *AISTargetList )[mmsi];          // find current entry
-                pStaleTarget = pTargetData;                   // save a pointer to stale data
+                pTargetData = it->second;          // find current entry
+                pStaleTarget = pTargetData;        // save a pointer to stale data
             }
+            // XXX Should be ?
+            // assert(pTargetData != 0);
 
             //  Grab the stale targets's last report time
              wxDateTime now = wxDateTime::Now();
@@ -830,7 +832,8 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
             bool bhad_name = false;
             if( pStaleTarget ) bhad_name = pStaleTarget->b_nameValid;
 
-            if( gpsg_mmsi && pTargetData ) {
+            if (pTargetData) {
+              if( gpsg_mmsi ) {
                 pTargetData->PositionReportTicks = now.GetTicks();
                 pTargetData->StaticReportTicks = now.GetTicks();
                 pTargetData->m_utc_hour = gpsg_utc_hour;
@@ -852,7 +855,7 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 pTargetData->b_lost = false;
 
                 bdecode_result = true;
-            } else if( arpa_mmsi && pTargetData ) {
+              } else if( arpa_mmsi ) {
                 pTargetData->m_utc_hour = arpa_utc_hour;
                 pTargetData->m_utc_min = arpa_utc_min;
                 pTargetData->m_utc_sec = arpa_utc_sec;
@@ -891,7 +894,7 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 pTargetData->b_lost = arpa_nottracked;
 
                 bdecode_result = true;
-            } else if( aprs_mmsi && pTargetData ) {
+              } else if( aprs_mmsi ) {
                 pTargetData->m_utc_hour = now.GetHour();
                 pTargetData->m_utc_min = now.GetMinute();
                 pTargetData->m_utc_sec = now.GetSecond();
@@ -917,16 +920,14 @@ AIS_Error AIS_Decoder::Decode( const wxString& str )
                 pTargetData->b_lost = false;
 
                 bdecode_result = true;
-            } else{
+              } else{
                 // The normal Plain-Old AIS target code path....
                 bdecode_result = Parse_VDXBitstring( &strbit, pTargetData );       // Parse the new data
+              }
+              //     Update the most recent report period
+              pTargetData->RecentPeriod = pTargetData->PositionReportTicks - last_report_ticks;
             }
-
-                //     Update the most recent report period
-            if( pTargetData )    
-                pTargetData->RecentPeriod = pTargetData->PositionReportTicks - last_report_ticks;
             ret = AIS_NoError;
-            
         } else{
             ret = AIS_Partial;                // accumulating parts of a multi-sentence message
             pTargetData = 0;
@@ -1093,7 +1094,6 @@ AIS_Target_Data *AIS_Decoder::ProcessDSx( const wxString& str, bool b_take_dsc )
     int mmsi = 0;
     
     AIS_Target_Data *pTargetData = NULL;
-    AIS_Target_Data *pStaleTarget = NULL;
     
     // parse a DSC Position message            $CDDSx,.....
     //  Use a tokenizer to pull out the first 9 fields
@@ -1179,9 +1179,10 @@ AIS_Target_Data *AIS_Decoder::ProcessDSx( const wxString& str, bool b_take_dsc )
     
     //  Search the current AISTargetList for an MMSI match
     AIS_Target_Hash::iterator it = AISTargetList->find( mmsi );
+    AIS_Target_Data *pStaleTarget = NULL;
     if( it == AISTargetList->end() ) {                 // not found
     } else {
-        pStaleTarget = ( *AISTargetList )[mmsi];          // find current entry
+        pStaleTarget = it->second;          // find current entry
         last_report_ticks = pStaleTarget->PositionReportTicks;
     }
     
@@ -1240,7 +1241,7 @@ AIS_Target_Data *AIS_Decoder::ProcessDSx( const wxString& str, bool b_take_dsc )
             if( it == AISTargetList->end() ) {                 // not found
                 pTargetData = m_ptentative_dsctarget;
             } else {
-                pTargetData = ( *AISTargetList )[mmsi];          // find current entry
+                pTargetData = it->second;          // find current entry
                 AISTargetTrackList *ptrack = pTargetData->m_ptrack;
                 pTargetData->CloneFrom( m_ptentative_dsctarget);  // this will make an empty track list
                 
