@@ -7734,6 +7734,7 @@ int MyFrame::GetApplicationMemoryUse( void )
 void MyFrame::HandlePianoClick( int selected_index, int selected_dbIndex )
 {
     if( !pCurrentStack ) return;
+    assert(ChartData != 0);
 
     // stop movement or on slow computer we may get something like :
     // zoom out with the wheel (timer is set)
@@ -7767,11 +7768,9 @@ void MyFrame::HandlePianoClick( int selected_index, int selected_dbIndex )
             //  then we had better set the new scale directly to avoid excessive underzoom
             //  on, eg, Inland ENCs
             bool set_scale = false;
-            if(ChartData){
-                if( CHART_TYPE_S57 == ChartData->GetDBChartType( selected_dbIndex ) ){
-                    if( ChartData->GetDBChartScale(selected_dbIndex) < 5000){
-                        set_scale = true;
-                    }
+            if( CHART_TYPE_S57 == ChartData->GetDBChartType( selected_dbIndex ) ){
+                if( ChartData->GetDBChartScale(selected_dbIndex) < 5000){
+                    set_scale = true;
                 }
             }
 
@@ -7832,8 +7831,9 @@ void MyFrame::HandlePianoRollover( int selected_index, int selected_dbIndex )
 {
     if( !cc1 ) return;
     if( !pCurrentStack ) return;
+    assert(ChartData != 0);
 
-    if(ChartData && ChartData->IsBusy())
+    if (ChartData->IsBusy())
         return;
 
     wxPoint key_location = g_Piano->GetKeyOrigin( selected_index );
@@ -7912,28 +7912,30 @@ void MyFrame::SelectQuiltRefChart( int selected_index )
 
 void MyFrame::SelectQuiltRefdbChart( int db_index, bool b_autoscale )
 {
-    if( pCurrentStack ) pCurrentStack->SetCurrentEntryFromdbIndex( db_index );
+    if( pCurrentStack )
+        pCurrentStack->SetCurrentEntryFromdbIndex( db_index );
 
     cc1->SetQuiltRefChart( db_index );
-
-    ChartBase *pc = ChartData->OpenChartFromDB( db_index, FULL_INIT );
-    if( pc ) {
-        if(b_autoscale) {
-            double best_scale_ppm = GetBestVPScale( pc );
-            cc1->SetVPScale( best_scale_ppm );
+    if (ChartData) {
+        ChartBase *pc = ChartData->OpenChartFromDB( db_index, FULL_INIT );
+        if( pc ) {
+            if(b_autoscale) {
+                double best_scale_ppm = GetBestVPScale( pc );
+                cc1->SetVPScale( best_scale_ppm );
+            }
         }
+        else
+            cc1->SetQuiltRefChart( -1 );
     }
     else
         cc1->SetQuiltRefChart( -1 );
-
-
 }
 
 void MyFrame::SelectChartFromStack( int index, bool bDir, ChartTypeEnum New_Type,
         ChartFamilyEnum New_Family )
 {
-    if( !pCurrentStack )
-        return;
+    if( !pCurrentStack ) return;
+    assert(ChartData != 0);
 
     if( index < pCurrentStack->nEntry ) {
 //      Open the new chart
@@ -7990,8 +7992,8 @@ void MyFrame::SelectChartFromStack( int index, bool bDir, ChartTypeEnum New_Type
 
 void MyFrame::SelectdbChart( int dbindex )
 {
-    if( !pCurrentStack )
-        return;
+    if( !pCurrentStack ) return;
+    assert(ChartData != 0);
 
     if( dbindex >= 0 ) {
 //      Open the new chart
@@ -8055,6 +8057,7 @@ void MyFrame::SetChartThumbnail( int index )
     if( bDBUpdateInProgress ) return;
 
     if( NULL == pCurrentStack ) return;
+    assert(ChartData != 0);
 
     if( NULL == pthumbwin ) return;
 
@@ -8168,6 +8171,8 @@ void MyFrame::UpdateControlBar( void )
     if( !cc1 ) return;
 
     if( !pCurrentStack ) return;
+    // pCurrentStack != 0 ==> ChartData
+    assert(ChartData != 0);
 
     if ( !g_bShowChartBar ) return;
 
@@ -8191,10 +8196,8 @@ void MyFrame::UpdateControlBar( void )
 
         g_Piano->SetNoshowIndexArray( g_quilt_noshow_index_array );
 
-        if(ChartData){
-            sel_type = ChartData->GetDBChartType(cc1->GetQuiltReferenceChartIndex());
-            sel_family = ChartData->GetDBChartFamily(cc1->GetQuiltReferenceChartIndex());
-        }
+        sel_type = ChartData->GetDBChartType(cc1->GetQuiltReferenceChartIndex());
+        sel_family = ChartData->GetDBChartFamily(cc1->GetQuiltReferenceChartIndex());
     } else {
         piano_chart_index_array = ChartData->GetCSArray( pCurrentStack );
         g_Piano->SetKeyArray( piano_chart_index_array );
@@ -8836,8 +8839,8 @@ void MyFrame::OnPianoMenuEnableChart( wxCommandEvent& event )
 
 void MyFrame::OnPianoMenuDisableChart( wxCommandEvent& event )
 {
-    if( !pCurrentStack )
-        return;
+    if( !pCurrentStack ) return;
+    assert(ChartData != 0);
 
     RemoveChartFromQuilt( menu_selected_dbIndex );
 
