@@ -3206,7 +3206,8 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
             }
         }
         //  Create the quilt
-        if( ChartData && pCurrentStack ) {
+        if( pCurrentStack ) {
+            assert(ChartData != 0);
             int current_db_index;
             current_db_index = pCurrentStack->GetCurrentEntrydbIndex();       // capture the current
 
