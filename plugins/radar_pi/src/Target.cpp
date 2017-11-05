@@ -88,6 +88,7 @@ Target::Target()
     Name(),
     Tclass(0), 
     Dist(0.0), 
+    Brg(0.0),
     Cog(0.0), 
     Sog(0.0), 
     Rot(0),
