@@ -164,7 +164,8 @@ void GribReader::readAllGribRecords()
         prevDataSet = 0;
         if (!rec->isDataKnown())
         {
-            if (dynamic_cast<GribV2Record *>(rec) == 0 || !dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet()) {
+            GribV2Record *rec2 = dynamic_cast<GribV2Record *>(rec);
+            if ( rec2 == 0 || rec2->hasMoreDataSet()) {
                 delete rec;
                 rec = 0;
             }
@@ -258,6 +259,7 @@ void GribReader::readAllGribRecords()
             storeRecordInMap(rec);
 
         else {
+            GribV2Record *rec2 = dynamic_cast<GribV2Record *>(rec);
 #if 0
             fprintf(stderr,
                        "GribReader: unknown record type: dataType=%d levelType=%d levelValue=%d idCenter==%d && idModel==%d && idGrid==%d\n",
@@ -265,7 +267,7 @@ void GribReader::readAllGribRecords()
                        rec->getIdCenter(), rec->getIdModel(), rec->getIdGrid()
                 );
 #endif
-            if ( dynamic_cast<GribV2Record *>(rec) == 0 || !dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet()) {
+            if ( rec2 == 0 || !rec2->hasMoreDataSet()) {
                 delete rec;
                 rec = 0;
             }
