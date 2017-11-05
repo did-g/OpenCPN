@@ -44,7 +44,7 @@ before_build:
   - cmake -T v120_xp ..
 
 build_script:
-  - cmake --build . --config debug
+  # - cmake --build . --config debug
   - cmake --build . --target package --config release
   # --target package doesn't work because of nsis not correctly installed
 
