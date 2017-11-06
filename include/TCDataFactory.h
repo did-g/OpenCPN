@@ -48,8 +48,6 @@ typedef struct {
 class abbr_entry
 {
 public:
-    virtual ~abbr_entry() {};
-
     int         type;
     wxString    short_s;
     wxString    long_s;
