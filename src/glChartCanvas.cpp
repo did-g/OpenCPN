@@ -3120,6 +3120,7 @@ void glChartCanvas::RenderNoDTA(ViewPort &vp, ChartBase *chart)
         }
 #else
         int j = pCurrentStack->GetDBIndex(i);
+        assert (j >= 0);
         pt = (ChartTableEntry *) &ChartData->GetChartTableEntry( j );
         if(pt->GetpsFullPath()->IsSameAs(chart->GetFullPath())){
             index = j;
