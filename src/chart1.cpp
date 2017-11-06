@@ -777,6 +777,18 @@ public:
     bool OnExec(const wxString& topic, const wxString& data);
 };
 
+// Refresh the Piano Bar
+static void refresh_Piano()
+{
+    int idx = pCurrentStack->GetCurrentEntrydbIndex();
+    if (idx < 0)
+        return;
+
+    ArrayOfInts piano_active_chart_index_array;
+    piano_active_chart_index_array.Add( pCurrentStack->GetCurrentEntrydbIndex() );
+    g_Piano->SetActiveKeyArray( piano_active_chart_index_array );
+}
+
 // Opens a file passed from another instance
 bool stConnection::OnExec(const wxString& topic, const wxString& data)
 {
@@ -6218,11 +6230,7 @@ void MyFrame::ChartsRefresh( int dbi_hint, ViewPort &vp, bool b_purge )
                 SetChartThumbnail( dbi_hint );       // need to reset thumbnail on failed chart open
         }
 
-        //          Refresh the Piano Bar
-        ArrayOfInts piano_active_chart_index_array;
-        piano_active_chart_index_array.Add( pCurrentStack->GetCurrentEntrydbIndex() );
-        g_Piano->SetActiveKeyArray( piano_active_chart_index_array );
-
+        refresh_Piano();
     } else {
         //    Select reference chart from the stack, as though clicked by user
         //    Make it the smallest scale chart on the stack
@@ -7977,10 +7985,7 @@ void MyFrame::SelectChartFromStack( int index, bool bDir, ChartTypeEnum New_Type
 
     }
 
-    //          Refresh the Piano Bar
-    ArrayOfInts piano_active_chart_index_array;
-    piano_active_chart_index_array.Add( pCurrentStack->GetCurrentEntrydbIndex() );
-    g_Piano->SetActiveKeyArray( piano_active_chart_index_array );
+    refresh_Piano();
 }
 
 void MyFrame::SelectdbChart( int dbindex )
@@ -8026,10 +8031,7 @@ void MyFrame::SelectdbChart( int dbindex )
 
     }
 
-    //          Refresh the Piano Bar
-    ArrayOfInts piano_active_chart_index_array;
-    piano_active_chart_index_array.Add( pCurrentStack->GetCurrentEntrydbIndex() );
-    g_Piano->SetActiveKeyArray( piano_active_chart_index_array );
+    refresh_Piano();
 }
 
 void MyFrame::SetChartUpdatePeriod( ViewPort &vp )
@@ -8194,10 +8196,7 @@ void MyFrame::UpdateControlBar( void )
     } else {
         piano_chart_index_array = ChartData->GetCSArray( pCurrentStack );
         g_Piano->SetKeyArray( piano_chart_index_array );
-
-        ArrayOfInts piano_active_chart_index_array;
-        piano_active_chart_index_array.Add( pCurrentStack->GetCurrentEntrydbIndex() );
-        g_Piano->SetActiveKeyArray( piano_active_chart_index_array );
+        refresh_Piano();
 
         if(Current_Ch){
             sel_type = Current_Ch->GetChartType();
