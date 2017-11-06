@@ -522,11 +522,11 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
         //if( ChartData->IsChartInCache( piqp->dbIndex ) ){
         pret = ChartData->OpenChartFromDB( piqp->dbIndex, FULL_INIT );
         s57chart *s57 = dynamic_cast<s57chart*>( pret );
-        printf("\tsearching");	
         if (s57 != 0) {
+            printf("\tsearching");
             pobj_list = s57->GetHazards(r, pobj_list);
+            printf(" find %d \n", pobj_list->GetCount() -c);
         }
-        printf(" find %d \n", pobj_list->GetCount() -c);
     }
     LLRegion *region = 0;
 
