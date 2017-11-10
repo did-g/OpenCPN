@@ -5,19 +5,19 @@
 	Copyright (C) 2002-2003, Davy Durham
 
 	This library is free software; you can redistribute it and/or
-	modify it under the terms of the GNU Library General Public
+	modify it under the terms of the GNU Lesser General Public
 	License as published by the Free Software Foundation; either
-	version 2 of the License, or (at your option) any later version.
+	version 2.1 of the License, or (at your option) any later version.
 
 	This library is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-	Library General Public License for more details.
+	Lesser General Public License for more details.
 
-	You should have received a copy of the GNU Library General Public
+	You should have received a copy of the GNU Lesser General Public
 	License along with this library; if not, write to the
-	Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-	Boston, MA  02111-1307  USA.
+	Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+	Boston, MA  02110-1301  USA
 */
 
 /*
@@ -281,6 +281,12 @@ status WAVEFile::parseFormat(const Tag &id, uint32_t size)
 
 			/* numCoefficients should be at least 7. */
 			assert(numCoefficients >= 7 && numCoefficients <= 255);
+			if (numCoefficients < 7 || numCoefficients > 255)
+			{
+				_af_error(AF_BAD_HEADER,
+						"Bad number of coefficients");
+				return AF_FAIL;
+			}
 
 			m_msadpcmNumCoefficients = numCoefficients;
 
@@ -326,6 +332,7 @@ status WAVEFile::parseFormat(const Tag &id, uint32_t size)
 			{
 				_af_error(AF_BAD_NOT_IMPLEMENTED,
 					"IMA ADPCM compression supports only 4 bits per sample");
+				return AF_FAIL;
 			}
 
 			int bytesPerBlock = (samplesPerBlock + 14) / 8 * 4 * channelCount;
@@ -333,6 +340,7 @@ status WAVEFile::parseFormat(const Tag &id, uint32_t size)
 			{
 				_af_error(AF_BAD_CODEC_CONFIG,
 					"Invalid samples per block for IMA ADPCM compression");
+				return AF_FAIL;
 			}
 
 			track->f.sampleWidth = 16;
@@ -834,6 +842,8 @@ AFfilesetup WAVEFile::completeSetup(AFfilesetup setup)
 	}
 
 	TrackSetup *track = setup->getTrack();
+	if (!track)
+		return AF_NULL_FILESETUP;
 
 	if (track->f.isCompressed())
 	{
@@ -1026,13 +1036,14 @@ AFfilesetup WAVEFile::completeSetup(AFfilesetup setup)
 
 bool WAVEFile::isInstrumentParameterValid(AUpvlist list, int i)
 {
-	int param, type, lval;
+	int param, type;
 
 	AUpvgetparam(list, i, &param);
 	AUpvgetvaltype(list, i, &type);
 	if (type != AU_PVTYPE_LONG)
 		return false;
 
+	long lval;
 	AUpvgetval(list, i, &lval);
 
 	switch (param)

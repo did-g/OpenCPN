@@ -95,15 +95,33 @@ SET(SRC_WEATHERFAX
             src/libaudiofile/query.cpp
             src/libaudiofile/units.cpp
             src/libaudiofile/util.cpp
+            src/libaudiofile/Buffer.cpp 
+            src/libaudiofile/FLACFile.cpp 
+            src/libaudiofile/PacketTable.cpp
 
+            src/libaudiofile/alac/ag_dec.c
+            src/libaudiofile/alac/ag_enc.c
+            src/libaudiofile/alac/ALACBitUtilities.c
+            src/libaudiofile/alac/ALACDecoder.cpp
+            src/libaudiofile/alac/ALACEncoder.cpp
+            src/libaudiofile/alac/dp_dec.c
+            src/libaudiofile/alac/dp_enc.c
+            src/libaudiofile/alac/EndianPortable.c
+            src/libaudiofile/alac/matrix_dec.c
+            src/libaudiofile/alac/matrix_enc.c
+
+            src/libaudiofile/modules/ALAC.cpp
+            src/libaudiofile/modules/BlockCodec.cpp
             src/libaudiofile/modules/FileModule.cpp
+            src/libaudiofile/modules/FLAC.cpp
             src/libaudiofile/modules/G711.cpp
             src/libaudiofile/modules/IMA.cpp
-            src/libaudiofile/modules/MSADPCM.cpp
             src/libaudiofile/modules/Module.cpp
             src/libaudiofile/modules/ModuleState.cpp
+            src/libaudiofile/modules/MSADPCM.cpp
             src/libaudiofile/modules/PCM.cpp
             src/libaudiofile/modules/RebufferModule.cpp
+            src/libaudiofile/modules/RebufferModule.h
             src/libaudiofile/modules/SimpleModule.cpp
 	)
 
