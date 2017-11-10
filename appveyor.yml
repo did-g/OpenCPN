@@ -33,7 +33,7 @@ install:
   # build wxWidgets
   - cmd: cd %WXWIN%\build\msw\
   - cmd: nmake -f makefile.vc BUILD=release SHARED=1 CFLAGS=/D_USING_V120_SDK71_ CXXFLAGS=/D_USING_V120_SDK71_
-  - cmd: nmake -f makefile.vc BUILD=debug SHARED=1 CFLAGS=/D_USING_V120_SDK71_ CXXFLAGS=/D_USING_V120_SDK71_
+  # - cmd: nmake -f makefile.vc BUILD=debug SHARED=1 CFLAGS=/D_USING_V120_SDK71_ CXXFLAGS=/D_USING_V120_SDK71_
 
 before_build:
   - cd c:\project\opencpn
@@ -45,6 +45,7 @@ before_build:
 
 build_script:
   # - cmake --build . --config debug
+  - cmake --build . --target opencpn.exe --config release
   - cmake --build . --target package --config release
   # --target package doesn't work because of nsis not correctly installed
 
