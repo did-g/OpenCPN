@@ -4,19 +4,19 @@
 	Copyright (C) 2001, Silicon Graphics, Inc.
 
 	This library is free software; you can redistribute it and/or
-	modify it under the terms of the GNU Library General Public
+	modify it under the terms of the GNU Lesser General Public
 	License as published by the Free Software Foundation; either
-	version 2 of the License, or (at your option) any later version.
+	version 2.1 of the License, or (at your option) any later version.
 
 	This library is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-	Library General Public License for more details.
+	Lesser General Public License for more details.
 
-	You should have received a copy of the GNU Library General Public
+	You should have received a copy of the GNU Lesser General Public
 	License along with this library; if not, write to the
-	Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-	Boston, MA  02111-1307  USA.
+	Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+	Boston, MA  02110-1301  USA
 */
 
 /*
@@ -31,9 +31,9 @@
 #include <limits>
 #include <string.h>
 
+#include "BlockCodec.h"
 #include "Compiler.h"
 #include "File.h"
-#include "FileModule.h"
 #include "Track.h"
 #include "afinternal.h"
 #include "audiofile.h"
@@ -57,12 +57,12 @@ struct ms_adpcm_state
 	}
 };
 
-class MSADPCM : public FileModule
+class MSADPCM : public BlockCodec
 {
 public:
-	static Module *createDecompress(Track *, File *, bool canSeek,
+	static MSADPCM *createDecompress(Track *, File *, bool canSeek,
 		bool headerless, AFframecount *chunkFrames);
-	static Module *createCompress(Track *, File *, bool canSeek,
+	static MSADPCM *createCompress(Track *, File *, bool canSeek,
 		bool headerless, AFframecount *chunkFrames);
 
 	virtual ~MSADPCM();
@@ -74,24 +74,8 @@ public:
 		return mode() == Compress ? "ms_adpcm_compress" : "ms_adpcm_decompress";
 	}
 	virtual void describe() OVERRIDE;
-	virtual void runPull() OVERRIDE;
-	virtual void reset1() OVERRIDE;
-	virtual void reset2() OVERRIDE;
-	virtual void runPush() OVERRIDE;
-	virtual void sync1() OVERRIDE;
-	virtual void sync2() OVERRIDE;
 
 private:
-	/*
-		We set framesToIgnore during a reset1 and add it to
-		framesToIgnore during a reset2.
-	*/
-	AFframecount m_framesToIgnore;
-	AFfileoffset m_savedPositionNextFrame;
-	AFframecount m_savedNextFrame;
-
-	int m_bytesPerPacket, m_framesPerPacket;
-
 	// m_coefficients is an array of m_numCoefficients ADPCM coefficient pairs.
 	int m_numCoefficients;
 	int16_t m_coefficients[256][2];
@@ -100,8 +84,8 @@ private:
 
 	MSADPCM(Mode mode, Track *track, File *fh, bool canSeek);
 
-	int decodeBlock(const uint8_t *encoded, int16_t *decoded);
-	int encodeBlock(const int16_t *decoded, uint8_t *encoded);
+	int decodeBlock(const uint8_t *encoded, int16_t *decoded) OVERRIDE;
+	int encodeBlock(const int16_t *decoded, uint8_t *encoded) OVERRIDE;
 	void choosePredictorForBlock(const int16_t *decoded);
 };
 
@@ -118,24 +102,60 @@ static const int16_t adaptationTable[] =
 	768, 614, 512, 409, 307, 230, 230, 230
 };
 
+int firstBitSet(int x)
+{
+        int position=0;
+        while (x!=0)
+        {
+                x>>=1;
+                ++position;
+        }
+        return position;
+}
+
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
+bool multiplyCheckOverflow(int a, int b, int *result)
+{
+#if (defined __GNUC__ && __GNUC__ >= 5) || ( __clang__ && __has_builtin(__builtin_mul_overflow))
+	return __builtin_mul_overflow(a, b, result);
+#else
+	if (firstBitSet(a)+firstBitSet(b)>31) // int is signed, so we can't use 32 bits
+		return true;
+	*result = a * b;
+	return false;
+#endif
+}
+
+
 // Compute a linear PCM value from the given differential coded value.
 static int16_t decodeSample(ms_adpcm_state &state,
-	uint8_t code, const int16_t *coefficient)
+	uint8_t code, const int16_t *coefficient, bool *ok=NULL)
 {
 	int linearSample = (state.sample1 * coefficient[0] +
 		state.sample2 * coefficient[1]) >> 8;
+	int delta;
 
 	linearSample += ((code & 0x08) ? (code - 0x10) : code) * state.delta;
 
 	linearSample = clamp(linearSample, MIN_INT16, MAX_INT16);
 
-	int delta = (state.delta * adaptationTable[code]) >> 8;
+	if (multiplyCheckOverflow(state.delta, adaptationTable[code], &delta))
+	{
+                if (ok) *ok=false;
+		_af_error(AF_BAD_COMPRESSION, "Error decoding sample");
+		return 0;
+	}
+	delta >>= 8;
 	if (delta < 16)
 		delta = 16;
 
 	state.delta = delta;
 	state.sample2 = state.sample1;
 	state.sample1 = linearSample;
+	if (ok) *ok=true;
 
 	return static_cast<int16_t>(linearSample);
 }
@@ -229,13 +249,16 @@ int MSADPCM::decodeBlock(const uint8_t *encoded, int16_t *decoded)
 	{
 		uint8_t code;
 		int16_t newSample;
+		bool ok;
 
 		code = *encoded >> 4;
-		newSample = decodeSample(*state[0], code, coefficient[0]);
+		newSample = decodeSample(*state[0], code, coefficient[0], &ok);
+		if (!ok) return 0;
 		*decoded++ = newSample;
 
 		code = *encoded & 0x0f;
-		newSample = decodeSample(*state[1], code, coefficient[1]);
+		newSample = decodeSample(*state[1], code, coefficient[1], &ok);
+		if (!ok) return 0;
 		*decoded++ = newSample;
 
 		encoded++;
@@ -353,15 +376,10 @@ void MSADPCM::describe()
 }
 
 MSADPCM::MSADPCM(Mode mode, Track *track, File *fh, bool canSeek) :
-	FileModule(mode, track, fh, canSeek),
-	m_framesToIgnore(-1),
-	m_savedPositionNextFrame(-1),
-	m_savedNextFrame(-1),
+	BlockCodec(mode, track, fh, canSeek),
+	m_numCoefficients(0),
 	m_state(NULL)
 {
-	m_framesPerPacket = track->f.framesPerPacket;
-	m_bytesPerPacket = track->f.bytesPerPacket;
-
 	m_state = new ms_adpcm_state[m_track->f.channelCount];
 }
 
@@ -399,7 +417,7 @@ bool MSADPCM::initializeCoefficients()
 	return true;
 }
 
-Module *MSADPCM::createDecompress(Track *track, File *fh,
+MSADPCM *MSADPCM::createDecompress(Track *track, File *fh,
 	bool canSeek, bool headerless, AFframecount *chunkFrames)
 {
 	assert(fh->tell() == track->fpos_first_frame);
@@ -417,7 +435,7 @@ Module *MSADPCM::createDecompress(Track *track, File *fh,
 	return msadpcm;
 }
 
-Module *MSADPCM::createCompress(Track *track, File *fh,
+MSADPCM *MSADPCM::createCompress(Track *track, File *fh,
 	bool canSeek, bool headerless, AFframecount *chunkFrames)
 {
 	assert(fh->tell() == track->fpos_first_frame);
@@ -433,94 +451,6 @@ Module *MSADPCM::createCompress(Track *track, File *fh,
 	*chunkFrames = msadpcm->m_framesPerPacket;
 
 	return msadpcm;
-}
-
-void MSADPCM::runPull()
-{
-	AFframecount framesToRead = m_outChunk->frameCount;
-	AFframecount framesRead = 0;
-
-	assert(m_outChunk->frameCount % m_framesPerPacket == 0);
-	int blockCount = m_outChunk->frameCount / m_framesPerPacket;
-
-	// Read the compressed frames.
-	ssize_t bytesRead = read(m_inChunk->buffer, m_bytesPerPacket * blockCount);
-	int blocksRead = bytesRead >= 0 ? bytesRead / m_bytesPerPacket : 0;
-
-	// Decompress into m_outChunk.
-	for (int i=0; i<blocksRead; i++)
-	{
-		decodeBlock(static_cast<const uint8_t *>(m_inChunk->buffer) + i * m_bytesPerPacket,
-			static_cast<int16_t *>(m_outChunk->buffer) + i * m_framesPerPacket * m_track->f.channelCount);
-
-		framesRead += m_framesPerPacket;
-	}
-
-	m_track->nextfframe += framesRead;
-
-	assert(tell() == m_track->fpos_next_frame);
-
-	if (framesRead < framesToRead)
-		reportReadError(framesRead, framesToRead);
-
-	m_outChunk->frameCount = framesRead;
-}
-
-void MSADPCM::reset1()
-{
-	AFframecount nextTrackFrame = m_track->nextfframe;
-	m_track->nextfframe = (nextTrackFrame / m_framesPerPacket) *
-		m_framesPerPacket;
-
-	m_framesToIgnore = nextTrackFrame - m_track->nextfframe;
-}
-
-void MSADPCM::reset2()
-{
-	m_track->fpos_next_frame = m_track->fpos_first_frame +
-		m_bytesPerPacket * (m_track->nextfframe / m_framesPerPacket);
-	m_track->frames2ignore += m_framesToIgnore;
-
-	assert(m_track->nextfframe % m_framesPerPacket == 0);
-}
-
-void MSADPCM::runPush()
-{
-	AFframecount framesToWrite = m_inChunk->frameCount;
-	int channelCount = m_inChunk->f.channelCount;
-
-	int blockCount = (framesToWrite + m_framesPerPacket - 1) / m_framesPerPacket;
-	for (int i=0; i<blockCount; i++)
-	{
-		encodeBlock(static_cast<const int16_t *>(m_inChunk->buffer) + i * m_framesPerPacket * channelCount,
-			static_cast<uint8_t *>(m_outChunk->buffer) + i * m_bytesPerPacket);
-	}
-
-	ssize_t bytesWritten = write(m_outChunk->buffer, m_bytesPerPacket * blockCount);
-	ssize_t blocksWritten = bytesWritten >= 0 ? bytesWritten / m_bytesPerPacket : 0;
-	AFframecount framesWritten = std::min((AFframecount) blocksWritten * m_framesPerPacket, framesToWrite);
-
-	m_track->nextfframe += framesWritten;
-	m_track->totalfframes = m_track->nextfframe;
-
-	assert(tell() == m_track->fpos_next_frame);
-
-	if (framesWritten < framesToWrite)
-		reportWriteError(framesWritten, framesToWrite);
-}
-
-void MSADPCM::sync1()
-{
-	m_savedPositionNextFrame = m_track->fpos_next_frame;
-	m_savedNextFrame = m_track->nextfframe;
-}
-
-void MSADPCM::sync2()
-{
-	assert(tell() == m_track->fpos_next_frame);
-	m_track->fpos_after_data = tell();
-	m_track->fpos_next_frame = m_savedPositionNextFrame;
-	m_track->nextfframe = m_savedNextFrame;
 }
 
 bool _af_ms_adpcm_format_ok (AudioFormat *f)
@@ -549,13 +479,13 @@ bool _af_ms_adpcm_format_ok (AudioFormat *f)
 	return true;
 }
 
-Module *_af_ms_adpcm_init_decompress (Track *track, File *fh,
+FileModule *_af_ms_adpcm_init_decompress (Track *track, File *fh,
 	bool canSeek, bool headerless, AFframecount *chunkFrames)
 {
 	return MSADPCM::createDecompress(track, fh, canSeek, headerless, chunkFrames);
 }
 
-Module *_af_ms_adpcm_init_compress (Track *track, File *fh,
+FileModule *_af_ms_adpcm_init_compress (Track *track, File *fh,
 	bool canSeek, bool headerless, AFframecount *chunkFrames)
 {
 	return MSADPCM::createCompress(track, fh, canSeek, headerless, chunkFrames);
