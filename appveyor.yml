@@ -1,5 +1,6 @@
 clone_folder: c:\project\opencpn
 shallow_clone: true
+max_jobs: 1
 image:
 - Visual Studio 2015
 
@@ -45,7 +46,6 @@ before_build:
 
 build_script:
   # - cmake --build . --config debug
-  - cmake --build . --target opencpn.exe --config release
   - cmake --build . --target package --config release
   # --target package doesn't work because of nsis not correctly installed
 
