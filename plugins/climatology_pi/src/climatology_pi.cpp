@@ -276,9 +276,12 @@ void climatology_pi::OnToolbarToolCallback(int id)
 
 void climatology_pi::OnClimatologyDialogClose()
 {
-    if(m_pClimatologyDialog)
+    if(m_pClimatologyDialog) {
+        if(m_pClimatologyDialog->m_cfgdlg)
+            m_pClimatologyDialog->m_cfgdlg->Hide();
         m_pClimatologyDialog->Show(false);
-
+        RequestRefresh(m_parent_window); // refresh main window
+    }
     SaveConfig();
 }
 
@@ -335,6 +338,33 @@ void climatology_pi::SetPluginMessage(wxString &message_id, wxString &message_bo
     if(message_id == _T("CLIMATOLOGY_REQUEST")) {
         SendClimatology(true);
     }
+}
+
+// -------------------------------------------------------
+// GRIB_TIMELINE is a misnomer
+void climatology_pi::SendTimelineMessage(wxDateTime time)
+{
+    wxJSONValue v;
+    if (time.IsValid()) {
+        v[_T("Day")] = time.GetDay();
+        v[_T("Month")] = time.GetMonth();
+        v[_T("Year")] = time.GetYear();
+        v[_T("Hour")] = time.GetHour();
+        v[_T("Minute")] = time.GetMinute();
+        v[_T("Second")] = time.GetSecond();
+    }
+    else {
+        v[_T("Day")] = -1;
+        v[_T("Month")] = -1;
+        v[_T("Year")] = -1;
+        v[_T("Hour")] = -1;
+        v[_T("Minute")] = -1;
+        v[_T("Second")] = -1;
+    }
+    wxJSONWriter w;
+    wxString out;
+    w.Write(v, out);
+    SendPluginMessage(wxString(_T("GRIB_TIMELINE")), out);
 }
 
 void climatology_pi::FreeData()
