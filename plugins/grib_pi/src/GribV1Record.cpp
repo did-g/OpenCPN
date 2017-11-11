@@ -570,6 +570,8 @@ bool GribV1Record::readGribSection4_BDS(ZUFILE* file) {
                 else {
                     ind = j*Ni+i;
                 }
+                // XXX FIXME
+                ind = j*Ni+i;
                 if (hasValue(i,j)) {
                     x = readPackedBits(buf, startbit, nbBitsInPack);
                     data[ind] = (refValue + x*scaleFactorEpow2)/decimalFactorD;
