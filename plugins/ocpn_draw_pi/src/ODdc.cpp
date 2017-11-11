@@ -747,7 +747,7 @@ void ODDC::DrawSector( wxCoord xc, wxCoord yc, wxCoord x1, wxCoord y1, wxCoord x
     else {
         wxPoint *points;
         int numpoints = ArcSectorPoints( *&points, xc, yc, x1, y1, x2, y2, x3, y3, x4, y4, true);
-        
+        DrawLines( numpoints, points );
         DrawPolygonTessellated( numpoints, points, 0, 0 );
         delete [] points;
     }
@@ -1185,7 +1185,6 @@ void ODDC::DrawPolygonsTessellated( int n, int npoints[], wxPoint points[], wxCo
     }
     #ifdef ocpnUSE_GL
     else {
-        
         GLUtesselator *tobj = gluNewTess();
         
         gluTessCallback( tobj, GLU_TESS_VERTEX, (_GLUfuncptr) &ODDCvertexCallback );
