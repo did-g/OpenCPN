@@ -38,6 +38,11 @@ install:
 
 before_build:
   - cd c:\project\opencpn
+  - cd buildwin
+  - ps: Start-FileDownload https://downloads.sourceforge.net/project/opencpnplugins/opencpn_packaging_data/PVW32Con.exe
+  - cd ..
+  - ps: Start-FileDownload https://sourceforge.net/projects/opencpnplugins/files/opencpn_packaging_data/portaudio-vc12.7z
+  - cmd: 7z x -y portaudio-vc12.7z -oc:\project\opencpn\buildwin
   - mkdir build
   - cd build
   - ps: Start-FileDownload http://downloads.sourceforge.net/project/opencpnplugins/opencpn_packaging_data/OpenCPN_buildwin.7z
