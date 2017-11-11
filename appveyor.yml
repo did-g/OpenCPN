@@ -46,8 +46,10 @@ before_build:
 
 build_script:
   # - cmake --build . --config debug
+  # opencpn.lib first
+  - cmake --build . --target opencpn --config release
+  # 
   - cmake --build . --target package --config release
-  # --target package doesn't work because of nsis not correctly installed
 
 artifacts:
   - path: 'build\*.exe'
