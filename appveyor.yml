@@ -53,8 +53,10 @@ build_script:
   # - cmake --build . --config debug
   # opencpn.lib first
   - cmake --build . --target opencpn --config release
-  # 
-  - cmake --build . --target package --config release
+  #  package
+  #- cmake --build . --target package --config release
+  # only make work with plugin
+  - cmake --build .  --config release
 
 artifacts:
   - path: 'build\*.exe'
