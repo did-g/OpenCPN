@@ -935,21 +935,21 @@ void ODDC::DrawCircle( wxCoord x, wxCoord y, wxCoord radius )
 void ODDC::DrawDisk( wxCoord x, wxCoord y, wxCoord innerRadius, wxCoord outerRadius )
 {
     if( dc ) {
-        wxGraphicsContext *wxGC = 0;
+        wxGraphicsContext *wxGC = NULL;
         wxMemoryDC *pmdc = wxDynamicCast(GetDC(), wxMemoryDC);
         if( pmdc ) wxGC = wxGraphicsContext::Create( *pmdc );
         else {
             wxClientDC *pcdc = wxDynamicCast(GetDC(), wxClientDC);
             if( pcdc ) wxGC = wxGraphicsContext::Create( *pcdc );
         }
-        if (wxGC == 0)
-            return; // assert ?
-        wxGC->SetPen(dc->GetPen());
-        wxGC->SetBrush(dc->GetBrush());
-        wxGraphicsPath p = wxGC->CreatePath();
-        p.AddCircle( x, y, innerRadius );
-        p.AddCircle( x, y, outerRadius );
-        wxGC->FillPath(p);
+        if(wxGC) {
+            wxGC->SetPen(dc->GetPen());
+            wxGC->SetBrush(dc->GetBrush());
+            wxGraphicsPath p = wxGC->CreatePath();
+            p.AddCircle( x, y, innerRadius );
+            p.AddCircle( x, y, outerRadius );
+            wxGC->FillPath(p);
+        }
     }
 #ifdef ocpnUSE_GL
     else {

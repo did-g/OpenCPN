@@ -530,7 +530,7 @@ unsigned int PointMan::GetIconTexture( const wxBitmap *pbm, int &glw, int &glh )
         unsigned char *a = image.GetAlpha();
             
         unsigned char mr, mg, mb;
-        if (!a)
+        if(!a)
             image.GetOrFindMaskColour( &mr, &mg, &mb );
     
         unsigned char *e = new unsigned char[4 * w * h];

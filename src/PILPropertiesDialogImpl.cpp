@@ -84,10 +84,13 @@ void PILPropertiesDialogImpl::SaveChanges()
         if(it->iID == m_iID) break;
         ++it;
     }
+    assert(it != pPIL->m_PilLineList.end());
     it->sName = m_textCtrlName->GetValue();
     it->sDescription = m_textCtrlDesctription->GetValue();
     it->dOffset = wxAtof(m_textCtrlOffset->GetValue());
     it->wxcActiveColour = m_colourPickerLineColour->GetColour();
+    m_pPIL->CreateColourSchemes((PILLINE*)&*it);
+    m_pPIL->SetColourScheme();
     it->dStyle = ::StyleValues[m_choiceLineStyle->GetSelection()];
     it->dWidth = ::WidthValues[m_choiceLineWidth->GetSelection()];
 
@@ -108,6 +111,7 @@ void PILPropertiesDialogImpl:: UpdateProperties( PIL *pPIL, int iID )
         if(it->iID == iID) break;
         ++it;
     }
+    assert(it != pPIL->m_PilLineList.end());
     m_textCtrlIDNum->SetValue(wxString::Format("%i", iID));
     m_textCtrlName->Clear();
     m_textCtrlName->AppendText(it->sName);
