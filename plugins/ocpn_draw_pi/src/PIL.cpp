@@ -109,7 +109,6 @@ PIL::~PIL()
 {
     //dtor
     std::list<PILLINE>::iterator it = m_PilLineList.begin();
-    int i = m_PilLineList.size();
     while(it != m_PilLineList.end()) {
         m_PilLineList.erase(it);
         it = m_PilLineList.begin();
@@ -412,6 +411,11 @@ void PIL::SetPILLineSelect( double lat, double lon)
         
         ++it;
     }
+}
+
+void PIL::SetColourScheme(void)
+{
+    SetColourScheme(m_ColourScheme);
 }
 
 void PIL::SetColourScheme(PI_ColorScheme cs)

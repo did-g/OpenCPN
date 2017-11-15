@@ -360,6 +360,7 @@ void Boundary::DrawGL( PlugIn_ViewPort &piVP )
                 else dc.DrawPolygonTessellated( m_pODPointList->GetCount() - 1, m_bpts, 0, 0);
             } else if( m_bInclusionBoundary && m_pODPointList->GetCount() > 3 ) {
                 dc.DrawPolygonsTessellated( 2, l_iAllPointsSizes, l_AllPoints, 0, 0);
+                delete [] l_AllPoints;
             }
 
             glDisable( GL_BLEND );
