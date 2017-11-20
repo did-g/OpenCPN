@@ -45,7 +45,8 @@ extern ocpn_draw_pi *g_ocpn_draw_pi;
 
 ODToolbarImpl::ODToolbarImpl( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint &pos, const wxSize &size, long style  ) : ODToolbarDialog( parent, id, title, pos, size, style )
 {
-    m_ColourScheme = PI_N_COLOR_SCHEMES; // invalid
+    m_ColourScheme = PI_GLOBAL_COLOR_SCHEME_RGB;
+    
     AddTools();
     
     m_Mode = ID_NONE;
@@ -543,10 +544,13 @@ void ODToolbarImpl::SetColourScheme( PI_ColorScheme cs )
         GetGlobalColor( _T("GREY2"), &gridline );
 //TODO this does not appear to work correctly
         this->SetBackgroundColour( window_back_color );
+        this->SetForegroundColour( window_back_color );
         this->ClearBackground();
+        this->Refresh(true);
         this->m_toolBarODToolbar->SetBackgroundColour( window_back_color );
+        this->m_toolBarODToolbar->SetForegroundColour( window_back_color );
         this->m_toolBarODToolbar->ClearBackground();
+        this->m_toolBarODToolbar->Refresh(true);
     }
-    
 }
 

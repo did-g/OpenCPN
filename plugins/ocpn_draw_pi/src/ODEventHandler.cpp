@@ -55,7 +55,6 @@ extern ocpn_draw_pi                 *g_ocpn_draw_pi;
 extern PathManagerDialog            *g_pPathManagerDialog;
 extern ODSelect                     *g_pODSelect;
 extern ODConfig                     *g_pODConfig;
-extern PlugIn_ViewPort              *g_pVP;
 extern PlugIn_ViewPort              g_VP;
 extern ChartCanvas                  *ocpncc1;
 extern ODPathPropertiesDialogImpl   *g_pODPathPropDialog;
@@ -934,6 +933,7 @@ void ODEventHandler::PopupMenuHandler(wxCommandEvent& event )
                 wxArrayPtrVoid *ppath_array = g_pPathMan->GetPathArrayContaining( m_pFoundODPoint );
                 if( ppath_array ) {
                     g_pODPointMan->DestroyODPoint( m_pFoundODPoint );
+                    delete ppath_array;
                 }
                 else {
                     g_pODSelect->DeleteSelectablePoint( m_pFoundODPoint, SELTYPE_ODPOINT );

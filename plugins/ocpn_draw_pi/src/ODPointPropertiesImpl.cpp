@@ -64,6 +64,7 @@ extern int                  g_iTextPosition;
 extern int                  g_iBoundaryPointRangeRingLineWidth;
 extern int                  g_iBoundaryPointRangeRingLineStyle;
 
+extern PI_ColorScheme    g_global_color_scheme;
 
 ODPointPropertiesImpl::ODPointPropertiesImpl( wxWindow* parent )
 :
@@ -307,8 +308,7 @@ void ODPointPropertiesImpl::SaveChanges()
 //        m_pODPoint->m_fODPointRangeRingsStep = m_RangeRingSteps;
         m_pODPoint->m_iODPointRangeRingsStepUnits = m_choiceDistanceUnitsString->GetSelection();
         m_pODPoint->m_wxcODPointRangeRingsColour = m_colourPickerRangeRingsColour->GetColour();
-        m_pODPoint->CreateColourSchemes();
-
+     
         m_pODPoint->SetName( m_textName->GetValue() );
         m_pODPoint->SetODPointArrivalRadius( m_textCtrlODPointArrivalRadius->GetValue() );
         m_pODPoint->SetShowODPointRangeRings( m_checkBoxShowODPointRangeRings->GetValue() );
@@ -354,14 +354,20 @@ void ODPointPropertiesImpl::SaveChanges()
             
             
         }
+        m_pODPoint->CreateColourSchemes();
+        m_pODPoint->SetColourScheme(g_global_color_scheme);
+
         m_pODPoint->SetVisible( m_checkBoxVisible->GetValue() );
         m_pODPoint->SetNameShown( m_checkBoxShowName->GetValue() );
         if(m_pODPoint->m_sTypeString == wxT("Guard Zone Point")) {
             if(m_text_lat != m_textLatitude->GetValue() || m_text_lon != m_textLongitude->GetValue()) {
                 m_pODPoint->SetPosition( fromDMM_Plugin( m_textLatitude->GetValue() ), fromDMM_Plugin( m_textLongitude->GetValue() ) );
                 wxArrayPtrVoid *l_array = g_pPathMan->GetPathArrayContaining(m_pODPoint);
-                GZ *l_gz = (GZ *)l_array->Item(0);
-                l_gz->UpdateGZ(m_pODPoint);
+                if (l_array) {
+                    GZ *l_gz = (GZ *)l_array->Item(0);
+                    l_gz->UpdateGZ(m_pODPoint);
+                    delete l_array;
+                }
             }
         } else
             m_pODPoint->SetPosition( fromDMM_Plugin( m_textLatitude->GetValue() ), fromDMM_Plugin( m_textLongitude->GetValue() ) );
@@ -635,6 +641,7 @@ bool ODPointPropertiesImpl::UpdateProperties( bool positionOnly )
                 m_checkBoxChangeAllPointIcons->Disable();
             else
                 m_checkBoxChangeAllPointIcons->Enable();
+            delete ppath_array;
         } else {
             m_checkBoxChangeAllPointIcons->Disable();
         }

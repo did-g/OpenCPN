@@ -95,7 +95,9 @@ private:
     wxBitmap    BuildDimmedToolBitmap(wxBitmap bmp_nosrmal, unsigned char dim_ratio);
     
 #ifdef ODraw_USE_SVG
-    wxBitmap    LoadSVG( const wxString filename, unsigned int width = -1, unsigned int height = -1 );
+    // we need valid width and height for plugin SVG loader
+    // by default use icon png size in data : 32x32
+    wxBitmap    LoadSVG( const wxString filename, unsigned int width = 32, unsigned int height = 32 );
     wxBitmap    ScaleIcon( wxBitmap bitmap, const wxString filename, double sf );
     
 #endif
@@ -153,5 +155,6 @@ private:
 
     double          m_dScaleFactor;
     PI_ColorScheme  m_ColourScheme;
+    bool            m_failedBitmapLoad;
 };
 #endif /* ODICONS_H */

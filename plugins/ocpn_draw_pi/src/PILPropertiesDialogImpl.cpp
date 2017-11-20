@@ -84,7 +84,7 @@ void PILPropertiesDialogImpl::SaveChanges()
         if(it->iID == m_iID) break;
         ++it;
     }
-    assert(it != pPIL->m_PilLineList.end());
+    assert(it != m_pPIL->m_PilLineList.end());
     it->sName = m_textCtrlName->GetValue();
     it->sDescription = m_textCtrlDesctription->GetValue();
     it->dOffset = wxAtof(m_textCtrlOffset->GetValue());

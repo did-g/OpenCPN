@@ -387,7 +387,7 @@ void ODDC::DrawLine( wxCoord x1, wxCoord y1, wxCoord x2, wxCoord y2, bool b_hiqu
                 else
                     glLineWidth( pen_width );
             } else
-                glLineWidth( pen_width );
+                glLineWidth( wxMax(g_GLMinSymbolLineWidth, pen_width) );
         } else {            
             if( pen_width > 1 ) {
                 GLint parms[2];
@@ -396,7 +396,7 @@ void ODDC::DrawLine( wxCoord x1, wxCoord y1, wxCoord x2, wxCoord y2, bool b_hiqu
                     else
                         glLineWidth( pen_width );
             } else
-                glLineWidth( pen_width );
+                glLineWidth( wxMax(g_GLMinSymbolLineWidth, pen_width) );
         }
         
         if( b_draw_thick ) DrawGLThickLine( x1, y1, x2, y2, m_pen, b_hiqual );
@@ -636,7 +636,7 @@ void ODDC::DrawArc( wxCoord xc, wxCoord yc, wxCoord x1, wxCoord y1, wxCoord x2, 
                 else
                     glLineWidth( pen_width );
             } else
-                glLineWidth( pen_width );
+                glLineWidth(wxMax(g_GLMinSymbolLineWidth, pen_width) );
         } else {            
             if( pen_width > 1 ) {
                 GLint parms[2];
@@ -645,7 +645,7 @@ void ODDC::DrawArc( wxCoord xc, wxCoord yc, wxCoord x1, wxCoord y1, wxCoord x2, 
                 else
                     glLineWidth( pen_width );
             } else
-                glLineWidth( pen_width );
+                glLineWidth(wxMax(g_GLMinSymbolLineWidth, pen_width) );
         }
         
         if( b_draw_thick ) DrawGLThickLine( x1, y1, x2, y2, m_pen, b_hiqual );
@@ -1457,7 +1457,7 @@ bool ODDC::ConfigurePen()
 #ifdef ocpnUSE_GL
     if(c != wxNullColour)
         glColor4ub( c.Red(), c.Green(), c.Blue(), c.Alpha() );
-    glLineWidth( width );
+    glLineWidth(wxMax(g_GLMinSymbolLineWidth, width) );
 #endif    
     return true;
 }
