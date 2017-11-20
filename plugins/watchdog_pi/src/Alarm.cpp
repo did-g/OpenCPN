@@ -47,6 +47,7 @@ class LandFallAlarm : public Alarm
 {
 public:
     LandFallAlarm() : Alarm(true, 5 /* seconds */),
+                      m_crossinglat1(NAN),
                       m_Mode(TIME),
                       m_TimeMinutes(20),
                       m_Distance(3)
@@ -68,6 +69,9 @@ public:
     }
 
     bool Test() {
+        if(!m_bData)
+            return false;
+
         PlugIn_Position_Fix_Ex lastfix = g_watchdog_pi->LastFix();
 
         if(isnan(lastfix.Lat))
@@ -176,6 +180,10 @@ public:
     }
 
     void Render(wdDC &dc, PlugIn_ViewPort &vp) {
+
+        if(!m_bData)
+            return;
+
         PlugIn_Position_Fix_Ex lastfix = g_watchdog_pi->LastFix();
         if(isnan(m_crossinglat1))
             return;
@@ -1029,7 +1037,7 @@ public:
                     return _T(" ") + wxString(_("Guard Zone")) + _T(": ") + m_GuardZoneName + _T(": Not found");
                 else
                     return _T(" ") + wxString(_("Guard Zone")) + _T(": ") + m_GuardZoneName + _T(": ") +
-                    (m_bGuardZoneFired ? wxString(_("AIS Target in zone")) : wxString(_("NO AIS tagets found in zone")));
+                    (m_bGuardZoneFired ? wxString(_("AIS Target in zone")) : wxString(_("NO AIS targets found in zone")));
                 break;
             }
         }
@@ -1882,9 +1890,9 @@ public:
     void SaveConfig(TiXmlElement *c) {
         c->SetAttribute("Type", "Course");
         switch(m_Mode) {
-        case PORT: c->SetAttribute("Mode", "Port");
-        case STARBOARD: c->SetAttribute("Mode", "Starboard");
-        case BOTH: c->SetAttribute("Mode", "Both");
+        case PORT: c->SetAttribute("Mode", "Port"); break;
+        case STARBOARD: c->SetAttribute("Mode", "Starboard"); break;
+        case BOTH: c->SetAttribute("Mode", "Both");break;
         }
 
         c->SetDoubleAttribute("Tolerance", m_Tolerance);
