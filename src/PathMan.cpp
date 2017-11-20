@@ -210,9 +210,12 @@ bool PathMan::DoesPathContainSharedPoints( ODPath *pPath )
                     ODPath *pb = (ODPath *) pRA->Item( ir );
                     if( pb == pPath)
                         continue;               // self
-                    else 
+                    else  {
+                        delete pRA;
                         return true;
+                    }
                 }
+                delete pRA;
             }
                 
             if( pnode ) pnode = pnode->GetNext();
@@ -274,7 +277,6 @@ void PathMan::DeleteAllPaths( void )
         }
 
 //        g_pODConfig->m_bSkipChangeSetUpdate = true;
-        g_pODConfig->DeleteConfigPath( ppath );
         DeletePath( ppath );
         node = g_pPathList->GetFirst();                   // Path
 //        g_pODConfig->m_bSkipChangeSetUpdate = false;

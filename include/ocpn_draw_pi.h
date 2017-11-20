@@ -433,7 +433,6 @@ public:
     
     Undo        *undo;
     
-    PlugIn_ViewPort *m_pVP;
     wxGLContext     *m_pcontext;
     wxMemoryDC      *pmdc;
 //    wxGLCanvas      *m_glcc;
@@ -475,6 +474,7 @@ private:
     
     wxTimer         m_RolloverPopupTimer;
     
+    PlugIn_ViewPort m_VP;
     
     int               m_show_id;
     int               m_hide_id;
@@ -482,7 +482,6 @@ private:
     int                m_config_button_id;
 
     bool              m_bLOGShowIcon;
-    PI_ColorScheme    m_global_color_scheme;
     
     Boundary    *m_pSelectedBoundary;
     EBL         *m_pSelectedEBL;
