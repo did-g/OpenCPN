@@ -1214,13 +1214,14 @@ static bool mapTimeRange(GRIBMessage *grid, zuint *p1, zuint *p2, zuchar *t_rang
 void  GribV2Record::translateDataType()
 {
     this->knownData = true;
+    dataCenterModel = OTHER_DATA_CENTER;
     //------------------------
     // NOAA GFS
     //------------------------
     if (dataType == GRB_PRECIP_RATE) {	// mm/s -> mm/h
         multiplyAllData( 3600.0 );
     }
-    else if (   idCenter==7 && idModel==2 )		// NOAA
+    if ( idCenter==7 && idModel==2 )		// NOAA
     {
         dataCenterModel = NOAA_GFS;
         // altitude level (entire atmosphere vs entire atmosphere considered as 1 level)
@@ -1289,7 +1290,7 @@ void  GribV2Record::translateDataType()
 		if ( getDataType()==GRB_PRESSURE && getLevelType()==LV_GND_SURF && getLevelValue()==0)
 		{
 			levelType  = LV_MSL;
-		}
+		} // missing enum for dataCenterModel
     }
 	
 	//------------------------
