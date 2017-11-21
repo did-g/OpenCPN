@@ -137,8 +137,8 @@ void GribReader::readAllGribRecords()
             }
         }
         else {
-            assert (!rec || dynamic_cast<GribV2Record *>(rec));
-            if (rec && dynamic_cast<GribV2Record *>(rec)->hasMoreDataSet())  {
+            GribV2Record *rec2 = dynamic_cast<GribV2Record *>(rec);
+            if (rec2 && rec2->hasMoreDataSet())  {
                 rec = static_cast<GribV2Record *>(rec)->GribV2NextDataSet(file, id);
                 if (prevDataSet != 0) {
                     delete prevDataSet;
