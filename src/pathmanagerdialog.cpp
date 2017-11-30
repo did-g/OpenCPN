@@ -62,6 +62,7 @@
 #include "PILProp.h"
 #include "PathMan.h"
 #include "PointMan.h"
+#include "ODNewODPointDialogImpl.h"
 #include "ODPoint.h"
 #include "ODSelect.h"
 #include "chcanv.h"
@@ -402,6 +403,8 @@ void PathManagerDialog::OnTabSwitch( wxNotebookEvent &event )
 // implementation
 PathManagerDialog::PathManagerDialog( wxWindow *parent )
 {
+    m_wParent = parent;
+    
     long style = wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER;
 #ifdef __WXOSX__
     style |= wxSTAY_ON_TOP;
@@ -432,8 +435,7 @@ void PathManagerDialog::Create()
     m_pODPointListCtrl = NULL;
 
     m_pNotebook = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxSize( -1, -1 ), wxNB_TOP );
-    itemBoxSizer1->Add( m_pNotebook, 1,
-            wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND, 5 );
+    itemBoxSizer1->Add( m_pNotebook, 1, wxALL | wxEXPAND, 5 );
 
     //  Create "Path" panel
     m_pPanelPath = new wxPanel( m_pNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
@@ -467,7 +469,7 @@ void PathManagerDialog::Create()
 
     // Buttons: Delete, Properties...
     wxBoxSizer *bsPathButtons = new wxBoxSizer( wxVERTICAL );
-    sbsPaths->Add( bsPathButtons, 0, wxALIGN_RIGHT );
+    sbsPaths->Add( bsPathButtons, 0, wxALL );
 
     btnPathProperties = new wxButton( m_pPanelPath, -1, _("&Properties...") );
     bsPathButtons->Add( btnPathProperties, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
@@ -531,7 +533,7 @@ void PathManagerDialog::Create()
     m_pODPointListCtrl->InsertColumn( colOCPNPOINTDIST, _("Distance from Ownship"), wxLIST_FORMAT_LEFT, 180 );
 
     wxBoxSizer *bsODPointButtons = new wxBoxSizer( wxVERTICAL );
-    itemBoxSizer4->Add( bsODPointButtons, 0, wxALIGN_RIGHT );
+    itemBoxSizer4->Add( bsODPointButtons, 0, wxALL );
 
     btnODPointNew = new wxButton( m_pPanelODPoint, -1, _("&New") );
     bsODPointButtons->Add( btnODPointNew, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
@@ -618,7 +620,7 @@ void PathManagerDialog::Create()
     m_pLayListCtrl->InsertColumn( colLAYITEMS, _("No. of items"), wxLIST_FORMAT_LEFT, 100 );
 
     wxBoxSizer *bsLayButtons = new wxBoxSizer( wxVERTICAL );
-    itemBoxSizer7->Add( bsLayButtons, 0, wxALIGN_RIGHT );
+    itemBoxSizer7->Add( bsLayButtons, 0, wxALL );
 
     btnLayNew = new wxButton( m_pPanelLay, -1, _("Temporary layer") );
     bsLayButtons->Add( btnLayNew, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
@@ -655,7 +657,7 @@ void PathManagerDialog::Create()
     //this->Connect( -1, wxEVT_SHOW, wxCloseEventHandler(PathManagerDialog::OnOK), NULL, this);
 
     btnPathOK = new wxButton( this, -1, _("&OK") );
-    itemBoxSizer5->Add( btnPathOK, 0, wxALL | wxALIGN_RIGHT, DIALOG_MARGIN );
+    itemBoxSizer5->Add( btnPathOK, 0, wxALL, DIALOG_MARGIN );
     btnPathOK->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
                             wxCommandEventHandler(PathManagerDialog::OnOK), NULL, this );
     
@@ -1551,15 +1553,32 @@ void PathManagerDialog::OnODPointToggleVisibility( wxMouseEvent &event )
 
 void PathManagerDialog::OnODPointNewClick( wxCommandEvent &event )
 {
-    ODPoint *pWP = new ODPoint( g_dLat, g_dLon, g_sODPointIconName, wxEmptyString,
-            wxT("") );
-    pWP->m_bIsolatedMark = true;                      // This is an isolated mark
-    pWP->SetTypeString( wxS("Boundary Point") );
-    g_pODSelect->AddSelectableODPoint( g_dLat, g_dLon, pWP );
-    g_pODConfig->AddNewODPoint( pWP, -1 );    // use auto next num
-    RequestRefresh( GetOCPNCanvasWindow() );
+    ODNewODPointDialogImpl *l_pType = new ODNewODPointDialogImpl(m_wParent);
+#ifndef __WXOSX__
+    DimeWindow( l_pType );
+#endif
+    l_pType->ShowModal();
+    
+    if(l_pType->m_bOK){
+        ODPoint *pODP = NULL;
+        if(l_pType->m_iSelection == ID_ODNEWPOINTDIALOGBUTTON_BOUNDARY) {
+            BoundaryPoint *pBP = new BoundaryPoint( g_dLat, g_dLon, g_sODPointIconName, wxEmptyString, wxT("") );
+            pBP->m_bIsolatedMark = true;                      // This is an isolated mark
+            pODP = pBP;
+        } else {
+            TextPoint *pTP = new TextPoint( g_dLat, g_dLon, g_sODPointIconName, wxEmptyString, wxT("") );
+            pTP->m_bIsolatedMark = true;                      // This is an isolated mark
+            pODP = pTP;
+        }
+        g_pODSelect->AddSelectableODPoint( g_dLat, g_dLon, pODP );
+        g_pODConfig->AddNewODPoint( pODP, -1 );    // use auto next num
+        UpdateODPointsListCtrl( pODP );
+        RequestRefresh( GetOCPNCanvasWindow() );
 
-    ODPointShowPropertiesDialog( pWP, GetParent() );
+        ODPointShowPropertiesDialog( pODP, GetParent() );
+    }
+    
+    //delete l_pType;
 }
 
 void PathManagerDialog::OnODPointPropertiesClick( wxCommandEvent &event )
