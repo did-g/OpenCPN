@@ -1,7 +1,7 @@
-/***************************************************************************
- *
+/**************************************************************************
+ * 
  * Project:  OpenCPN
- * Purpose:  OCPN Draw Utility functions support
+ * Purpose:  Dead Reckoning Support
  * Author:   Jon Gough
  *
  ***************************************************************************
@@ -22,21 +22,35 @@
  *   Free Software Foundation, Inc.,                                       *
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,  USA.         *
  **************************************************************************/
- 
-#ifndef ODUTILS_H
-#define ODUTILS_H
- 
- const wxChar   *ParseGPXDateTime( wxDateTime &dt, const wxChar *datetime );
- wxString       GetUUID(void);
- int            GetRandomNumber(int range_min, int range_max); 
- void           MenuPrepend( wxMenu *menu, int id, wxString label);
- void           MenuAppend( wxMenu *menu, int id, wxString label);
- double         sign( double x );
- double         FNipart( double x );
- double         FNday( int y, int m, int d, int h );
- double         FNrange( double x );
- double         getLMT( double ut, double lon );
- bool           pointInPolygon(int polyCorners, double *polyX, double *polyY, double x, double y);
- bool           GetLineIntersection(double p0_x, double p0_y, double p1_x, double p1_y, double p2_x, double p2_y, double p3_x, double p3_y, double *i_x, double *i_y);
- int            ArcSectorPoints( wxPoint *&points, wxCoord xc, wxCoord yc, wxCoord x1, wxCoord y1, wxCoord x2, wxCoord y2, wxCoord x3, wxCoord y3, wxCoord x4, wxCoord y4, bool bHighQuality );
+
+#include "wx/wxprec.h"
+
+#ifndef WX_PRECOMP
+#include "wx/wx.h"
 #endif
+
+#include "ODNewODPointDialogImpl.h"
+
+ODNewODPointDialogImpl::ODNewODPointDialogImpl( wxWindow* parent ) : ODNewODPointDialogDef( parent )
+{
+}
+ 
+void ODNewODPointDialogImpl::OnOK( wxCommandEvent& event )
+{
+    m_bOK = true;
+    if(m_radioBoxODPointType->GetSelection() == 0)
+        m_iSelection = ID_ODNEWPOINTDIALOGBUTTON_BOUNDARY;
+    else
+        m_iSelection = ID_ODNEWPOINTDIALOGBUTTON_TEXT;
+    
+    Show(false);
+}
+
+void ODNewODPointDialogImpl::OnCancel( wxCommandEvent& event )
+{
+    m_bOK = false;
+    m_iSelection = ID_ODNEWPOINTDIALOGBUTTON_BOUNDARY;
+    
+    Show(false);
+}
+ 

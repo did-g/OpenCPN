@@ -291,9 +291,6 @@ ODPoint       *pAnchorWatchPoint2;
 
 IDX_entry       *gpIDX;
 
-wxString        *g_ODlocale;
-int             g_iLocaleDepth;
-
 int             g_click_stop;
 bool            g_bConfirmObjectDelete;
 
@@ -387,13 +384,15 @@ ocpn_draw_pi::ocpn_draw_pi(void *ppimgr)
     // XXX FIXME get it from driver
     g_GLMinSymbolLineWidth = 1.0f;
 #endif
-
-    m_pODicons = new ODicons();
 }
 
 ocpn_draw_pi::~ocpn_draw_pi()
 {
-    
+#ifdef __WXMSW__
+#ifdef _DEBUG
+    _CrtDumpMemoryLeaks(); 
+#endif    
+#endif    
 }
 
 int ocpn_draw_pi::Init(void)
@@ -437,8 +436,6 @@ int ocpn_draw_pi::Init(void)
     g_iGZMaxNum = 0;
     m_chart_scale = 0.;
     g_pfFix.valid = false;
-    g_iLocaleDepth = 0;
-    g_ODlocale = NULL;
     
     // Drawing modes from toolbar
     m_Mode = 0;
@@ -465,7 +462,9 @@ int ocpn_draw_pi::Init(void)
     g_pODSelect = new ODSelect();
     
     LoadConfig();
-
+    
+    m_pODicons = new ODicons();
+    
     g_pODJSON = new ODJSON;
     g_pODAPI = new ODAPI;
     g_pODPointList = new ODPointList;
@@ -737,15 +736,12 @@ bool ocpn_draw_pi::DeInit(void)
     g_pPathManagerDialog = NULL;
 
     if( g_pODToolbar ) g_pODToolbar->Destroy();
+    delete g_pODToolbar;
     g_pODToolbar = NULL;
     if( g_pODJSON ) delete g_pODJSON;
     g_pODJSON = NULL;
     if( g_pODAPI ) delete g_pODAPI;
     g_pODAPI = NULL;
-    
-    while(g_iLocaleDepth) {
-        ResetGlobalLocale();
-    }
     
     if( m_config_button_id ) RemovePlugInTool(m_config_button_id);
     m_config_button_id = 0;
@@ -758,14 +754,18 @@ bool ocpn_draw_pi::DeInit(void)
     }
 
     delete g_pGZMan;
+    g_pGZMan = NULL;
     delete g_pBoundaryMan;
+    g_pBoundaryMan = NULL;
     delete g_pPathMan;
-#if 0
-    // XXX FIXME core dump
-    // path first/last point is inserted twice in the list
-    // but points have only one manager pointer so double freed.
+    g_pPathMan = NULL;
     delete g_pODPointMan;
-#endif
+    g_pODPointMan = NULL;
+    delete m_pODicons;
+    m_pODicons = NULL;
+    delete g_pODConfig;
+    g_pODConfig = NULL;
+
     shutdown(false);
     return true;
 }
@@ -1212,15 +1212,6 @@ void ocpn_draw_pi::OnToolbarToolUpCallback(int id)
 }
 void ocpn_draw_pi::SaveConfig()
 {
-#ifndef __WXMSW__
-    wxString *l_locale = new wxString(wxSetlocale(LC_NUMERIC, NULL));
-#if wxCHECK_VERSION(3,0,0)  && !defined(_WXMSW_)       
-    wxSetlocale(LC_NUMERIC, "C");
-#else
-    setlocale(LC_NUMERIC, "C");
-#endif
-#endif
-    
     wxFileConfig *pConf = m_pODConfig;
     
     if(pConf)
@@ -1363,26 +1354,10 @@ void ocpn_draw_pi::SaveConfig()
         
     }
     
-#ifndef __WXMSW__
-#if wxCHECK_VERSION(3,0,0)        
-    wxSetlocale(LC_NUMERIC, l_locale->ToAscii());
-#else
-    setlocale(LC_NUMERIC, l_locale->ToAscii());
-#endif
-    delete l_locale;
-#endif
 }
 
 void ocpn_draw_pi::LoadConfig()
 {
-#ifndef __WXMSW__
-    wxString *l_locale = new wxString(wxSetlocale(LC_NUMERIC, NULL));
-#if wxCHECK_VERSION(3,0,0)        
-    wxSetlocale(LC_NUMERIC, "C");
-#else
-    setlocale(LC_NUMERIC, "C");
-#endif
-#endif
     
     wxFileConfig *pConf = (wxFileConfig *)m_pODConfig;
     
@@ -1621,14 +1596,6 @@ void ocpn_draw_pi::LoadConfig()
         pConf->Read( wxS( "DefaultTextPointDisplayTextWhen" ), &g_iTextPointDisplayTextWhen, ID_TEXTPOINT_DISPLAY_TEXT_SHOW_ALWAYS );
     }
 
-#ifndef __WXMSW__
-#if wxCHECK_VERSION(3,0,0)        
-    wxSetlocale(LC_NUMERIC, l_locale->ToAscii());
-#else
-    setlocale(LC_NUMERIC, l_locale->ToAscii());
-#endif
-    delete l_locale;
-#endif
 }
 
 void ocpn_draw_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
@@ -3064,7 +3031,6 @@ void ocpn_draw_pi::DrawAllPathsInBBox(ODDC &dc,  LLBBox& BltBBox)
     wxPathListNode *pnode = g_pPathList->GetFirst();
     while( pnode ) {
         bool b_run = false;
-        bool b_drawn = false;
         ODPath *pPath = pnode->GetData();
         ODPath *pPathDraw = NULL;
         Boundary *pBoundaryDraw = NULL;
@@ -3100,7 +3066,6 @@ void ocpn_draw_pi::DrawAllPathsInBBox(ODDC &dc,  LLBBox& BltBBox)
             
             if( !BltBBox.IntersectOut( test_box ) ) // Path is not wholly outside window
             {
-                b_drawn = true;
                 pPathDraw->Draw( dc, m_VP );
             }
 
@@ -3147,7 +3112,6 @@ void ocpn_draw_pi::DrawAllODPointsInBBox( ODDC& dc, LLBBox& BltBBox )
         return;
     
     wxODPointListNode *node = g_pODPointMan->GetODPointList()->GetFirst();
-    
     while( node ) {
         ODPoint *pOP = node->GetData();
         if(node->GetData()->m_sTypeString == _T("Boundary Point"))
@@ -3680,7 +3644,7 @@ bool ocpn_draw_pi::CreatePILLeftClick( wxMouseEvent &event )
 
     m_pMousePIL->RebuildGUIDList();
     m_pMousePIL->AddLine( _T("Initial"), _T(""), g_dPILOffset);
-    if(g_PILDefaultNumIndexLines >=0)
+    if(g_PILDefaultNumIndexLines == 1)
         m_pMousePIL->AddLine( _T("Second"), _T(""), -g_dPILOffset, false );
 
     if(m_pMousePIL->m_iPersistenceType == ID_PERSISTENT || m_pMousePIL->m_iPersistenceType == ID_PERSISTENT_CRASH)

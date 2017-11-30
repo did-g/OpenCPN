@@ -38,7 +38,7 @@
 #include <wx/stdpaths.h>
 
 
-extern wxString g_SData_Locn;
+extern wxString *g_SData_Locn;
 extern wxString *g_pHome_locn;
 extern wxString *g_pData;
 extern wxString *g_pImage;
@@ -54,7 +54,8 @@ ODicons::ODicons()
 
 ODicons::~ODicons()
 {
-    
+    delete g_SData_Locn;
+    g_SData_Locn = NULL;
 }
 void ODicons::initialize_images(void)
 {
@@ -71,6 +72,7 @@ void ODicons::initialize_images(void)
     fn.AppendDir( wxT("plugins") );
     fn.AppendDir(wxT("ocpn_draw_pi"));
     fn.AppendDir(wxT("data"));
+    g_SData_Locn = new wxString(fn.GetFullPath().c_str());
 //#endif
     wxString s = _("ocpn_draw_pi data location");
     wxLogMessage( wxT("%s: %s"), s.c_str(), fn.GetFullPath().c_str());

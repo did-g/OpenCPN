@@ -178,6 +178,8 @@ extern int          g_InitialEdgePanSensitivity;
 extern int          g_iDisplayToolbar;
 extern ODToolbarImpl   *g_pODToolbar;
 
+extern wxString     *g_SData_Locn;
+
 
 ODPropertiesDialogImpl::ODPropertiesDialogImpl( wxWindow* parent )
 :
@@ -274,7 +276,7 @@ ODPropertiesDialogDef( parent )
     //  Accomodate scaling of icon
     //min_size = wxMax( min_size, (32 *g_ChartScaleFactorExp) + 4 );
     m_bODIComboBoxTextPointIconName->SetMinSize( wxSize(-1, min_size) );
-    m_SizerTextPointIconName->Replace(m_bcomboBoxTextPointIconName, m_bODIComboBoxTextPointIconName);
+    m_fgSizerTextPointIconName->Replace(m_bcomboBoxTextPointIconName, m_bODIComboBoxTextPointIconName);
 
     // EBL Start point Icon
     m_bODIComboBoxEBLStartIconName = new ODIconCombo( m_panelEBL, wxID_ANY, _("Combo!"), wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY );
@@ -349,6 +351,19 @@ ODPropertiesDialogDef( parent )
     delete m_bcomboBoxPILStartIconName;
     delete m_bcomboBoxPILEndIconName;
 
+    wxTextFile license_filea( g_SData_Locn->c_str() + _T("license.txt") );
+    wxString l_LicenseText = wxEmptyString;
+    if ( license_filea.Open() ) {
+        for ( wxString str = license_filea.GetFirstLine(); !license_filea.Eof() ; str = license_filea.GetNextLine() )
+            l_LicenseText.Append( str + _T("\n") );
+        license_filea.Close();
+        m_textCtrlLicense->SetDefaultStyle(wxTextAttr(*wxBLACK));
+        m_textCtrlLicense->Clear();
+        m_textCtrlLicense->SetValue(l_LicenseText);
+    } else {
+        wxLogMessage( _T("Could not open License file: ") + g_SData_Locn->c_str() );
+    }
+    
     SetDialogSize();
 }
 
@@ -393,6 +408,14 @@ void ODPropertiesDialogImpl::OnButtonClickFonts( wxCommandEvent& event )
     if(iRet == wxID_OK) {
         //wxFontData wsfdData = m_pfdDialog->GetFontData();
         m_staticTextFontFaceExample->SetFont(m_pfdDialog->GetFontData().GetChosenFont());
+        m_fgSizerTextPointFont->RecalcSizes();
+        m_panelTextPoint->Layout();
+        SendSizeEvent();
+#if wxCHECK_VERSION(3,0,0) 
+        m_notebookProperties->SetSelection(m_notebookProperties->FindPage(m_panelTextPoint));
+#else
+        m_notebookProperties->SetSelection(3);
+#endif
     }
 }
 
@@ -405,7 +428,6 @@ void ODPropertiesDialogImpl::OnDrawPropertiesOKClick( wxCommandEvent& event )
 #endif
     SetClientSize(m_defaultClientSize);
 
-    ResetGlobalLocale();
     event.Skip();
 }
 
@@ -417,7 +439,6 @@ void ODPropertiesDialogImpl::OnDrawPropertiesCancelClick( wxCommandEvent& event 
 #endif
     SetClientSize(m_defaultClientSize);
 
-    ResetGlobalLocale();
     event.Skip();
 }
 
@@ -661,7 +682,6 @@ void ODPropertiesDialogImpl::SetDialogSize( void )
 
 void ODPropertiesDialogImpl::UpdateProperties( void )
 {
-    SetGlobalLocale();
     SetTableCellBackgroundColours();
     m_textCtrlODPointArrivalRadius->SetValue( wxString::Format( _T("%.3f"), g_n_arrival_circle_radius ) );
     
