@@ -78,7 +78,6 @@ private:
     void OnRangeClick( wxGridRangeSelectEvent& event );
 
     GRIBUICtrlBar *m_pGDialog;
-    GribTimelineRecordSet * m_pTimeset;
     wxColour m_pDataCellsColour;
 };
 
