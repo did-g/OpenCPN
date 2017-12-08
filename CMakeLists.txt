@@ -1134,6 +1134,7 @@ SET(HDRS
 		include/tide_time.h
 		include/ChInfoWin.h
 		include/ocpCursor.h
+		include/ChartObj.h
 		include/Quilt.h
 		include/Hyperlink.h
 		include/NavObjectCollection.h
@@ -1233,6 +1234,7 @@ SET(SRCS
 		src/AIS_Target_Data.cpp
 		src/OCPNListCtrl.cpp
 		src/Quilt.cpp
+		src/ChartObj.cpp
 		src/Hyperlink.cpp
 		src/NavObjectCollection.cpp
 		src/RoutePoint.cpp
