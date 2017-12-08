@@ -3265,6 +3265,147 @@ bool s57chart::GetNearestSafeContour( double safe_cnt, double &next_safe_cnt )
     }
 }
 
+
+ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_list)
+{
+    if (pobj_list == 0) {
+        pobj_list = new ListOfS57Obj;
+        pobj_list->Clear();
+    }
+//    Iterate thru the razRules array, by object/rule type
+
+    ObjRazRules *top;
+    const int selection_mask = MASK_POINT;
+    double safety_contour = S52_getMarinerParam(S52_MAR_SAFETY_CONTOUR);
+
+    for( int i = 0; i < PRIO_NUM; ++i ) {
+
+        if(selection_mask & MASK_POINT){
+            // Points by type, array indices [0..1]
+
+            int point_type = ( ps52plib->m_nSymbolStyle == SIMPLIFIED ) ? 0 : 1;
+            for (top = razRules[i][point_type]; top != NULL; top = top->next) {
+                if ( top->obj->npt != 1 )
+                   continue; 
+
+                // if top-PRIO_HAZARDS
+                S57Obj *obj = top->obj;
+                // only use aton or mutable object (dangers)
+                if ( !(obj->m_bcategory_mutable || obj->bIsAton) )
+                    continue;
+
+                if ( !strncasecmp( obj->FeatureName, "LIGHTS", 6 ) )
+                    continue;
+
+                // XXX config option
+                if ( !strncasecmp( obj->FeatureName, "BOYLAT", 6 ) )
+                    continue;
+                if ( !strncasecmp( obj->FeatureName, "BOYSAW", 6 ) )
+                    continue;
+
+                if ( obj->m_bcategory_mutable && !obj->bCS_Added) {
+                    // XXX need ps52 function for conditionnal symbol
+                    //obj->CSrules = NULL;
+                    ps52plib->ComputeCSRules( top );
+                }
+
+                if ( obj->m_bcategory_mutable && obj->m_DisplayCat != DISPLAYBASE)
+                    continue;
+
+
+                double lat, lon;
+                fromSM( ( obj->x * obj->x_rate ) + obj->x_origin, ( obj->y * obj->y_rate ) + obj->y_origin,
+                    ref_lat, ref_lon, &lat, &lon );
+
+                if (region.Contains(lat, lon)) {
+                    bool add  = true;
+                    // find water
+                    ListOfS57Obj *area_list = GetAssociatedObjects(obj);
+                    bool danger = false;
+                    if( area_list ){    
+                        wxListOfS57ObjNode *node = area_list->GetFirst();
+                        while(node) {
+                            S57Obj *ptest_obj = node->GetData();
+                            if (GEO_LINE == ptest_obj->Primitive_type) {
+                               double drval2 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL2", drval2);
+                               if(drval2 < safety_contour) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            else {
+                               double drval1 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL1", drval1);
+#if 0
+                               double drval2 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL2", drval2);
+
+                               if(expsou == 1 || depth_value < drval2 )
+                               b_promote = true;
+#endif
+                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            node = node->GetNext();
+                        }
+                        if (!danger) add = false;
+
+                        delete area_list;
+                    }
+                    // danger in safe water
+                    if (add) pobj_list->Append( top->obj );
+                }
+            }
+        }
+        if(selection_mask & MASK_AREA){
+            // Areas by boundary type, array indices [3..4]
+            int area_boundary_type = ( ps52plib->m_nBoundaryStyle == PLAIN_BOUNDARIES ) ? 3 : 4;
+            top = razRules[i][area_boundary_type];           // Area nnn Boundaries
+
+            for (top = razRules[i][area_boundary_type]; top != NULL; top = top->next) {
+                S57Obj *obj = top->obj;
+
+                if (!(    !strncmp( obj->FeatureName, "LNDARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "DRGARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "DEPARE", 6 ) ))
+                   continue;
+                if (!strncmp( obj->FeatureName, "LNDARE", 6 ) ) {
+                
+                }
+
+#if 0            
+                if( ps52plib->ObjectRenderCheck( top, VPoint ) ) {
+                    if( DoesLatLonSelectObject( lat, lon, select_radius, top->obj ) ) 
+                        ret_ptr->Append( top );
+                }
+#endif                
+            }
+        }
+
+
+        if(selection_mask & MASK_LINE){
+                // Finally, lines
+            top = razRules[i][2];           // Lines
+
+            while( top != NULL ) {
+#if 0
+                if( ps52plib->ObjectRenderCheck( top, VPoint ) ) {
+                    if( DoesLatLonSelectObject( lat, lon, select_radius, top->obj ) ) ret_ptr->Append(
+                            top );
+                }
+#endif
+                top = top->next;
+            }
+        }
+    }
+
+    return pobj_list;
+}
+
+
 /*
  --------------------------------------------------------------------------
  Build a list of "associated" DEPARE and DRGARE objects from a given
