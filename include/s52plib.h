@@ -135,6 +135,8 @@ public:
     bool ObjectRenderCheckCat( ObjRazRules *rzRules, ViewPort *vp );
     bool ObjectRenderCheckCS( ObjRazRules *rzRules, ViewPort *vp );
 
+    void ComputeCSRules( ObjRazRules *rzRules );
+
     static void DestroyLUP( LUPrec *pLUP );
     static void ClearRulesCache( Rule *pR );
     DisCat findLUPDisCat(const char *objectName, LUPname TNAM);
