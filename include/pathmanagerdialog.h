@@ -104,6 +104,7 @@ class PathManagerDialog : public wxDialog {
 
             void OnLayDefaultAction(wxListEvent &event);
             void OnLayNewClick(wxCommandEvent &event);
+            void OnChart2LayClick(wxCommandEvent &event);
             void OnLayPropertiesClick(wxCommandEvent &event);
             void OnLayToggleChartClick(wxCommandEvent &event);
             void OnLayToggleListingClick(wxCommandEvent &event);
@@ -148,6 +149,7 @@ class PathManagerDialog : public wxDialog {
             wxButton *btnODPointDeleteAll;
             
             wxButton *btnLayNew;
+            wxButton *btnChart2Lay;
             //wxButton *btnLayProperties;
             wxButton *btnLayToggleChart;
             wxButton *btnLayToggleListing;

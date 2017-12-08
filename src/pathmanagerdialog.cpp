@@ -164,6 +164,10 @@ extern bool         g_bShowLayers;
 extern wxString     g_sODPointIconName;
 extern ODPlugIn_Position_Fix_Ex  g_pfFix;
 
+extern PlugIn_ViewPort g_VP;
+extern int g_BoundaryLineWidth; 
+extern int g_BoundaryLineStyle;
+
 //extern AIS_Decoder      *g_pAIS;
 
 // sort callback. Sort by route name.
@@ -627,6 +631,11 @@ void PathManagerDialog::Create()
     btnLayNew->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(PathManagerDialog::OnLayNewClick), NULL, this );
 
+    btnChart2Lay = new wxButton( m_pPanelLay, -1, _("S57 quilt to layer") );
+    bsLayButtons->Add( btnChart2Lay, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
+    btnChart2Lay->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(PathManagerDialog::OnChart2LayClick), NULL, this );
+
     //btnLayProperties = new wxButton(m_pPanelLay, -1, _("&Properties"));
     //bsLayButtons->Add(btnLayProperties, 0, wxALL|wxEXPAND, DIALOG_MARGIN);
     //btnLayProperties->Connect(wxEVT_COMMAND_BUTTON_CLICKED,
@@ -769,6 +778,8 @@ PathManagerDialog::~PathManagerDialog()
                              wxListEventHandler(PathManagerDialog::OnLayColumnClicked), NULL, this );
     btnLayNew->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
                         wxCommandEventHandler(PathManagerDialog::OnLayNewClick), NULL, this );
+    btnChart2Lay->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
+                        wxCommandEventHandler(PathManagerDialog::OnChart2LayClick), NULL, this );
     
     btnLayDelete->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
                            wxCommandEventHandler(PathManagerDialog::OnLayDeleteClick), NULL, this );
@@ -799,6 +810,7 @@ PathManagerDialog::~PathManagerDialog()
     delete btnExport;
     delete btnExportViz;
     delete btnLayNew;
+    delete btnChart2Lay;
     delete btnLayDelete;
     delete btnLayToggleChart;
     delete btnLayToggleNames;
@@ -1837,6 +1849,107 @@ void PathManagerDialog::OnLayNewClick( wxCommandEvent &event )
     UpdatePathListCtrl();
     UpdateODPointsListCtrl();
     UpdateLayListCtrl();
+    RequestRefresh( GetOCPNCanvasWindow() );
+}
+
+void PathManagerDialog::OnChart2LayClick( wxCommandEvent &event )
+{
+    if (!g_VP.bValid)
+        return;
+
+    bool show_flag = g_bShowLayers;
+    g_bShowLayers = true;
+    
+    // g_pODConfig->UI_ImportGPX( this, true, _T("") );
+    Boundary *l_pBoundary = new Boundary();
+    l_pBoundary->m_bInclusionBoundary = true;
+    l_pBoundary->m_bExclusionBoundary = false;
+    l_pBoundary->m_wxcActiveLineColour = wxColour( 0, 255, 0 );
+    l_pBoundary->m_wxcActiveFillColour = wxColour( 0, 255, 0 );
+    l_pBoundary->CreateColourSchemes();
+    l_pBoundary->SetColourScheme();
+    l_pBoundary->SetActiveColours();
+
+    g_pBoundaryList->Append( l_pBoundary );
+    g_pPathList->Append( l_pBoundary);
+    l_pBoundary->m_width = g_BoundaryLineWidth;
+    l_pBoundary->m_style = g_BoundaryLineStyle;
+
+    LLBBox l_LLBBox;
+    l_LLBBox.Set(g_VP.lat_min, g_VP.lon_min, g_VP.lat_max, g_VP.lon_max);
+
+    BoundaryPoint *l_BP1 = new BoundaryPoint(l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), g_sODPointIconName, wxS(""), wxT(""));
+    l_BP1->SetNameShown( false );
+    l_BP1->SetTypeString( wxS("Boundary Point") );
+    g_pODConfig->AddNewODPoint( l_BP1, -1 );
+    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_BP1 );
+    l_pBoundary->AddPoint( l_BP1 );
+
+    BoundaryPoint *l_BP2 = new BoundaryPoint(l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), g_sODPointIconName, wxS(""), wxT(""));
+    l_BP2->SetNameShown( false );
+    l_BP2->SetTypeString( wxS("Boundary Point") );
+    g_pODConfig->AddNewODPoint( l_BP2, -1 );
+    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_BP2 );
+    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_BP1, l_BP2, l_pBoundary );
+    l_pBoundary->AddPoint( l_BP2 );
+
+    BoundaryPoint *l_BP3 = new BoundaryPoint(l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), g_sODPointIconName, wxS(""), wxT(""));
+    l_BP3->SetNameShown( false );
+    l_BP3->SetTypeString( wxS("Boundary Point") );
+    g_pODConfig->AddNewODPoint( l_BP3, -1 );
+    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_BP3 );
+    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_BP2, l_BP3, l_pBoundary );
+    l_pBoundary->AddPoint( l_BP3 );
+
+    BoundaryPoint *l_BP4 = new BoundaryPoint(l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), g_sODPointIconName, wxS(""), wxT(""));
+    l_BP4->SetNameShown( false );
+    l_BP4->SetTypeString( wxS("Boundary Point") );
+    g_pODConfig->AddNewODPoint( l_BP4, -1 );
+    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_BP4 );
+    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_BP3, l_BP4, l_pBoundary );
+    l_pBoundary->AddPoint( l_BP4 );
+
+    // Add final point to close the boundary
+    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_BP4, l_BP1, l_pBoundary );
+    l_pBoundary->AddPoint( l_BP1 );
+
+    l_pBoundary->RebuildGUIDList(); // ensure the GUID list is intact and good
+    l_pBoundary->SetHiLite(0);
+    l_pBoundary->m_bIsBeingCreated = false;
+    // --------------
+    ListOfPI_ChartObj *lst = GetHazards( g_VP );
+    if (lst) {
+        for( ListOfPI_ChartObj::Node *node = lst->GetFirst(); node; node = node->GetNext() ) {
+            PI_ChartObj *cobj = node->GetData();
+            char name[7];
+            memcpy(name, cobj->FeatureName, 6);
+            name[6] = 0;
+            switch (cobj->Primitive_type) {
+            case 0: // GEO_POINT
+                {
+                    BoundaryPoint *hazard = new BoundaryPoint( cobj->m_lat, cobj->m_lon, g_sODPointIconName, name , wxT("") );
+                    hazard->SetNameShown( false );
+                    hazard->SetTypeString( wxS("Boundary Point") );
+                    hazard->m_bIsolatedMark = TRUE;
+                    hazard->m_bIsolatedMark = TRUE;
+                    hazard->SetShowODPointRangeRings(true);
+                    g_pODConfig->AddNewODPoint( hazard, -1 );    // use auto next num
+                    g_pODSelect->AddSelectableODPoint( cobj->m_lat, cobj->m_lon, hazard );
+                }
+                break;
+            case 2: // GEO_AREA
+                break;
+            }
+        }    
+        delete lst;
+    }
+    // --------------
+    g_bShowLayers = show_flag;
+
+    UpdatePathListCtrl();
+    UpdateODPointsListCtrl();
+    UpdateLayListCtrl();
+    ZoomtoPath(l_pBoundary);
     RequestRefresh( GetOCPNCanvasWindow() );
 }
 

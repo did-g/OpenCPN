@@ -290,7 +290,7 @@ public:
 };
 
 
-class ocpn_draw_pi : public opencpn_plugin_113
+class ocpn_draw_pi : public opencpn_plugin_115
 {
 public:
 
