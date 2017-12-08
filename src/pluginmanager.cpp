@@ -40,6 +40,10 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#if defined(USE_LIBELF)
+#undef USE_LIBELF
+#endif
+
 #ifdef USE_LIBELF
 #include <elf.h>
 #include <libelf.h>
@@ -84,6 +88,8 @@
 #ifdef ocpnUSE_GL
 #include "glChartCanvas.h"
 #endif
+
+#include "ChartObj.h"
 
 extern MyConfig        *pConfig;
 extern AIS_Decoder     *g_pAIS;
@@ -507,6 +513,8 @@ bool PlugInManager::CallLateInit(void)
             case 112:
             case 113:
             case 114:
+            case 115:
+            
                 if(pic->m_cap_flag & WANTS_LATE_INIT) {
                     wxString msg(_T("PlugInManager: Calling LateInit PlugIn: "));
                     msg += pic->m_plugin_file;
@@ -540,6 +548,7 @@ void PlugInManager::SendVectorChartObjectInfo(const wxString &chart, const wxStr
                 case 112:
                 case 113:
                 case 114:
+                case 115:
                 {
                     opencpn_plugin_112 *ppi = dynamic_cast<opencpn_plugin_112 *>(pic->m_pplugin);
                     if(ppi)
@@ -1304,6 +1313,10 @@ PlugInContainer *PlugInManager::LoadPlugIn(wxString plugin_file)
     case 114:
         pic->m_pplugin = dynamic_cast<opencpn_plugin_114*>(plug_in);
         break;
+
+    case 115:
+        pic->m_pplugin = dynamic_cast<opencpn_plugin_115*>(plug_in);
+        break;
         
     default:
         break;
@@ -1369,6 +1382,7 @@ bool PlugInManager::RenderAllCanvasOverlayPlugIns( ocpnDC &dc, const ViewPort &v
                     case 112:
                     case 113:
                     case 114:
+                    case 115:
                     {
                         opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                         if(ppi)
@@ -1422,6 +1436,7 @@ bool PlugInManager::RenderAllCanvasOverlayPlugIns( ocpnDC &dc, const ViewPort &v
                     case 112:
                     case 113:
                     case 114:
+                    case 115:
                     {
                         opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                         if(ppi)
@@ -1485,6 +1500,7 @@ bool PlugInManager::RenderAllGLCanvasOverlayPlugIns( wxGLContext *pcontext, cons
                 case 112:
                 case 113:
                 case 114:
+                case 115:
                 {
                     opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                     if(ppi)
@@ -1516,6 +1532,7 @@ bool PlugInManager::SendMouseEventToPlugins( wxMouseEvent &event)
                     case 112:
                     case 113:
                     case 114:
+                    case 115:
                     {
                         opencpn_plugin_112 *ppi = dynamic_cast<opencpn_plugin_112*>(pic->m_pplugin);
                             if(ppi)
@@ -1549,6 +1566,7 @@ bool PlugInManager::SendKeyEventToPlugins( wxKeyEvent &event)
                     {
                         case 113:
                         case 114:
+                        case 115:
                         {
                             opencpn_plugin_113 *ppi = dynamic_cast<opencpn_plugin_113*>(pic->m_pplugin);
                             if(ppi && ppi->KeyboardEventHook( event ))
@@ -1611,6 +1629,7 @@ void NotifySetupOptionsPlugin( PlugInContainer *pic )
             case 112:
             case 113:
             case 114:
+            case 115:
             {
                 opencpn_plugin_19 *ppi = dynamic_cast<opencpn_plugin_19 *>(pic->m_pplugin);
                 if(ppi) {
@@ -1787,6 +1806,8 @@ void PlugInManager::SendMessageToAllPlugins(const wxString &message_id, const wx
                 case 112:
                 case 113:
                 case 114:
+                case 115:
+                
                 {
                     opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                     if(ppi)
@@ -1866,6 +1887,7 @@ void PlugInManager::SendPositionFixToAllPlugIns(GenericPosDatEx *ppos)
                 case 112:
                 case 113:
                 case 114:
+                case 115:
                 {
                     opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                     if(ppi)
@@ -3742,6 +3764,15 @@ opencpn_plugin_114::~opencpn_plugin_114(void)
 {
 }
 
+//    Opencpn_Plugin_115 Implementation
+opencpn_plugin_115::opencpn_plugin_115(void *pmgr)
+: opencpn_plugin_114(pmgr)
+{
+}
+
+opencpn_plugin_115::~opencpn_plugin_115(void)
+{
+}
 
 //          Helper and interface classes
 
@@ -5188,6 +5219,120 @@ void CreateCompatibleS57Object( PI_S57Obj *pObj, S57Obj *cobj, chart_context *pc
     }
 }
 
+static PI_ChartObj *CreatePluginChartObject(S57Obj *pObj )
+{
+    PI_ChartObj *cobj = new PI_ChartObj;
+    assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
+    memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
+    cobj->Primitive_type = (GeoPrim_t)pObj->Primitive_type;
+    cobj->att_array = pObj->att_array;
+    // cobj->attVal = pObj->attVal;
+    cobj->n_attr = pObj->n_attr;    
+    
+    cobj->x = pObj->x;
+    cobj->y = pObj->y;
+    cobj->z = pObj->z;
+    cobj->npt = pObj->npt;
+    
+    cobj->iOBJL = pObj->iOBJL;
+    cobj->Index = pObj->Index;
+    
+    cobj->geoPt = (pt *)pObj->geoPt;
+    cobj->geoPtz = pObj->geoPtz;
+    cobj->geoPtMulti = pObj->geoPtMulti;
+    
+    cobj->m_lat = pObj->m_lat;
+    cobj->m_lon = pObj->m_lon;
+    
+    cobj->m_DisplayCat = (PI_DisCat)pObj->m_DisplayCat;
+#if 0    
+    cobj->x_rate = pObj->x_rate;
+    cobj->y_rate = pObj->y_rate;
+    cobj->x_origin = pObj->x_origin;
+    cobj->y_origin = pObj->y_origin;
+#endif    
+    cobj->Scamin = pObj->Scamin;
+    cobj->nRef = pObj->nRef;
+    cobj->bIsAton = pObj->bIsAton;
+    cobj->bIsAssociable = pObj->bIsAssociable;
+    
+    cobj->m_n_lsindex = pObj->m_n_lsindex;
+    cobj->m_lsindex_array = pObj->m_lsindex_array;
+    cobj->m_n_edge_max_points = pObj->m_n_edge_max_points;
+#if 0    
+    if(gs_plib_flags & PLIB_CAPS_OBJSEGLIST){
+        cobj->m_ls_list_legacy = (PI_line_segment_element *)pObj->m_ls_list;          // note the cast, assumes in-sync layout
+    }
+    else   
+        cobj->m_ls_list_legacy = 0;
+#endif
+    cobj->m_ls_list = 0;
+
+#if 0        
+    if(gs_plib_flags & PLIB_CAPS_OBJCATMUTATE)
+        cobj->m_bcategory_mutable = pObj->m_bcategory_mutable;
+    else
+        cobj->m_bcategory_mutable = true;                       // assume all objects are mutable
+
+    cobj->m_DPRI = -1;                              // default is unassigned, fixed at render time
+    if(gs_plib_flags & PLIB_CAPS_OBJCATMUTATE){
+        if(pObj->m_DPRI == -1){
+            S52PLIB_Context *pCtx = (S52PLIB_Context *)pObj->S52_Context;
+            if(pCtx->LUP)
+                cobj->m_DPRI = pCtx->LUP->DPRI - '0';
+        }
+        else
+            cobj->m_DPRI = pObj->m_DPRI;
+    }
+#endif    
+        
+ 
+    cobj->pPolyTessGeo = ( PolyTessGeo* )pObj->pPolyTessGeo;
+    cobj->m_chart_context = (chart_context *)pObj->m_chart_context;
+    
+#if 0    
+    if(pObj->auxParm3 != 1234){
+        pObj->auxParm3 = 1234;
+        pObj->auxParm0 = -99;
+    }
+        
+    cobj->auxParm0 = pObj->auxParm0;
+    cobj->auxParm1 = 0;
+    cobj->auxParm2 = 0;
+    cobj->auxParm3 = 0;
+    
+    S52PLIB_Context *pContext = (S52PLIB_Context *)pObj->S52_Context;
+    if( pContext->bBBObj_valid )
+        // this is ugly because plugins still use wxBoundingBox
+        cobj->BBObj.Set(pContext->BBObj.GetMinY(), pContext->BBObj.GetMinX(),
+                        pContext->BBObj.GetMaxY(), pContext->BBObj.GetMaxX());
+    cobj->CSrules = pContext->CSrules;
+    cobj->bCS_Added = pContext->bCS_Added;
+    
+    cobj->FText = pContext->FText;
+    cobj->bFText_Added = pContext->bFText_Added;
+    cobj->rText = pContext->rText;
+    
+    cobj->bIsClone = true;              // Protect cloned object pointers in S57Obj dtor
+    if(pctx){
+        cobj->m_chart_context = pctx;
+        chart_context *ppctx = (chart_context *)pObj->m_chart_context;
+        
+        if( ppctx ){
+            cobj->m_chart_context->m_pvc_hash = ppctx->m_pvc_hash;
+            cobj->m_chart_context->m_pve_hash = ppctx->m_pve_hash;
+            cobj->m_chart_context->ref_lat = ppctx->ref_lat;
+            cobj->m_chart_context->ref_lon = ppctx->ref_lon;
+            cobj->m_chart_context->pFloatingATONArray = ppctx->pFloatingATONArray;
+            cobj->m_chart_context->pRigidATONArray = ppctx->pRigidATONArray;
+            cobj->m_chart_context->safety_contour = ppctx->safety_contour;
+            cobj->m_chart_context->vertex_buffer = ppctx->vertex_buffer;
+        }
+        cobj->m_chart_context->chart = 0;           // note bene, this is always NULL for a PlugIn chart
+    }
+#endif
+    return cobj;
+}
 
 bool PI_PLIBSetContext( PI_S57Obj *pObj )
 {
@@ -6355,5 +6500,35 @@ void PlugInAISDrawGL( wxGLCanvas* glcanvas, const PlugIn_ViewPort &vp )
 bool PlugInSetFontColor(const wxString TextElement, const wxColour color)
 {
   return FontMgr::Get().SetFontColor(TextElement, color);
+}
+
+// -----------------------------------
+/* API 1.15 */
+#include <wx/listimpl.cpp>
+WX_DEFINE_LIST(ListOfPI_ChartObj);
+
+ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp )
+{
+  ChartObj a;
+  ViewPort ocpn_vp = CreateCompatibleViewport(vp);
+  ListOfS57Obj *rep = a.GetHazards(ocpn_vp);
+
+  ListOfPI_ChartObj *crep = new ListOfPI_ChartObj;
+  for( ListOfS57Obj::Node *node = rep->GetFirst(); node; node = node->GetNext() ) {
+       PI_ChartObj *c;
+       S57Obj *pobj = node->GetData();
+       c = CreatePluginChartObject(pobj);
+       crep->Append( c );
+  }                 
+  delete rep;
+
+  return crep;
+}
+
+
+ListOfPI_ChartObj *GetSafeWaterAreas(const PlugIn_ViewPort &vp )
+{
+  ViewPort ocpn_vp = CreateCompatibleViewport(vp);
+  return 0;
 }
 

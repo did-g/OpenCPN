@@ -50,7 +50,7 @@ class wxGLContext;
 //    PlugIns conforming to API Version less then the most modern will also
 //    be correctly supported.
 #define API_VERSION_MAJOR           1
-#define API_VERSION_MINOR           14
+#define API_VERSION_MINOR           15
 
 //    Fwd Definitions
 class       wxFileConfig;
@@ -524,6 +524,14 @@ public:
 
 };
 
+class DECL_EXP opencpn_plugin_115 : public opencpn_plugin_114
+{
+public:
+  opencpn_plugin_115(void *pmgr);
+  virtual ~opencpn_plugin_115();
+
+};
+
 //------------------------------------------------------------------
 //      Route and Waypoint PlugIn support
 //
@@ -763,8 +771,10 @@ extern  DECL_EXP wxString GetLocaleCanonicalName();
 
 
 class PI_S57Obj;
-
 WX_DECLARE_LIST(PI_S57Obj, ListOfPI_S57Obj);
+
+class PI_ChartObj;
+WX_DECLARE_LIST(PI_ChartObj, ListOfPI_ChartObj);
 
 // ----------------------------------------------------------------------------
 // PlugInChartBaseGL
@@ -1215,5 +1225,66 @@ extern WXDLLIMPEXP_CORE const wxEventType wxEVT_DOWNLOAD_EVENT;
 /* Allow drawing of objects onto other OpenGL canvases */
 extern DECL_EXP void PlugInAISDrawGL( wxGLCanvas* glcanvas, const PlugIn_ViewPort& vp );
 extern DECL_EXP bool PlugInSetFontColor(const wxString TextElement, const wxColour color);
+
+// API 1.15 Extra objects handling. 
+// chart file vfs plugin.
+class DECL_EXP PI_ChartObj
+{
+public:
+
+      //  Public Methods
+      PI_ChartObj() {};
+      ~PI_ChartObj() {};
+
+public:
+      // Instance Data
+      char                    FeatureName[8];
+      int                     Primitive_type;
+
+      char                    *att_array;
+      int                     n_attr;
+
+      int                     iOBJL;
+      int                     Index;
+
+      double                  x;                      // for POINT
+      double                  y;
+      double                  z;
+      int                     npt;                    // number of points as needed by arrays
+      void                    *geoPt;                 // for LINE & AREA not described by PolyTessGeo
+      double                  *geoPtz;                // an array[3] for MultiPoint, SM with Z, i.e. depth
+      double                  *geoPtMulti;            // an array[2] for MultiPoint, lat/lon to make bbox
+                                                      // of decomposed points
+
+      void                    *pPolyTessGeo;
+
+      double                  m_lat;                  // The lat/lon of the object's "reference" point
+      double                  m_lon;
+
+      int                     Scamin;                 // SCAMIN attribute decoded during load
+
+      bool                    bIsClone;
+      int                     nRef;                   // Reference counter, to signal OK for deletion
+
+      bool                    bIsAton;                // This object is an aid-to-navigation
+      bool                    bIsAssociable;          // This object is DRGARE or DEPARE
+
+      int                     m_n_lsindex;
+      int                     *m_lsindex_array;
+      int                     m_n_edge_max_points;
+      void                    *m_chart_context;
+
+      PI_DisCat               m_DisplayCat;
+
+      void *                  S52_Context;
+
+      PI_line_segment_element *m_ls_list;
+      bool                    m_bcategory_mutable;
+      int                     m_DPRI;
+};
+
+extern DECL_EXP ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp );
+extern DECL_EXP ListOfPI_ChartObj *GetSafeWaterAreas(const PlugIn_ViewPort &vp );
+
 
 #endif //_PLUGIN_H_
