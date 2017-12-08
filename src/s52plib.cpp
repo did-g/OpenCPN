@@ -5694,7 +5694,27 @@ int s52plib::RenderObjectToGLText( const wxGLContext &glcc, ObjRazRules *rzRules
     return DoRenderObjectTextOnly( NULL, rzRules, vp );
 }
 
+void s52plib::ComputeCSRules( ObjRazRules *rzRules )
+{
+    Rules *rules = rzRules->LUP->ruleList;
 
+    while( rules != NULL ) {
+        switch( rules->ruleType ){
+            case RUL_CND_SY: {
+                if( !rzRules->obj->bCS_Added ) {
+                    rzRules->obj->CSrules = NULL;
+                    ps52plib->GetAndAddCSRules( rzRules, rules );
+                    if(strncmp(rzRules->obj->FeatureName, "SOUNDG", 6))
+                        rzRules->obj->bCS_Added = 1; // mark the object
+                }
+                break;
+            }
+            default:
+                break;
+        } 
+        rules = rules->next;
+    }
+}
 
 int s52plib::DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp )
 {
