@@ -171,11 +171,11 @@ public:
       //    DEPCNT VALDCO array access
       bool GetNearestSafeContour(double safe_cnt, double &next_safe_cnt);
 
+      virtual ListOfS57Obj *GetHazards(const LLRegion &region, ListOfS57Obj *lst = 0);
       virtual ListOfS57Obj *GetAssociatedObjects(S57Obj *obj);
 
       virtual VE_Hash&  Get_ve_hash(void){ return m_ve_hash; }
       virtual VC_Hash&  Get_vc_hash(void){ return m_vc_hash; }
-
       virtual void ForceEdgePriorityEvaluate(void);
 
       float *GetLineVertexBuffer( void ){ return m_line_vertex_buffer; }
