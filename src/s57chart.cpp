@@ -120,6 +120,7 @@ WX_DEFINE_OBJARRAY(ArrayOfS57Obj);
 
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(ListOfS57Obj);                // Implement a list of S57 Objects
+WX_DEFINE_LIST(ListOfS57ObjRegion);
 
 WX_DEFINE_LIST(ListOfObjRazRules);   // Implement a list ofObjRazRules
 
@@ -3443,7 +3444,7 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
                     // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
                     free(ptestp);
                     #endif
-                    if (nPointReduced) {
+                    if (nPointReduced >= 3) {
                         double *to = new double[nPointReduced *2];
                         for (int v = 0; v < nPointReduced*2; v +=2) {
                            to[v]    = pReduced[v/2].m_y;
@@ -3475,7 +3476,7 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
                 // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
                 free( ptestp );
                 #endif
-                if (nPointReduced) {
+                if (nPointReduced >= 3) {
                     double *to = new double[nPointReduced *2];
                     for (int v = 0; v < nPointReduced*2; v +=2) {
                            to[v]    = pReduced[v/2].m_y;
@@ -3495,10 +3496,10 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
     return region;
 }
 
-ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_list)
+ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjRegion *pobj_list)
 {
     if (pobj_list == 0) {
-        pobj_list = new ListOfS57Obj;
+        pobj_list = new ListOfS57ObjRegion;
         pobj_list->Clear();
     }
 //    Iterate thru the razRules array, by object/rule type
@@ -3590,7 +3591,10 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
                         delete area_list;
                     }
                     // danger in safe water
-                    if (add) pobj_list->Append( obj );
+                    if (add) {
+                        S57ObjRegion *l =  new S57ObjRegion(obj, 0) ;
+                        pobj_list->Append( l );
+                    }
                 }
             }
         }
@@ -3618,15 +3622,48 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
                     LLRegion i(obj->BBObj);
                     i.Intersect(region);
                     if (!i.Empty()) {
-                        pobj_list->Append( obj );
+                        printf ("/");
+                        LLRegion *e = S57Obj2LLRegion(obj);
+                        e->Intersect(i);
+                        if (!e->Empty()) {
+                            printf ("\\");
+                            S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
+                            pobj_list->Append( l );
+                        }
+                        else
+                            delete e;
                     }
-                    continue;
+                    continue; // done
                 }
                 if ( obj->m_bcategory_mutable && !obj->bCS_Added) {
                     ps52plib->ComputeCSRules( top );
                 }
 
-                if ( strncmp( obj->FeatureName, "DEPARE", 6 ) ) { // not a DEPARE
+                if ( !strncmp( obj->FeatureName, "DEPARE", 6 ) || 
+                     !strncmp( obj->FeatureName, "DRGARE", 6 ) ) 
+                {
+                    double drval1 = 0.0;
+                    GetDoubleAttr(obj, "DRVAL1", drval1);
+                    if (drval1 <= safety_contour) {
+                        LLRegion i(obj->BBObj);
+                        i.Intersect(region);
+                        if (!i.Empty()) {
+                            printf (".");
+                            LLRegion *e = S57Obj2LLRegion(obj);
+                            //e->Reduce(0.0003);
+                            e->Intersect(i);
+                            if (!e->Empty()) {
+                                printf ("+");
+                                S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
+                                pobj_list->Append( l );
+                            }
+                            else
+                                delete e;
+                        }
+                    }
+
+                }
+                else {
                     bool add  = true;
                     // find water
                     ListOfS57Obj *area_list = GetAssociatedObjects(obj);
@@ -3659,26 +3696,19 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
                         if (add) {
                             LLRegion i(obj->BBObj);
                             i.Intersect(region);
-                            if (!i.Empty())
-                                pobj_list->Append( obj );
-                        }
-                    }
-                }
-                else {
-                    double drval1 = 0.0;
-                    GetDoubleAttr(obj, "DRVAL1", drval1);
-                    if (drval1 <= safety_contour) {
-                        LLRegion i(obj->BBObj);
-                        i.Intersect(region);
-                        if (!i.Empty()) {
-                            printf (".");
-                            LLRegion *e = S57Obj2LLRegion(obj);
-                            i.Intersect(*e);
                             if (!i.Empty()) {
-                                printf ("+");
-                                pobj_list->Append( obj );
+                                printf ("-");
+                                LLRegion *e = S57Obj2LLRegion(obj);
+                                //e->Reduce(0.0003);
+                                e->Intersect(i);
+                                if (!e->Empty()) {
+                                    printf ("=");
+                                    S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
+                                    pobj_list->Append( l );
+                                }
+                                else
+                                    delete e;
                             }
-                            delete e;
                         }
                     }
                 }
