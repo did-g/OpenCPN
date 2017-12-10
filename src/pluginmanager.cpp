@@ -5227,120 +5227,6 @@ void CreateCompatibleS57Object( PI_S57Obj *pObj, S57Obj *cobj, chart_context *pc
     }
 }
 
-static PI_ChartObj *CreatePluginChartObject(S57Obj *pObj )
-{
-    PI_ChartObj *cobj = new PI_ChartObj;
-    assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
-    memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
-    cobj->Primitive_type = (GeoPrim_t)pObj->Primitive_type;
-    cobj->att_array = pObj->att_array;
-    // cobj->attVal = pObj->attVal;
-    cobj->n_attr = pObj->n_attr;    
-    
-    cobj->x = pObj->x;
-    cobj->y = pObj->y;
-    cobj->z = pObj->z;
-    cobj->npt = pObj->npt;
-    
-    cobj->iOBJL = pObj->iOBJL;
-    cobj->Index = pObj->Index;
-    
-    cobj->geoPt = (pt *)pObj->geoPt;
-    cobj->geoPtz = pObj->geoPtz;
-    cobj->geoPtMulti = pObj->geoPtMulti;
-    
-    cobj->m_lat = pObj->m_lat;
-    cobj->m_lon = pObj->m_lon;
-    
-    cobj->m_DisplayCat = (PI_DisCat)pObj->m_DisplayCat;
-#if 0    
-    cobj->x_rate = pObj->x_rate;
-    cobj->y_rate = pObj->y_rate;
-    cobj->x_origin = pObj->x_origin;
-    cobj->y_origin = pObj->y_origin;
-#endif    
-    cobj->Scamin = pObj->Scamin;
-    cobj->nRef = pObj->nRef;
-    cobj->bIsAton = pObj->bIsAton;
-    cobj->bIsAssociable = pObj->bIsAssociable;
-    
-    cobj->m_n_lsindex = pObj->m_n_lsindex;
-    cobj->m_lsindex_array = pObj->m_lsindex_array;
-    cobj->m_n_edge_max_points = pObj->m_n_edge_max_points;
-#if 0    
-    if(gs_plib_flags & PLIB_CAPS_OBJSEGLIST){
-        cobj->m_ls_list_legacy = (PI_line_segment_element *)pObj->m_ls_list;          // note the cast, assumes in-sync layout
-    }
-    else   
-        cobj->m_ls_list_legacy = 0;
-#endif
-    cobj->m_ls_list = 0;
-
-#if 0        
-    if(gs_plib_flags & PLIB_CAPS_OBJCATMUTATE)
-        cobj->m_bcategory_mutable = pObj->m_bcategory_mutable;
-    else
-        cobj->m_bcategory_mutable = true;                       // assume all objects are mutable
-
-    cobj->m_DPRI = -1;                              // default is unassigned, fixed at render time
-    if(gs_plib_flags & PLIB_CAPS_OBJCATMUTATE){
-        if(pObj->m_DPRI == -1){
-            S52PLIB_Context *pCtx = (S52PLIB_Context *)pObj->S52_Context;
-            if(pCtx->LUP)
-                cobj->m_DPRI = pCtx->LUP->DPRI - '0';
-        }
-        else
-            cobj->m_DPRI = pObj->m_DPRI;
-    }
-#endif    
-        
- 
-    cobj->pPolyTessGeo = ( PolyTessGeo* )pObj->pPolyTessGeo;
-    cobj->m_chart_context = (chart_context *)pObj->m_chart_context;
-    
-#if 0    
-    if(pObj->auxParm3 != 1234){
-        pObj->auxParm3 = 1234;
-        pObj->auxParm0 = -99;
-    }
-        
-    cobj->auxParm0 = pObj->auxParm0;
-    cobj->auxParm1 = 0;
-    cobj->auxParm2 = 0;
-    cobj->auxParm3 = 0;
-    
-    S52PLIB_Context *pContext = (S52PLIB_Context *)pObj->S52_Context;
-    if( pContext->bBBObj_valid )
-        // this is ugly because plugins still use wxBoundingBox
-        cobj->BBObj.Set(pContext->BBObj.GetMinY(), pContext->BBObj.GetMinX(),
-                        pContext->BBObj.GetMaxY(), pContext->BBObj.GetMaxX());
-    cobj->CSrules = pContext->CSrules;
-    cobj->bCS_Added = pContext->bCS_Added;
-    
-    cobj->FText = pContext->FText;
-    cobj->bFText_Added = pContext->bFText_Added;
-    cobj->rText = pContext->rText;
-    
-    cobj->bIsClone = true;              // Protect cloned object pointers in S57Obj dtor
-    if(pctx){
-        cobj->m_chart_context = pctx;
-        chart_context *ppctx = (chart_context *)pObj->m_chart_context;
-        
-        if( ppctx ){
-            cobj->m_chart_context->m_pvc_hash = ppctx->m_pvc_hash;
-            cobj->m_chart_context->m_pve_hash = ppctx->m_pve_hash;
-            cobj->m_chart_context->ref_lat = ppctx->ref_lat;
-            cobj->m_chart_context->ref_lon = ppctx->ref_lon;
-            cobj->m_chart_context->pFloatingATONArray = ppctx->pFloatingATONArray;
-            cobj->m_chart_context->pRigidATONArray = ppctx->pRigidATONArray;
-            cobj->m_chart_context->safety_contour = ppctx->safety_contour;
-            cobj->m_chart_context->vertex_buffer = ppctx->vertex_buffer;
-        }
-        cobj->m_chart_context->chart = 0;           // note bene, this is always NULL for a PlugIn chart
-    }
-#endif
-    return cobj;
-}
 
 bool PI_PLIBSetContext( PI_S57Obj *pObj )
 {
@@ -6528,6 +6414,120 @@ wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily family,
 
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(ListOfPI_ChartObj);
+static PI_ChartObj *CreatePluginChartObject(S57Obj *pObj )
+{
+    PI_ChartObj *cobj = new PI_ChartObj;
+    assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
+    memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
+    cobj->Primitive_type = (GeoPrim_t)pObj->Primitive_type;
+    cobj->att_array = pObj->att_array;
+    // cobj->attVal = pObj->attVal;
+    cobj->n_attr = pObj->n_attr;    
+    
+    cobj->x = pObj->x;
+    cobj->y = pObj->y;
+    cobj->z = pObj->z;
+    cobj->npt = pObj->npt;
+    
+    cobj->iOBJL = pObj->iOBJL;
+    cobj->Index = pObj->Index;
+    
+    cobj->geoPt = (pt *)pObj->geoPt;
+    cobj->geoPtz = pObj->geoPtz;
+    cobj->geoPtMulti = pObj->geoPtMulti;
+    
+    cobj->m_lat = pObj->m_lat;
+    cobj->m_lon = pObj->m_lon;
+    
+    cobj->m_DisplayCat = (PI_DisCat)pObj->m_DisplayCat;
+#if 0    
+    cobj->x_rate = pObj->x_rate;
+    cobj->y_rate = pObj->y_rate;
+    cobj->x_origin = pObj->x_origin;
+    cobj->y_origin = pObj->y_origin;
+#endif    
+    cobj->Scamin = pObj->Scamin;
+    cobj->nRef = pObj->nRef;
+    cobj->bIsAton = pObj->bIsAton;
+    cobj->bIsAssociable = pObj->bIsAssociable;
+    
+    cobj->m_n_lsindex = pObj->m_n_lsindex;
+    cobj->m_lsindex_array = pObj->m_lsindex_array;
+    cobj->m_n_edge_max_points = pObj->m_n_edge_max_points;
+#if 0    
+    if(gs_plib_flags & PLIB_CAPS_OBJSEGLIST){
+        cobj->m_ls_list_legacy = (PI_line_segment_element *)pObj->m_ls_list;          // note the cast, assumes in-sync layout
+    }
+    else   
+        cobj->m_ls_list_legacy = 0;
+#endif
+    cobj->m_ls_list = 0;
+
+#if 0        
+    if(gs_plib_flags & PLIB_CAPS_OBJCATMUTATE)
+        cobj->m_bcategory_mutable = pObj->m_bcategory_mutable;
+    else
+        cobj->m_bcategory_mutable = true;                       // assume all objects are mutable
+
+    cobj->m_DPRI = -1;                              // default is unassigned, fixed at render time
+    if(gs_plib_flags & PLIB_CAPS_OBJCATMUTATE){
+        if(pObj->m_DPRI == -1){
+            S52PLIB_Context *pCtx = (S52PLIB_Context *)pObj->S52_Context;
+            if(pCtx->LUP)
+                cobj->m_DPRI = pCtx->LUP->DPRI - '0';
+        }
+        else
+            cobj->m_DPRI = pObj->m_DPRI;
+    }
+#endif    
+        
+ 
+    cobj->pPolyTessGeo = ( PolyTessGeo* )pObj->pPolyTessGeo;
+    cobj->m_chart_context = (chart_context *)pObj->m_chart_context;
+    
+#if 0    
+    if(pObj->auxParm3 != 1234){
+        pObj->auxParm3 = 1234;
+        pObj->auxParm0 = -99;
+    }
+        
+    cobj->auxParm0 = pObj->auxParm0;
+    cobj->auxParm1 = 0;
+    cobj->auxParm2 = 0;
+    cobj->auxParm3 = 0;
+    
+    S52PLIB_Context *pContext = (S52PLIB_Context *)pObj->S52_Context;
+    if( pContext->bBBObj_valid )
+        // this is ugly because plugins still use wxBoundingBox
+        cobj->BBObj.Set(pContext->BBObj.GetMinY(), pContext->BBObj.GetMinX(),
+                        pContext->BBObj.GetMaxY(), pContext->BBObj.GetMaxX());
+    cobj->CSrules = pContext->CSrules;
+    cobj->bCS_Added = pContext->bCS_Added;
+    
+    cobj->FText = pContext->FText;
+    cobj->bFText_Added = pContext->bFText_Added;
+    cobj->rText = pContext->rText;
+    
+    cobj->bIsClone = true;              // Protect cloned object pointers in S57Obj dtor
+    if(pctx){
+        cobj->m_chart_context = pctx;
+        chart_context *ppctx = (chart_context *)pObj->m_chart_context;
+        
+        if( ppctx ){
+            cobj->m_chart_context->m_pvc_hash = ppctx->m_pvc_hash;
+            cobj->m_chart_context->m_pve_hash = ppctx->m_pve_hash;
+            cobj->m_chart_context->ref_lat = ppctx->ref_lat;
+            cobj->m_chart_context->ref_lon = ppctx->ref_lon;
+            cobj->m_chart_context->pFloatingATONArray = ppctx->pFloatingATONArray;
+            cobj->m_chart_context->pRigidATONArray = ppctx->pRigidATONArray;
+            cobj->m_chart_context->safety_contour = ppctx->safety_contour;
+            cobj->m_chart_context->vertex_buffer = ppctx->vertex_buffer;
+        }
+        cobj->m_chart_context->chart = 0;           // note bene, this is always NULL for a PlugIn chart
+    }
+#endif
+    return cobj;
+}
 
 ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp )
 {
