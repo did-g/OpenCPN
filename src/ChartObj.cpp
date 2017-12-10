@@ -243,7 +243,7 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
 }
 
 // -------------------
-ListOfS57Obj *ChartObj::GetHazards(ViewPort &vp)
+ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
 {
   if ( !ChartData )
     return 0;
@@ -502,7 +502,7 @@ ListOfS57Obj *ChartObj::GetHazards(ViewPort &vp)
             il++;
     }
 
-    ListOfS57Obj *pobj_list = new ListOfS57Obj;
+    ListOfS57ObjRegion *pobj_list = new ListOfS57ObjRegion;
     pobj_list->Clear();
 
     // XXX TODO void Quilt::ComputeRenderRegion( ViewPort &vp, OCPNRegion &chart_region )
@@ -529,7 +529,7 @@ ListOfS57Obj *ChartObj::GetHazards(ViewPort &vp)
     return pobj_list;
 }
 
-ListOfS57Obj *ChartObj::GetSafeWaterAreas(ViewPort &vp)
+ListOfS57ObjRegion *ChartObj::GetSafeWaterAreas(ViewPort &vp)
 {
   return 0;
 }
