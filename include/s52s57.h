@@ -334,6 +334,20 @@ typedef struct _MultipointGeometryDescriptor{
     void *          pointTable;
 }MultipointGeometryDescriptor;
 
+class LLRegion;
+
+class S57ObjRegion
+{
+public:
+
+      //  Public Methods
+      S57ObjRegion(S57Obj *o = 0, LLRegion *r = 0) : obj(o), region(r) {};
+      ~S57ObjRegion() {};
+
+      S57Obj *obj;
+      LLRegion *region;
+};
+
 
 class S57Obj
 {
