@@ -1232,6 +1232,7 @@ extern DECL_EXP double PlugInGetDisplaySizeMM();
 
 // API 1.15 Extra objects handling. 
 // chart file vfs plugin.
+
 class DECL_EXP PI_ChartObj
 {
 public:
@@ -1244,6 +1245,8 @@ public:
       // Instance Data
       char                    FeatureName[8];
       int                     Primitive_type;
+      int		      n_points;
+      double		      *region;
 
       char                    *att_array;
       int                     n_attr;
