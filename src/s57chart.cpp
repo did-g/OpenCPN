@@ -3602,7 +3602,11 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
             // Areas by boundary type, array indices [3..4]
             int area_boundary_type = ( ps52plib->m_nBoundaryStyle == PLAIN_BOUNDARIES ) ? 3 : 4;
             top = razRules[i][area_boundary_type];           // Area nnn Boundaries
-
+            LLRegion *land = new LLRegion;
+            LLRegion *sea = new LLRegion;
+            S57Obj *land_obj = 0;
+            S57Obj *sea_obj = 0;
+            
             for (top = razRules[i][area_boundary_type]; top != NULL; top = top->next) {
                 S57Obj *obj = top->obj;
 
@@ -3627,8 +3631,12 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                         e->Intersect(i);
                         if (!e->Empty()) {
                             printf ("\\");
-                            S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
-                            pobj_list->Append( l );
+                            if (land_obj == 0)
+                                land_obj = obj;
+                            //e->Reduce(0.0003);
+                            land->Union( *e );
+                            // S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
+                            // pobj_list->Append( l );
                         }
                         else
                             delete e;
@@ -3650,12 +3658,15 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                         if (!i.Empty()) {
                             printf (".");
                             LLRegion *e = S57Obj2LLRegion(obj);
-                            //e->Reduce(0.0003);
                             e->Intersect(i);
                             if (!e->Empty()) {
                                 printf ("+");
-                                S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
-                                pobj_list->Append( l );
+                                // e->Reduce(0.0003);
+                                if (sea_obj == 0)
+                                    sea_obj = obj;
+                                sea->Union( *e );
+                                // S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
+                                // pobj_list->Append( l );
                             }
                             else
                                 delete e;
@@ -3699,10 +3710,10 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             if (!i.Empty()) {
                                 printf ("-");
                                 LLRegion *e = S57Obj2LLRegion(obj);
-                                //e->Reduce(0.0003);
                                 e->Intersect(i);
                                 if (!e->Empty()) {
                                     printf ("=");
+                                    // e->Reduce(0.0003);
                                     S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
                                     pobj_list->Append( l );
                                 }
@@ -3713,6 +3724,20 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                     }
                 }
             }
+            land->Reduce(0.0003);
+            if (!land->Empty()) {
+                S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
+                pobj_list->Append( l );
+            }
+            else
+                delete land;
+            sea->Reduce(0.0003);
+            if (!sea->Empty()) {
+                S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
+                pobj_list->Append( l );
+            }
+            else
+                delete sea;
         }
 
 
