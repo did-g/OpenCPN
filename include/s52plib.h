@@ -253,6 +253,7 @@ public:
     MyNatsurHash m_natsur_hash;     // hash table for cacheing NATSUR string values from int attributes
 
     wxRect m_last_clip_rect;
+    int reduceLOD( double LOD_meters, int nPoints, double *source, wxPoint2DDouble **dest);
     
 private:
     int S52_load_Plib( const wxString& PLib, bool b_forceLegacy );
@@ -288,7 +289,6 @@ private:
     
     void UpdateOBJLArray( S57Obj *obj );
 
-    int reduceLOD( double LOD_meters, int nPoints, double *source, wxPoint2DDouble **dest);
     
     int RenderLSLegacy( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderLCLegacy( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
