@@ -32,8 +32,8 @@ class ChartObj
 public:
   ChartObj();
   ~ChartObj();
-  ListOfS57Obj *GetHazards(ViewPort &vp);
-  ListOfS57Obj *GetSafeWaterAreas(ViewPort &vp);
+  ListOfS57ObjRegion *GetHazards(ViewPort &vp);
+  ListOfS57ObjRegion *GetSafeWaterAreas(ViewPort &vp);
 
 private:
   int GetExtendedStackCount( ) 
