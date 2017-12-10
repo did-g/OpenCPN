@@ -6433,11 +6433,33 @@ int PluginGetMaxAvailableGshhgQuality() { return cc1->GetMaxAvailableGshhgQualit
 
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(ListOfPI_ChartObj);
-static PI_ChartObj *CreatePluginChartObject(S57Obj *pObj )
+static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
 {
     PI_ChartObj *cobj = new PI_ChartObj;
+    S57Obj *pObj = pObjRegion->obj;
     assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
     memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
+    LLRegion *r = pObjRegion->region;
+    if (r) {
+       int cnt = 0;
+       for(std::list<poly_contour>::const_iterator i = r->contours.begin(); i != r->contours.end(); i++) {
+          for(poly_contour::const_iterator j = i->begin(); j != i->end(); j++)
+              cnt++;
+       }
+       cobj->region = 0;
+       cobj->n_points = cnt;
+       if (cnt != 0) {
+          cobj->region = new double[cnt *2];
+          cnt = 0;
+          for(std::list<poly_contour>::const_iterator i = r->contours.begin(); i != r->contours.end(); i++) {
+             for(poly_contour::const_iterator j = i->begin(); j != i->end(); j++) {
+               cobj->region[cnt++ ] = j->x;
+               cobj->region[cnt++ ] = j->y;
+             }
+          }
+       }
+    }
+
     cobj->Primitive_type = (GeoPrim_t)pObj->Primitive_type;
     cobj->att_array = pObj->att_array;
     // cobj->attVal = pObj->attVal;
@@ -6552,12 +6574,12 @@ ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp )
 {
   ChartObj a;
   ViewPort ocpn_vp = CreateCompatibleViewport(vp);
-  ListOfS57Obj *rep = a.GetHazards(ocpn_vp);
+  ListOfS57ObjRegion *rep = a.GetHazards(ocpn_vp);
 
   ListOfPI_ChartObj *crep = new ListOfPI_ChartObj;
-  for( ListOfS57Obj::Node *node = rep->GetFirst(); node; node = node->GetNext() ) {
+  for( ListOfS57ObjRegion::Node *node = rep->GetFirst(); node; node = node->GetNext() ) {
        PI_ChartObj *c;
-       S57Obj *pobj = node->GetData();
+       S57ObjRegion *pobj = node->GetData();
        c = CreatePluginChartObject(pobj);
        crep->Append( c );
   }                 
