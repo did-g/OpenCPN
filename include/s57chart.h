@@ -100,6 +100,9 @@ WX_DECLARE_OBJARRAY(S57Obj, ArrayOfS57Obj);
 // And also a list
 WX_DECLARE_LIST(S57Obj, ListOfS57Obj);
 
+class S57ObjRegion;
+WX_DECLARE_LIST(S57ObjRegion, ListOfS57ObjRegion);
+
 
 WX_DECLARE_LIST(ObjRazRules, ListOfObjRazRules);
 
@@ -173,7 +176,7 @@ public:
       //    DEPCNT VALDCO array access
       bool GetNearestSafeContour(double safe_cnt, double &next_safe_cnt);
 
-      virtual ListOfS57Obj *GetHazards(const LLRegion &region, ListOfS57Obj *lst = 0);
+      virtual ListOfS57ObjRegion *GetHazards(const LLRegion &region, ListOfS57ObjRegion  *lst = 0);
       virtual ListOfS57Obj *GetAssociatedObjects(S57Obj *obj);
 
       virtual VE_Hash&  Get_ve_hash(void){ return m_ve_hash; }
