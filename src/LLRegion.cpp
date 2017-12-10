@@ -99,7 +99,7 @@ void LLRegion::Print() const
 
 void LLRegion::plot(const char*fn) const
 {
-    char filename[100] = "/home/sean/";
+    char filename[100] = "/tmp/";
     strcat(filename, fn);
     FILE *f = fopen(filename, "w");
     for(std::list<poly_contour>::const_iterator i = contours.begin(); i != contours.end(); i++) {
