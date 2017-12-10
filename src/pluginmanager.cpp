@@ -6431,6 +6431,7 @@ static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
     if (r) {
        int cnt = 0;
        for(std::list<poly_contour>::const_iterator i = r->contours.begin(); i != r->contours.end(); i++) {
+          cnt++;
           for(poly_contour::const_iterator j = i->begin(); j != i->end(); j++)
               cnt++;
        }
@@ -6444,6 +6445,8 @@ static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
                cobj->region[cnt++ ] = j->x;
                cobj->region[cnt++ ] = j->y;
              }
+             cobj->region[cnt++ ] = 99999.;
+             cobj->region[cnt++ ] = 99999.;
           }
        }
     }
