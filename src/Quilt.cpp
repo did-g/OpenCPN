@@ -184,7 +184,6 @@ LLRegion &QuiltCandidate::GetReducedCandidateRegion(double factor)
         reduced_candidate_region.Reduce(factor);
         last_factor = factor;
     }
-
     return reduced_candidate_region;
 }
 
