@@ -1263,6 +1263,7 @@ extern DECL_EXP void PlugInHandleAutopilotRoute(bool enable);
 extern DECL_EXP wxString GetPluginDataDir(const char* plugin_name);
 
 // chart file vfs plugin.
+
 class DECL_EXP PI_ChartObj
 {
 public:
@@ -1275,6 +1276,8 @@ public:
       // Instance Data
       char                    FeatureName[8];
       int                     Primitive_type;
+      int		      n_points;
+      double		      *region;
 
       char                    *att_array;
       int                     n_attr;
