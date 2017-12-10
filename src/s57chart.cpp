@@ -3265,6 +3265,214 @@ bool s57chart::GetNearestSafeContour( double safe_cnt, double &next_safe_cnt )
     }
 }
 
+#if 0
+/*
+// bool s52plib::GetPointPixSingle( ObjRazRules *rzRules, float north, float east, wxPoint *r, ViewPort *vp )
+
+
+void s57chart::GetPointPix( ObjRazRules *rzRules, float north, float east, wxPoint *r )
+{
+    r->x = roundint(((east - m_easting_vp_center) * m_view_scale_ppm) + m_pixx_vp_center);
+    r->y = roundint(m_pixy_vp_center - ((north - m_northing_vp_center) * m_view_scale_ppm));
+}
+*/
+#endif
+
+LLRegion *S57Obj2LLRegion(S57Obj *obj)
+{
+    //     if(rzRules->obj->Index != 7574)
+    //         return 0;
+    
+    // catch cm93 and legacy PlugIns (e.g.s63_pi)
+    LLRegion *region = new LLRegion();
+    if( obj->m_n_lsindex  && !obj->m_ls_list) {
+        printf("legacy\n");
+        return region;
+    }
+    s57chart *ch_s57;
+
+    ch_s57 = dynamic_cast<s57chart*>( obj->m_chart_context->chart );
+    assert (ch_s57);
+    double ref_lat = ch_s57->ref_lat;
+    double ref_lon = ch_s57->ref_lon;
+    float sym_factor = 1.0; ///1.50;                        // gives nicer effect
+    
+    //double LOD = 2.0 / vp->view_scale_ppm;              // empirical value, by experiment
+    double LOD = 0.; //wxMin(LOD, 10.0);
+    
+    if( !obj->m_n_lsindex ) 
+      return region;
+        
+    // Calculate the size of a work buffer
+    int max_points = 0;
+    if( obj->m_n_edge_max_points > 0 ) 
+        max_points = obj->m_n_edge_max_points;
+    else{
+        line_segment_element *lsa = obj->m_ls_list;
+        
+        while(lsa){
+            if( (lsa->ls_type == TYPE_EE) || (lsa->ls_type == TYPE_EE_REV) )
+                max_points += lsa->pedge->nCount;
+            else
+                max_points += 2;
+            
+            lsa = lsa->next;
+        }
+    }
+    
+    //  Allocate some storage for converted points
+    double *pdp = (double *)malloc( 2 * ( max_points ) * sizeof(double) ); 
+    
+    unsigned char *vbo_point = (unsigned char *)obj->m_chart_context->chart->GetLineVertexBuffer();
+    line_segment_element *ls = obj->m_ls_list;
+    
+    unsigned int index = 0;
+    unsigned int idouble = 0;
+    int nls = 0;
+    wxPoint2DDouble lp;
+    float *ppt;
+    
+    int direction = 1;
+    int ndraw = 0;
+    while(ls){
+        if( 1 /*ls->priority == priority_current */ ) {  
+            //transcribe the segment in the proper order into the output buffer
+            int nPoints;
+            int idir = 1;
+            // fetch the first point
+            if( (ls->ls_type == TYPE_EE) || (ls->ls_type == TYPE_EE_REV) ){
+                ppt = (float *)(vbo_point + ls->pedge->vbo_offset);
+                nPoints = ls->pedge->nCount;
+                if(ls->ls_type == TYPE_EE_REV)
+                    idir = -1;
+            }
+            else{
+                ppt = (float *)(vbo_point + ls->pcs->vbo_offset);
+                nPoints = 2;
+            }
+            
+            int vbo_index = 0;
+            int vbo_inc = 2;
+            if(idir == -1){
+                vbo_index = (nPoints-1) * 2;
+                vbo_inc = -2;
+            }
+            for(int ip=0 ; ip < nPoints ; ip++){
+                wxPoint2DDouble r;
+                // XXX GetPointPixSingle( rzRules, ppt[vbo_index + 1], ppt[vbo_index], &r, vp );fromSM
+                // ref_lat, ref_lon, &xlat, &xlon );
+                fromSM( /*east */ ppt[vbo_index], /* north */ ppt[vbo_index +1], ref_lat, ref_lon, &r.m_y, &r.m_x );
+
+                if( (r.m_x != lp.m_x) || (r.m_y != lp.m_y) ){
+                    pdp[idouble++] = r.m_x;
+                    pdp[idouble++] = r.m_y;
+                    
+                    nls++;
+                }
+                else{               // sKipping point
+                }
+                
+                lp = r;
+                vbo_index += vbo_inc;
+            }            
+        }  // priority
+        
+        // inspect the next segment to see if it can be connected, or if the chain breaks
+        int idir = 1;
+        if(ls->next){
+            
+            int nPoints_next;
+            line_segment_element *lsn = ls->next;
+            // fetch the first point
+            if( (lsn->ls_type == TYPE_EE) || (lsn->ls_type == TYPE_EE_REV) ){
+                ppt = (float *)(vbo_point + lsn->pedge->vbo_offset);
+                nPoints_next = lsn->pedge->nCount;
+                if(lsn->ls_type == TYPE_EE_REV)
+                    idir = -1;
+                
+            }
+            else{
+                ppt = (float *)(vbo_point + lsn->pcs->vbo_offset);
+                nPoints_next = 2;
+            }
+            
+            wxPoint2DDouble ptest;
+            if(idir == 1) {
+                // GetPointPixSingle( rzRules, ppt[1], ppt[0], &ptest, vp );
+                fromSM( /*east */ ppt[0], /* north */ ppt[1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
+            }
+            else{
+            // fetch the last point
+                int index_last_next = (nPoints_next-1) * 2;
+                // GetPointPixSingle( rzRules, ppt[index_last_next +1], ppt[index_last_next], &ptest, vp );
+                fromSM( ppt[index_last_next], ppt[index_last_next+1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
+            }
+            
+            // try to match the correct point in this segment with the last point in the previous segment
+
+            if(lp != ptest)         // not connectable?
+            {
+                if(nls){
+                    wxPoint2DDouble *pReduced = 0;
+                    int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
+                    #if 0
+                    wxPoint *ptestp = (wxPoint *) malloc( ( max_points ) * sizeof(wxPoint) ); 
+                    GetPointPixArray( rzRules, pReduced, ptestp, nPointReduced, vp );
+                
+                    // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
+                    free(ptestp);
+                    #endif
+                    if (nPointReduced) {
+                        double *to = new double[nPointReduced *2];
+                        for (int v = 0; v < nPointReduced*2; v +=2) {
+                           to[v]    = pReduced[v/2].m_y;
+                           to[v +1] = pReduced[v/2].m_x;
+                        }
+                        region->Union(LLRegion(nPointReduced, to));
+                        delete [] to;
+                    }
+                    free(pReduced);
+                    ndraw++;
+                }
+                
+                nls = 0;
+                index = 0;
+                idouble = 0;
+                lp = wxPoint2DDouble(0,0);
+                direction = 1;
+            }
+        }
+        else{
+            // no more segments, so render what is available
+            if(nls){
+                wxPoint2DDouble *pReduced = 0;
+                int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
+                #if 0                
+                wxPoint *ptestp = (wxPoint *) malloc( ( max_points ) * sizeof(wxPoint) ); 
+                GetPointPixArray( rzRules, pReduced, ptestp, nPointReduced, vp );
+                                
+                // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
+                free( ptestp );
+                #endif
+                if (nPointReduced) {
+                    double *to = new double[nPointReduced *2];
+                    for (int v = 0; v < nPointReduced*2; v +=2) {
+                           to[v]    = pReduced[v/2].m_y;
+                           to[v +1] = pReduced[v/2].m_x;
+                    }
+                    region->Union(LLRegion(nPointReduced, to));
+                    delete [] to;
+                }
+                free(pReduced);
+            }
+        }
+        
+        ls = ls->next;
+    }
+    
+    free(pdp);
+    return region;
+}
 
 ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_list)
 {
@@ -3275,7 +3483,7 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
 //    Iterate thru the razRules array, by object/rule type
 
     ObjRazRules *top;
-    const int selection_mask = MASK_POINT;
+    const int selection_mask = MASK_POINT | MASK_AREA;
     double safety_contour = S52_getMarinerParam(S52_MAR_SAFETY_CONTOUR);
 
     for( int i = 0; i < PRIO_NUM; ++i ) {
@@ -3290,9 +3498,10 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
 
                 // if top-PRIO_HAZARDS
                 S57Obj *obj = top->obj;
+                bool checkit = false;
                 // only use aton or mutable object (dangers)
-                if ( !(obj->m_bcategory_mutable || obj->bIsAton) )
-                    continue;
+                if ( obj->m_bcategory_mutable || obj->bIsAton )
+                    checkit =  true;
 
                 if ( !strncasecmp( obj->FeatureName, "LIGHTS", 6 ) )
                     continue;
@@ -3303,16 +3512,20 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
                 if ( !strncasecmp( obj->FeatureName, "BOYSAW", 6 ) )
                     continue;
 
+                if ( !strncmp( obj->FeatureName, "PILPNT", 6 ) ) 
+                    checkit =  true;
+                if ( !strncmp( obj->FeatureName, "LNDARE", 6 ) ) 
+                    checkit =  true;
+
                 if ( obj->m_bcategory_mutable && !obj->bCS_Added) {
-                    // XXX need ps52 function for conditionnal symbol
-                    //obj->CSrules = NULL;
                     ps52plib->ComputeCSRules( top );
                 }
 
                 if ( obj->m_bcategory_mutable && obj->m_DisplayCat != DISPLAYBASE)
                     continue;
 
-
+                if (!checkit)
+                    continue;
                 double lat, lon;
                 fromSM( ( obj->x * obj->x_rate ) + obj->x_origin, ( obj->y * obj->y_rate ) + obj->y_origin,
                     ref_lat, ref_lon, &lat, &lon );
@@ -3356,7 +3569,7 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
                         delete area_list;
                     }
                     // danger in safe water
-                    if (add) pobj_list->Append( top->obj );
+                    if (add) pobj_list->Append( obj );
                 }
             }
         }
@@ -3368,20 +3581,86 @@ ListOfS57Obj *s57chart::GetHazards(const LLRegion &region, ListOfS57Obj *pobj_li
             for (top = razRules[i][area_boundary_type]; top != NULL; top = top->next) {
                 S57Obj *obj = top->obj;
 
-                if (!(    !strncmp( obj->FeatureName, "LNDARE", 6 ) 
+                // even they are mutable we don't care about depth contour 
+                if (!strncmp( obj->FeatureName, "DEPCNT", 6  ))
+                    continue;
+
+                // what we are looking for
+                if (! (    !strncmp( obj->FeatureName, "LNDARE", 6 ) 
                        || !strncmp( obj->FeatureName, "DRGARE", 6 ) 
-                       || !strncmp( obj->FeatureName, "DEPARE", 6 ) ))
+                       || !strncmp( obj->FeatureName, "DEPARE", 6 ) 
+                       || obj->m_bcategory_mutable
+                      ))
                    continue;
+
                 if (!strncmp( obj->FeatureName, "LNDARE", 6 ) ) {
-                
+                    LLRegion i(obj->BBObj);
+                    i.Intersect(region);
+                    if (!i.Empty()) {
+                        pobj_list->Append( obj );
+                    }
+                    continue;
+                }
+                if ( obj->m_bcategory_mutable && !obj->bCS_Added) {
+                    ps52plib->ComputeCSRules( top );
                 }
 
-#if 0            
-                if( ps52plib->ObjectRenderCheck( top, VPoint ) ) {
-                    if( DoesLatLonSelectObject( lat, lon, select_radius, top->obj ) ) 
-                        ret_ptr->Append( top );
+                if ( strncmp( obj->FeatureName, "DEPARE", 6 ) ) { // not a DEPARE
+                    bool add  = true;
+                    // find water
+                    ListOfS57Obj *area_list = GetAssociatedObjects(obj);
+                    bool danger = false;
+                    if( area_list ){    
+                        wxListOfS57ObjNode *node = area_list->GetFirst();
+                        while(node) {
+                            S57Obj *ptest_obj = node->GetData();
+                            if (GEO_LINE == ptest_obj->Primitive_type) {
+                               double drval2 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL2", drval2);
+                               if(drval2 < safety_contour) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            else {
+                               double drval1 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL1", drval1);
+                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            node = node->GetNext();
+                        }
+                        if (!danger) add = false;
+
+                        delete area_list;
+                        if (add) {
+                            LLRegion i(obj->BBObj);
+                            i.Intersect(region);
+                            if (!i.Empty())
+                                pobj_list->Append( obj );
+                        }
+                    }
                 }
-#endif                
+                else {
+                    double drval1 = 0.0;
+                    GetDoubleAttr(obj, "DRVAL1", drval1);
+                    if (drval1 <= safety_contour) {
+                        LLRegion i(obj->BBObj);
+                        i.Intersect(region);
+                        if (!i.Empty()) {
+                            printf (".");
+                            LLRegion *e = S57Obj2LLRegion(obj);
+                            i.Intersect(*e);
+                            if (!i.Empty()) {
+                                printf ("+");
+                                pobj_list->Append( obj );
+                            }
+                            delete e;
+                        }
+                    }
+                }
             }
         }
 
