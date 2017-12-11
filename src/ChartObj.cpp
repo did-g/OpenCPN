@@ -242,8 +242,8 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
     return true;
 }
 
-
-ListOfS57Obj *ChartObj::GetHazards(ViewPort &vp)
+// -------------------
+ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
 {
   if ( !ChartData )
     return 0;
@@ -502,7 +502,7 @@ ListOfS57Obj *ChartObj::GetHazards(ViewPort &vp)
             il++;
     }
 
-    ListOfS57Obj *pobj_list = new ListOfS57Obj;
+    ListOfS57ObjRegion *pobj_list = new ListOfS57ObjRegion;
     pobj_list->Clear();
 
     // XXX TODO void Quilt::ComputeRenderRegion( ViewPort &vp, OCPNRegion &chart_region )
@@ -522,14 +522,14 @@ ListOfS57Obj *ChartObj::GetHazards(ViewPort &vp)
         //if( ChartData->IsChartInCache( piqp->dbIndex ) ){
         pret = ChartData->OpenChartFromDB( piqp->dbIndex, FULL_INIT );
         s57chart *s57 = dynamic_cast<s57chart*>( pret );
-        printf("\tsearching");
+        printf("\tsearching");	
         pobj_list = s57->GetHazards(r, pobj_list);
         printf(" find %d \n", pobj_list->GetCount() -c);
     }
     return pobj_list;
 }
 
-ListOfS57Obj *ChartObj::GetSafeWaterAreas(ViewPort &vp)
+ListOfS57ObjRegion *ChartObj::GetSafeWaterAreas(ViewPort &vp)
 {
   return 0;
 }
