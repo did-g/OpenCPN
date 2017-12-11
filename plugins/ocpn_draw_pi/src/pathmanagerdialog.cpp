@@ -1938,6 +1938,66 @@ void PathManagerDialog::OnChart2LayClick( wxCommandEvent &event )
                 }
                 break;
             case 2: // GEO_AREA
+                if (cobj->region != 0 && cobj->n_points >= 4) { 
+                    int cnt = cobj->n_points;
+                    double *p = cobj->region;
+                    while (cnt >= 4) {
+                        Boundary *l_pBoundary = new Boundary();
+                        double l_dPrevLat;
+                        double l_dPrevLon;
+                        double f_lat;
+                        double f_lon;
+                    
+                        l_pBoundary->m_bInclusionBoundary = false;
+                        l_pBoundary->m_bExclusionBoundary = true;
+                        g_pBoundaryList->Append( l_pBoundary );
+                        g_pPathList->Append( l_pBoundary);
+                        l_pBoundary->m_width = g_BoundaryLineWidth;
+                        l_pBoundary->m_style = g_BoundaryLineStyle;
+                        // lon lat layout
+                        f_lat = *(p +1);
+                        f_lon = *(p);                    
+                        BoundaryPoint *l_BP1 = new BoundaryPoint(f_lat, f_lon, g_sODPointIconName, wxS(""), wxT(""));
+                        l_BP1->SetNameShown( false );
+                        l_BP1->SetTypeString( wxS("Boundary Point") );
+                        g_pODConfig->AddNewODPoint( l_BP1, -1 );
+                        g_pODSelect->AddSelectableODPoint( f_lat, f_lon, l_BP1 );
+                        l_pBoundary->AddPoint( l_BP1 );
+
+                        cnt--;
+                        p += 2;
+                        l_dPrevLat = f_lat;
+                        l_dPrevLon = f_lon;
+
+                        BoundaryPoint *l_BP2 = l_BP1;
+                        while (cnt > 0) {
+                            double d_Lat = *(p +1);
+                            double d_Lon = *p;
+                            p += 2;
+                            cnt--;
+                            // End of contour marker
+                            if (d_Lat == 99999.)
+                                break;
+                            BoundaryPoint *l_BP3 = new BoundaryPoint(d_Lat, d_Lon, g_sODPointIconName, wxS(""), wxT(""));
+                            l_BP3->SetNameShown( false );
+                            l_BP3->SetTypeString( wxS("Boundary Point") );
+                            g_pODConfig->AddNewODPoint( l_BP3, -1 );
+                            g_pODSelect->AddSelectableODPoint( d_Lat, d_Lon, l_BP3 );
+                            g_pODSelect->AddSelectablePathSegment( l_dPrevLat, l_dPrevLon, d_Lat, d_Lon, l_BP2, l_BP3, l_pBoundary );
+                            l_dPrevLat = d_Lat;
+                            l_dPrevLon = d_Lon;
+
+                            l_pBoundary->AddPoint( l_BP3 );
+                            l_BP2 = l_BP3;
+                        }
+                        // Add final point to close the boundary
+                        g_pODSelect->AddSelectablePathSegment( l_dPrevLat, l_dPrevLon, f_lat, f_lon, l_BP2, l_BP1, l_pBoundary );
+                        l_pBoundary->AddPoint( l_BP1 );
+                        l_pBoundary->RebuildGUIDList(); // ensure the GUID list is intact and good
+                        l_pBoundary->SetHiLite(0);
+                        l_pBoundary->m_bIsBeingCreated = false;
+                    }
+                }
                 break;
             }
         }    
