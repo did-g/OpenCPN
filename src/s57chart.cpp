@@ -3724,6 +3724,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                     }
                 }
             }
+#if 0
             land->Reduce(0.0003);
             if (!land->Empty()) {
                 S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
@@ -3739,7 +3740,25 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
             else
                 delete sea;
         }
-
+#endif
+            if (!land->Empty()) {
+                land->Union(*sea);
+                land->Reduce(0.0003);
+                S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
+                pobj_list->Append( l );
+                delete sea;
+            }
+            else {
+                delete land;
+                sea->Reduce(0.0003);
+                if (!sea->Empty()) {
+                    S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
+                    pobj_list->Append( l );
+                }
+                else
+                    delete sea;
+            }
+        }
 
         if(selection_mask & MASK_LINE){
                 // Finally, lines
