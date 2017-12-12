@@ -3722,14 +3722,14 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
 #endif
             if (!land->Empty()) {
                 land->Union(*sea);
-                land->Reduce(0.0003);
+                // land->Reduce(0.0003);
                 S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
                 pobj_list->Append( l );
                 delete sea;
             }
             else {
                 delete land;
-                sea->Reduce(0.0003);
+                // sea->Reduce(0.0003);
                 if (!sea->Empty()) {
                     S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
                     pobj_list->Append( l );
