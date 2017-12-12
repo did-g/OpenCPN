@@ -526,7 +526,26 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
         pobj_list = s57->GetHazards(r, pobj_list);
         printf(" find %d \n", pobj_list->GetCount() -c);
     }
-    return pobj_list;
+    LLRegion *region = 0;
+
+    for( ListOfS57ObjRegion::Node *node = pobj_list->GetFirst(); node; node = node->GetNext() ) {
+       S57ObjRegion *pObj = node->GetData();
+       LLRegion *r = pObj->region;
+       if (r != 0) {
+           if (region == 0) {
+               region = r;
+           }
+           else {
+               region->Union(*r);
+               pObj->region = 0;
+           }
+       }
+  }
+  if (region) {
+      region->Reduce(0.0003);
+  }
+
+  return pobj_list;
 }
 
 ListOfS57ObjRegion *ChartObj::GetSafeWaterAreas(ViewPort &vp)
