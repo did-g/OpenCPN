@@ -6406,6 +6406,8 @@ static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
     assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
     memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
     LLRegion *r = pObjRegion->region;
+    cobj->region = 0;
+    cobj->n_points = 0;
     if (r) {
        int cnt = 0;
        for(std::list<poly_contour>::const_iterator i = r->contours.begin(); i != r->contours.end(); i++) {
@@ -6413,7 +6415,7 @@ static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
           for(poly_contour::const_iterator j = i->begin(); j != i->end(); j++)
               cnt++;
        }
-       cobj->region = 0;
+       printf("region %d\n", cnt);
        cobj->n_points = cnt;
        if (cnt != 0) {
           cobj->region = new double[cnt *2];
