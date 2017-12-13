@@ -1406,21 +1406,17 @@ void glChartCanvas::RenderChartOutline( int dbIndex, ViewPort &vp )
         else
             nPly = ChartData->GetDBPlyPoint( dbIndex, 0, &plylat, &plylon );
 
-        if (nPly == 0) {
-            // XXX error msg?
-            // chart isn't valid anymore!!
-            continue;
-        }
-
         bool begin = false, sml_valid = false;
         double sml[2];
         float lastplylat = 0.0;
         float lastplylon = 0.0;
+        // modulo is undefined for zero (compiler can use a div operation)
+        int modulo = (nPly == 0)?1:nPly;
         for( int i = 0; i < nPly+1; i++ ) {
             if(nAuxPlyEntries)
-                ChartData->GetDBAuxPlyPoint( dbIndex, i, j, &plylat, &plylon );
+                ChartData->GetDBAuxPlyPoint( dbIndex, i % modulo, j, &plylat, &plylon );
             else
-                ChartData->GetDBPlyPoint( dbIndex, i, &plylat, &plylon );
+                ChartData->GetDBPlyPoint( dbIndex, i % modulo, &plylat, &plylon );
 
             plylon += lon_bias;
 
