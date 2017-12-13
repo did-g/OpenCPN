@@ -1987,7 +1987,7 @@ void PathManagerDialog::OnChart2LayClick( wxCommandEvent &event )
                             l_dPrevLat = d_Lat;
                             l_dPrevLon = d_Lon;
 
-                            l_pBoundary->AddPoint( l_BP3 );
+                            l_pBoundary->AddPoint( l_BP3, true, true, true );
                             l_BP2 = l_BP3;
                         }
                         // Add final point to close the boundary
