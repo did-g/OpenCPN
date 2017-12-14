@@ -53,7 +53,7 @@ artifacts:
   - path: 'build\*.exe'
     name: installer
 
-  - path: 'build\opencpn.lib'
+  - path: 'build\Release\opencpn.lib'
     name: lib
 
 deploy:
