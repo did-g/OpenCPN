@@ -3668,8 +3668,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                                 // S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
                                 // pobj_list->Append( l );
                             }
-                            else
-                                delete e;
+                            delete e;
                         }
                     }
 
