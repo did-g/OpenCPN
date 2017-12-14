@@ -45,6 +45,7 @@ before_build:
 
 build_script:
   # - cmake --build . --config debug
+  - cmake --build . --target opencpn --config release
   - cmake --build . --target package --config release
   # --target package doesn't work because of nsis not correctly installed
 
@@ -52,11 +53,14 @@ artifacts:
   - path: 'build\*.exe'
     name: installer
 
+  - path: 'build\opencpn.lib'
+    name: lib
+
 deploy:
   description: 'release created by AppVeyor CI'
   provider: GitHub
   auth_token: '%GitHub_auth_token%'
-  artifact: installer,portable
+  artifact: installer,lib
   draft: true
   prerelease: true
   on:
