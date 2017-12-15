@@ -245,17 +245,23 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
 // -------------------
 ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
 {
+  ListOfS57ObjRegion *pobj_list = new ListOfS57ObjRegion;
+  pobj_list->Clear();
+
   if ( !ChartData )
-    return 0;
+    return pobj_list;
 
   if(ChartData->IsBusy())             // This prevent recursion on chart loads that Yeild()
-    return 0;
+    return pobj_list;
 
   m_vp = vp;
   delete m_stack;
   m_stack = new ChartStack;
   if (BuildExtendedChartStackAndCandidateArray() == false)
-    return 0;
+    return pobj_list;
+
+  if (m_pcandidate_array->GetCount() == 0)
+    return pobj_list;
 
   bool b_has_overlays = false;
   //  If this is an S57 quilt, we need to know if there are overlays in it
@@ -502,8 +508,6 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
             il++;
     }
 
-    ListOfS57ObjRegion *pobj_list = new ListOfS57ObjRegion;
-    pobj_list->Clear();
 
     // XXX TODO void Quilt::ComputeRenderRegion( ViewPort &vp, OCPNRegion &chart_region )
 
