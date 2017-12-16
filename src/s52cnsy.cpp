@@ -989,8 +989,6 @@ static void *DEPCNT02 (void *param)
            //  Move this object to DisplayBase category
             rzRules->obj->m_DisplayCat = DISPLAYBASE;
             rzRules->obj->Scamin = 1e8;                 // effectively no SCAMIN
-            rzRules->obj->m_DPRI = PRIO_HAZARDS - '0';
-
 //            rzRules->LUP->DPRI = PRIO_HAZARDS;
 
       } else {
@@ -1959,7 +1957,6 @@ static void *OBSTRN04 (void *param)
             {
                   obstrn04str.Append(*udwhaz03str);
                   obstrn04str.Append(*quapnt01str);
-                  rzRules->obj->m_DPRI = PRIO_HAZARDS - '0';
 
                   goto end;
             }
