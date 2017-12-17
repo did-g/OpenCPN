@@ -3612,7 +3612,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             printf ("\\");
                             if (land_obj == 0)
                                 land_obj = obj;
-                            //e->Reduce(0.0003);
+                            e->Reduce2(0.001);
                             land->Union( *e );
                             // S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
                             // pobj_list->Append( l );
@@ -3640,7 +3640,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             e->Intersect(i);
                             if (!e->Empty()) {
                                 printf ("+");
-                                // e->Reduce(0.0003);
+                                e->Reduce2(0.001);
                                 if (sea_obj == 0)
                                     sea_obj = obj;
                                 sea->Union( *e );
@@ -3691,7 +3691,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                                 e->Intersect(i);
                                 if (!e->Empty()) {
                                     printf ("=");
-                                    // e->Reduce(0.0003);
+                                    e->Reduce2(0.001);
                                     S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
                                     pobj_list->Append( l );
                                 }
@@ -3702,33 +3702,16 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                     }
                 }
             }
-#if 0
-            land->Reduce(0.0003);
-            if (!land->Empty()) {
-                S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
-                pobj_list->Append( l );
-            }
-            else
-                delete land;
-            sea->Reduce(0.0003);
-            if (!sea->Empty()) {
-                S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
-                pobj_list->Append( l );
-            }
-            else
-                delete sea;
-        }
-#endif
             if (!land->Empty()) {
                 land->Union(*sea);
-                // land->Reduce(0.0003);
+                //land->Reduce2(0.003);
                 S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
                 pobj_list->Append( l );
                 delete sea;
             }
             else {
                 delete land;
-                // sea->Reduce(0.0003);
+                //sea->Reduce2(0.003);
                 if (!sea->Empty()) {
                     S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
                     pobj_list->Append( l );
