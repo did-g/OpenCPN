@@ -340,6 +340,73 @@ void LLRegion::Subtract(const LLRegion& region)
     Put(region, GLU_TESS_WINDING_POSITIVE, true);
 }
 
+// ----------------------
+// p1-- p2 -- p3 -- p4
+//
+void LLRegion::Reduce2(double factor)
+{
+    double factor2 = factor*factor;
+    int u = 0;
+//return;
+    std::list<poly_contour>::iterator i = contours.begin();
+    while(i != contours.end()) {
+        if(i->size() < 6) {
+            i++;
+            continue;
+        }
+
+        // reduce segments
+        // l j k 
+        contour_pt p1 = *i->rbegin();
+        poly_contour::iterator j = i->begin(), p2, p3;
+        j++;
+        p2  = j;
+        j++;
+        while(j != i->end()) {
+            p3 = j;
+            j++;
+            // (x1,y1), (x2,y2), and (x3,y3) be the three points, with x1<x2<x3. 
+            // Let m1=(y2−y1)/(x2−x1) and m2=(y3−y2)/(x3−x2). If m1<m2 
+            // there is an arc that is concave up (but no arc that is concave down); 
+            // if m1>m2, there is an arc that is concave down (but no arc that is concave up).
+            bool skip = false;
+            if (p2->x != p1.x && p3->x != p2->x) {
+                double m1 = (p2->y - p1.y)/fabs(p2->x - p1.x);
+                double m2 = (p3->y - p2->y)/fabs(p3->x - p2->x); 
+                if (p1.x < p2->x && p2->x < p3->x) {
+                   if (m1 > m2)
+                      skip = true;
+                }
+                else if (p1.x > p2->x && p2->x > p3->x){
+                   if (m1 < m2)
+                      skip = true;
+                }
+            }
+            if( skip && dist2(vector(*p2, p1)) < factor2 ) {
+                i->erase(p2);
+                u++;
+                p2 = p3;
+                /*
+                p1 = *p3;
+                p2 = j;
+                if (j != i->end()) j++;*/
+            }
+            else {
+                p1 = *p2;
+                p2 = p3;
+            }
+        }
+
+        // erase zero contours
+        if(i->size() < 3)
+            i = contours.erase(i);
+        else
+            i++;
+    }
+    printf(" %d ", u); 
+    //Optimize();
+}
+
 void LLRegion::Reduce(double factor)
 {
     double factor2 = factor*factor;
