@@ -5692,7 +5692,7 @@ void s52plib::ComputeCSRules( ObjRazRules *rzRules )
             case RUL_CND_SY: {
                 if( !rzRules->obj->bCS_Added ) {
                     rzRules->obj->CSrules = NULL;
-                    ps52plib->GetAndAddCSRules( rzRules, rules );
+                    GetAndAddCSRules( rzRules, rules );
                     if(strncmp(rzRules->obj->FeatureName, "SOUNDG", 6))
                         rzRules->obj->bCS_Added = 1; // mark the object
                 }
