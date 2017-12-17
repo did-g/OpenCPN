@@ -548,7 +548,7 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
        }
   }
   if (region) {
-      region->Reduce(0.0003);
+      //region->Reduce2(0.003);
   }
 
   return pobj_list;
