@@ -371,6 +371,7 @@ public:
 // ----------------------------------------------------------------------------
 
 class PlugInChartBase;                  // found in ocpn_plugin.h
+class ListOfS57ObjRegion;
 
 class ChartPlugInWrapper : public ChartBaseBSB
 {
@@ -444,6 +445,7 @@ class ChartPlugInWrapper : public ChartBaseBSB
                                                          const OCPNRegion &RectRegion );
             
             virtual void ClearPLIBTextList();
+            virtual ListOfS57ObjRegion *GetHazards(const void *region, ListOfS57ObjRegion  *lst = 0);
             
       private:
             PlugInChartBase *m_ppicb;
