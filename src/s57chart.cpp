@@ -3365,9 +3365,13 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
                 fromSM( /*east */ ppt[vbo_index], /* north */ ppt[vbo_index +1], ref_lat, ref_lon, &r.m_y, &r.m_x );
 
                 if( (r.m_x != lp.m_x) || (r.m_y != lp.m_y) ){
+#if 0
                     pdp[idouble++] = r.m_x;
                     pdp[idouble++] = r.m_y;
-                    
+#else
+                    pdp[idouble++] = r.m_y;
+                    pdp[idouble++] = r.m_x;
+#endif
                     nls++;
                 }
                 else{               // sKipping point
@@ -3399,30 +3403,19 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
             
             wxPoint2DDouble ptest;
             if(idir == 1) {
-                // GetPointPixSingle( rzRules, ppt[1], ppt[0], &ptest, vp );
                 fromSM( /*east */ ppt[0], /* north */ ppt[1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
             }
-            else{
-            // fetch the last point
+            else{ // fetch the last point
                 int index_last_next = (nPoints_next-1) * 2;
-                // GetPointPixSingle( rzRules, ppt[index_last_next +1], ppt[index_last_next], &ptest, vp );
                 fromSM( ppt[index_last_next], ppt[index_last_next+1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
             }
             
             // try to match the correct point in this segment with the last point in the previous segment
-
-            if(lp != ptest)         // not connectable?
-            {
-                if(nls){
+            if(lp != ptest) {         // not connectable?
+                if(nls >= 3){
+                    #if 0
                     wxPoint2DDouble *pReduced = 0;
                     int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
-                    #if 0
-                    wxPoint *ptestp = (wxPoint *) malloc( ( max_points ) * sizeof(wxPoint) ); 
-                    GetPointPixArray( rzRules, pReduced, ptestp, nPointReduced, vp );
-                
-                    // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
-                    free(ptestp);
-                    #endif
                     if (nPointReduced >= 3) {
                         double *to = new double[nPointReduced *2];
                         for (int v = 0; v < nPointReduced*2; v +=2) {
@@ -3434,6 +3427,9 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
                         delete [] to;
                     }
                     free(pReduced);
+                    #else
+                        region->Union(LLRegion(nls, pdp));
+                    #endif
                     ndraw++;
                 }
                 
@@ -3446,16 +3442,10 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
         }
         else{
             // no more segments, so render what is available
-            if(nls){
+            if(nls >= 3){
+                #if 0
                 wxPoint2DDouble *pReduced = 0;
                 int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
-                #if 0                
-                wxPoint *ptestp = (wxPoint *) malloc( ( max_points ) * sizeof(wxPoint) ); 
-                GetPointPixArray( rzRules, pReduced, ptestp, nPointReduced, vp );
-                                
-                // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
-                free( ptestp );
-                #endif
                 if (nPointReduced >= 3) {
                     double *to = new double[nPointReduced *2];
                     for (int v = 0; v < nPointReduced*2; v +=2) {
@@ -3467,6 +3457,9 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
                     delete [] to;
                 }
                 free(pReduced);
+                #else
+                    region->Union(LLRegion(nls, pdp));
+                #endif
             }
         }
         
