@@ -4338,6 +4338,11 @@ void PlugInChartBaseExtended::ClearPLIBTextList()
 {
 }
 
+ListOfS57ObjRegion *PlugInChartBaseExtended::GetHazards(const void *region, ListOfS57ObjRegion  *lst)
+{
+    return 0;
+}
+
 // ----------------------------------------------------------------------------
 // ChartPlugInWrapper Implementation
 //    This class is a wrapper/interface to PlugIn charts(PlugInChartBase)
@@ -4847,6 +4852,17 @@ void ChartPlugInWrapper::ClearPLIBTextList()
         if(pCBx)
             pCBx->ClearPLIBTextList();
     }
+}
+
+ListOfS57ObjRegion *ChartPlugInWrapper::GetHazards(const void *region, ListOfS57ObjRegion *lst)
+{
+    if(m_ppicb)
+    {
+        PlugInChartBaseExtended *pCBx = dynamic_cast<PlugInChartBaseExtended*>( m_ppicb );
+        if(pCBx)
+            return pCBx->GetHazards(region, lst);
+    }
+    return 0;
 }
 
 bool ChartPlugInWrapper::AdjustVP(ViewPort &vp_last, ViewPort &vp_proposed)
