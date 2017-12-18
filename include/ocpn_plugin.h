@@ -780,6 +780,7 @@ WX_DECLARE_LIST(PI_ChartObj, ListOfPI_ChartObj);
 // PlugInChartBaseGL
 //  Derived from PlugInChartBase, add OpenGL Vector chart support
 // ----------------------------------------------------------------------------
+class ListOfS57ObjRegion;
 
 class DECL_EXP PlugInChartBaseGL : public PlugInChartBase
 {
@@ -833,6 +834,7 @@ public:
     virtual float *GetNoCOVRTableHead(int iTable);
     
     virtual void ClearPLIBTextList();
+    virtual ListOfS57ObjRegion *GetHazards(const void *region, ListOfS57ObjRegion  *lst = 0);
     
 };
 
