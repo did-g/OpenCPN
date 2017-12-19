@@ -1660,10 +1660,6 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
             parent_frame->ToggleGrid();
             break;
 
-       case 'G':
-            parent_frame->ToggleGrid();
-            break;
-
        case 'L':
             parent_frame->ToggleLights();
             break;

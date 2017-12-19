@@ -1381,12 +1381,6 @@ void glChartCanvas::RenderChartOutline( int dbIndex, ViewPort &vp )
         else
             nPly = ChartData->GetDBPlyPoint( dbIndex, 0, &plylat, &plylon );
 
-        if (nPly == 0) {
-            // XXX error msg?
-            // chart isn't valid anymore!!
-            continue;
-        }
-
         bool begin = false, sml_valid = false;
         double sml[2];
         float lastplylat = 0.0;
