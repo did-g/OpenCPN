@@ -402,10 +402,9 @@ void BoatDialog::OnPaintPlot(wxPaintEvent& event)
                 
                 int px, py;
                 int s;
-                for(s = 0; s<num_wind_speeds-1; s++) {
-                    if(wind_speeds[s] > polar.wind_speeds[VWi].VW)
+                for(s = 0; s<num_wind_speeds-1; s++)
+                    if(wind_speeds[s] > windspeed)
                         break;
-                }
                 { // interpolate into non-linear windspeed space
                     double x = windspeed, x1 = wind_speeds[s], x2 = wind_speeds[s+1];
                     double y1 = s * w / num_wind_speeds;
@@ -417,8 +416,6 @@ void BoatDialog::OnPaintPlot(wxPaintEvent& event)
                 
                 if(lastvalid) {
                     dc.DrawLine(lx, ly, px, py);
-                    if(full)
-                        dc.DrawLine(2*cx-lx, ly, 2*cx-px, py);
                 }
 
                 lx = px, ly = py;
@@ -428,11 +425,11 @@ void BoatDialog::OnPaintPlot(wxPaintEvent& event)
     }
 
     /* vmg */
-
     wxPoint lastp[4];
     bool lastpvalid[4] = {false, false, false, false};
     for(unsigned int VWi = 0; VWi<polar.wind_speeds.size(); VWi++) {
-        double VW = polar.wind_speeds[VWi].VW;
+        double VA, VW = polar.wind_speeds[VWi].VW;
+        double windspeed = polar.wind_speeds[VWi].VW;
         SailingVMG vmg = polar.GetVMGTrueWind(VW);
 
         for(int i=0; i<4; i++) {
@@ -455,13 +452,33 @@ void BoatDialog::OnPaintPlot(wxPaintEvent& event)
             case 0: case 2: a = W; break;
             case 1: case 3: a = Polar::DirectionApparentWind(VB, W, VW); break;
             }
+            switch(selection) {
+            case 0: case 1:
+                VB = polar.Speed(W, VW);
+                break;
+            case 2: case 3:
+                VA = windspeed;
+                VB = polar.SpeedAtApparentWindSpeed(W, VA);
+                //VW = Polar::VelocityTrueWind(VA, VB, W);
+                break;
+            }
 
             wxPoint p;
             if(plottype == 0) {
                 p.x =  m_PlotScale*VB*sin(deg2rad(a)) + cx;
                 p.y = -m_PlotScale*VB*cos(deg2rad(a)) + cy;
             } else {
-                p.x = a * w / (full ? 360 : 180) + cx;
+                int s;
+                for(s = 0; s<num_wind_speeds-1; s++)
+                    if(wind_speeds[s] > windspeed)
+                        break;
+                { // interpolate into non-linear windspeed space
+                    double x = windspeed, x1 = wind_speeds[s], x2 = wind_speeds[s+1];
+                    double y1 = s * w / num_wind_speeds;
+                    double y2 = (s+1) * w / num_wind_speeds;
+
+                    p.x = x2 - x1 ? (y2 - y1)*(x - x1)/(x2 - x1) + y1 : y1;
+                }
                 p.y = h - 2*VB*m_PlotScale;
             }
 
@@ -535,7 +552,7 @@ void BoatDialog::OnPaintCrossOverChart(wxPaintEvent& event)
     wxColour colors[] = {*wxRED, *wxGREEN, *wxBLUE, *wxCYAN, *wxYELLOW,
                          wxColour(255, 0, 255)};
     int c = 0;
-    for(unsigned int i=0; i<m_Boat.Polars.size(); i++) {
+    for(int i=0; i<(int)m_Boat.Polars.size(); i++) {
         bool bold = i == index;
 
 //        dc.SetPen(wxPen(colors[c], bold ? 1 : 3));
@@ -638,7 +655,7 @@ void BoatDialog::OnOpenBoat ( wxCommandEvent& event )
     pConf->SetPath ( _T( "/PlugIns/WeatherRouting/BoatDialog" ) );
 
     wxString path;
-    pConf->Read ( _T ( "Path" ), &path, weather_routing_pi::StandardPath());
+    pConf->Read ( _T ( "BoatPath" ), &path, weather_routing_pi::StandardPath() + _T("boats"));
 
     wxFileDialog openDialog
         ( this, _( "Select Boat" ), path, wxT ( "" ),
@@ -646,10 +663,10 @@ void BoatDialog::OnOpenBoat ( wxCommandEvent& event )
           wxFD_OPEN  );
 
     if( openDialog.ShowModal() == wxID_OK ) {
-        wxString filename = openDialog.GetPath();
         pConf->SetPath ( _T( "/PlugIns/WeatherRouting/BoatDialog" ) );
-        pConf->Write ( _T ( "Path" ), wxFileName(filename).GetPath() );
+        pConf->Write ( _T ( "BoatPath" ), openDialog.GetDirectory() );
 
+        wxString filename = openDialog.GetPath();
         wxString error = m_Boat.OpenXML(filename);
         if(error.empty()) {
             RepopulatePolars();
@@ -667,6 +684,7 @@ void BoatDialog::OnOpenBoat ( wxCommandEvent& event )
 
 void BoatDialog::SaveBoat()
 {
+    // wait for crossover generation to comple
     while(m_CrossOverGenerationThread) {
         wxYield();
         wxThread::Sleep(10);
@@ -677,18 +695,17 @@ void BoatDialog::SaveBoat()
         pConf->SetPath ( _T( "/PlugIns/WeatherRouting/BoatDialog" ) );
 
         wxString path;
-        pConf->Read ( _T ( "Path" ), &path, weather_routing_pi::StandardPath());
+        pConf->Read ( _T ( "BoatPath" ), &path, weather_routing_pi::StandardPath() + _T("boats"));
 
         wxFileDialog saveDialog( this, _( "Select Boat" ), path, wxT ( "" ),
                                  wxT ( "Boat files (*.xml)|*.XML;*.xml|All files (*.*)|*.*" ),
                                  wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
         if( saveDialog.ShowModal() == wxID_OK ) {
-            wxString filename = wxFileDialog::AppendExtension(saveDialog.GetPath(), _T("*.xml"));
-
             pConf->SetPath ( _T( "/PlugIns/WeatherRouting/BoatDialog" ) );
-            pConf->Write ( _T ( "Path" ), wxFileName(filename).GetPath() );
+            pConf->Write ( _T ( "BoatPath" ), saveDialog.GetDirectory() );
 
+            wxString filename = wxFileDialog::AppendExtension(saveDialog.GetPath(), _T("*.xml"));
             m_boatpath = filename;
             SetTitle(m_boatpath);
         } else
@@ -719,35 +736,6 @@ void BoatDialog::OnSaveAsBoat ( wxCommandEvent& event )
 void BoatDialog::OnClose ( wxCommandEvent& event )
 {
     EndModal(wxID_CANCEL);
-}
-
-void BoatDialog::OnSaveFile ( wxCommandEvent& event )
-{
-    long index = SelectedPolar();
-    if(index < 0)
-        return;
-
-    wxFileConfig *pConf = GetOCPNConfigObject();
-    pConf->SetPath ( _T( "/PlugIns/WeatherRouting/BoatDialog" ) );
-
-    wxString path;
-    pConf->Read ( _T ( "FilePath" ), &path, weather_routing_pi::StandardPath());
-
-    wxFileDialog saveDialog( this, _( "Select Polar" ), path, wxT ( "" ),
-                             wxT ( "Boat Polar files (*.file)|*.FILE;*.file|All files (*.*)|*.*" ), wxFD_SAVE  );
-
-    if( saveDialog.ShowModal() == wxID_OK ) {
-        wxString filename = saveDialog.GetPath();
-        pConf->SetPath ( _T( "/PlugIns/WeatherRouting/BoatDialog" ) );
-        pConf->Write ( _T ( "FILEPath" ), wxFileName(filename).GetPath() );
-
-        Polar &polar = m_Boat.Polars[index];
-        if(!polar.Save(saveDialog.GetPath().mb_str())) {
-            wxMessageDialog md(this, _("Failed saving boat polar to file"), _("OpenCPN Weather Routing Plugin"),
-                               wxICON_ERROR | wxOK );
-            md.ShowModal();
-        }
-    }
 }
 
 void BoatDialog::OnPolarSelected()
@@ -849,9 +837,7 @@ void BoatDialog::OnAddPolar( wxCommandEvent& event )
     pConf->SetPath ( _T( "/PlugIns/WeatherRouting/BoatDialog" ) );
 
     wxString path;
-    pConf->Read ( _T ( "FilePath" ), &path, *GetpSharedDataLocation()
-                  + _T("plugins/weather_routing_pi/data/polars"));
-    path = wxFileName(path).GetPath();
+    pConf->Read ( _T ( "PolarPath" ), &path, weather_routing_pi::StandardPath() + _T("polars"));
 
     wxFileDialog openDialog
         ( this, _( "Select Polar File" ), path, wxT ( "" ),
@@ -861,7 +847,7 @@ void BoatDialog::OnAddPolar( wxCommandEvent& event )
     if( openDialog.ShowModal() != wxID_OK )
         return;
 
-    pConf->Write( _T ( "FilePath" ), openDialog.GetPath());
+    pConf->Write( _T ( "PolarPath" ), openDialog.GetDirectory());
 
     wxArrayString paths;
     openDialog.GetPaths(paths);
@@ -1033,7 +1019,7 @@ wxString BoatDialog::FormatVMG(double W, double VW)
     long index = SelectedPolar();
     Polar &polar = m_Boat.Polars[index];
     double A = isnan(W) ? NAN :
-        positive_degrees(Polar::DirectionApparentWind(polar.Speed(W, VW), W, VW));
+        positive_degrees(Polar::DirectionApparentWind(polar.Speed(W, VW, true), W, VW));
     return wxString::Format(_("%.1f True %.1f Apparent"), W, A);
 }
 
