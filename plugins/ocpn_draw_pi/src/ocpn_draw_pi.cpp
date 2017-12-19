@@ -1609,16 +1609,18 @@ bool ocpn_draw_pi::KeyboardEventHook( wxKeyEvent &event )
 {
     bool bret = FALSE;
     
-    if( event.GetKeyCode() < 128 )            //ascii
+    int key_char = event.GetKeyCode();
+    if(  key_char < 128 || key_char == WXK_MENU)            //ascii
     {
-        int key_char = event.GetKeyCode();
-        
         if ( event.ControlDown() )
             key_char -= 64;
 
         if((bKey_Boundary_Pressed || bKey_Point_Pressed || bKey_TextPoint_Pressed || bKey_EBL_Pressed || bKey_DR_Pressed || bKey_GZ_Pressed || bKey_PIL_Pressed) && key_char != WXK_ESCAPE) return true;
         
         switch( key_char ) {
+            case WXK_MENU:
+                bret = CallPopupMenu();
+                break;
             case WXK_CONTROL_B:                      // Ctrl B
                 if ( event.ShiftDown() ) { // Shift-Ctrl-B
                     if(event.GetEventType() == wxEVT_KEY_DOWN) {
@@ -1814,6 +1816,165 @@ bool ocpn_draw_pi::KeyboardEventHook( wxKeyEvent &event )
     }
     SetCursor_PlugIn( m_pCurrentCursor );
     if(bret) RequestRefresh(m_parent_window);
+    return bret;
+}
+
+bool ocpn_draw_pi::CallPopupMenu(  )
+{
+    bool bret = FALSE;
+    if(m_bODPointEditing) {
+        m_bODPointEditing = false;
+        m_pCurrentCursor = NULL;
+        m_pFoundODPoint->m_bIsBeingEdited = false;
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if(m_bPathEditing) {
+        m_bPathEditing = false;
+        m_pCurrentCursor = NULL;
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( nBoundary_State == 1 || nPoint_State == 1 || nTextPoint_State == 1 || nEBL_State == 1 || nDR_State == 1 || nGZ_State == 1 || nPIL_State == 1 ) {
+        m_Mode++;
+        if(m_Mode >= ID_MODE_BOUNDARY)
+            SetToolbarTool();
+        g_pODToolbar->SetToolbarTool( m_Mode );
+        bret = TRUE;
+    } else if ( nBoundary_State > 1 ) {
+        m_iCallerId = 0;
+        nBoundary_State = 0;
+        FinishBoundary();
+        bKey_Boundary_Pressed = false;
+        m_pCurrentCursor = NULL;
+        SetToolbarItemState( m_draw_button_id, false );
+        g_pODToolbar->SetToolbarToolEnableAll();
+        g_pODToolbar->SetToolbarTool( ID_NONE );
+        g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
+        if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( nPoint_State > 1) {
+        m_iCallerId = 0;
+        nPoint_State = 0;
+        bKey_Point_Pressed = false;
+        m_pCurrentCursor = NULL;
+        SetToolbarItemState( m_draw_button_id, false );
+        g_pODToolbar->SetToolbarToolEnableAll();
+        g_pODToolbar->SetToolbarTool( ID_NONE );
+        g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
+        if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( nTextPoint_State > 1) {
+        m_iCallerId = 0;
+        nTextPoint_State = 0;
+        bKey_TextPoint_Pressed = false;
+        m_pCurrentCursor = NULL;
+        SetToolbarItemState( m_draw_button_id, false );
+        g_pODToolbar->SetToolbarToolEnableAll();
+        g_pODToolbar->SetToolbarTool( ID_NONE );
+        g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
+        if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( nEBL_State > 1 ) {
+        m_iCallerId = 0;
+        nEBL_State = 0;
+        bKey_EBL_Pressed = false;
+        m_bEBLMoveOrigin = false;
+        m_pCurrentCursor = NULL;
+        SetToolbarItemState( m_draw_button_id, false );
+        g_pODToolbar->SetToolbarToolEnableAll();
+        g_pODToolbar->SetToolbarTool( ID_NONE );
+        g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
+        if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( nDR_State > 1 ) {
+        m_iCallerId = 0;
+        nDR_State = 0;
+        bKey_DR_Pressed = false;
+        m_pCurrentCursor = NULL;
+        SetToolbarItemState( m_draw_button_id, false );
+        g_pODToolbar->SetToolbarToolEnableAll();
+        g_pODToolbar->SetToolbarTool( ID_NONE );
+        g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
+        if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( nGZ_State > 1 ) {
+        m_iCallerId = 0;
+        if(!(nGZ_State & 1) && m_pMouseGZ) {
+            g_pGZMan->DeletePath(m_pMouseGZ);
+            m_pMouseGZ = NULL;
+        }
+        nGZ_State = 0;
+        bKey_GZ_Pressed = false;
+        m_pCurrentCursor = NULL;
+        SetToolbarItemState( m_draw_button_id, false );
+        g_pODToolbar->SetToolbarToolEnableAll();
+        g_pODToolbar->SetToolbarTool( ID_NONE );
+        g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
+        if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( nPIL_State > 1 ) {
+        m_iCallerId = 0;
+        nPIL_State = 0;
+        bKey_PIL_Pressed = false;
+        m_pCurrentCursor = NULL;
+        SetToolbarItemState( m_draw_button_id, false );
+        g_pODToolbar->SetToolbarToolEnableAll();
+        g_pODToolbar->SetToolbarTool( ID_NONE );
+        g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
+        if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if ( m_bEBLMoveOrigin ) {
+        m_bEBLMoveOrigin = false;
+        m_pCurrentCursor = NULL;
+        // bRefresh = TRUE;
+        bret = TRUE;
+    } else if( m_pBoundaryList.size() > 0 ) {
+        g_ODEventHandler->SetCanvas( ocpncc1 );
+        g_ODEventHandler->SetBoundaryList( m_pBoundaryList );
+        g_ODEventHandler->PopupMenu( SELTYPE_BOUNDARYLIST );
+        m_pBoundaryList.clear();
+        // bRefresh = TRUE;
+        bret = true;
+    } else if ( nBoundary_State == 0 && nPoint_State == 0 && nTextPoint_State == 0 && nEBL_State == 0 && nDR_State == 0 && nGZ_State == 0 && nPIL_State == 0) {
+        FindSelectedObject();
+        
+        if( 0 != m_seltype ) {
+            if(m_pSelectedPath) {
+                m_pSelectedBoundary = NULL;
+                m_pSelectedEBL = NULL;
+                m_pSelectedDR = NULL;
+                m_pSelectedGZ = NULL;
+                m_pSelectedPIL = NULL;
+                if(m_pSelectedPath->m_sTypeString == wxT("Boundary"))
+                    m_pSelectedBoundary = (Boundary *)m_pSelectedPath;
+                else if(m_pSelectedPath->m_sTypeString == wxT("EBL"))
+                    m_pSelectedEBL = (EBL *)m_pSelectedPath;
+                else if(m_pSelectedPath->m_sTypeString == wxT("DR"))
+                    m_pSelectedDR = (DR *)m_pSelectedPath;
+                else if(m_pSelectedPath->m_sTypeString == wxT("Guard Zone"))
+                    m_pSelectedGZ = (GZ *)m_pSelectedPath;
+                else if(m_pSelectedPath->m_sTypeString == wxT("PIL"))
+                    m_pSelectedPIL = (PIL *)m_pSelectedPath;
+            }
+            g_ODEventHandler->SetCanvas( ocpncc1 );
+            g_ODEventHandler->SetPath( m_pSelectedPath );
+            g_ODEventHandler->SetPoint( m_pFoundODPoint );
+            g_ODEventHandler->SetPIL( m_iPILId );
+            g_ODEventHandler->SetLatLon( m_cursor_lat, m_cursor_lon );
+            g_ODEventHandler->PopupMenu( m_seltype );
+            
+            //RequestRefresh( m_parent_window );
+            // bRefresh = TRUE;
+            bret = true;
+        } 
+        else bret = FALSE;
+    }
     return bret;
 }
 
@@ -2291,160 +2452,8 @@ bool ocpn_draw_pi::MouseEventHook( wxMouseEvent &event )
         
     }
     if ( event.RightDown() ) {
-        if(m_bODPointEditing) {
-            m_bODPointEditing = false;
-            m_pCurrentCursor = NULL;
-            m_pFoundODPoint->m_bIsBeingEdited = false;
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if(m_bPathEditing) {
-            m_bPathEditing = false;
-            m_pCurrentCursor = NULL;
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( nBoundary_State == 1 || nPoint_State == 1 || nTextPoint_State == 1 || nEBL_State == 1 || nDR_State == 1 || nGZ_State == 1 || nPIL_State == 1 ) {
-            m_Mode++;
-            if(m_Mode >= ID_MODE_BOUNDARY)
-                SetToolbarTool();
-            g_pODToolbar->SetToolbarTool( m_Mode );
-            bret = TRUE;
-        } else if ( nBoundary_State > 1 ) {
-            m_iCallerId = 0;
-            nBoundary_State = 0;
-            FinishBoundary();
-            bKey_Boundary_Pressed = false;
-            m_pCurrentCursor = NULL;
-            SetToolbarItemState( m_draw_button_id, false );
-            g_pODToolbar->SetToolbarToolEnableAll();
-            g_pODToolbar->SetToolbarTool( ID_NONE );
-            g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
-            if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( nPoint_State > 1) {
-            m_iCallerId = 0;
-            nPoint_State = 0;
-            bKey_Point_Pressed = false;
-            m_pCurrentCursor = NULL;
-            SetToolbarItemState( m_draw_button_id, false );
-            g_pODToolbar->SetToolbarToolEnableAll();
-            g_pODToolbar->SetToolbarTool( ID_NONE );
-            g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
-            if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( nTextPoint_State > 1) {
-            m_iCallerId = 0;
-            nTextPoint_State = 0;
-            bKey_TextPoint_Pressed = false;
-            m_pCurrentCursor = NULL;
-            SetToolbarItemState( m_draw_button_id, false );
-            g_pODToolbar->SetToolbarToolEnableAll();
-            g_pODToolbar->SetToolbarTool( ID_NONE );
-            g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
-            if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( nEBL_State > 1 ) {
-            m_iCallerId = 0;
-            nEBL_State = 0;
-            bKey_EBL_Pressed = false;
-            m_bEBLMoveOrigin = false;
-            m_pCurrentCursor = NULL;
-            SetToolbarItemState( m_draw_button_id, false );
-            g_pODToolbar->SetToolbarToolEnableAll();
-            g_pODToolbar->SetToolbarTool( ID_NONE );
-            g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
-            if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( nDR_State > 1 ) {
-            m_iCallerId = 0;
-            nDR_State = 0;
-            bKey_DR_Pressed = false;
-            m_pCurrentCursor = NULL;
-            SetToolbarItemState( m_draw_button_id, false );
-            g_pODToolbar->SetToolbarToolEnableAll();
-            g_pODToolbar->SetToolbarTool( ID_NONE );
-            g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
-            if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( nGZ_State > 1 ) {
-            m_iCallerId = 0;
-            if(!(nGZ_State & 1) && m_pMouseGZ) {
-                g_pGZMan->DeletePath(m_pMouseGZ);
-                m_pMouseGZ = NULL;
-            }
-            nGZ_State = 0;
-            bKey_GZ_Pressed = false;
-            m_pCurrentCursor = NULL;
-            SetToolbarItemState( m_draw_button_id, false );
-            g_pODToolbar->SetToolbarToolEnableAll();
-            g_pODToolbar->SetToolbarTool( ID_NONE );
-            g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
-            if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( nPIL_State > 1 ) {
-            m_iCallerId = 0;
-            nPIL_State = 0;
-            bKey_PIL_Pressed = false;
-            m_pCurrentCursor = NULL;
-            SetToolbarItemState( m_draw_button_id, false );
-            g_pODToolbar->SetToolbarToolEnableAll();
-            g_pODToolbar->SetToolbarTool( ID_NONE );
-            g_pODToolbar->GetPosition( &g_iToolbarPosX, &g_iToolbarPosY );
-            if( g_iDisplayToolbar != ID_DISPLAY_ALWAYS ) g_pODToolbar->Hide();
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if ( m_bEBLMoveOrigin ) {
-            m_bEBLMoveOrigin = false;
-            m_pCurrentCursor = NULL;
-            bRefresh = TRUE;
-            bret = TRUE;
-        } else if( m_pBoundaryList.size() > 0 ) {
-            g_ODEventHandler->SetCanvas( ocpncc1 );
-            g_ODEventHandler->SetBoundaryList( m_pBoundaryList );
-            g_ODEventHandler->PopupMenu( SELTYPE_BOUNDARYLIST );
-            m_pBoundaryList.clear();
-            bRefresh = TRUE;
-            bret = true;
-        } else if ( nBoundary_State == 0 && nPoint_State == 0 && nTextPoint_State == 0 && nEBL_State == 0 && nDR_State == 0 && nGZ_State == 0 && nPIL_State == 0) {
-            FindSelectedObject();
-            
-            if( 0 != m_seltype ) {
-                if(m_pSelectedPath) {
-                    m_pSelectedBoundary = NULL;
-                    m_pSelectedEBL = NULL;
-                    m_pSelectedDR = NULL;
-                    m_pSelectedGZ = NULL;
-                    m_pSelectedPIL = NULL;
-                    if(m_pSelectedPath->m_sTypeString == wxT("Boundary"))
-                        m_pSelectedBoundary = (Boundary *)m_pSelectedPath;
-                    else if(m_pSelectedPath->m_sTypeString == wxT("EBL"))
-                        m_pSelectedEBL = (EBL *)m_pSelectedPath;
-                    else if(m_pSelectedPath->m_sTypeString == wxT("DR"))
-                        m_pSelectedDR = (DR *)m_pSelectedPath;
-                    else if(m_pSelectedPath->m_sTypeString == wxT("Guard Zone"))
-                        m_pSelectedGZ = (GZ *)m_pSelectedPath;
-                    else if(m_pSelectedPath->m_sTypeString == wxT("PIL"))
-                        m_pSelectedPIL = (PIL *)m_pSelectedPath;
-                }
-                g_ODEventHandler->SetCanvas( ocpncc1 );
-                g_ODEventHandler->SetPath( m_pSelectedPath );
-                g_ODEventHandler->SetPoint( m_pFoundODPoint );
-                g_ODEventHandler->SetPIL( m_iPILId );
-                g_ODEventHandler->SetLatLon( m_cursor_lat, m_cursor_lon );
-                g_ODEventHandler->PopupMenu( m_seltype );
-                
-                //RequestRefresh( m_parent_window );
-                bRefresh = TRUE;
-                bret = true;
-            } else bret = FALSE;
-            
-            //end           
-        }
+        bret = CallPopupMenu();
+        bRefresh = bret;
     }
     
     //      Check to see if there is a path under the cursor
