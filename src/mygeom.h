@@ -59,7 +59,7 @@
 
 #define DATA_TYPE_FLOAT         0
 #define DATA_TYPE_DOUBLE        1
-
+#define DATA_TYPE_SHORT         2
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -117,6 +117,27 @@ public:
         TriPrim     *p_next;                // chain link
 };
 
+class LegacyTriPrim
+{
+public:
+    LegacyTriPrim();
+    ~LegacyTriPrim();
+    void FreeMem(void);
+    
+    unsigned int type;                  // Type of triangle primitive
+    //  May be PTG_TRIANGLES
+    //         PTG_TRIANGLE_STRIP
+    //         PTG_TRIANGLE_FAN
+    
+    int         nVert;
+    double      *p_vertex;              //  Pointer to vertex array, x,y,x,y.....
+    
+    double      minx, miny, maxx, maxy;
+    
+    LegacyTriPrim     *p_next;                // chain link
+    
+};
+
 
 
 class PolyTriGroup
@@ -128,7 +149,7 @@ public:
 
         int             nContours;
         int             *pn_vertex;             // pointer to array of poly vertex counts
-//        float           *pgroup_geom;           // pointer to Raw geometry, used for contour line drawing
+        float           *pgroup_geom;           // pointer to Raw geometry, used for contour line drawing
 
         TriPrim         *tri_prim_head;         // head of linked list of TriPrims
         bool            m_bSMSENC;
@@ -136,6 +157,8 @@ public:
         unsigned char   *single_buffer;
         int             single_buffer_size;
         int             data_type;              //  p_vertex in TriPrim chain is FLOAT or DOUBLE
+        float           sfactor;
+        float           soffset;
         
     private:
         int my_bufgets( char *buf, int buf_len_max );

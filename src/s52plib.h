@@ -30,20 +30,10 @@
 
 #include "pi_s52s57.h"                 //types
 
-//#include "ocpn_plugin.h"
-#include "oesenc_pi.h"
-
 class wxGLContext;
-class Extended_Geometry;
 
 #include "LLRegion.h"
 //#include "ocpn_types.h"
-
-#include <wx/dcgraph.h>         // supplemental, for Mac
-
-//    wxWindows Hash Map Declarations
-#include <wx/hashmap.h>
-class RuleHash;
 
 typedef enum ColorScheme
 {
@@ -53,6 +43,12 @@ typedef enum ColorScheme
     GLOBAL_COLOR_SCHEME_NIGHT,
     N_COLOR_SCHEMES
 }_ColorScheme;
+
+#include <wx/dcgraph.h>         // supplemental, for Mac
+
+//    wxWindows Hash Map Declarations
+#include <wx/hashmap.h>
+class RuleHash;
 
 WX_DECLARE_HASH_MAP( wxString, Rule*, wxStringHash, wxStringEqual, RuleHash );
 WX_DECLARE_HASH_MAP( int, wxString, wxIntegerHash, wxIntegerEqual, MyNatsurHash );
@@ -86,28 +82,6 @@ public:
 
 WX_DECLARE_OBJARRAY(noshow_element, ArrayOfNoshow);
 
-
-class  PI_OCPNwxFontList: public wxGDIObjListBase
-{
-public:
-    wxFont *FindOrCreateFont(int pointSize,
-                             wxFontFamily family,
-                             wxFontStyle style,
-                             wxFontWeight weight,
-                             bool underline = false,
-                             const wxString& face = wxEmptyString,
-                             wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
-    void FreeAll( void );
-    
-private:
-    bool isSame(wxFont *font, int pointSize, wxFontFamily family,
-                wxFontStyle style,
-                wxFontWeight weight,
-                bool underline,
-                const wxString& facename,
-                wxFontEncoding encoding);
-};
-
 //-----------------------------------------------------------------------------
 //      LUP Array container, and friends
 //-----------------------------------------------------------------------------
@@ -138,12 +112,14 @@ private:
 
 class s52plib {
 public:
-    s52plib( const wxString& PLib, bool b_forceLegacy = false );
+     s52plib( const wxString& PLib, bool b_forceLegacy = false );
     ~s52plib();
 
     void SetPPMM( float ppmm );
     float GetPPMM() { return canvas_pix_per_mm; }
 
+    void SetOCPNVersion(int major, int minor, int patch);
+    
     double GetRVScaleFactor() { return m_rv_scale_factor; }
     
     LUPrec *S52_LUPLookup( LUPname LUP_name, const char * objectName,
@@ -163,14 +139,24 @@ public:
     wxString GetPLIBColorScheme( void ) { return m_ColorScheme; }
 
     void SetGLRendererString(const wxString &renderer);
-
+    void SetGLOptions(bool b_useStencil,
+                      bool b_useStencilAP,
+                      bool b_useScissors,
+                      bool b_useFBO,
+                      bool b_useVBO,
+                      int  nTextureFormat);
+    
     bool ObjectRenderCheck( ObjRazRules *rzRules, ViewPort *vp );
+    bool ObjectRenderCheckRules( ObjRazRules *rzRules, ViewPort *vp, bool check_noshow = false );
     bool ObjectRenderCheckPos( ObjRazRules *rzRules, ViewPort *vp );
     bool ObjectRenderCheckCat( ObjRazRules *rzRules, ViewPort *vp );
     bool ObjectRenderCheckCS( ObjRazRules *rzRules, ViewPort *vp );
 
+    void ComputeCSRules( ObjRazRules *rzRules );
+
     static void DestroyLUP( LUPrec *pLUP );
     static void ClearRulesCache( Rule *pR );
+    DisCat findLUPDisCat(const char *objectName, LUPname TNAM);
     
 //    Temporarily save/restore the current colortable index
 //    Useful for Thumbnail rendering
@@ -178,7 +164,8 @@ public:
     void RestoreColorScheme( void ) {}
 
 //    Rendering stuff
-    void PrepareForRender( const PlugIn_ViewPort& VPoint );
+    void PrepareForRender( ViewPort *vp );
+    void PrepareForRender( void );
     void AdjustTextList( int dx, int dy, int screenw, int screenh );
     void ClearTextList( void );
     int SetLineFeaturePriority( ObjRazRules *rzRules, int npriority );
@@ -186,9 +173,9 @@ public:
 
     //    For DC's
     int RenderObjectToDC( wxDC *pdc, ObjRazRules *rzRules, ViewPort *vp );
+    int RenderObjectToDCText( wxDC *pdc, ObjRazRules *rzRules, ViewPort *vp );
     int RenderAreaToDC( wxDC *pdc, ObjRazRules *rzRules, ViewPort *vp, render_canvas_parms *pb_spec );
-    int RenderObjectToDCText( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp );
-    
+
     // Accessors
     bool GetShowSoundings() { return m_bShowSoundg; }
     void SetShowSoundings( bool f ) { m_bShowSoundg = f; GenerateStateHash(); }
@@ -203,7 +190,7 @@ public:
     bool GetLightsOff(){ return m_lightsOff; }
     
     void SetAnchorOn(bool val){ m_anchorOn = val; }
-    bool GetAnchorOn(){ return m_anchorOn; }
+    bool GetAnchorOn();
     
     int GetMajorVersion( void ) { return m_VersionMajor; }
     int GetMinorVersion( void ) { return m_VersionMinor; }
@@ -226,19 +213,19 @@ public:
     
     //    For OpenGL
     int RenderObjectToGL( const wxGLContext &glcc, ObjRazRules *rzRules, ViewPort *vp );
-    int RenderObjectToGLText( const wxGLContext &glcc, ObjRazRules *rzRules, ViewPort *vp );
     int RenderAreaToGL( const wxGLContext &glcc, ObjRazRules *rzRules, ViewPort *vp );
-   
+    int RenderObjectToGLText( const wxGLContext &glcc, ObjRazRules *rzRules, ViewPort *vp );
+    
     void RenderPolytessGL( ObjRazRules *rzRules, ViewPort *vp,double z_clip_geom, wxPoint *ptp );
     
     bool EnableGLLS(bool benable);
 
-    Extended_Geometry *buildExtendedGeom( S57Obj *obj );
-    
     bool IsObjNoshow( const char *objcl);
     void AddObjNoshow( const char *objcl);
     void RemoveObjNoshow( const char *objcl);
     void ClearNoshow(void);
+    void SaveObjNoshow() { m_saved_noshow = m_noshow_array; };
+    void RestoreObjNoshow() { m_noshow_array = m_saved_noshow; };
     
     //Todo accessors
     LUPname m_nSymbolStyle;
@@ -285,14 +272,18 @@ public:
 
     wxRect m_last_clip_rect;
     int m_myConfig;
-
+    
     double lastLightLat;
     double lastLightLon;
+
+    int reduceLOD( double LOD_meters, int nPoints, double *source, wxPoint2DDouble **dest);
     
 private:
     int S52_load_Plib( const wxString& PLib, bool b_forceLegacy );
     bool S52_flush_Plib();
-
+    
+    void PLIB_LoadS57Config();
+    
     bool PreloadOBJLFromCSV(const wxString &csv_file);
 
     int DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp );
@@ -305,7 +296,8 @@ private:
 	render_canvas_parms *pb_spec );
     int RenderToGLAC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderToGLAP( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
-
+    int RenderToGLAP_GLSL( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    
     //    Object Renderers
     int RenderTX( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderTE( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
@@ -318,11 +310,23 @@ private:
     int RenderGLLS( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderGLLC( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     
-    int RenderCARC_DisplayList( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     int RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    int RenderCARC_GLSL( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
     
     void UpdateOBJLArray( S57Obj *obj );
 
+    
+    int RenderLSLegacy( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    int RenderLCLegacy( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    int RenderGLLSLegacy( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    int RenderGLLCLegacy( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    int RenderLSPlugIn( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    int RenderLCPlugIn( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    
+    int RenderLS_Dash_GLSL( ObjRazRules *rzRules, Rules *rules, ViewPort *vp );
+    
+    void DrawDashLine( wxPen &pen, wxCoord x1, wxCoord y1, wxCoord x2, wxCoord y2, ViewPort *vp);
+    
     render_canvas_parms* CreatePatternBufferSpec( ObjRazRules *rzRules,
         Rules *rules, ViewPort *vp, bool b_revrgb, bool b_pot = false );
 
@@ -355,7 +359,15 @@ private:
 
     LUPrec *FindBestLUP( wxArrayOfLUPrec *LUPArray, unsigned int startIndex, unsigned int count,
                               S57Obj *pObj, bool bStrict );
-        
+    
+    void SetGLClipRect(const ViewPort &vp, const wxRect &rect);
+    
+    char *_getParamVal( ObjRazRules *rzRules, char *str, char *buf, int bsz );
+    S52_TextC *S52_PL_parseTX( ObjRazRules *rzRules, Rules *rules, char *cmd );
+    char *_parseTEXT( ObjRazRules *rzRules, S52_TextC *text, char *str0 );
+    S52_TextC *S52_PL_parseTE( ObjRazRules *rzRules, Rules *rules, char *cmd );
+    
+    
     Rules *StringToRules( const wxString& str_in );
     void GetAndAddCSRules( ObjRazRules *rzRules, Rules *rules );
 
@@ -371,15 +383,11 @@ private:
     void GetPixPointSingle( int pixx, int pixy, double *plat, double *plon, ViewPort *vp );
     void GetPixPointSingleNoRotate( int pixx, int pixy, double *plat, double *plon, ViewPort *vpt );
     
-    bool IsTextEnabled(const PlugIn_ViewPort& VPoint);
-    bool IsSoundingEnabled(const PlugIn_ViewPort& VPoint, bool current_val);
-    bool IsLightsEnabled(const PlugIn_ViewPort& VPoint);
-    bool isAnchorEnabled( const PlugIn_ViewPort& VPoint );
-    
     wxString m_plib_file;
 
     float canvas_pix_per_mm; // Set by parent, used to scale symbols/lines/patterns
     double m_rv_scale_factor;
+    float m_display_size_mm;
     
     S52color m_unused_color;
     wxColor m_unused_wxColor;
@@ -402,7 +410,7 @@ private:
     TextObjList m_textObjList;
 
     wxString m_ColorScheme;
-    
+
     bool m_lightsOff;
     bool m_anchorOn;
     
@@ -416,11 +424,26 @@ private:
     RenderFromHPGL* HPGL;
 
     TexFont *m_txf;
-    PI_OCPNwxFontList *m_FontList;
     
     bool m_benableGLLS;
     DisCat m_nDisplayCategory;
     ArrayOfNoshow m_noshow_array;
+    ArrayOfNoshow m_saved_noshow;
+    
+    int m_coreVersionMajor;
+    int m_coreVersionMinor;
+    int m_coreVersionPatch;
+
+    // GL Options, set by core depending on hardware capability
+    bool m_useStencil;
+    bool m_useStencilAP;
+    bool m_useScissors;
+    bool m_useFBO;
+    bool m_useVBO;
+    int  m_TextureFormat;
+    
+    float *workBuf;
+    size_t workBufSize;
     
 };
 
@@ -430,14 +453,24 @@ private:
 class RenderFromHPGL {
 public:
     RenderFromHPGL( s52plib* plibarg );
-    ~RenderFromHPGL( );
+    ~RenderFromHPGL(  );
     
     void SetTargetDC( wxDC* pdc );
     void SetTargetOpenGl();
 #if wxUSE_GRAPHICS_CONTEXT
     void SetTargetGCDC( wxGCDC* gdc );
 #endif
+    void SetVP( ViewPort *pVP ){ m_vp = pVP; }
     bool Render(char *str, char *col, wxPoint &r, wxPoint &pivot, wxPoint origin, float scale, double rot_angle, bool bSymbol);
+    wxBrush *getBrush(){ return brush; }
+    
+    GLUtesselator *m_tobj;
+    int          s_odc_tess_vertex_idx;
+    int          s_odc_tess_vertex_idx_this;
+    int          s_odc_tess_buf_len;
+    GLenum       s_odc_tess_mode;
+    int          s_odc_nvertex;
+    GLfloat     *s_odc_tess_work_buf;
     
 private:
     const char* findColorNameInRef( char colorCode, char* col );
@@ -448,8 +481,11 @@ private:
     void Circle( wxPoint center, int radius, bool filled = false );
     void Polygon();
 
+    void DrawPolygonTessellated( int n, wxPoint points[], wxCoord xoffset, wxCoord yoffset );
+    void DrawPolygon( int n, wxPoint points[], wxCoord xoffset, wxCoord yoffset, float scale, float angle );
+    
     s52plib* plib;
-    float scaleFactor;
+    double scaleFactor;
 
     wxDC* targetDC;
 #if wxUSE_GRAPHICS_CONTEXT
@@ -462,16 +498,22 @@ private:
     wxBrush* brush;
     long penWidth;
     int transparency;
-
+    
     int noPoints;
     wxPoint polygon[100];
+    
+    float m_currentColor[4];
 
     bool renderToDC;
     bool renderToOpenGl;
     bool renderToGCDC;
+    ViewPort *m_vp;
     
-    float m_currentColor[4];
-    
+     
+    float *workBuf;
+    size_t workBufSize;
+    unsigned int workBufIndex;
+
 };
 
 #endif //_S52PLIB_H_
