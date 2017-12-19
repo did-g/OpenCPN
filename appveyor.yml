@@ -62,11 +62,14 @@ artifacts:
   - path: 'build\*.exe'
     name: installer
 
+  - path: 'build\Release\opencpn.lib'
+    name: lib
+
 deploy:
   description: 'release created by AppVeyor CI'
   provider: GitHub
   auth_token: '%GitHub_auth_token%'
-  artifact: installer,portable
+  artifact: installer,lib
   draft: true
   prerelease: true
   on:

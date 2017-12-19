@@ -22,6 +22,10 @@
 #include "ChartObj.h"
 #include "Quilt.h"
 
+// XXX BAD
+#include "ocpn_plugin.h"
+#include "chartimg.h"
+
 extern ChartDB *ChartData;
 extern int g_GroupIndex;
 extern ArrayOfInts g_quilt_noshow_index_array;
@@ -245,17 +249,23 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
 // -------------------
 ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
 {
+  ListOfS57ObjRegion *pobj_list = new ListOfS57ObjRegion;
+  pobj_list->Clear();
+
   if ( !ChartData )
-    return 0;
+    return pobj_list;
 
   if(ChartData->IsBusy())             // This prevent recursion on chart loads that Yeild()
-    return 0;
+    return pobj_list;
 
   m_vp = vp;
   delete m_stack;
   m_stack = new ChartStack;
   if (BuildExtendedChartStackAndCandidateArray() == false)
-    return 0;
+    return pobj_list;
+
+  if (m_pcandidate_array->GetCount() == 0)
+    return pobj_list;
 
   bool b_has_overlays = false;
   //  If this is an S57 quilt, we need to know if there are overlays in it
@@ -502,8 +512,6 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
             il++;
     }
 
-    ListOfS57ObjRegion *pobj_list = new ListOfS57ObjRegion;
-    pobj_list->Clear();
 
     // XXX TODO void Quilt::ComputeRenderRegion( ViewPort &vp, OCPNRegion &chart_region )
 
@@ -518,15 +526,47 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
         const ChartTableEntry &cte = ChartData->GetChartTableEntry( piqp->dbIndex );
         LLRegion r = piqp->ActiveRegion;
         int c = pobj_list->GetCount();
-        printf("%d chart %s %d \n",i, cte.GetpFullPath(), cte.GetScale());
         //if( ChartData->IsChartInCache( piqp->dbIndex ) ){
         pret = ChartData->OpenChartFromDB( piqp->dbIndex, FULL_INIT );
+        printf("%d chart %p %s %d \n",i, pret, cte.GetpFullPath(), cte.GetScale());
         s57chart *s57 = dynamic_cast<s57chart*>( pret );
-        printf("\tsearching");	
-        pobj_list = s57->GetHazards(r, pobj_list);
-        printf(" find %d \n", pobj_list->GetCount() -c);
+        if (s57 != 0) {
+            printf("\tsearching s57 ");
+            pobj_list = s57->GetHazards(r, pobj_list);
+            printf(" found %d \n", pobj_list->GetCount() -c);
+        }
+        else {
+          ChartPlugInWrapper /*PlugInChartBaseExtended*/ *oesenc = dynamic_cast <ChartPlugInWrapper *>( pret );
+          if (oesenc != 0) {
+              printf("\tsearching oesenc ");
+              pobj_list = oesenc->GetHazards((void *)&r, pobj_list);
+              if (pobj_list)
+                  printf(" found %d \n", pobj_list->GetCount() -c);
+              else
+                  printf(" no list! bug?\n");
+          }
+        }
     }
-    return pobj_list;
+    LLRegion *region = 0;
+
+    if (pobj_list) for( ListOfS57ObjRegion::Node *node = pobj_list->GetFirst(); node; node = node->GetNext() ) {
+       S57ObjRegion *pObj = node->GetData();
+       LLRegion *r = pObj->region;
+       if (r != 0) {
+           if (region == 0) {
+               region = r;
+           }
+           else {
+               region->Union(*r);
+               pObj->region = 0;
+           }
+       }
+  }
+  if (region) {
+      //region->Reduce2(0.003);
+  }
+
+  return pobj_list;
 }
 
 ListOfS57ObjRegion *ChartObj::GetSafeWaterAreas(ViewPort &vp)

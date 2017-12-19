@@ -3386,9 +3386,13 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
                 fromSM( /*east */ ppt[vbo_index], /* north */ ppt[vbo_index +1], ref_lat, ref_lon, &r.m_y, &r.m_x );
 
                 if( (r.m_x != lp.m_x) || (r.m_y != lp.m_y) ){
+#if 0
                     pdp[idouble++] = r.m_x;
                     pdp[idouble++] = r.m_y;
-                    
+#else
+                    pdp[idouble++] = r.m_y;
+                    pdp[idouble++] = r.m_x;
+#endif
                     nls++;
                 }
                 else{               // sKipping point
@@ -3420,40 +3424,33 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
             
             wxPoint2DDouble ptest;
             if(idir == 1) {
-                // GetPointPixSingle( rzRules, ppt[1], ppt[0], &ptest, vp );
                 fromSM( /*east */ ppt[0], /* north */ ppt[1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
             }
-            else{
-            // fetch the last point
+            else{ // fetch the last point
                 int index_last_next = (nPoints_next-1) * 2;
-                // GetPointPixSingle( rzRules, ppt[index_last_next +1], ppt[index_last_next], &ptest, vp );
                 fromSM( ppt[index_last_next], ppt[index_last_next+1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
             }
             
             // try to match the correct point in this segment with the last point in the previous segment
-
-            if(lp != ptest)         // not connectable?
-            {
-                if(nls){
+            if(lp != ptest) {         // not connectable?
+                if(nls >= 3){
+                    #if 0
                     wxPoint2DDouble *pReduced = 0;
                     int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
-                    #if 0
-                    wxPoint *ptestp = (wxPoint *) malloc( ( max_points ) * sizeof(wxPoint) ); 
-                    GetPointPixArray( rzRules, pReduced, ptestp, nPointReduced, vp );
-                
-                    // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
-                    free(ptestp);
-                    #endif
                     if (nPointReduced >= 3) {
                         double *to = new double[nPointReduced *2];
                         for (int v = 0; v < nPointReduced*2; v +=2) {
                            to[v]    = pReduced[v/2].m_y;
                            to[v +1] = pReduced[v/2].m_x;
                         }
+                        // region->Combine(LLRegion(nPointReduced, to));
                         region->Union(LLRegion(nPointReduced, to));
                         delete [] to;
                     }
                     free(pReduced);
+                    #else
+                        region->Union(LLRegion(nls, pdp));
+                    #endif
                     ndraw++;
                 }
                 
@@ -3466,26 +3463,24 @@ LLRegion *S57Obj2LLRegion(S57Obj *obj)
         }
         else{
             // no more segments, so render what is available
-            if(nls){
+            if(nls >= 3){
+                #if 0
                 wxPoint2DDouble *pReduced = 0;
                 int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
-                #if 0                
-                wxPoint *ptestp = (wxPoint *) malloc( ( max_points ) * sizeof(wxPoint) ); 
-                GetPointPixArray( rzRules, pReduced, ptestp, nPointReduced, vp );
-                                
-                // XXX draw_lc_poly( m_pdc, color, w, ptestp, nPointReduced, sym_len, sym_factor, rules->razRule, vp );
-                free( ptestp );
-                #endif
                 if (nPointReduced >= 3) {
                     double *to = new double[nPointReduced *2];
                     for (int v = 0; v < nPointReduced*2; v +=2) {
                            to[v]    = pReduced[v/2].m_y;
                            to[v +1] = pReduced[v/2].m_x;
                     }
+                    // region->Combine(LLRegion(nPointReduced, to));
                     region->Union(LLRegion(nPointReduced, to));
                     delete [] to;
                 }
                 free(pReduced);
+                #else
+                    region->Union(LLRegion(nls, pdp));
+                #endif
             }
         }
         
@@ -3508,6 +3503,10 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
     const int selection_mask = MASK_POINT | MASK_AREA;
     double safety_contour = S52_getMarinerParam(S52_MAR_SAFETY_CONTOUR);
 
+    LLRegion *land = new LLRegion;
+    LLRegion *sea = new LLRegion;
+    S57Obj *land_obj = 0;
+    S57Obj *sea_obj = 0;
     for( int i = 0; i < PRIO_NUM; ++i ) {
 
         if(selection_mask & MASK_POINT){
@@ -3602,10 +3601,6 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
             // Areas by boundary type, array indices [3..4]
             int area_boundary_type = ( ps52plib->m_nBoundaryStyle == PLAIN_BOUNDARIES ) ? 3 : 4;
             top = razRules[i][area_boundary_type];           // Area nnn Boundaries
-            LLRegion *land = new LLRegion;
-            LLRegion *sea = new LLRegion;
-            S57Obj *land_obj = 0;
-            S57Obj *sea_obj = 0;
             
             for (top = razRules[i][area_boundary_type]; top != NULL; top = top->next) {
                 S57Obj *obj = top->obj;
@@ -3633,10 +3628,12 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             printf ("\\");
                             if (land_obj == 0)
                                 land_obj = obj;
-                            //e->Reduce(0.0003);
+                            #if 0
+                            e->Reduce2(0.001);
                             land->Union( *e );
-                            // S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
-                            // pobj_list->Append( l );
+                            #else                            
+                            land->Combine( *e );
+                            #endif
                         }
                         else
                             delete e;
@@ -3661,15 +3658,16 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             e->Intersect(i);
                             if (!e->Empty()) {
                                 printf ("+");
-                                // e->Reduce(0.0003);
                                 if (sea_obj == 0)
                                     sea_obj = obj;
+                                #if 0
+                                e->Reduce2(0.001);
                                 sea->Union( *e );
-                                // S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
-                                // pobj_list->Append( l );
+                                #else
+                                sea->Combine( *e );
+                                #endif
                             }
-                            else
-                                delete e;
+                            delete e;
                         }
                     }
 
@@ -3713,7 +3711,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                                 e->Intersect(i);
                                 if (!e->Empty()) {
                                     printf ("=");
-                                    // e->Reduce(0.0003);
+                                    e->Reduce2(0.001);
                                     S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
                                     pobj_list->Append( l );
                                 }
@@ -3723,40 +3721,6 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                         }
                     }
                 }
-            }
-#if 0
-            land->Reduce(0.0003);
-            if (!land->Empty()) {
-                S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
-                pobj_list->Append( l );
-            }
-            else
-                delete land;
-            sea->Reduce(0.0003);
-            if (!sea->Empty()) {
-                S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
-                pobj_list->Append( l );
-            }
-            else
-                delete sea;
-        }
-#endif
-            if (!land->Empty()) {
-                land->Union(*sea);
-                land->Reduce(0.0003);
-                S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
-                pobj_list->Append( l );
-                delete sea;
-            }
-            else {
-                delete land;
-                sea->Reduce(0.0003);
-                if (!sea->Empty()) {
-                    S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
-                    pobj_list->Append( l );
-                }
-                else
-                    delete sea;
             }
         }
 
@@ -3774,6 +3738,24 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                 top = top->next;
             }
         }
+    }
+    if (!land->Empty()) {
+        land->Reduce2(0.001);
+        sea->Reduce2(0.001);
+        land->Union(*sea);
+        S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
+        pobj_list->Append( l );
+        delete sea;
+    }
+    else {
+        delete land;
+        sea->Reduce2(0.001);
+        if (!sea->Empty()) {
+            S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
+            pobj_list->Append( l );
+        }
+        else
+            delete sea;
     }
 
     return pobj_list;

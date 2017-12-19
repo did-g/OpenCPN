@@ -1274,6 +1274,8 @@ wxDateTime GRIBUICtrlBar::MinTime()
 
 GribTimelineRecordSet* GRIBUICtrlBar::GetTimeLineRecordSet(wxDateTime time)
 {
+    if (m_bGRIBActiveFile == NULL)
+        return NULL;
     ArrayOfGribRecordSets *rsa = m_bGRIBActiveFile->GetRecordSetArrayPtr();
 
     if(rsa->GetCount() == 0)

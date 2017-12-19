@@ -1047,7 +1047,7 @@ static bool InsertRouteA( Route *pTentRoute )
     return bAddroute;
 }
                        
-static bool InsertTrack( Track *pTentTrack )
+static bool InsertTrack( Track *pTentTrack, bool bApplyChanges = false )
 {
     if(!pTentTrack)
         return false;
@@ -1055,7 +1055,7 @@ static bool InsertTrack( Track *pTentTrack )
     bool bAddtrack = true;
     //    If the track has only 1 point, don't load it.
     //    This usually occurs if some points were discarded as being co-incident.
-    if( pTentTrack->GetnPoints() < 2 )
+    if( !bApplyChanges && pTentTrack->GetnPoints() < 2 )
         bAddtrack = false;
     
     //    TODO  All this trouble for a tentative track.......Should make some Track methods????
@@ -1485,7 +1485,7 @@ void NavObjectChanges::AddTrackPoint( TrackPoint *pWP, const char *action, const
     pugi::xml_node object = m_gpx_root.append_child("tkpt");
     GPXCreateTrkpt(object, pWP, OPT_TRACKPT);
 
-    pugi::xml_node xchild = object.child("extensions");
+    pugi::xml_node xchild = object.append_child("extensions");
     
     pugi::xml_node child = xchild.append_child("opencpn:action");
     child.append_child(pugi::node_pcdata).set_value(action);
@@ -1560,7 +1560,7 @@ bool NavObjectChanges::ApplyChanges(void)
 
                     else if(!strcmp(child.first_child().value(), "add") ){
                         if( !pExisting )
-                            ::InsertTrack( pTrack );
+                            ::InsertTrack( pTrack, true );
                     }
 
                     else
@@ -1623,6 +1623,18 @@ bool NavObjectChanges::ApplyChanges(void)
 
         object = object.next_sibling();
     }
-
+    // Check to make sure we haven't loaded tracks with less than 2 points
+    wxTrackListNode *node1 = pTrackList->GetFirst();
+    while( node1 ) {
+        Track *pTrack = node1->GetData();
+        if( pTrack->GetnPoints() < 2 ) {
+            wxTrackListNode *tnode = node1->GetNext();
+            delete pTrack;
+            pTrackList->DeleteNode(node1);
+            node1 = tnode;
+        } else
+            node1 = node1->GetNext();
+    }
+    
     return true;
 }

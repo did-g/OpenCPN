@@ -514,7 +514,6 @@ bool PlugInManager::CallLateInit(void)
             case 113:
             case 114:
             case 115:
-            
                 if(pic->m_cap_flag & WANTS_LATE_INIT) {
                     wxString msg(_T("PlugInManager: Calling LateInit PlugIn: "));
                     msg += pic->m_plugin_file;
@@ -548,7 +547,7 @@ void PlugInManager::SendVectorChartObjectInfo(const wxString &chart, const wxStr
                 case 112:
                 case 113:
                 case 114:
-                case 115:
+		case 115:
                 {
                     opencpn_plugin_112 *ppi = dynamic_cast<opencpn_plugin_112 *>(pic->m_pplugin);
                     if(ppi)
@@ -1313,7 +1312,6 @@ PlugInContainer *PlugInManager::LoadPlugIn(wxString plugin_file)
     case 114:
         pic->m_pplugin = dynamic_cast<opencpn_plugin_114*>(plug_in);
         break;
-
     case 115:
         pic->m_pplugin = dynamic_cast<opencpn_plugin_115*>(plug_in);
         break;
@@ -1382,14 +1380,13 @@ bool PlugInManager::RenderAllCanvasOverlayPlugIns( ocpnDC &dc, const ViewPort &v
                     case 112:
                     case 113:
                     case 114:
-                    case 115:
+		    case 115:
                     {
                         opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                         if(ppi)
                             ppi->RenderOverlay(*pdc, &pivp);
                         break;
                     }
-
                     default:
                         break;
                     }
@@ -1443,7 +1440,6 @@ bool PlugInManager::RenderAllCanvasOverlayPlugIns( ocpnDC &dc, const ViewPort &v
                             b_rendered = ppi->RenderOverlay(mdc, &pivp);
                         break;
                     }
-
                     default:
                     {
                         b_rendered = pic->m_pplugin->RenderOverlay(&mdc, &pivp);
@@ -1525,7 +1521,7 @@ bool PlugInManager::SendMouseEventToPlugins( wxMouseEvent &event)
         PlugInContainer *pic = plugin_array.Item(i);
         if(pic->m_bEnabled && pic->m_bInitState)
         {
-            if(pic->m_cap_flag & WANTS_MOUSE_EVENTS){
+            if(pic->m_cap_flag & WANTS_MOUSE_EVENTS)
             {
                 switch(pic->m_api_version)
                 {
@@ -1535,15 +1531,13 @@ bool PlugInManager::SendMouseEventToPlugins( wxMouseEvent &event)
                     case 115:
                     {
                         opencpn_plugin_112 *ppi = dynamic_cast<opencpn_plugin_112*>(pic->m_pplugin);
-                            if(ppi)
-                                if(ppi->MouseEventHook( event ))
-                                    bret = true;
-                            break;
-                        }
-                        
-                        default:
-                            break;
+                        if(ppi)
+                            if(ppi->MouseEventHook( event ))
+                                bret = true;
+                        break;
                     }
+                    default:
+                        break;
                 }
             }
         }
@@ -1573,7 +1567,6 @@ bool PlugInManager::SendKeyEventToPlugins( wxKeyEvent &event)
                                 bret = true;
                             break;
                         }
-                        
                         default:
                             break;
                     }
@@ -1807,7 +1800,6 @@ void PlugInManager::SendMessageToAllPlugins(const wxString &message_id, const wx
                 case 113:
                 case 114:
                 case 115:
-                
                 {
                     opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                     if(ppi)
@@ -1894,7 +1886,6 @@ void PlugInManager::SendPositionFixToAllPlugIns(GenericPosDatEx *ppos)
                         ppi->SetPositionFixEx(pfix_ex);
                     break;
                 }
-
                 default:
                     break;
                 }
@@ -4323,6 +4314,11 @@ void PlugInChartBaseExtended::ClearPLIBTextList()
 {
 }
 
+ListOfS57ObjRegion *PlugInChartBaseExtended::GetHazards(const void *region, ListOfS57ObjRegion  *lst)
+{
+    return 0;
+}
+
 // ----------------------------------------------------------------------------
 // ChartPlugInWrapper Implementation
 //    This class is a wrapper/interface to PlugIn charts(PlugInChartBase)
@@ -4832,6 +4828,17 @@ void ChartPlugInWrapper::ClearPLIBTextList()
         if(pCBx)
             pCBx->ClearPLIBTextList();
     }
+}
+
+ListOfS57ObjRegion *ChartPlugInWrapper::GetHazards(const void *region, ListOfS57ObjRegion *lst)
+{
+    if(m_ppicb)
+    {
+        PlugInChartBaseExtended *pCBx = dynamic_cast<PlugInChartBaseExtended*>( m_ppicb );
+        if(pCBx)
+            return pCBx->GetHazards(region, lst);
+    }
+    return 0;
 }
 
 bool ChartPlugInWrapper::AdjustVP(ViewPort &vp_last, ViewPort &vp_proposed)
@@ -6390,6 +6397,12 @@ bool PlugInSetFontColor(const wxString TextElement, const wxColour color)
 
 // -----------------------------------
 /* API 1.15 */
+
+double PlugInGetDisplaySizeMM()
+{
+    return g_Platform->GetDisplaySizeMM();
+}
+
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(ListOfPI_ChartObj);
 static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
@@ -6399,6 +6412,8 @@ static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
     assert(sizeof cobj->FeatureName >= sizeof pObj->FeatureName);
     memcpy(cobj->FeatureName, pObj->FeatureName, sizeof pObj->FeatureName);
     LLRegion *r = pObjRegion->region;
+    cobj->region = 0;
+    cobj->n_points = 0;
     if (r) {
        int cnt = 0;
        for(std::list<poly_contour>::const_iterator i = r->contours.begin(); i != r->contours.end(); i++) {
@@ -6406,7 +6421,7 @@ static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
           for(poly_contour::const_iterator j = i->begin(); j != i->end(); j++)
               cnt++;
        }
-       cobj->region = 0;
+       printf("region %d\n", cnt);
        cobj->n_points = cnt;
        if (cnt != 0) {
           cobj->region = new double[cnt *2];

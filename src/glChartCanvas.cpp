@@ -1391,11 +1391,13 @@ void glChartCanvas::RenderChartOutline( int dbIndex, ViewPort &vp )
         double sml[2];
         float lastplylat = 0.0;
         float lastplylon = 0.0;
+        // modulo is undefined for zero (compiler can use a div operation)
+        int modulo = (nPly == 0)?1:nPly;
         for( int i = 0; i < nPly+1; i++ ) {
             if(nAuxPlyEntries)
-                ChartData->GetDBAuxPlyPoint( dbIndex, i, j, &plylat, &plylon );
+                ChartData->GetDBAuxPlyPoint( dbIndex, i % modulo, j, &plylat, &plylon );
             else
-                ChartData->GetDBPlyPoint( dbIndex, i, &plylat, &plylon );
+                ChartData->GetDBPlyPoint( dbIndex, i % modulo, &plylat, &plylon );
 
             plylon += lon_bias;
 
@@ -2150,7 +2152,7 @@ void glChartCanvas::DrawFloatingOverlayObjects( ocpnDC &dc )
 
     if( g_pi_manager ) {
         g_pi_manager->SendViewPortToRequestingPlugIns( vp );
-        g_pi_manager->RenderAllGLCanvasOverlayPlugIns( NULL, vp );
+        g_pi_manager->RenderAllGLCanvasOverlayPlugIns( m_pcontext, vp );
     }
 
     // all functions called with cc1-> are still slow because they go through ocpndc
@@ -2871,11 +2873,7 @@ void glChartCanvas::RenderQuiltViewGL( ViewPort &vp, const OCPNRegion &rect_regi
                             pd = (unsigned char *) malloc( dim * dim * 3 );
                             HalfScaleChartBits( 2*dim, 2*dim, ps, pd );
 
-<<<<<<< HEAD
-                                    MipMap_24( GL_TEXTURE_2D, level, GL_RGB, dim, dim, 0, GL_RGB, GL_UNSIGNED_BYTE, pd );
-=======
                             glTexImage2D( GL_TEXTURE_2D, level, GL_RGB, dim, dim, 0, GL_RGB, GL_UNSIGNED_BYTE, pd );
->>>>>>> 90e80c0... Initial projections support commit
                                     
                             free(ps);
                             ps = pd;
