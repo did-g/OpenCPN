@@ -479,6 +479,7 @@ private:
     bool    CreateDRLeftClick( wxMouseEvent &event );
     bool    CreateGZLeftClick( wxMouseEvent &event );
     bool    CreatePILLeftClick( wxMouseEvent &event );
+    bool    CallPopupMenu( );
 
     void    MenuPrepend( wxMenu *menu, int id, wxString label);
     void    MenuAppend( wxMenu *menu, int id, wxString label);
