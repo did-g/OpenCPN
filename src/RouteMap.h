@@ -42,6 +42,7 @@ struct PlotData
     wxDateTime time;
     double lat, lon;
     double VBG, BG, VB, B, VW, W, VWG, WG, VC, C, WVHT;
+    double VW_GUST;
     int tacks;
 };
 
@@ -57,7 +58,7 @@ public:
 
     SkipPosition *BuildSkipList();
 
-    void GetPlotData(Position *next, double dt,
+    bool GetPlotData(Position *next, double dt,
                      RouteMapConfiguration &configuration, PlotData &data);
     bool GetWindData(RouteMapConfiguration &configuration, double &W, double &VW, int &data_mask);
     bool GetCurrentData(RouteMapConfiguration &configuration, double &C, double &VC, int &data_mask);

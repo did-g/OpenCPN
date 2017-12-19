@@ -105,6 +105,22 @@ static double Swell(GribRecordSet *grib, double lat, double lon)
     return height;
 }
 
+static double Gust(GribRecordSet *grib, double lat, double lon)
+{
+    if(!grib)
+        return NAN;
+
+    GribRecord *grh = grib->m_GribRecordPtrArray[Idx_WIND_GUST];
+    if(!grh)
+        return NAN;
+
+    double gust = grh->getInterpolatedValue(lon, lat, true );
+    if(gust == GRIB_NOTDEF)
+        return NAN;
+    return gust;
+}
+
+
 static inline bool GribWind(GribRecordSet *grib, double lat, double lon,
                             double &WG, double &VWG)
 {
@@ -490,15 +506,21 @@ static inline bool ReadWindAndCurrents(RouteMapConfiguration &configuration, Pos
 }
 
 /* get data from a position for plotting */
-void Position::GetPlotData(Position *next, double dt, RouteMapConfiguration &configuration, PlotData &data)
+bool Position::GetPlotData(Position *next, double dt, RouteMapConfiguration &configuration, PlotData &data)
 {
     data.WVHT = Swell(configuration.grib, lat, lon);
+    data.VW_GUST = Gust(configuration.grib, lat, lon);
     data.tacks = tacks;
 
     climatology_wind_atlas atlas;
     int data_mask = 0; // not used for plotting yet
-    ReadWindAndCurrents(configuration, this, data.WG, data.VWG,
-                        data.W, data.VW, data.C, data.VC, atlas, data_mask);
+    if(!ReadWindAndCurrents(configuration, this, data.WG, data.VWG,
+                            data.W, data.VW, data.C, data.VC, atlas, data_mask)) {
+        // I don't think this can ever be hit, because the data should have been there
+        // for the position be be created in the first place
+        printf("Wind/Current data failed for position!!!\n");
+        return false;
+    }
 
     ll_gc_ll_reverse(lat, lon, next->lat, next->lon, &data.BG, &data.VBG);
     if(dt == 0)
@@ -507,6 +529,7 @@ void Position::GetPlotData(Position *next, double dt, RouteMapConfiguration &con
         data.VBG *= 3600 / dt;
 
     OverWater(data.BG, data.VBG, data.C, data.VC, data.B, data.VB);
+    return true;
 }
 
 bool Position::GetWindData(RouteMapConfiguration &configuration, double &W, double &VW, int &data_mask)
@@ -2575,6 +2598,7 @@ void RouteMap::SetNewGrib(GribRecordSet *grib)
     for(int i=0; i<Idx_COUNT; i++) {
         switch (i) {
         case Idx_HTSIGW:
+        case Idx_WIND_GUST:
         case Idx_WIND_VX:
         case Idx_WIND_VY:
         case Idx_SEACURRENT_VX:

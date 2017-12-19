@@ -27,6 +27,7 @@
 #include <wx/wx.h>
 #include <wx/imaglist.h>
 #include <wx/progdlg.h>
+#include <wx/dir.h>
 
 #include <stdlib.h>
 #include <math.h>
@@ -79,11 +80,11 @@ static const char *eye[]={
 WeatherRoute::WeatherRoute() : routemapoverlay(new RouteMapOverlay) {}
 WeatherRoute::~WeatherRoute() { delete routemapoverlay; }
 
- const wxString WeatherRouting::column_names[NUM_COLS] = {_T(""), _("Start"), _("Start Time"),
+const wxString WeatherRouting::column_names[NUM_COLS] = {_T(""), _("Boat"), _("Start"), _("Start Time"),
                                                           _("End"), _("End Time"), _("Time"), _("Distance"),
                                                           _("Avg Speed"), _("Max Speed"),
                                                           _("Avg Speed Ground"), _("Max Speed Ground"),
-                                                          _("Avg Wind"), _("Max Wind"),
+                                                         _("Avg Wind"), _("Max Wind"), _("Max Wind Gust"),
                                                           _("Avg Current"), _("Max Current"),
                                                           _("Avg Swell"), _("Max Swell"),
                                                           _("Upwind Percentage"),
@@ -151,15 +152,36 @@ WeatherRouting::WeatherRouting(wxWindow *parent, weather_routing_pi &plugin)
     m_default_configuration_path = weather_routing_pi::StandardPath()
         + _T("WeatherRoutingConfiguration.xml");
 
-    if(!OpenXML(m_default_configuration_path, false)) {
+    if(!wxFileName::FileExists(m_default_configuration_path)) {
         /* create directory for plugin files if it doesn't already exist */
-        wxFileName fn(m_default_configuration_path);
-        wxFileName fn2 = fn.GetPath();
-        if(!fn.DirExists()) {
-            fn2.Mkdir();
-            fn.Mkdir();
+	wxFileName fn;
+	wxString boatsdir = weather_routing_pi::StandardPath() + wxFileName::GetPathSeparator() + _T("boats");
+	wxString polarsdir = weather_routing_pi::StandardPath() + wxFileName::GetPathSeparator() + _T("polars");
+
+	fn.Mkdir(weather_routing_pi::StandardPath());
+	fn.Mkdir(boatsdir);
+	fn.Mkdir(polarsdir);
+
+	wxString cfg = *GetpSharedDataLocation() + _T("plugins/weather_routing_pi/data/") + _T("WeatherRoutingConfiguration.xml");
+	if (wxFileName::FileExists(cfg))
+	    wxCopyFile(cfg, m_default_configuration_path);
+
+	wxArrayString boats;
+	wxDir::GetAllFiles(*GetpSharedDataLocation() + _T("plugins/weather_routing_pi/data/boats"), &boats);
+	for (unsigned int i = 0; i < boats.Count(); i++) {
+	    wxFileName f(boats.Item(i));
+	    wxCopyFile(boats.Item(i), boatsdir + wxFileName::GetPathSeparator() + f.GetFullName());
+        }
+
+	wxArrayString polars;
+	wxDir::GetAllFiles(*GetpSharedDataLocation() + _T("plugins/weather_routing_pi/data/polars"), &polars);
+	for (unsigned int i = 0; i < polars.Count(); i++) {
+	    wxFileName f(polars.Item(i));
+	    wxCopyFile(polars.Item(i), polarsdir + wxFileName::GetPathSeparator() + f.GetFullName());
         }
     }
+
+    OpenXML(m_default_configuration_path, false);
 
     wxFileConfig *pConf = GetOCPNConfigObject();
     pConf->SetPath ( _T( "/PlugIns/WeatherRouting" ) );
@@ -1214,8 +1236,16 @@ bool WeatherRouting::OpenXML(wxString filename, bool reportfailure)
                     configuration.dt = AttributeDouble(e, "dt", 0);
             
                     configuration.boatFileName = wxString::FromUTF8(e->Attribute("Boat"));
-                    if(!wxFileName::FileExists(configuration.boatFileName))
-                        configuration.boatFileName = _T("");
+                    if(!wxFileName::FileExists(configuration.boatFileName)) {
+                        configuration.boatFileName = weather_routing_pi::StandardPath() +
+			                             _T("boats") +
+						     wxFileName::GetPathSeparator() +
+						     configuration.boatFileName;
+                        if(!wxFileName::FileExists(configuration.boatFileName)) {
+
+                            configuration.boatFileName = _T("");
+			}
+		    }
             
                     configuration.Integrator = (RouteMapConfiguration::IntegratorType)
                         AttributeInt(e, "Integrator", 0);
@@ -1508,6 +1538,9 @@ void WeatherRoute::Update(WeatherRouting *wr, bool stateonly)
         MaxWind = wxString::Format
             (_T("%.2f"), routemapoverlay->RouteInfo(RouteMapOverlay::MAXWIND));
 
+        MaxWindGust = wxString::Format
+            (_T("%.2f"), routemapoverlay->RouteInfo(RouteMapOverlay::MAXWINDGUST));
+        
         AvgCurrent = wxString::Format
             (_T("%.2f"), routemapoverlay->RouteInfo(RouteMapOverlay::AVGCURRENT));
 
@@ -1577,6 +1610,11 @@ void WeatherRouting::UpdateItem(long index, bool stateonly)
             m_lWeatherRoutes->SetColumnWidth(columns[VISIBLE], 28);
         }
 
+        if(columns[BOAT] >= 0) {
+            m_lWeatherRoutes->SetItem(index, columns[BOAT], wxFileName(weatherroute->BoatFilename).GetName());
+            m_lWeatherRoutes->SetColumnWidth(columns[BOAT], wxLIST_AUTOSIZE);
+        }
+
         if(columns[START] >= 0) {
             m_lWeatherRoutes->SetItem(index, columns[START], weatherroute->Start);
             m_lWeatherRoutes->SetColumnWidth(columns[START], wxLIST_AUTOSIZE);
@@ -1623,6 +1661,9 @@ void WeatherRouting::UpdateItem(long index, bool stateonly)
         if(columns[MAXWIND] >= 0)
             m_lWeatherRoutes->SetItem(index, columns[MAXWIND], weatherroute->MaxWind);
 
+        if(columns[MAXWINDGUST] >= 0)
+            m_lWeatherRoutes->SetItem(index, columns[MAXWINDGUST], weatherroute->MaxWindGust);
+        
         if(columns[AVGCURRENT] >= 0)
             m_lWeatherRoutes->SetItem(index, columns[AVGCURRENT], weatherroute->AvgCurrent);
 
@@ -1973,7 +2014,8 @@ RouteMapConfiguration WeatherRouting::DefaultConfiguration()
     } else
         configuration.EndLat = 0, configuration.EndLon = 0;
     
-    configuration.boatFileName = weather_routing_pi::StandardPath() + _T("Boat.xml");
+    configuration.boatFileName = weather_routing_pi::StandardPath() +
+        _T("boats") + wxFileName::GetPathSeparator() + _T("Boat.xml");
     
     configuration.Integrator = RouteMapConfiguration::NEWTON;
 
