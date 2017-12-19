@@ -40,7 +40,7 @@
 
 #include "oesenc_pi.h"
 #include "eSENCChart.h"
-#include "mygeom63.h"
+#include "mygeom.h"
 #include "cpl_csv.h"
 
 #include "pi_s52s57.h"
@@ -65,6 +65,9 @@
 
 #endif
 
+#ifdef __OCPN__ANDROID__
+#include "qdebug.h"
+#endif
 
 
 
@@ -135,15 +138,11 @@ WX_DEFINE_LIST(ListOfPI_S57Obj);                // Implement a list of PI_S57 Ob
 WX_DEFINE_LIST(ListOfS57Obj);                // Implement a list of S57 Objects
 WX_DEFINE_LIST(ListOfObjRazRules);
 
-#if 0
-#ifdef BUILD_VBO
 #ifdef ocpnUSE_GL                         
 extern PFNGLGENBUFFERSPROC                 s_glGenBuffers;
 extern PFNGLBINDBUFFERPROC                 s_glBindBuffer;
 extern PFNGLBUFFERDATAPROC                 s_glBufferData;
 extern PFNGLDELETEBUFFERSPROC              s_glDeleteBuffers;
-#endif
-#endif
 #endif
 
 extern bool              g_b_EnableVBO;
@@ -535,6 +534,8 @@ eSENCChart::eSENCChart()
     //m_pcontour_array = new ArrayOfSortedDoubles;
     
     m_next_safe_contour = 1e6;
+    m_LineVBO_name = -1;
+    
     m_plib_state_hash = 0;
     
     m_line_vertex_buffer = 0;
@@ -634,6 +635,11 @@ eSENCChart::~eSENCChart()
       }
       m_vc_hash.clear();
 
+#ifdef ocpnUSE_GL
+      if(s_glDeleteBuffers && (m_LineVBO_name > 0))
+          s_glDeleteBuffers(1, (GLuint *)&m_LineVBO_name);
+#endif
+          
       for(unsigned int i=0 ; i < m_pcs_vector.size() ; i++)
           delete m_pcs_vector.at(i);                    // destroy the connector segments
           
@@ -1296,7 +1302,7 @@ wxBitmap &eSENCChart::RenderRegionView(const PlugIn_ViewPort& VPoint, const wxRe
     
     if( Region != m_last_Region ) force_new_view = true;
     
-    ps52plib->PrepareForRender(VPoint);
+    ps52plib->PrepareForRender(&m_cvp);
     
     if( m_plib_state_hash != PI_GetPLIBStateHash() ) {
         m_bLinePrioritySet = false;                     // need to reset line priorities
@@ -1450,12 +1456,18 @@ int eSENCChart::RenderRegionViewOnGL( const wxGLContext &glc, const PlugIn_ViewP
 {
 
 #ifdef ocpnUSE_GL
-    
+ 
+    //OCPNStopWatch sw;
+ 
     m_cvp = CreateCompatibleViewport( VPoint );
         
     SetVPParms( VPoint );
+    
+    //qDebug() << "PI RenderTime1" << sw.GetTime();
+    
+    ps52plib->PrepareForRender(&m_cvp);
 
-    ps52plib->PrepareForRender(VPoint);
+    //qDebug() << "PI RenderTime2" << sw.GetTime();
     
     if( m_plib_state_hash != PI_GetPLIBStateHash() ) {
         m_bLinePrioritySet = false;                     // need to reset line priorities
@@ -1474,17 +1486,24 @@ int eSENCChart::RenderRegionViewOnGL( const wxGLContext &glc, const PlugIn_ViewP
         ResetPointBBoxes( m_last_vp, VPoint );
     }
 
+    BuildLineVBO();
     SetLinePriorities();
 
+    //qDebug() << "PI RenderTime3" << sw.GetTime();
+    
     //        Clear the text declutter list
     ps52plib->ClearTextList();
+
+    //qDebug() << "PI RenderTime3a" << sw.GetTime();
     
-    glPushMatrix();
+///    glPushMatrix();
 
     wxRegionIterator upd( Region ); // get the Region rect list
         while( upd.HaveRects() ) {
             wxRect rect = upd.GetRect();
 //            printf("  wSENCChart::RRVGL:  rect: %d %d %d %d \n", rect.x, rect.y, rect.width, rect.height);
+            
+            //qDebug() << "Rect" << rect.x << rect.y << rect.width << rect.height;
             
 
             //  Build synthetic ViewPort on this rectangle
@@ -1530,10 +1549,22 @@ int eSENCChart::RenderRegionViewOnGL( const wxGLContext &glc, const PlugIn_ViewP
             
             //SetClipRegionGL( glc, temp_vp, rect, true /*!b_overlay*/, b_use_stencil );
             ps52plib->m_last_clip_rect = rect;
-            //wxRect clip_rect = rect;
-            
-            DoRenderRectOnGL( glc, temp_vp, rect, b_use_stencil);
 
+#ifdef USE_ANDROID_GLES2            
+             glEnable(GL_SCISSOR_TEST);
+             glScissor(rect.x, m_cvp.pix_height-rect.height-rect.y, rect.width, rect.height);
+             //qDebug() << "Scissor" << rect.x << m_cvp.pix_height-rect.height-rect.y << rect.width << rect.height;
+            
+#endif            
+
+             
+            DoRenderRectOnGL( glc, temp_vp, rect, b_use_stencil);
+            //qDebug() << "PI RenderTime4" << sw.GetTime();
+            
+#ifdef USE_ANDROID_GLES2            
+             glDisable( GL_SCISSOR_TEST );
+#endif
+            
             upd++;
         }  //while
 
@@ -1541,9 +1572,11 @@ int eSENCChart::RenderRegionViewOnGL( const wxGLContext &glc, const PlugIn_ViewP
     m_last_vp = VPoint;
     m_last_Region = Region;
 
-    glPopMatrix();
+///    glPopMatrix();
 
 #endif
+    //qDebug() << "PI RenderTime5" << sw.GetTime();
+    
     return true;
 }
 
@@ -1557,10 +1590,10 @@ int eSENCChart::RenderRegionViewOnGLTextOnly( const wxGLContext &glc, const Plug
     
     SetVPParms( VPoint );
     
-    ps52plib->PrepareForRender(VPoint);
+    ps52plib->PrepareForRender(&m_cvp);
     
     //    Adjust for rotation
-    glPushMatrix();
+///    glPushMatrix();
     
     
     {
@@ -1614,12 +1647,13 @@ int eSENCChart::RenderRegionViewOnGLTextOnly( const wxGLContext &glc, const Plug
         }
     }
     
-    glPopMatrix();
+///    glPopMatrix();
     
 #endif
     return true;
 }
 
+#if 0
 void eSENCChart::SetClipRegionGL( const wxGLContext &glc, const PlugIn_ViewPort& VPoint,
         const wxRegion &Region, bool b_render_nodta, bool b_useStencil )
 {
@@ -1634,7 +1668,10 @@ void eSENCChart::SetClipRegionGL( const wxGLContext &glc, const PlugIn_ViewPort&
         //    We are going to write "1" into the stencil buffer wherever the region is valid
         glStencilFunc( GL_ALWAYS, 1, 1 );
         glStencilOp( GL_KEEP, GL_KEEP, GL_REPLACE );
-    } else              //  Use depth buffer for clipping
+    }
+#ifndef USE_ANDROID_GLES2
+    
+    else              //  Use depth buffer for clipping
     {
         glEnable( GL_DEPTH_TEST ); // to enable writing to the depth buffer
         glDepthFunc( GL_ALWAYS );  // to ensure everything you draw passes
@@ -1642,6 +1679,7 @@ void eSENCChart::SetClipRegionGL( const wxGLContext &glc, const PlugIn_ViewPort&
 
         glClear( GL_DEPTH_BUFFER_BIT ); // for a fresh start
     }
+#endif
 
     //    As a convenience, while we are creating the stencil or depth mask,
     //    also render the default "NODTA" background if selected
@@ -1792,6 +1830,8 @@ void eSENCChart::SetClipRegionGL( const wxGLContext &glc, const PlugIn_ViewPort&
 #endif
 }
 
+#endif
+
 bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoint, wxRect &rect, bool b_useStencil )
 {
     
@@ -1819,9 +1859,12 @@ bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoin
     else
         glEnable( GL_DEPTH_TEST );
 
+//#ifndef USE_ANDROID_GLES2    
     glDisable( GL_DEPTH_TEST );
     glDisable( GL_STENCIL_TEST );
+//#endif    
     
+    //OCPNStopWatch sw;
     
     
     
@@ -1836,11 +1879,21 @@ bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoin
             crnt = top;
             top = top->next;               // next object
             crnt->sm_transform_parms = &vp_transform;
+
+            // This may be a deferred tesselation
+            // Don't pre-process the geometry unless the object is to be actually rendered
+            if(!crnt->obj->pPolyTessGeo->IsOk() ){ 
+                if(ps52plib->ObjectRenderCheckRules( crnt, &tvp, true )){
+                   if(!crnt->obj->pPolyTessGeo->m_pxgeom)
+                        crnt->obj->pPolyTessGeo->m_pxgeom = buildExtendedGeom( crnt->obj );
+                }
+            }
             ps52plib->RenderAreaToGL( glc, crnt, &tvp );
-            
         }
     }
 
+    //qDebug() << "PI RenderTimeD1" << sw.GetTime();
+    
     // TODO WHY is this necessary? 
     glDisable( GL_DEPTH_TEST );
     
@@ -1856,7 +1909,12 @@ bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoin
             crnt->sm_transform_parms = &vp_transform;
             ps52plib->RenderObjectToGL( glc, crnt, &tvp );
         }
-
+    }
+    
+    //qDebug() << "PI RenderTimeD2" << sw.GetTime();
+    
+    for( i = 0; i < PRIO_NUM; ++i ) {
+        
         top = razRules[i][2];           //LINES
         while( top != NULL ) {
             ObjRazRules *crnt = top;
@@ -1864,7 +1922,11 @@ bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoin
             crnt->sm_transform_parms = &vp_transform;
             ps52plib->RenderObjectToGL( glc, crnt, &tvp );
         }
-
+    }
+    
+    //qDebug() << "PI RenderTimeD3" << sw.GetTime();
+        
+    for( i = 0; i < PRIO_NUM; ++i ) {
         if( PI_GetPLIBSymbolStyle() == SIMPLIFIED )
             top = razRules[i][0];       //SIMPLIFIED Points
         else
@@ -1876,9 +1938,11 @@ bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoin
             crnt->sm_transform_parms = &vp_transform;
             ps52plib->RenderObjectToGL( glc, crnt, &tvp );
         }
-
+        
     }
 
+    //qDebug() << "PI RenderTimeD4" << sw.GetTime();
+    
     glDisable( GL_STENCIL_TEST );
     glDisable( GL_DEPTH_TEST );
     glDisable( GL_SCISSOR_TEST );
@@ -5371,6 +5435,16 @@ int eSENCChart::DCRenderRect( wxMemoryDC& dcinput, const PlugIn_ViewPort& vp, wx
                     crnt = top;
                     top = top->next;               // next object
                     crnt->sm_transform_parms = &vp_transform;
+                    
+                    // This may be a deferred tesselation
+                    // Don't pre-process the geometry unless the object is to be actually rendered
+                    if(!crnt->obj->pPolyTessGeo->IsOk() ){ 
+                        if(ps52plib->ObjectRenderCheckRules( crnt, &cvp, true )){
+                            if(!crnt->obj->pPolyTessGeo->m_pxgeom)
+                                crnt->obj->pPolyTessGeo->m_pxgeom = buildExtendedGeom( crnt->obj );
+                        }
+                    }
+                    
                     ps52plib->RenderAreaToDC( &dcinput, crnt, &cvp, &pb_spec );
 
                 }
@@ -7240,15 +7314,14 @@ void eSENCChart::AssembleLineGeometry( void )
 
 
 
-
 void eSENCChart::BuildLineVBO( void )
 {
     
-#ifdef BUILD_VBO    
+//#ifdef BUILD_VBO    
 #ifdef ocpnUSE_GL
      
-    if(!g_b_EnableVBO)
-        return;
+    //if(!g_b_EnableVBO)
+      //  return;
     
     if(m_LineVBO_name == -1){
         
@@ -7260,17 +7333,25 @@ void eSENCChart::BuildLineVBO( void )
         (s_glBindBuffer)(GL_ARRAY_BUFFER, vboId);
         
         // upload data to VBO
+#ifndef USE_ANDROID_GLES2
         glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex coords array
+#endif
         (s_glBufferData)(GL_ARRAY_BUFFER, m_vbo_byte_length, m_line_vertex_buffer, GL_STATIC_DRAW);
         
+#ifndef USE_ANDROID_GLES2
         glDisableClientState(GL_VERTEX_ARRAY);            // deactivate vertex array
+#endif
         (s_glBindBuffer)(GL_ARRAY_BUFFER, 0);
         
-        //  Loop and populate all the objects
+         //  Loop and populate all the objects
         for( int i = 0; i < PRIO_NUM; ++i ) {
             for( int j = 0; j < LUPNAME_NUM; j++ ) {
-                PI_S57Obj *obj = razRules[i][j];
-                obj->auxParm2 = vboId;
+                ObjRazRules *top = razRules[i][j];
+                while( top != NULL ) {
+                    S57Obj *obj = top->obj;
+                    obj->auxParm2 = vboId;
+                    top = top->next;
+                }
             }
         }
         
@@ -7278,7 +7359,7 @@ void eSENCChart::BuildLineVBO( void )
         
     }
 #endif    
-#endif
+//#endif
 }
 
 
@@ -9198,5 +9279,242 @@ bool isPointInObjectBoundary( double east, double north, S57Obj *obj )
     
     return( (count&1) == 1);
 }
+
+Extended_Geometry *eSENCChart::buildExtendedGeom( S57Obj *obj )
+{
+    Extended_Geometry *xG = new Extended_Geometry;
+    
+    //  Get the countours from the line segment arrays already present in the object
+    
+    // Calculate the size of the resulting contour points buffer
+    int max_points = 0;
+    if( obj->m_n_edge_max_points > 0 )
+        max_points = obj->m_n_edge_max_points;
+    else{
+        line_segment_element *lsa = obj->m_ls_list;
+        
+        while(lsa){
+            
+            if(lsa->ls_type == TYPE_EE)
+                max_points += lsa->pedge->nCount;
+            else
+                max_points += 2;
+            
+            lsa = lsa->next;
+        }
+    }
+    
+    //  Allocate some storage for ccontour points
+    double *ptpf = (double *) malloc( ( max_points *2 ) * sizeof(double) );
+    double *pfRun = ptpf;
+    
+    unsigned char *vbo_point = (unsigned char *)obj->m_chart_context->chart->GetLineVertexBuffer();;
+    line_segment_element *ls = obj->m_ls_list;
+    
+    unsigned int index = 0;
+    int nls = 0;
+    float lpx = 0;
+    float lpy = 0;
+    float fpx, fpy;
+    
+    float *ppt;
+    
+    int direction = 1;
+    int ndraw = 0;
+    wxArrayInt contourCountArray;
+    
+    while(ls){
+        
+        //  We need to get the direction for the first segment
+        if(index == 0){
+            
+            // But we only care if there is another segment following
+            if(ls->next){
+                
+                int nPoints;
+                // fetch the first point
+                if(ls->ls_type == TYPE_EE){
+                    ppt = (float *)(vbo_point + ls->pedge->vbo_offset);
+                    nPoints = ls->pedge->nCount;
+                }
+                else{
+                    ppt = (float *)(vbo_point + ls->pcs->vbo_offset);
+                    nPoints = 2;
+                }
+                float pfirstx = ppt[1];
+                float pfirsty = ppt[0];
+                
+                
+                // fetch the last point
+                int index_last = (nPoints-1) * 2;
+                float plastx = ppt[index_last +1];
+                float plasty = ppt[index_last];
+                
+                //  Now fetch the first and last point of the following segment
+                
+                int nPoints_next;
+                line_segment_element *lsn = ls->next;
+                
+                // fetch the first point
+                if(lsn->ls_type == TYPE_EE){
+                    ppt = (float *)(vbo_point + lsn->pedge->vbo_offset);
+                    nPoints_next = lsn->pedge->nCount;
+                }
+                else{
+                    ppt = (float *)(vbo_point + lsn->pcs->vbo_offset);
+                    nPoints_next = 2;
+                }
+                float pfirstx_next = ppt[1];
+                float pfirsty_next = ppt[0];
+                
+                
+                // fetch the last point
+                int index_last_next = (nPoints_next-1) * 2;
+                float plastx_next = ppt[index_last_next +1];
+                float plasty_next = ppt[index_last_next];
+                
+                
+                // Now find the correct match
+                // That is, what order(direction) of the first segmenta allows direct hookup to the next segment
+                // we don't care about the direction of the next segment, only that it can be connected
+                
+                if( (fabs(plastx - pfirstx_next) < .05) && (fabs(plasty - pfirsty_next) < .05) ){
+                    fpx = pfirstx;
+                    fpy = pfirsty;
+                    direction = 1;
+                }
+                
+                else if( (fabs(plastx - plastx_next) < .05) && (fabs(plasty - plasty_next) < .05) ){
+                    direction = 1;
+                    fpx = pfirstx;
+                    fpy = pfirsty;
+                }
+                else{
+                    direction = -1;
+                    fpx = plastx;
+                    fpy = plasty;
+                }
+            }
+        }
+        
+        
+        //transcribe the segment in the proper order into the output buffer
+        int nPoints;
+        // fetch the first point
+        if(ls->ls_type == TYPE_EE){
+            ppt = (float *)(vbo_point + ls->pedge->vbo_offset);
+            nPoints = ls->pedge->nCount;
+            
+        }
+        else{
+            ppt = (float *)(vbo_point + ls->pcs->vbo_offset);
+            nPoints = 2;
+        }
+        
+        
+        if(direction == 1){
+            int vbo_index = 0;
+            for(int ip=0 ; ip < nPoints ; ip++){
+                *pfRun++ = ppt[vbo_index];
+                *pfRun++ = ppt[vbo_index + 1];
+                nls++;
+                index++;
+                
+                lpy = ppt[vbo_index];
+                lpx = ppt[vbo_index + 1];
+                vbo_index += 2;
+            }
+        }
+        else{
+            int vbo_index = (nPoints-1) * 2;
+            for(int ip=0 ; ip < nPoints ; ip++){
+                *pfRun++ = ppt[vbo_index];
+                *pfRun++ = ppt[vbo_index + 1];
+                nls++;
+                index++;
+                
+                lpy = ppt[vbo_index];
+                lpx = ppt[vbo_index + 1];
+                vbo_index -= 2;
+            }
+        }
+        
+        
+        
+        // inspect the next segment to see if it can be connected, or if the chain breaks
+        if(ls->next){
+            
+            int nPoints_next;
+            line_segment_element *lsn = ls->next;
+            // fetch the first point
+            if(lsn->ls_type == TYPE_EE){
+                ppt = (float *)(vbo_point + lsn->pedge->vbo_offset);
+                nPoints_next = lsn->pedge->nCount;
+            }
+            else{
+                ppt = (float *)(vbo_point + lsn->pcs->vbo_offset);
+                nPoints_next = 2;
+            }
+            
+            float pfirstx_next = ppt[1];
+            float pfirsty_next = ppt[0];
+            
+            // fetch the last point
+            int index_last_next = (nPoints_next-1) * 2;
+            float plastx_next = ppt[index_last_next +1];
+            float plasty_next = ppt[index_last_next];
+            
+            
+            // try to match a point in this segment with the last point in the previous segment, and set direction for the next loop
+            
+            if( (fabs(lpx - pfirstx_next) < 0.05) &&  (fabs(lpy - pfirsty_next) < 0.05) )
+                direction = 1;
+            
+            else if( (fabs(lpx - plastx_next) < 0.05) &&  (fabs(lpy - plasty_next) < 0.05) )
+                direction = -1;
+            
+            else{
+                
+                // Is the contour closed?
+                if( (fabs(lpx - fpx) < 0.05) &&  (fabs(lpy - fpy) < 0.05) )
+                    int yyp = 4;
+                
+                // Store the point count for this contour
+                    contourCountArray.Add(nls);
+                    
+                    
+                    nls = 0;
+                    index = 0;
+            }
+        }
+        else{
+            // no more segments, so capture the point count for the last segment,
+            // and record this contour
+            
+            // Is the contour closed?
+            if( (fabs(lpx - fpx) < 0.05) &&  (fabs(lpy - fpy) < 0.05) )
+                int yyp = 4;
+            
+            contourCountArray.Add(nls);
+            
+            
+        }
+        
+        ls = ls->next;
+    }
+    
+    //  Fill in the Extended_Geometry parameters....
+    
+    xG->n_contours = contourCountArray.GetCount();
+    xG->contour_array = (int *)malloc(xG->n_contours * sizeof(int));
+    for(int i=0 ; i < xG->n_contours ; i++){
+        xG->contour_array[i] = contourCountArray[i];
+    }
+    
+    xG->vertex_array = (wxPoint2DDouble *)ptpf;
+    
+    return xG;
+}
+
 
 
