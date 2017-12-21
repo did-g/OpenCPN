@@ -1562,6 +1562,7 @@ SET(uiData
         src/bitmaps/iconStandard.png
         src/bitmaps/iconUserStd.png
         src/bitmaps/iconAll.png
+        src/bitmaps/DragHandle.svg
 	)
 
 IF (USE_S57)
