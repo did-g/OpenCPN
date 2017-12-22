@@ -6420,6 +6420,15 @@ double PlugInGetDisplaySizeMM()
     return g_Platform->GetDisplaySizeMM();
 }
 
+wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily family, 
+                    wxFontStyle style, wxFontWeight weight, bool underline,
+                    const wxString &facename,
+                    wxFontEncoding encoding)
+{
+    return FontMgr::Get().FindOrCreateFont(point_size, family, style, weight, underline, facename, encoding);
+}
+
+
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(ListOfPI_ChartObj);
 static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )
