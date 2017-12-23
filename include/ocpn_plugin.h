@@ -1238,8 +1238,6 @@ extern DECL_EXP wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily fa
                     const wxString &facename = wxEmptyString,
                     wxFontEncoding encoding = wxFONTENCODING_DEFAULT );
 
-
-
 // API 1.15 Extra objects handling. 
 // chart file vfs plugin.
 
@@ -1302,6 +1300,5 @@ public:
 
 extern DECL_EXP ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp );
 extern DECL_EXP ListOfPI_ChartObj *GetSafeWaterAreas(const PlugIn_ViewPort &vp );
-
 
 #endif //_PLUGIN_H_
