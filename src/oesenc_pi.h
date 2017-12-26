@@ -110,7 +110,7 @@ WX_DECLARE_OBJARRAY(ChartSetEULA *, EULAArray);
 //    The PlugIn Class Definition
 //----------------------------------------------------------------------------------------------------------
 
-class oesenc_pi : public opencpn_plugin_111
+class oesenc_pi : public opencpn_plugin_115
 {
 public:
       oesenc_pi(void *ppimgr);
