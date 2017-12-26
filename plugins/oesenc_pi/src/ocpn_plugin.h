@@ -50,7 +50,7 @@ class wxGLContext;
 //    PlugIns conforming to API Version less then the most modern will also
 //    be correctly supported.
 #define API_VERSION_MAJOR           1
-#define API_VERSION_MINOR           13
+#define API_VERSION_MINOR           15
 
 //    Fwd Definitions
 class       wxFileConfig;
@@ -58,6 +58,7 @@ class       wxNotebook;
 class       wxFont;
 class       wxAuiManager;
 class       wxScrolledWindow;
+class       wxGLCanvas;
 
 //---------------------------------------------------------------------------------------------------------
 //
@@ -513,6 +514,22 @@ public:
     virtual bool KeyboardEventHook( wxKeyEvent &event );
     virtual void OnToolbarToolDownCallback(int id);
     virtual void OnToolbarToolUpCallback(int id);
+};
+
+class DECL_EXP opencpn_plugin_114 : public opencpn_plugin_113
+{
+public:
+  opencpn_plugin_114(void *pmgr);
+  virtual ~opencpn_plugin_114();
+
+};
+
+class DECL_EXP opencpn_plugin_115 : public opencpn_plugin_114
+{
+public:
+    opencpn_plugin_115(void *pmgr);
+    virtual ~opencpn_plugin_115();
+
 };
 
 //------------------------------------------------------------------
@@ -1057,6 +1074,7 @@ extern DECL_EXP void ForceChartDBUpdate();
 extern  DECL_EXP wxString GetWritableDocumentsDir( void );
 extern  DECL_EXP wxDialog *GetActiveOptionsDialog();
 extern  DECL_EXP wxArrayString GetWaypointGUIDArray( void );
+extern  DECL_EXP wxArrayString GetIconNameArray(void);
 
 extern  DECL_EXP bool AddPersistentFontKey(wxString TextElement);
 extern  DECL_EXP wxString GetActiveStyleName();
@@ -1200,5 +1218,20 @@ private:
 //extern const wxEventType DECL_EXP wxEVT_DOWNLOAD_EVENT;
 
 extern WXDLLIMPEXP_CORE const wxEventType wxEVT_DOWNLOAD_EVENT;
+
+// API 1.14 Extra canvas Support
+
+/* Allow drawing of objects onto other OpenGL canvases */
+extern DECL_EXP void PlugInAISDrawGL( wxGLCanvas* glcanvas, const PlugIn_ViewPort& vp );
+extern DECL_EXP bool PlugInSetFontColor(const wxString TextElement, const wxColour color);
+
+// API 1.15
+extern DECL_EXP double PlugInGetDisplaySizeMM();
+
+// 
+extern DECL_EXP wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily family, 
+                    wxFontStyle style, wxFontWeight weight, bool underline = false,
+                    const wxString &facename = wxEmptyString,
+                    wxFontEncoding encoding = wxFONTENCODING_DEFAULT );
 
 #endif //_PLUGIN_H_

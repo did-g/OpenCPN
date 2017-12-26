@@ -532,7 +532,7 @@ OESENC_HTMLMessageDialog *pinfoDlg;
 //---------------------------------------------------------------------------------------------------------
 
 oesenc_pi::oesenc_pi(void *ppimgr)
-      :opencpn_plugin_111(ppimgr)
+      :opencpn_plugin_115(ppimgr)
 {
       // Create the PlugIn icons
       m_pplugin_icon = new wxBitmap(default_pi);
