@@ -1704,6 +1704,10 @@ void ChartCanvas::OnKeyDown( wxKeyEvent &event )
             parent_frame->ToggleENCText();
             break;
 
+        case 'U':
+            parent_frame->ToggleDataQuality();
+            break;
+
         case 1:                      // Ctrl A
             parent_frame->TogglebFollow();
             break;
