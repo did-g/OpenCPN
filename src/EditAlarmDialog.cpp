@@ -36,6 +36,7 @@
 #include "WatchdogUI.h"
 
 #include "EditAlarmDialog.h"
+#include "WeatherPanel.h"
 #include "ODAPI.h"
 
 extern wxJSONValue g_ReceivedODVersionJSONMsg;
@@ -79,7 +80,7 @@ void EditAlarmDialog::Save()
     m_alarm->SavePanel(m_fgSizer->GetItem((size_t)0)->GetWindow());
 }
 
-void EditAlarmDialog::OnTestAlarm( wxCommandEvent& event )
+void EditAlarmDialog::OnTestAlarm( wxCommandEvent& )
 {
     TestAlarm testalarm;
     Alarm *alarm = m_alarm;
@@ -89,7 +90,7 @@ void EditAlarmDialog::OnTestAlarm( wxCommandEvent& event )
     m_alarm = alarm;
 }
 
-void EditAlarmDialog::OnInformation( wxCommandEvent& event )
+void EditAlarmDialog::OnInformation( wxCommandEvent& )
 {
     wxMessageDialog mdlg(this, _("\
 Most alarms should be self-explanatory\n\
@@ -127,7 +128,7 @@ void GetODVersion( void )
     SendPluginMessage( wxS("OCPN_DRAW_PI"), MsgString );
 }
 
-void BoundaryPanel::OnGetBoundaryGUID( wxCommandEvent& event )
+void BoundaryPanel::OnGetBoundaryGUID( wxCommandEvent& )
 {
     extern wxJSONValue g_ReceivedBoundaryGUIDJSONMsg;
     extern wxString    g_ReceivedBoundaryGUIDMessage;
@@ -205,7 +206,7 @@ void BoundaryPanel::OnBoundaryGUIDKillFocus( wxFocusEvent& event )
                 } else {
                     wxString l_s = _T(" ") + wxString(_("Error!")) + _T("\n") 
                     + _("GUID") + _T(": ") + m_tBoundaryGUID->GetValue() + _(" does not exist");
-                    wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchman"), wxOK | wxICON_WARNING);
+                    wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchdog"), wxOK | wxICON_WARNING);
                     mdlg.ShowModal();
                     m_tBoundaryGUID->SetFocus();
                 }
@@ -231,7 +232,7 @@ void BoundaryPanel::OnBoundaryGUIDKillFocus( wxFocusEvent& event )
             } else {
                 wxString l_s = _T(" ") + wxString(_("Error!")) + _T("\n") 
                 + _("GUID") + _T(": ") + m_tBoundaryGUID->GetValue() + _(" does not exist");
-                wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchman"), wxOK | wxICON_WARNING);
+                wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchdog"), wxOK | wxICON_WARNING);
                 mdlg.ShowModal();
                 m_tBoundaryGUID->SetFocus();
             }
@@ -284,7 +285,7 @@ void BoundaryPanel::OnGuardZoneGUIDKillFocus( wxFocusEvent& event )
                 } else {
                     wxString l_s = _T(" ") + wxString(_("Error!")) + _T("\n") 
                     + _("GUID") + _T(": ") + m_tGuardZoneGUID->GetValue() + _(" does not exist");
-                    wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchman"), wxOK | wxICON_WARNING);
+                    wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchdog"), wxOK | wxICON_WARNING);
                     mdlg.ShowModal();
                     m_tGuardZoneGUID->SetFocus();
                 }
@@ -309,7 +310,7 @@ void BoundaryPanel::OnGuardZoneGUIDKillFocus( wxFocusEvent& event )
         } else {
             wxString l_s = _T(" ") + wxString(_("Error!")) + _T("\n") 
                     + _("GUID") + _T(": ") + m_tGuardZoneGUID->GetValue() + _(" does not exist");
-            wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchman"), wxOK | wxICON_WARNING);
+            wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchdog"), wxOK | wxICON_WARNING);
             mdlg.ShowModal();
             m_tGuardZoneGUID->SetFocus();
         }
@@ -317,7 +318,7 @@ void BoundaryPanel::OnGuardZoneGUIDKillFocus( wxFocusEvent& event )
     event.Skip();
 }
 
-void BoundaryPanel::OnRadioButton(wxCommandEvent& event)
+void BoundaryPanel::OnRadioButton(wxCommandEvent& event )
 {
     switch(event.GetId()) {
         case GPSCOURSE: 
@@ -335,16 +336,55 @@ void BoundaryPanel::OnRadioButton(wxCommandEvent& event)
         
 }
 
-void AnchorPanel::OnSyncToBoat( wxCommandEvent& event )
+void AnchorPanel::OnSyncToBoat( wxCommandEvent& )
 {
     m_tLatitude->SetValue(wxString::Format(_T("%f"), g_watchdog_pi->LastFix().Lat));
     m_tLongitude->SetValue(wxString::Format(_T("%f"), g_watchdog_pi->LastFix().Lon));
 }
 
-void CoursePanel::OnCurrentCourse( wxCommandEvent& event )
+void CoursePanel::OnCurrentCourse( wxCommandEvent& )
 {
     m_sCourse->SetValue(g_watchdog_pi->m_cog);
 }
 
+void WindPanel::OnAboutWind( wxCommandEvent& )
+{
+    wxString l_s = _("Wind Alarms can be from:\
+1) Apparent - measured from moving boat (requires only wind sensors)\
+2) True Relative - wind would feel like if boat stopped (requires wind sensors + gps)\
+3) True Absolute - wind would feel if boat stopped and faced north (requires wind sensors + gps + compass)");
+    wxMessageDialog mdlg(GetOCPNCanvasWindow(), l_s, _("Watchdog"), wxOK | wxICON_WARNING);
+    mdlg.ShowModal();
+}
 
+void WeatherPanel::SetupControls()
+{
+    switch(m_cVariable->GetSelection()) {
+    case BAROMETER: // Barometer
+        m_stUnits->SetLabel(_("mBar"));
+        break;
+    case AIR_TEMPERATURE: case SEA_TEMPERATURE:
+        m_stUnits->SetLabel(_("Deg C"));
+        break;
+    case RELATIVE_HUMIDITY:
+        m_stUnits->SetLabel(_("Deg C"));
+        break;
+    }
 
+    int selection = m_cType->GetSelection();
+    m_cType->Clear();
+    if(m_rbRate->GetValue()) {
+        m_cType->Append(_("Increasing"));
+        m_cType->Append(_("Decreasing"));
+    } else {
+        m_cType->Append(_("Above"));
+        m_cType->Append(_("Below"));
+    }
+    m_cType->SetSelection(selection);
+    m_sRatePeriod->Enable(m_rbRate->GetValue());
+}
+
+void WeatherPanel::OnVariable( wxCommandEvent& )
+{
+    SetupControls();
+}
