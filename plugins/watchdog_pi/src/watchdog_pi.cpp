@@ -28,6 +28,7 @@
 #include <wx/stdpaths.h>
 
 #include "wxJSON/jsonreader.h"
+#include "wxJSON/jsonwriter.h"
 
 #include "wddc.h"
 
@@ -109,6 +110,7 @@ watchdog_pi::watchdog_pi(void *ppimgr)
     m_lasttimerfix.FixTime = 0;
 
     m_sog = m_cog = NAN;
+    m_declination = NAN;
     
     g_ReceivedPathGUIDMessage = wxEmptyString;
     g_ReceivedBoundaryTimeMessage = wxEmptyString;
@@ -589,6 +591,11 @@ void watchdog_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                 }
             }
         }
+    } else if(message_id == _T("WMM_VARIATION_BOAT")) {
+        if(reader.Parse( message_body, &root ) == 0) {
+            root[_T("Decl")].AsString().ToDouble(&m_declination);
+            m_declinationTime = wxDateTime::Now();
+        }
     }
 }
 
@@ -632,4 +639,16 @@ wxString watchdog_pi::StandardPath()
 
     stdPath += s; // is this necessary?
     return stdPath;
+}
+
+double watchdog_pi::Declination()
+{
+    if(!m_declinationTime.IsValid() || (wxDateTime::Now() - m_declinationTime).GetSeconds() > 1200) {
+        wxJSONWriter w;
+        wxString out;
+        wxJSONValue v;
+        w.Write(v, out);
+        SendPluginMessage(wxString(_T("WMM_VARIATION_BOAT_REQUEST")), out);
+    }
+    return m_declination;
 }
