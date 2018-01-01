@@ -3723,6 +3723,9 @@ void glChartCanvas::Render()
     DrawEmboss(cc1->EmbossDepthScale() );
     DrawEmboss(cc1->EmbossOverzoomIndicator( gldc ) );
 
+    if( cc1->m_pTrackRolloverWin )
+        cc1->m_pTrackRolloverWin->Draw(gldc);
+
     if( cc1->m_pRouteRolloverWin )
         cc1->m_pRouteRolloverWin->Draw(gldc);
 
