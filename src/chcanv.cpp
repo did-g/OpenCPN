@@ -323,12 +323,12 @@ extern double           g_display_size_mm;
 
 extern bool             g_bshowToolbar;
 extern ocpnFloatingToolbarDialog *g_MainToolbar;
+extern wxColour         g_colourOwnshipRangeRingsColour;
 
 // LIVE ETA OPTION
 bool                    g_bShowLiveETA;
 double                  g_defaultBoatSpeed;
 double                  g_defaultBoatSpeedUserUnit;
-
 
 
 // "Curtain" mode parameters
@@ -2528,6 +2528,9 @@ void ChartCanvas::OnRolloverPopupTimerEvent( wxTimerEvent& event )
 
                     s << FormatDistanceAdaptive( dist );
 
+                    double segmentSpeed = toUsrSpeed( dist / ( (segShow_point_b->GetCreateTime() - segShow_point_a->GetCreateTime()).GetSeconds().ToDouble() / 3600.) );
+                    s << wxString::Format( _T("  %.1f "), (float)segmentSpeed ) << getUsrSpeedUnit();
+
                     m_pTrackRolloverWin->SetString( s );
 
                     wxSize win_size = GetSize();
@@ -2630,7 +2633,10 @@ void ChartCanvas::SetCursorStatus( double cursor_lat, double cursor_lon )
     
     if(STAT_FIELD_CURSOR_LL >= 0)
         parent_frame->SetStatusText ( s1, STAT_FIELD_CURSOR_LL );
-    
+
+    if( STAT_FIELD_CURSOR_BRGRNG < 0 )
+        return;
+
     double brg, dist;
     wxString s;
     DistanceBearingMercator(cursor_lat, cursor_lon, gLat, gLon, &brg, &dist);
@@ -2693,8 +2699,7 @@ void ChartCanvas::SetCursorStatus( double cursor_lat, double cursor_lon )
     }
     // END OF - LIVE ETA OPTION
     
-    if(STAT_FIELD_CURSOR_BRGRNG >= 0)
-        parent_frame->SetStatusText ( s, STAT_FIELD_CURSOR_BRGRNG );
+    parent_frame->SetStatusText ( s, STAT_FIELD_CURSOR_BRGRNG );
 }
 
 // CUSTOMIZATION - FORMAT MINUTES
@@ -4015,9 +4020,13 @@ void ChartCanvas::ShipIndicatorsDraw( ocpnDC& dc, int img_height,
             pow( (double) (lGPSPoint.y - r.y), 2 ) );
             int pix_radius = (int) lpp;
             
-            wxPen ppPen1( GetGlobalColor( _T ( "URED" ) ), g_cog_predictor_width );
+            extern wxColor GetDimColor(wxColor c);
+            wxColor rangeringcolour = GetDimColor(g_colourOwnshipRangeRingsColour);
+            
+            wxPen ppPen1( rangeringcolour, g_cog_predictor_width );
+            
             dc.SetPen( ppPen1 );
-            dc.SetBrush( wxBrush( GetGlobalColor( _T ( "URED" ) ), wxBRUSHSTYLE_TRANSPARENT ) );
+            dc.SetBrush( wxBrush( rangeringcolour, wxBRUSHSTYLE_TRANSPARENT ) );
             
             for( int i = 1; i <= g_iNavAidRadarRingsNumberVisible; i++ )
                 dc.StrokeCircle( lGPSPoint.x, lGPSPoint.y, i * pix_radius );
@@ -4501,7 +4510,7 @@ void ChartCanvas::ScaleBarDraw( ocpnDC& dc )
             dist = 1.0;
             count = 10;
             pen1 = wxPen( GetGlobalColor( _T ( "SCLBR" ) ), 3, wxPENSTYLE_SOLID );
-            pen2 = wxPen( GetGlobalColor( _T ( "CHDRD" ) ), 3, wxPENSTYLE_SOLID );
+            pen2 = wxPen( GetGlobalColor( _T ( "CHGRD" ) ), 3, wxPENSTYLE_SOLID );
         }
 
         GetCanvasPixPoint( x_origin, y_origin, blat, blon );

@@ -236,7 +236,7 @@ bool                      bDrawCurrentValues;
 
 wxString                  ChartListFileName;
 wxString                  AISTargetNameFileName;
-wxString                  gWorldMapLocation;
+wxString                  gWorldMapLocation, gDefaultWorldMapLocation;
 wxString                  *pInit_Chart_Dir;
 wxString                  g_csv_locn;
 wxString                  g_SENCPrefix;
@@ -318,6 +318,7 @@ int                       g_iWaypointRangeRingsStepUnits;
 wxColour                  g_colourWaypointRangeRingsColour;
 bool                      g_bWayPointPreventDragging;
 bool                      g_bConfirmObjectDelete;
+wxColour                  g_colourOwnshipRangeRingsColour;
 
 // Set default color scheme
 ColorScheme               global_color_scheme = GLOBAL_COLOR_SCHEME_DAY;
@@ -2099,10 +2100,11 @@ bool MyApp::OnInit()
     }
 
 //      Establish the GSHHS Dataset location
+    gDefaultWorldMapLocation = "gshhs";
+    gDefaultWorldMapLocation.Prepend( g_Platform->GetSharedDataDir() );
+    gDefaultWorldMapLocation.Append( wxFileName::GetPathSeparator() );
     if( gWorldMapLocation == wxEmptyString ) {
-        gWorldMapLocation = "gshhs";
-        gWorldMapLocation.Prepend( g_Platform->GetSharedDataDir() );
-        gWorldMapLocation.Append( wxFileName::GetPathSeparator() );
+        gWorldMapLocation = gDefaultWorldMapLocation;
     }
 
     //  Check the global Tide/Current data source array
@@ -2271,6 +2273,7 @@ bool MyApp::OnInit()
     cc1->SetQuiltMode( g_bQuiltEnable );                     // set initial quilt mode
     cc1->m_bFollow = pConfig->st_bFollow;               // set initial state
     cc1->SetViewPoint( vLat, vLon, initial_scale_ppm, 0., 0. );
+    
     g_ChartUpdatePeriod = !!cc1->m_bFollow;
     gFrame->Enable();
 
@@ -4035,7 +4038,7 @@ void MyFrame::ODoSetSize( void )
                 //  Otherwise, just split the frame client width into equal spaces
 
                 if(m_StatusBarFieldCount > 2){
-                    int widths[] = { -6, -5, -5, -4, -3 };
+                    int widths[] = { -6, -5, -5, -6, -4 };
                     m_pStatusBar->SetStatusWidths( m_StatusBarFieldCount, widths );
                 }
                 else if(m_StatusBarFieldCount == 2){
@@ -4308,14 +4311,12 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
         case ID_MENU_ZOOM_IN:
         case ID_ZOOMIN: {
             cc1->ZoomCanvas( 2.0, false );
-            //DoChartUpdate();
             break;
         }
 
         case ID_MENU_ZOOM_OUT:
         case ID_ZOOMOUT: {
             cc1->ZoomCanvas( 0.5, false );
-            //DoChartUpdate();
             break;
         }
 
@@ -6347,10 +6348,15 @@ bool MyFrame::UpdateChartDatabaseInplace( ArrayOfCDI &DirArray, bool b_force, bo
     wxLogMessage( _T("   ") );
     wxLogMessage( _T("Starting chart database Update...") );
     wxString gshhg_chart_loc = gWorldMapLocation;
+    gWorldMapLocation = wxEmptyString;
     ChartData->Update( DirArray, b_force, pprog );
     ChartData->SaveBinary(ChartListFileName);
     wxLogMessage( _T("Finished chart database Update") );
     wxLogMessage( _T("   ") );
+    if( gWorldMapLocation.empty() ) { //Last resort. User might have deleted all GSHHG data, but we still might have the default dataset distributed with OpenCPN or from the package repository...
+       gWorldMapLocation = gDefaultWorldMapLocation;
+       gshhg_chart_loc = wxEmptyString;
+    }
 
     if( cc1 && gWorldMapLocation != gshhg_chart_loc )
     {
