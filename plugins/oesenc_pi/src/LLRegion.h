@@ -87,6 +87,7 @@ public:
 
     void Reduce(double factor);
     void Reduce2(double factor);
+    void Combine(const LLRegion& region);
 
     std::list<poly_contour> contours;
 
@@ -95,7 +96,6 @@ private:
     bool NoIntersection(const LLRegion& region) const;
     void PutContours(work &w, const LLRegion& region, bool reverse=false);
     void Put(const LLRegion& region, int winding_rule, bool reverse=false);
-    void Combine(const LLRegion& region);
     void InitBox( float minlat, float minlon, float maxlat, float maxlon);
     void InitPoints( size_t n, const double *points );
     void AdjustLongitude();

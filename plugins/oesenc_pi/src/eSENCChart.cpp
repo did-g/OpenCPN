@@ -9516,5 +9516,476 @@ Extended_Geometry *eSENCChart::buildExtendedGeom( S57Obj *obj )
     return xG;
 }
 
+WX_DEFINE_LIST(ListOfS57ObjRegion);
 
+static LLRegion *S57Obj2LLRegion(S57Obj *obj)
+{
+    //     if(rzRules->obj->Index != 7574)
+    //         return 0;
+    
+    // catch cm93 and legacy PlugIns (e.g.s63_pi)
+    LLRegion *region = new LLRegion();
+    if( obj->m_n_lsindex  && !obj->m_ls_list) {
+        printf("legacy\n");
+        return region;
+    }
+    eSENCChart *ch_s57;
+
+    ch_s57 = dynamic_cast<eSENCChart*>( obj->m_chart_context->chart );
+    assert (ch_s57);
+    double ref_lat = ch_s57->m_ref_lat;
+    double ref_lon = ch_s57->m_ref_lon;
+    float sym_factor = 1.0; ///1.50;                        // gives nicer effect
+    
+    //double LOD = 2.0 / vp->view_scale_ppm;              // empirical value, by experiment
+    double LOD = 0.; //wxMin(LOD, 10.0);
+    
+    if( !obj->m_n_lsindex ) {
+      printf("tcho\n");
+      return region;
+    }
+        
+    // Calculate the size of a work buffer
+    int max_points = 0;
+    if( obj->m_n_edge_max_points > 0 ) 
+        max_points = obj->m_n_edge_max_points;
+    else{
+        line_segment_element *lsa = obj->m_ls_list;
+        
+        while(lsa){
+            if( (lsa->ls_type == TYPE_EE) || (lsa->ls_type == TYPE_EE_REV) )
+                max_points += lsa->pedge->nCount;
+            else
+                max_points += 2;
+            
+            lsa = lsa->next;
+        }
+    }
+    
+    //  Allocate some storage for converted points
+    double *pdp = (double *)malloc( 2 * ( max_points ) * sizeof(double) ); 
+    
+    unsigned char *vbo_point = (unsigned char *)obj->m_chart_context->chart->GetLineVertexBuffer();
+    line_segment_element *ls = obj->m_ls_list;
+    
+    unsigned int index = 0;
+    unsigned int idouble = 0;
+    int nls = 0;
+    wxPoint2DDouble lp;
+    float *ppt;
+    
+    int direction = 1;
+    int ndraw = 0;
+    while(ls){
+        if( 1 /*ls->priority == priority_current */ ) {  
+            //transcribe the segment in the proper order into the output buffer
+            int nPoints;
+            int idir = 1;
+            // fetch the first point
+            if( (ls->ls_type == TYPE_EE) || (ls->ls_type == TYPE_EE_REV) ){
+                ppt = (float *)(vbo_point + ls->pedge->vbo_offset);
+                nPoints = ls->pedge->nCount;
+                if(ls->ls_type == TYPE_EE_REV)
+                    idir = -1;
+            }
+            else{
+                ppt = (float *)(vbo_point + ls->pcs->vbo_offset);
+                nPoints = 2;
+            }
+            
+            int vbo_index = 0;
+            int vbo_inc = 2;
+            if(idir == -1){
+                vbo_index = (nPoints-1) * 2;
+                vbo_inc = -2;
+            }
+            for(int ip=0 ; ip < nPoints ; ip++){
+                wxPoint2DDouble r;
+                fromSM_Plugin( /*east */ ppt[vbo_index], /* north */ ppt[vbo_index +1], ref_lat, ref_lon, &r.m_y, &r.m_x );
+
+                if( (r.m_x != lp.m_x) || (r.m_y != lp.m_y) ){
+#if 0
+                    pdp[idouble++] = r.m_x;
+                    pdp[idouble++] = r.m_y;
+#else
+                    pdp[idouble++] = r.m_y;
+                    pdp[idouble++] = r.m_x;
+#endif                    
+                    nls++;
+                }
+                else{               // sKipping point
+                }
+                
+                lp = r;
+                vbo_index += vbo_inc;
+            }            
+        }  // priority
+        
+        // inspect the next segment to see if it can be connected, or if the chain breaks
+        int idir = 1;
+        if(ls->next){
+            
+            int nPoints_next;
+            line_segment_element *lsn = ls->next;
+            // fetch the first point
+            if( (lsn->ls_type == TYPE_EE) || (lsn->ls_type == TYPE_EE_REV) ){
+                ppt = (float *)(vbo_point + lsn->pedge->vbo_offset);
+                nPoints_next = lsn->pedge->nCount;
+                if(lsn->ls_type == TYPE_EE_REV)
+                    idir = -1;
+                
+            }
+            else{
+                ppt = (float *)(vbo_point + lsn->pcs->vbo_offset);
+                nPoints_next = 2;
+            }
+            
+            wxPoint2DDouble ptest;
+            if(idir == 1) {
+                // GetPointPixSingle( rzRules, ppt[1], ppt[0], &ptest, vp );
+                fromSM_Plugin( /*east */ ppt[0], /* north */ ppt[1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
+            }
+            else{
+            // fetch the last point
+                int index_last_next = (nPoints_next-1) * 2;
+                // GetPointPixSingle( rzRules, ppt[index_last_next +1], ppt[index_last_next], &ptest, vp );
+                fromSM_Plugin( ppt[index_last_next], ppt[index_last_next+1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
+            }
+            
+            // try to match the correct point in this segment with the last point in the previous segment
+
+            if(lp != ptest)         // not connectable?
+            {
+                if(nls >= 3){
+                    #if 0
+                    wxPoint2DDouble *pReduced = 0;
+                    int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
+                    if (nPointReduced >= 3) {
+                        double *to = new double[nPointReduced *2];
+                        for (int v = 0; v < nPointReduced*2; v +=2) {
+                           to[v]    = pReduced[v/2].m_y;
+                           to[v +1] = pReduced[v/2].m_x;
+                        }
+                        region->Union(LLRegion(nPointReduced, to));
+                        delete [] to;
+                    }
+                    free(pReduced);
+                    #else
+                        region->Union(LLRegion(nls, pdp));
+                    #endif
+                    ndraw++;
+                }
+                
+                nls = 0;
+                index = 0;
+                idouble = 0;
+                lp = wxPoint2DDouble(0,0);
+                direction = 1;
+            }
+        }
+        else{
+            // no more segments, so render what is available
+            if(nls >= 3){
+                #if 0
+                wxPoint2DDouble *pReduced = 0;
+                int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
+                if (nPointReduced >= 3) {
+                    double *to = new double[nPointReduced *2];
+                    for (int v = 0; v < nPointReduced*2; v +=2) {
+                           to[v]    = pReduced[v/2].m_y;
+                           to[v +1] = pReduced[v/2].m_x;
+                    }
+                    region->Union(LLRegion(nPointReduced, to));
+                    delete [] to;
+                }
+                free(pReduced);
+                #else
+                    region->Union(LLRegion(nls, pdp));
+                #endif
+            }
+        }
+        
+        ls = ls->next;
+    }
+    
+    free(pdp);
+    return region;
+}
+
+
+ListOfS57ObjRegion *eSENCChart::GetHazards( const void *reg, ListOfS57ObjRegion *pobj_list)
+{
+    if (pobj_list == 0) {
+        pobj_list = new ListOfS57ObjRegion;
+        pobj_list->Clear();
+    }
+//    Iterate thru the razRules array, by object/rule type
+    ObjRazRules *top;
+    const LLRegion *r1 = (const LLRegion *)reg;
+    const LLRegion &region = *r1;
+    const int selection_mask = MASK_POINT | MASK_AREA;
+    double safety_contour = S52_getMarinerParam(S52_MAR_SAFETY_CONTOUR);
+
+    LLRegion *land = new LLRegion;
+    LLRegion *sea = new LLRegion;
+    S57Obj *land_obj = 0;
+    S57Obj *sea_obj = 0;
+    for( int i = 0; i < PRIO_NUM; ++i ) {
+
+        if(selection_mask & MASK_POINT){
+            // Points by type, array indices [0..1]
+
+            int point_type = ( ps52plib->m_nSymbolStyle == SIMPLIFIED ) ? 0 : 1;
+            for (top = razRules[i][point_type]; top != NULL; top = top->next) {
+                if ( top->obj->npt != 1 )
+                   continue; 
+
+                // if top-PRIO_HAZARDS
+                S57Obj *obj = top->obj;
+                bool checkit = false;
+                // only use aton or mutable object (dangers)
+                if ( obj->m_bcategory_mutable || obj->bIsAton )
+                    checkit =  true;
+
+                if ( !strncasecmp( obj->FeatureName, "LIGHTS", 6 ) )
+                    continue;
+
+                // XXX config option
+                if ( !strncasecmp( obj->FeatureName, "BOYLAT", 6 ) )
+                    continue;
+                if ( !strncasecmp( obj->FeatureName, "BOYSAW", 6 ) )
+                    continue;
+
+                if ( !strncmp( obj->FeatureName, "PILPNT", 6 ) ) 
+                    checkit =  true;
+                if ( !strncmp( obj->FeatureName, "LNDARE", 6 ) ) 
+                    checkit =  true;
+
+                if ( obj->m_bcategory_mutable && !obj->bCS_Added) {
+                    ps52plib->ComputeCSRules( top );
+                }
+
+                if ( obj->m_bcategory_mutable && obj->m_DisplayCat != DISPLAYBASE)
+                    continue;
+
+                if (!checkit)
+                    continue;
+                double lat, lon;
+                fromSM_Plugin( ( obj->x * obj->x_rate ) + obj->x_origin, ( obj->y * obj->y_rate ) + obj->y_origin,
+                    m_ref_lat, m_ref_lon, &lat, &lon );
+
+                if (region.Contains(lat, lon)) {
+                    bool add  = true;
+                    // find water
+                    ListOfS57Obj *area_list = GetAssociatedObjects(obj);
+                    bool danger = false;
+                    if( area_list ){    
+                        wxListOfS57ObjNode *node = area_list->GetFirst();
+                        while(node) {
+                            S57Obj *ptest_obj = node->GetData();
+                            if (GEO_LINE == ptest_obj->Primitive_type) {
+                               double drval2 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL2", drval2);
+                               if(drval2 < safety_contour) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            else {
+                               double drval1 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL1", drval1);
+#if 0
+                               double drval2 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL2", drval2);
+
+                               if(expsou == 1 || depth_value < drval2 )
+                               b_promote = true;
+#endif
+                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            node = node->GetNext();
+                        }
+                        if (!danger) add = false;
+
+                        delete area_list;
+                    }
+                    // danger in safe water
+                    if (add) {
+                        S57ObjRegion *l =  new S57ObjRegion(obj, 0) ;
+                        pobj_list->Append( l );
+                    }
+                }
+            }
+        }
+        if(1 && selection_mask & MASK_AREA){
+            // Areas by boundary type, array indices [3..4]
+            int area_boundary_type = ( ps52plib->m_nBoundaryStyle == PLAIN_BOUNDARIES ) ? 3 : 4;
+            top = razRules[i][area_boundary_type];           // Area nnn Boundaries
+            
+            for (top = razRules[i][area_boundary_type]; top != NULL; top = top->next) {
+                S57Obj *obj = top->obj;
+
+                // even they are mutable we don't care about depth contour 
+                if (!strncmp( obj->FeatureName, "DEPCNT", 6  ))
+                    continue;
+
+                // what we are looking for
+                if (! (    !strncmp( obj->FeatureName, "LNDARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "DRGARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "DEPARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "UNSARE", 6 )
+                       || obj->m_bcategory_mutable
+                      ))
+                   continue;
+
+                if (   !strncmp( obj->FeatureName, "LNDARE", 6 ) ||
+                       !strncmp( obj->FeatureName, "UNSARE", 6 ) ) {                
+                    LLRegion i(obj->BBObj);
+                    i.Intersect(region);
+                    if (!i.Empty()) {
+                        printf ("/");
+                        LLRegion *e = S57Obj2LLRegion(obj);
+                        e->Intersect(i);
+                        if (!e->Empty()) {
+                            printf ("\\");
+                            if (land_obj == 0)
+                                land_obj = obj;
+                            #if 0
+                            e->Reduce2(0.001);
+                            land->Union( *e );
+                            #else                            
+                            //land->Combine( *e );
+                            land->Union( *e );
+                            #endif
+                        }
+                        else
+                            delete e;
+                    }
+                    continue; // done
+                }
+                if ( obj->m_bcategory_mutable && !obj->bCS_Added) {
+                    ps52plib->ComputeCSRules( top );
+                }
+
+                if ( !strncmp( obj->FeatureName, "DEPARE", 6 ) || 
+                     !strncmp( obj->FeatureName, "DRGARE", 6 ) ) 
+                {
+                    double drval1 = 0.0;
+                    GetDoubleAttr(obj, "DRVAL1", drval1);
+                    if (drval1 < safety_contour) {
+                        LLRegion i(obj->BBObj);
+                        i.Intersect(region);
+                        if (!i.Empty()) {
+                            printf (".");
+                            LLRegion *e = S57Obj2LLRegion(obj);
+                            e->Intersect(i);
+                            if (!e->Empty()) {
+                                printf ("+");
+                                if (sea_obj == 0)
+                                    sea_obj = obj;
+                                #if 0
+                                e->Reduce2(0.001);
+                                sea->Union( *e );
+                                #else
+                                // sea->Combine( *e );
+                                sea->Union( *e );
+                                #endif
+                            }
+                            delete e;
+                        }
+                    }
+
+                }
+                else {
+                    bool add  = true;
+                    // find water
+                    ListOfS57Obj *area_list = GetAssociatedObjects(obj);
+                    bool danger = false;
+printf("|");                    
+                    if( area_list ){    
+                        wxListOfS57ObjNode *node = area_list->GetFirst();
+                        while(node) {
+                            S57Obj *ptest_obj = node->GetData();
+                            if (GEO_LINE == ptest_obj->Primitive_type) {
+                               double drval2 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL2", drval2);
+                               if(drval2 < safety_contour) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            else {
+                               double drval1 = 0.0;
+                               GetDoubleAttr(ptest_obj, "DRVAL1", drval1);
+                               if(drval1 > safety_contour /*&& expsou != 1*/) {
+                                   danger = true;
+                                   break;
+                               }
+                            }
+                            node = node->GetNext();
+                        }
+                        if (!danger) add = false;
+
+                        delete area_list;
+                        if (add) {
+                            LLRegion i(obj->BBObj);
+                            i.Intersect(region);
+                            if (!i.Empty()) {
+                                printf ("-");
+                                LLRegion *e = S57Obj2LLRegion(obj);
+                                e->Intersect(i);
+                                if (!e->Empty()) {
+                                    printf ("=");
+                                    e->Reduce2(0.001);
+                                    S57ObjRegion *l =  new S57ObjRegion(obj, e) ;
+                                    pobj_list->Append( l );
+                                }
+                                else
+                                    delete e;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if(selection_mask & MASK_LINE){
+                // Finally, lines
+            top = razRules[i][2];           // Lines
+
+            while( top != NULL ) {
+#if 0
+                if( ps52plib->ObjectRenderCheck( top, VPoint ) ) {
+                    if( DoesLatLonSelectObject( lat, lon, select_radius, top->obj ) ) ret_ptr->Append(
+                            top );
+                }
+#endif
+                top = top->next;
+            }
+        }
+    }
+    if (!land->Empty()) {
+        land->Reduce2(0.001);
+        sea->Reduce2(0.001);
+        land->Union(*sea);
+        S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
+        pobj_list->Append( l );
+        delete sea;
+    }
+    else {
+        delete land;
+        sea->Reduce2(0.001);
+        if (!sea->Empty()) {
+            S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
+            pobj_list->Append( l );
+        }
+        else
+            delete sea;
+    }
+
+    return pobj_list;
+}
 
