@@ -118,6 +118,8 @@ public:
 // ----------------------------------------------------------------------------
 // eSENCChart Definition
 // ----------------------------------------------------------------------------
+class S57ObjRegion;
+WX_DECLARE_LIST(S57ObjRegion, ListOfS57ObjRegion);
 
 class  eSENCChart : public PlugInChartBaseExtended
 {
@@ -162,6 +164,7 @@ class  eSENCChart : public PlugInChartBaseExtended
                                         const wxRegion &Region, bool b_use_stencil );
       
       void ClearPLIBTextList();
+      ListOfS57ObjRegion *GetHazards(const void *region, ListOfS57ObjRegion  *lst = 0);
       
       virtual bool AdjustVP(PlugIn_ViewPort &vp_last, PlugIn_ViewPort &vp_proposed);
       virtual double GetNearestPreferredScalePPM(double target_scale_ppm);
