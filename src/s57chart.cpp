@@ -3557,7 +3557,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                                if(expsou == 1 || depth_value < drval2 )
                                b_promote = true;
 #endif
-                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                               if(drval1 > safety_contour /*&& expsou != 1*/) {
                                    danger = true;
                                    break;
                                }
@@ -3592,11 +3592,13 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                 if (! (    !strncmp( obj->FeatureName, "LNDARE", 6 ) 
                        || !strncmp( obj->FeatureName, "DRGARE", 6 ) 
                        || !strncmp( obj->FeatureName, "DEPARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "UNSARE", 6 ) 
                        || obj->m_bcategory_mutable
                       ))
                    continue;
 
-                if (!strncmp( obj->FeatureName, "LNDARE", 6 ) ) {
+                if (   !strncmp( obj->FeatureName, "LNDARE", 6 ) ||
+                       !strncmp( obj->FeatureName, "UNSARE", 6 ) ) {
                     LLRegion i(obj->BBObj);
                     i.Intersect(region);
                     if (!i.Empty()) {
@@ -3628,7 +3630,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                 {
                     double drval1 = 0.0;
                     GetDoubleAttr(obj, "DRVAL1", drval1);
-                    if (drval1 <= safety_contour) {
+                    if (drval1 < safety_contour) {
                         LLRegion i(obj->BBObj);
                         i.Intersect(region);
                         if (!i.Empty()) {
@@ -3671,7 +3673,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             else {
                                double drval1 = 0.0;
                                GetDoubleAttr(ptest_obj, "DRVAL1", drval1);
-                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                               if(drval1 > safety_contour /*&& expsou != 1*/) {
                                    danger = true;
                                    break;
                                }
