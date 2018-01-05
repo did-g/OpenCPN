@@ -2326,7 +2326,7 @@ InitReturn s57chart::Init( const wxString& name, ChartInitFlag flags )
         m_TempFilePath = wxFileName::GetTempDir() + wxFileName::GetPathSeparator() +
             wxFileName(name).GetName();
 
-        if(!DecompressXZFile(name, m_TempFilePath)) {
+        if(!wxFileExists(m_TempFilePath) && !DecompressXZFile(name, m_TempFilePath)) {
             wxRemoveFile(m_TempFilePath);
             return INIT_FAIL_REMOVE;
         }
@@ -2393,7 +2393,7 @@ InitReturn s57chart::Init( const wxString& name, ChartInitFlag flags )
     //      Full initialization from here
 
     if( !m_bbase_file_attr_known ) {
-        if( !GetBaseFileAttr( name ) )
+        if( !GetBaseFileAttr( m_TempFilePath ) )
             ret_value = INIT_FAIL_REMOVE;
         else
             m_bbase_file_attr_known = true;
@@ -2476,7 +2476,7 @@ InitReturn s57chart::FindOrCreateSenc( const wxString& name, bool b_progress )
         m_TempFilePath = wxFileName::GetTempDir() + wxFileName::GetPathSeparator() +
         wxFileName(name).GetName();
         
-        if(!DecompressXZFile(name, m_TempFilePath)) {
+        if(!wxFileExists(m_TempFilePath) && !DecompressXZFile(name, m_TempFilePath)) {
             wxRemoveFile(m_TempFilePath);
             return INIT_FAIL_REMOVE;
         }
@@ -3557,7 +3557,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                                if(expsou == 1 || depth_value < drval2 )
                                b_promote = true;
 #endif
-                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                               if(drval1 > safety_contour /*&& expsou != 1*/) {
                                    danger = true;
                                    break;
                                }
@@ -3592,11 +3592,13 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                 if (! (    !strncmp( obj->FeatureName, "LNDARE", 6 ) 
                        || !strncmp( obj->FeatureName, "DRGARE", 6 ) 
                        || !strncmp( obj->FeatureName, "DEPARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "UNSARE", 6 ) 
                        || obj->m_bcategory_mutable
                       ))
                    continue;
 
-                if (!strncmp( obj->FeatureName, "LNDARE", 6 ) ) {
+                if (   !strncmp( obj->FeatureName, "LNDARE", 6 ) ||
+                       !strncmp( obj->FeatureName, "UNSARE", 6 ) ) {
                     LLRegion i(obj->BBObj);
                     i.Intersect(region);
                     if (!i.Empty()) {
@@ -3628,7 +3630,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                 {
                     double drval1 = 0.0;
                     GetDoubleAttr(obj, "DRVAL1", drval1);
-                    if (drval1 <= safety_contour) {
+                    if (drval1 < safety_contour) {
                         LLRegion i(obj->BBObj);
                         i.Intersect(region);
                         if (!i.Empty()) {
@@ -3671,7 +3673,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             else {
                                double drval1 = 0.0;
                                GetDoubleAttr(ptest_obj, "DRVAL1", drval1);
-                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                               if(drval1 > safety_contour /*&& expsou != 1*/) {
                                    danger = true;
                                    break;
                                }

@@ -3452,7 +3452,7 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
                 b_ret = true;
             }
         }
-        //  Create the quilt
+        //  Create the stack
         if( pCurrentStack ) {
             assert(ChartData != 0);
             int current_db_index;
