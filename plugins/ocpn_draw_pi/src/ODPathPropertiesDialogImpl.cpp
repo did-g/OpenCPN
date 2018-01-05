@@ -72,7 +72,8 @@ extern bool                 g_bInclusionBoundary;
 extern int                  g_iInclusionBoundarySize;
 extern ODEventHandler       *g_ODEventHandler;
 extern PILPropertiesDialogImpl *g_PILIndexLinePropDialog;
-extern PI_ColorScheme    g_global_color_scheme;
+extern PI_ColorScheme       g_global_color_scheme;
+
 
 ODPathPropertiesDialogImpl::ODPathPropertiesDialogImpl() : ODPathPropertiesDialogDef( g_ocpn_draw_pi->m_parent_window )
 {

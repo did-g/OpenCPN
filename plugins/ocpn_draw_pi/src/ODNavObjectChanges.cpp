@@ -62,15 +62,16 @@ extern bool             g_bExclusionBoundaryPoint;
 extern bool             g_bInclusionBoundaryPoint;
 extern int              g_navobjbackups;
 extern int              g_iGZMaxNum;
+extern PI_ColorScheme   g_global_color_scheme;
 
 extern PI_ColorScheme    g_global_color_scheme;
+
 
 ODNavObjectChanges::ODNavObjectChanges() : pugi::xml_document()
 {
     //ctor
     m_bFirstPath = true;
     m_ODchanges_file = 0;
-    m_ptODPointList = new ODPointList;
 }
 
 ODNavObjectChanges::ODNavObjectChanges(wxString file_name) : pugi::xml_document()
@@ -79,7 +80,6 @@ ODNavObjectChanges::ODNavObjectChanges(wxString file_name) : pugi::xml_document(
     m_ODfilename = file_name;
     m_ODchanges_file = fopen(m_ODfilename.mb_str(), "a");
     m_bFirstPath = true;
-    m_ptODPointList = new ODPointList;
 }
 
 ODNavObjectChanges::~ODNavObjectChanges()
@@ -90,8 +90,7 @@ ODNavObjectChanges::~ODNavObjectChanges()
 
     if( ::wxFileExists( m_ODfilename ) )
         ::wxRemoveFile( m_ODfilename );
-    m_ptODPointList->clear();
-    delete m_ptODPointList;
+    m_ptODPointMap.clear();
 }
 
 void ODNavObjectChanges::RemoveChangesFile( void )
@@ -1146,7 +1145,7 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( pugi::xml_node &opt_node,
         else
             pOP = new ODPoint( rlat, rlon, SymString, NameString, GuidString, false ); // do not add to global WP list yet...
             
-        m_ptODPointList->Append( pOP ); 
+        m_ptODPointMap[ pOP->m_GUID ] = pOP;
     } else {
         if(pOP->m_sTypeString == wxT("Text Point")) {
             pTP = dynamic_cast<TextPoint *>(pOP);
@@ -1518,6 +1517,8 @@ ODPath *ODNavObjectChanges::GPXLoadPath1( pugi::xml_node &odpoint_node  , bool b
         if( b_fullviz )
             pTentPath->SetVisible();
     }
+    
+    pTentPath->SetPointVisibility();
 
     pTentPath->m_bPathIsActive = b_active;
     
@@ -1535,7 +1536,7 @@ ODPath *ODNavObjectChanges::GPXLoadPath1( pugi::xml_node &odpoint_node  , bool b
     pTentPath->CreateColourSchemes();
     pTentPath->SetColourScheme(g_global_color_scheme);
     pTentPath->SetActiveColours();
-
+    
     pTentPath->UpdateSegmentDistances();
     pTentPath->m_bIsBeingCreated = false;
     
@@ -1580,19 +1581,15 @@ ODPoint *ODNavObjectChanges::ODPointExists( const wxString& guid )
 
 ODPoint *ODNavObjectChanges::tempODPointExists( const wxString& guid )
 {
-    wxODPointListNode *node = m_ptODPointList->GetFirst();
-    while( node ) {
-        ODPoint *pp = node->GetData();
-        
-        //        if( pr->m_bIsInLayer ) return NULL;
-        //TODO fix crash when pp->m_GUID is not valid. Why is this so? appears to be when a point is updated twice, but.....
-        if( !pp->m_GUID.IsEmpty() && pp->m_GUID.length() > 0 && guid == pp->m_GUID ) {
-            return pp;
-        }
-        node = node->GetNext();
-    }
-    
-    return NULL;
+    std::map<wxString, ODPoint *>::iterator it = m_ptODPointMap.find( guid );
+    if (it == m_ptODPointMap.end( ))
+        return 0;
+    return it->second;
+}
+
+void ODNavObjectChanges::tempODPointRemove( const wxString& guid )
+{
+    m_ptODPointMap.erase( guid );
 }
 
 void ODNavObjectChanges::InsertPathA( ODPath *pTentPath )
@@ -1658,6 +1655,10 @@ void ODNavObjectChanges::InsertPathA( ODPath *pTentPath )
              GZ * pGZ = (GZ *)pTentPath;
              pGZ->UpdateGZSelectablePath();
          }
+         pTentPath->CreateColourSchemes();
+         pTentPath->SetColourScheme(g_global_color_scheme);
+         pTentPath->SetActiveColours();
+         
     }
     else {
         
@@ -1756,8 +1757,11 @@ bool ODNavObjectChanges::ApplyChanges(void)
                         g_pODPointMan->DestroyODPoint( pExisting, false );
                 }
                 
-                else
+                else {
+                    // XXX bogus or corrupted xml ?
+                    tempODPointRemove (pOp->m_GUID);
                     delete pOp;
+                }
             }
         }
         else
@@ -1846,12 +1850,17 @@ void ODNavObjectChanges::UpdatePathA( ODPath *pPathUpdate )
     ODPath * pExistingPath = PathExists( pPathUpdate->m_GUID );
 
     if( pExistingPath ) {
+        Boundary *pBoundary = NULL;
         EBL *pEBL = NULL;
         DR *pDR = NULL;
         GZ *pGZ = NULL;
         PIL *pPIL = NULL;
         
-        if(pPathUpdate->m_sTypeString == wxT("EBL")) {
+        if(pPathUpdate->m_sTypeString == wxT("Boundary")) {
+            pBoundary = (Boundary *)pExistingPath;
+            Boundary *puBoundary = (Boundary *)pPathUpdate;
+            pBoundary->SetColours( puBoundary );
+        } else if(pPathUpdate->m_sTypeString == wxT("EBL")) {
             pEBL = (EBL *)pExistingPath;
             EBL *puEBL = (EBL *)pPathUpdate;
             pEBL->SetPersistence(puEBL->m_iPersistenceType);
@@ -1907,6 +1916,9 @@ void ODNavObjectChanges::UpdatePathA( ODPath *pPathUpdate )
             g_pODSelect->AddAllSelectablePathSegments( pExistingPath );
             g_pODSelect->AddAllSelectableODPoints( pExistingPath );
         }
+        pExistingPath->CreateColourSchemes();
+        pExistingPath->SetColourScheme(g_global_color_scheme);
+        pExistingPath->SetActiveColours();
     } else {
         InsertPathA( pPathUpdate );
     }

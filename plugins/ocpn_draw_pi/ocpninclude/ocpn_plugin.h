@@ -527,8 +527,8 @@ public:
 class DECL_EXP opencpn_plugin_115 : public opencpn_plugin_114
 {
 public:
-  opencpn_plugin_115(void *pmgr);
-  virtual ~opencpn_plugin_115();
+    opencpn_plugin_115(void *pmgr);
+    virtual ~opencpn_plugin_115();
 
 };
 
@@ -780,6 +780,7 @@ WX_DECLARE_LIST(PI_ChartObj, ListOfPI_ChartObj);
 // PlugInChartBaseGL
 //  Derived from PlugInChartBase, add OpenGL Vector chart support
 // ----------------------------------------------------------------------------
+class ListOfS57ObjRegion;
 
 class DECL_EXP PlugInChartBaseGL : public PlugInChartBase
 {
@@ -833,6 +834,7 @@ public:
     virtual float *GetNoCOVRTableHead(int iTable);
     
     virtual void ClearPLIBTextList();
+    virtual ListOfS57ObjRegion *GetHazards(const void *region, ListOfS57ObjRegion  *lst = 0);
     
 };
 
@@ -1076,6 +1078,7 @@ extern DECL_EXP void ForceChartDBUpdate();
 extern  DECL_EXP wxString GetWritableDocumentsDir( void );
 extern  DECL_EXP wxDialog *GetActiveOptionsDialog();
 extern  DECL_EXP wxArrayString GetWaypointGUIDArray( void );
+extern  DECL_EXP wxArrayString GetIconNameArray(void);
 
 extern  DECL_EXP bool AddPersistentFontKey(wxString TextElement);
 extern  DECL_EXP wxString GetActiveStyleName();
@@ -1226,6 +1229,15 @@ extern WXDLLIMPEXP_CORE const wxEventType wxEVT_DOWNLOAD_EVENT;
 extern DECL_EXP void PlugInAISDrawGL( wxGLCanvas* glcanvas, const PlugIn_ViewPort& vp );
 extern DECL_EXP bool PlugInSetFontColor(const wxString TextElement, const wxColour color);
 
+// API 1.15
+extern DECL_EXP double PlugInGetDisplaySizeMM();
+
+// 
+extern DECL_EXP wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily family, 
+                    wxFontStyle style, wxFontWeight weight, bool underline = false,
+                    const wxString &facename = wxEmptyString,
+                    wxFontEncoding encoding = wxFONTENCODING_DEFAULT );
+
 // API 1.15 Extra objects handling. 
 // chart file vfs plugin.
 
@@ -1287,7 +1299,7 @@ public:
 };
 
 extern DECL_EXP ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp );
+extern DECL_EXP ListOfPI_ChartObj *GetHazards(size_t n, double *points );
 extern DECL_EXP ListOfPI_ChartObj *GetSafeWaterAreas(const PlugIn_ViewPort &vp );
-
 
 #endif //_PLUGIN_H_

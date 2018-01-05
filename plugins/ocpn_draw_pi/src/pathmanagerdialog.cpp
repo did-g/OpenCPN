@@ -499,6 +499,11 @@ void PathManagerDialog::Create()
     btnPathDelete->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(PathManagerDialog::OnPathDeleteClick), NULL, this );
 
+    btnChart2Lay = new wxButton( m_pPanelPath, -1, _("S57 quilt to layer") );
+    bsPathButtons->Add( btnChart2Lay, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
+    btnChart2Lay->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+            wxCommandEventHandler(PathManagerDialog::OnChart2LayClick), NULL, this );
+
     btnPathExport = new wxButton( m_pPanelPath, -1, _("&Export selected...") );
     bsPathButtons->Add( btnPathExport, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
     btnPathExport->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
@@ -510,6 +515,7 @@ void PathManagerDialog::Create()
     bsPathButtons->Add( btnPathDeleteAll, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
     btnPathDeleteAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(PathManagerDialog::OnPathDeleteAllClick), NULL, this );
+
 
     //  Create "OD points" panel
     m_pPanelODPoint = new wxPanel( m_pNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
@@ -631,10 +637,6 @@ void PathManagerDialog::Create()
     btnLayNew->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler(PathManagerDialog::OnLayNewClick), NULL, this );
 
-    btnChart2Lay = new wxButton( m_pPanelLay, -1, _("S57 quilt to layer") );
-    bsLayButtons->Add( btnChart2Lay, 0, wxALL | wxEXPAND, DIALOG_MARGIN );
-    btnChart2Lay->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
-            wxCommandEventHandler(PathManagerDialog::OnChart2LayClick), NULL, this );
 
     //btnLayProperties = new wxButton(m_pPanelLay, -1, _("&Properties"));
     //bsLayButtons->Add(btnLayProperties, 0, wxALL|wxEXPAND, DIALOG_MARGIN);
@@ -732,6 +734,9 @@ PathManagerDialog::~PathManagerDialog()
     
     btnPathDeleteAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
                                wxCommandEventHandler(PathManagerDialog::OnPathDeleteAllClick), NULL, this );
+
+    btnChart2Lay->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
+                        wxCommandEventHandler(PathManagerDialog::OnChart2LayClick), NULL, this );
     
     m_pODPointListCtrl->Disconnect( wxEVT_COMMAND_LIST_ITEM_SELECTED,
                                  wxListEventHandler(PathManagerDialog::OnODPointSelected), NULL, this );
@@ -778,8 +783,6 @@ PathManagerDialog::~PathManagerDialog()
                              wxListEventHandler(PathManagerDialog::OnLayColumnClicked), NULL, this );
     btnLayNew->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
                         wxCommandEventHandler(PathManagerDialog::OnLayNewClick), NULL, this );
-    btnChart2Lay->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
-                        wxCommandEventHandler(PathManagerDialog::OnChart2LayClick), NULL, this );
     
     btnLayDelete->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
                            wxCommandEventHandler(PathManagerDialog::OnLayDeleteClick), NULL, this );
@@ -1364,7 +1367,7 @@ void PathManagerDialog::UpdateODPointsListCtrl( ODPoint *op_select, bool b_retai
 
     wxODPointListNode *node = g_pODPointMan->GetODPointList()->GetFirst();
 
-    int index = 0;
+    long index = 0;
     while( node ) {
         ODPoint *op = node->GetData();
         if( op && op->IsListed() ) {
@@ -1378,7 +1381,7 @@ void PathManagerDialog::UpdateODPointsListCtrl( ODPoint *op_select, bool b_retai
             wxListItem li;
             li.SetId( index );
             li.SetImage( op->IsVisible() ? g_pODPointMan->GetIconIndex( op->GetIconBitmap() )
-                                    : g_pODPointMan->GetXIconIndex( op->GetIconBitmap() ) );
+                                   : g_pODPointMan->GetXIconIndex( op->GetIconBitmap() ) );
             li.SetData( op );
             li.SetText( _T("") );
             long idx = m_pODPointListCtrl->InsertItem( li );
@@ -1547,14 +1550,14 @@ void PathManagerDialog::OnODPointToggleVisibility( wxMouseEvent &event )
     //    Clicking Visibility column?
     if( clicked_index > -1 && event.GetX() < m_pODPointListCtrl->GetColumnWidth( colPATHVISIBLE ) ) {
         // Process the clicked item
-        ODPoint *wp = (ODPoint *) m_pODPointListCtrl->GetItemData( clicked_index );
+        ODPoint *pODP = (ODPoint *) m_pODPointListCtrl->GetItemData( clicked_index );
 
-        wp->SetVisible( !wp->IsVisible() );
+        pODP->SetVisible( !pODP->IsVisible() );
         m_pODPointListCtrl->SetItemImage( clicked_index,
-                                      wp->IsVisible() ? g_pODPointMan->GetIconIndex( wp->GetIconBitmap() )
-                                                      : g_pODPointMan->GetXIconIndex( wp->GetIconBitmap() ) );
+                                      pODP->IsVisible() ? g_pODPointMan->GetIconIndex( pODP->GetIconBitmap() )
+                                                      : g_pODPointMan->GetXIconIndex( pODP->GetIconBitmap() ) );
 
-        g_pODConfig->UpdateODPoint( wp );
+        g_pODConfig->UpdateODPoint( pODP );
 
         RequestRefresh( GetOCPNCanvasWindow() );
     }
@@ -1857,67 +1860,126 @@ void PathManagerDialog::OnChart2LayClick( wxCommandEvent &event )
     if (!g_VP.bValid)
         return;
 
+    PlugIn_ViewPort my_VP = g_VP;
+
     bool show_flag = g_bShowLayers;
     g_bShowLayers = true;
-    
-    // g_pODConfig->UI_ImportGPX( this, true, _T("") );
-    Boundary *l_pBoundary = new Boundary();
-    l_pBoundary->m_bInclusionBoundary = true;
-    l_pBoundary->m_bExclusionBoundary = false;
-    l_pBoundary->m_wxcActiveLineColour = wxColour( 0, 255, 0 );
-    l_pBoundary->m_wxcActiveFillColour = wxColour( 0, 255, 0 );
-    l_pBoundary->CreateColourSchemes();
-    l_pBoundary->SetColourScheme();
-    l_pBoundary->SetActiveColours();
 
-    g_pBoundaryList->Append( l_pBoundary );
-    g_pPathList->Append( l_pBoundary);
-    l_pBoundary->m_width = g_BoundaryLineWidth;
-    l_pBoundary->m_style = g_BoundaryLineStyle;
+    Boundary *l_pBoundary = 0;
+    ListOfPI_ChartObj *lst;
 
-    LLBBox l_LLBBox;
-    l_LLBBox.Set(g_VP.lat_min, g_VP.lon_min, g_VP.lat_max, g_VP.lon_max);
+    if( m_pPathListCtrl->GetSelectedItemCount() == 1 ) {
+        long selected_index_index = m_pPathListCtrl->GetNextItem( -1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED );
+        l_pBoundary =  dynamic_cast<Boundary *>(g_pPathList->Item( m_pPathListCtrl->GetItemData( selected_index_index ) )->GetData());
+        if ( l_pBoundary && l_pBoundary->m_bInclusionBoundary == true) {
+            LLBBox RBBox = l_pBoundary->GetBBox();
+            double clat = RBBox.GetMinLat() + ( ( RBBox.GetMaxLat() - RBBox.GetMinLat() ) / 2 );
+            double clon = RBBox.GetMinLon() + ( ( RBBox.GetMaxLon() - RBBox.GetMinLon() ) / 2 );
+            if( clon > 180. ) clon -= 360.;
+            else if( clon < -180. ) clon += 360.;
 
-    BoundaryPoint *l_BP1 = new BoundaryPoint(l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), g_sODPointIconName, wxS(""), wxT(""));
-    l_BP1->SetNameShown( false );
-    l_BP1->SetTypeString( wxS("Boundary Point") );
-    g_pODConfig->AddNewODPoint( l_BP1, -1 );
-    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_BP1 );
-    l_pBoundary->AddPoint( l_BP1 );
+            // Calculate ppm
+            double rw, rh, ppm; // route width, height, final ppm scale to use
+            int ww, wh; // chart window width, height
+            // route bbox width in nm
+            DistanceBearingMercator_Plugin( RBBox.GetMinLat(), RBBox.GetMinLon(), RBBox.GetMinLat(), 
+                RBBox.GetMaxLon(), NULL, &rw );
+            // route bbox height in nm
+            DistanceBearingMercator_Plugin( RBBox.GetMinLat(), RBBox.GetMinLon(), RBBox.GetMaxLat(),
+                RBBox.GetMinLon(), NULL, &rh );
 
-    BoundaryPoint *l_BP2 = new BoundaryPoint(l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), g_sODPointIconName, wxS(""), wxT(""));
-    l_BP2->SetNameShown( false );
-    l_BP2->SetTypeString( wxS("Boundary Point") );
-    g_pODConfig->AddNewODPoint( l_BP2, -1 );
-    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_BP2 );
-    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_BP1, l_BP2, l_pBoundary );
-    l_pBoundary->AddPoint( l_BP2 );
+            ocpncc1->GetSize( &ww, &wh );
 
-    BoundaryPoint *l_BP3 = new BoundaryPoint(l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), g_sODPointIconName, wxS(""), wxT(""));
-    l_BP3->SetNameShown( false );
-    l_BP3->SetTypeString( wxS("Boundary Point") );
-    g_pODConfig->AddNewODPoint( l_BP3, -1 );
-    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_BP3 );
-    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_BP2, l_BP3, l_pBoundary );
-    l_pBoundary->AddPoint( l_BP3 );
+            ppm = wxMin(ww/(rw*1852), wh/(rh*1852)) * ( 100 - fabs( clat ) ) / 90;
 
-    BoundaryPoint *l_BP4 = new BoundaryPoint(l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), g_sODPointIconName, wxS(""), wxT(""));
-    l_BP4->SetNameShown( false );
-    l_BP4->SetTypeString( wxS("Boundary Point") );
-    g_pODConfig->AddNewODPoint( l_BP4, -1 );
-    g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_BP4 );
-    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_BP3, l_BP4, l_pBoundary );
-    l_pBoundary->AddPoint( l_BP4 );
+            ppm = wxMin(ppm, 1.0);
 
-    // Add final point to close the boundary
-    g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_BP4, l_BP1, l_pBoundary );
-    l_pBoundary->AddPoint( l_BP1 );
+            my_VP.lat_min = RBBox.GetMinLat();
+            my_VP.lon_min = RBBox.GetMinLon();
+            my_VP.lat_max = RBBox.GetMaxLat();
+            my_VP.lon_max = RBBox.GetMaxLon();
+            my_VP.clon = clon;
+            my_VP.clat = clat;
+            my_VP.view_scale_ppm = ppm;
+            size_t n = l_pBoundary->GetnPoints();
+            if (n != 0) {
+                double *t = new double[n *2];
+                for (size_t i = 1, j = 0; i <= n; i++, j += 2) {
+                    // from LLRegion y, x order. ie lat lon
+                    t[j]    = l_pBoundary->GetPoint(i)->GetLatitude();
+                    t[j +1] = l_pBoundary->GetPoint(i)->GetLongitude();
+                }
+                // --------------
+                lst = GetHazards( n, t );
 
-    l_pBoundary->RebuildGUIDList(); // ensure the GUID list is intact and good
-    l_pBoundary->SetHiLite(0);
-    l_pBoundary->m_bIsBeingCreated = false;
-    // --------------
-    ListOfPI_ChartObj *lst = GetHazards( g_VP );
+                delete t;
+            }
+            else
+                l_pBoundary = 0;
+        }
+        else
+            l_pBoundary = 0;
+    }
+    if (l_pBoundary == 0) {
+        // g_pODConfig->UI_ImportGPX( this, true, _T("") );
+        l_pBoundary = new Boundary();
+        l_pBoundary->m_bInclusionBoundary = true;
+        l_pBoundary->m_bExclusionBoundary = false;
+        l_pBoundary->m_wxcActiveLineColour = wxColour( 0, 255, 0 );
+        l_pBoundary->m_wxcActiveFillColour = wxColour( 0, 255, 0 );
+        l_pBoundary->CreateColourSchemes();
+        l_pBoundary->SetColourScheme();
+        l_pBoundary->SetActiveColours();
+
+        g_pBoundaryList->Append( l_pBoundary );
+        g_pPathList->Append( l_pBoundary);
+        l_pBoundary->m_width = g_BoundaryLineWidth;
+        l_pBoundary->m_style = g_BoundaryLineStyle;
+
+        LLBBox l_LLBBox;
+        l_LLBBox.Set(my_VP.lat_min, my_VP.lon_min, my_VP.lat_max, my_VP.lon_max);
+
+        BoundaryPoint *l_BP1 = new BoundaryPoint(l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), g_sODPointIconName, wxS(""), wxT(""));
+        l_BP1->SetNameShown( false );
+        l_BP1->SetTypeString( wxS("Boundary Point") );
+        g_pODConfig->AddNewODPoint( l_BP1, -1 );
+        g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_BP1 );
+        l_pBoundary->AddPoint( l_BP1 );
+
+        BoundaryPoint *l_BP2 = new BoundaryPoint(l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), g_sODPointIconName, wxS(""), wxT(""));
+        l_BP2->SetNameShown( false );
+        l_BP2->SetTypeString( wxS("Boundary Point") );
+        g_pODConfig->AddNewODPoint( l_BP2, -1 );
+        g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_BP2 );
+        g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_BP1, l_BP2, l_pBoundary );
+        l_pBoundary->AddPoint( l_BP2 );
+
+        BoundaryPoint *l_BP3 = new BoundaryPoint(l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), g_sODPointIconName, wxS(""), wxT(""));
+        l_BP3->SetNameShown( false );
+        l_BP3->SetTypeString( wxS("Boundary Point") );
+        g_pODConfig->AddNewODPoint( l_BP3, -1 );
+        g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_BP3 );
+        g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMaxLat(), l_LLBBox.GetMinLon(), l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_BP2, l_BP3, l_pBoundary );
+        l_pBoundary->AddPoint( l_BP3 );
+
+        BoundaryPoint *l_BP4 = new BoundaryPoint(l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), g_sODPointIconName, wxS(""), wxT(""));
+        l_BP4->SetNameShown( false );
+        l_BP4->SetTypeString( wxS("Boundary Point") );
+        g_pODConfig->AddNewODPoint( l_BP4, -1 );
+        g_pODSelect->AddSelectableODPoint( l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_BP4 );
+        g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMinLat(), l_LLBBox.GetMinLon(), l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_BP3, l_BP4, l_pBoundary );
+        l_pBoundary->AddPoint( l_BP4 );
+
+        // Add final point to close the boundary
+        g_pODSelect->AddSelectablePathSegment( l_LLBBox.GetMinLat(), l_LLBBox.GetMaxLon(), l_LLBBox.GetMaxLat(), l_LLBBox.GetMaxLon(), l_BP4, l_BP1, l_pBoundary );
+        l_pBoundary->AddPoint( l_BP1 );
+
+        l_pBoundary->RebuildGUIDList(); // ensure the GUID list is intact and good
+        l_pBoundary->SetHiLite(0);
+        l_pBoundary->m_bIsBeingCreated = false;
+        // --------------
+        lst = GetHazards( my_VP );
+    }
     if (lst) {
         for( ListOfPI_ChartObj::Node *node = lst->GetFirst(); node; node = node->GetNext() ) {
             PI_ChartObj *cobj = node->GetData();
