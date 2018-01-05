@@ -1304,6 +1304,7 @@ public:
 };
 
 extern DECL_EXP ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp );
+extern DECL_EXP ListOfPI_ChartObj *GetHazards(size_t n, double *points );
 extern DECL_EXP ListOfPI_ChartObj *GetSafeWaterAreas(const PlugIn_ViewPort &vp );
 
 #endif //_PLUGIN_H_
