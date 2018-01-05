@@ -23,12 +23,15 @@
 #include "Quilt.h"
 
 // XXX BAD
+#include "chcanv.h"
+#include "chart1.h"
 #include "ocpn_plugin.h"
 #include "chartimg.h"
 
 extern ChartDB *ChartData;
 extern int g_GroupIndex;
 extern ArrayOfInts g_quilt_noshow_index_array;
+extern ChartCanvas *cc1;
 
 static int ExactCompareScales( int *i1, int *i2 )
 {
@@ -246,8 +249,7 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
     return true;
 }
 
-// -------------------
-ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
+ListOfS57ObjRegion *ChartObj::BuildHazardsList(const LLRegion &cvp_region)
 {
   ListOfS57ObjRegion *pobj_list = new ListOfS57ObjRegion;
   pobj_list->Clear();
@@ -257,8 +259,8 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
 
   if(ChartData->IsBusy())             // This prevent recursion on chart loads that Yeild()
     return pobj_list;
+  LLRegion vp_region = cvp_region;
 
-  m_vp = vp;
   delete m_stack;
   m_stack = new ChartStack;
   if (BuildExtendedChartStackAndCandidateArray() == false)
@@ -279,11 +281,6 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
       }
   }
 
-  //    Using Region logic, and starting from the largest scale chart
-  //    figuratively "draw" charts until the ViewPort window is completely quilted over
-  //    Add only those charts whose scale is smaller than the "reference scale"
-  const LLRegion cvp_region = m_vp.GetLLRegion(wxRect(0, 0, m_vp.pix_width, m_vp.pix_height));
-  LLRegion vp_region = cvp_region;
   //    "Draw" the reference chart first, since it is special in that it controls the fine vpscale setting
   QuiltCandidate *pqc_ref = m_pcandidate_array->Item( 0 );
 #if 0
@@ -567,6 +564,50 @@ ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
   }
 
   return pobj_list;
+}
+
+ListOfS57ObjRegion *ChartObj::GetHazards(LLRegion &reg)
+{
+  LLBBox RBBox = reg.GetBox();
+  double clat = RBBox.GetMinLat() + ( ( RBBox.GetMaxLat() - RBBox.GetMinLat() ) / 2 );
+  double clon = RBBox.GetMinLon() + ( ( RBBox.GetMaxLon() - RBBox.GetMinLon() ) / 2 );
+  if( clon > 180. ) clon -= 360.;
+  else if( clon < -180. ) clon += 360.;
+
+  // Calculate ppm
+  double rw, rh, ppm; // route width, height, final ppm scale to use
+  int ww, wh; // chart window width, height
+  // route bbox width in nm
+  DistanceBearingMercator( RBBox.GetMinLat(), RBBox.GetMinLon(), RBBox.GetMinLat(), 
+      RBBox.GetMaxLon(), NULL, &rw );
+  // route bbox height in nm
+  DistanceBearingMercator( RBBox.GetMinLat(), RBBox.GetMinLon(), RBBox.GetMaxLat(),
+      RBBox.GetMinLon(), NULL, &rh );
+
+  cc1->GetSize( &ww, &wh );
+
+  ppm = wxMin(ww/(rw*1852), wh/(rh*1852)) * ( 100 - fabs( clat ) ) / 90;
+
+  ppm = wxMin(ppm, 1.0);
+
+  m_vp.SetBBoxDirect(RBBox);
+
+  m_vp.clon = clon;
+  m_vp.clat = clat;
+  m_vp.view_scale_ppm = ppm;
+
+  return BuildHazardsList(reg);
+}
+
+// -------------------
+ListOfS57ObjRegion *ChartObj::GetHazards(ViewPort &vp)
+{
+  m_vp = vp;
+  //    Using Region logic, and starting from the largest scale chart
+  //    figuratively "draw" charts until the ViewPort window is completely quilted over
+  //    Add only those charts whose scale is smaller than the "reference scale"
+  const LLRegion cvp_region = m_vp.GetLLRegion(wxRect(0, 0, m_vp.pix_width, m_vp.pix_height));
+  return BuildHazardsList(cvp_region);
 }
 
 ListOfS57ObjRegion *ChartObj::GetSafeWaterAreas(ViewPort &vp)
