@@ -6598,6 +6598,23 @@ ListOfPI_ChartObj *GetHazards(const PlugIn_ViewPort &vp )
   return crep;
 }
 
+ListOfPI_ChartObj *GetHazards(size_t n, double *points )
+{
+  LLRegion region(n, points);
+  ChartObj a;
+  ListOfS57ObjRegion *rep = a.GetHazards(region);
+
+  ListOfPI_ChartObj *crep = new ListOfPI_ChartObj;
+  for( ListOfS57ObjRegion::Node *node = rep->GetFirst(); node; node = node->GetNext() ) {
+       PI_ChartObj *c;
+       S57ObjRegion *pobj = node->GetData();
+       c = CreatePluginChartObject(pobj);
+       crep->Append( c );
+  }                 
+  delete rep;
+  return crep;
+}
+
 
 ListOfPI_ChartObj *GetSafeWaterAreas(const PlugIn_ViewPort &vp )
 {
