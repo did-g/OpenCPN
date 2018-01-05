@@ -33,9 +33,12 @@ public:
   ChartObj();
   ~ChartObj();
   ListOfS57ObjRegion *GetHazards(ViewPort &vp);
+  ListOfS57ObjRegion *GetHazards(LLRegion &reg);
   ListOfS57ObjRegion *GetSafeWaterAreas(ViewPort &vp);
 
 private:
+  ListOfS57ObjRegion *BuildHazardsList(const LLRegion &reg);
+
   int GetExtendedStackCount( ) 
   {
         return m_extended_stack_array.GetCount();
