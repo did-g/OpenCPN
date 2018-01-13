@@ -3593,11 +3593,13 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                        || !strncmp( obj->FeatureName, "DRGARE", 6 ) 
                        || !strncmp( obj->FeatureName, "DEPARE", 6 ) 
                        || !strncmp( obj->FeatureName, "UNSARE", 6 ) 
+                       || !strncmp( obj->FeatureName, "MARCUL", 6 ) 
                        || obj->m_bcategory_mutable
                       ))
                    continue;
 
                 if (   !strncmp( obj->FeatureName, "LNDARE", 6 ) ||
+                      !strncmp( obj->FeatureName, "MARCUL", 6 ) ||
                        !strncmp( obj->FeatureName, "UNSARE", 6 ) ) {
                     LLRegion i(obj->BBObj);
                     i.Intersect(region);
@@ -3613,7 +3615,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             e->Reduce2(0.001);
                             land->Union( *e );
                             #else                            
-                            land->Combine( *e );
+                            land->Union( *e );
                             #endif
                         }
                         else
@@ -3645,7 +3647,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                                 e->Reduce2(0.001);
                                 sea->Union( *e );
                                 #else
-                                sea->Combine( *e );
+                                sea->Union( *e );
                                 #endif
                             }
                             delete e;
@@ -3721,8 +3723,8 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
         }
     }
     if (!land->Empty()) {
-        land->Reduce2(0.001);
-        sea->Reduce2(0.001);
+        land->Reduce2(0.0005);
+        sea->Reduce2(0.0005);
         land->Union(*sea);
         S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
         pobj_list->Append( l );
@@ -3730,7 +3732,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
     }
     else {
         delete land;
-        sea->Reduce2(0.001);
+        sea->Reduce2(0.0005);
         if (!sea->Empty()) {
             S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
             pobj_list->Append( l );
