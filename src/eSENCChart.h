@@ -119,6 +119,8 @@ public:
 // eSENCChart Definition
 // ----------------------------------------------------------------------------
 class S57ObjRegion;
+class LLRegion;
+
 WX_DECLARE_LIST(S57ObjRegion, ListOfS57ObjRegion);
 
 class  eSENCChart : public PlugInChartBaseExtended
@@ -376,6 +378,9 @@ protected:
       
       wxStringHashMap   m_TXTDSC_map;           // maps file names to content
       int               m_sencReadVersion;
+
+private:
+      LLRegion *S57Obj2LLRegion(S57Obj *obj);
       
 };
 
