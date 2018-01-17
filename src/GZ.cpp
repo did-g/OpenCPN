@@ -428,7 +428,7 @@ void GZ::UpdateGZSelectablePath( void )
                 }
                 break;
         }
-    } 
+    }
     
     PositionBearingDistanceMercator_Plugin( m_dCentreLat, m_dCentreLon, firstDirection, m_dFirstDistance, &l_dPrevLat, &l_dPrevLon);
     PositionBearingDistanceMercator_Plugin( m_dCentreLat, m_dCentreLon, firstDirection, m_dSecondDistance, &l_dLat, &l_dLon);
@@ -516,7 +516,7 @@ void GZ::GetLatLonPoints( PlugIn_ViewPort &piVP, wxPoint *l_pCentre, wxPoint *l_
                 }
                 break;
         }
-    } 
+    }
     // get x, y of first point on first line
     ODPoint *l_point = m_pODPointList->GetFirst()->GetData();
     GetCanvasPixLL( &piVP, *&l_l1p1, l_point->m_lat, l_point->m_lon );

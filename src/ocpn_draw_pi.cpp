@@ -709,7 +709,6 @@ bool ocpn_draw_pi::DeInit(void)
     m_parent_window->Disconnect( m_RolloverPopupTimer.GetId(), wxTimerEventHandler( ODEventHandler::OnRolloverPopupTimerEvent ) );
     if( g_ODEventHandler ) delete g_ODEventHandler;
     g_ODEventHandler = NULL;
-
     if( g_pODRolloverWin ) g_pODRolloverWin->Destroy();
     g_pODRolloverWin = NULL;
 
@@ -2120,8 +2119,16 @@ bool ocpn_draw_pi::MouseEventHook( wxMouseEvent &event )
                     if(m_pSelectedPath->m_sTypeString == wxT("Boundary")) {
                         m_pSelectedBoundary = (Boundary *)m_pSelectedPath;
                         if( event.ControlDown() ) {
-                            m_pBoundaryList.push_back( m_pSelectedBoundary );
-                            m_pSelectedBoundary->m_bPathPropertiesBlink = true;
+                            std::list<Boundary *>::iterator it = m_pBoundaryList.begin();
+                            while( it != m_pBoundaryList.end() ) {
+                                if ( *it == m_pSelectedBoundary)
+                                    break;
+                                ++it;
+                            }
+                            if ( it == m_pBoundaryList.end() ) {
+                                m_pBoundaryList.push_back( m_pSelectedBoundary );
+                                m_pSelectedBoundary->m_bPathPropertiesBlink = true;
+                            }
                         }
                     }
                     else if(m_pSelectedPath->m_sTypeString == wxT("EBL"))
