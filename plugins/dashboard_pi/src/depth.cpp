@@ -58,7 +58,9 @@ DashboardInstrument_Depth::DashboardInstrument_Depth( wxWindow *parent, wxWindow
       wxClientDC dc(this);
       int w;
       dc.GetTextExtent(m_title, &w, &m_TitleHeight, 0, 0, g_pFontTitle);
-      SetMinSize( wxSize(MinWidth, m_TitleHeight+40) );
+      //SetMinSize( wxSize(MinWidth, m_TitleHeight+40) );
+      SetMinSize(wxSize(wxMax(MinWidth, w), m_TitleHeight+wxMax(MinWidth, w)));
+      
 }
 
 void DashboardInstrument_Depth::SetData(int st, double data, wxString unit)
@@ -150,7 +152,8 @@ void DashboardInstrument_Depth::DrawForeground(wxGCDC* dc)
       dc->SetBrush(brush);
       dc->SetPen(*wxTRANSPARENT_PEN);
 
-      double ratioH = 100.0 / m_MaxDepth; // 140-40=100
+      //double ratioH = 100.0 / m_MaxDepth; // 140-40=100
+      double ratioH = 75.0 / m_MaxDepth; // 140-40=100
       double ratioW = double(size.x-6) / (DEPTH_RECORD_COUNT-1);
       wxPoint points[DEPTH_RECORD_COUNT+2];
       for (int idx = 0; idx < DEPTH_RECORD_COUNT; idx++)

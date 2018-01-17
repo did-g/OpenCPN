@@ -1590,9 +1590,13 @@ void dashboard_pi::ApplyConfig( void )
         } else {
             wxAuiPaneInfo& pane = m_pauimgr->GetPane( cont->m_pDashboardWindow );
             pane.Caption( cont->m_sCaption ).Show( cont->m_bIsVisible );
-            if(cont->m_pDashboardWindow->GetSizerOrientation() != orient ||
-               !cont->m_pDashboardWindow->isInstrumentListEqual( cont->m_aInstrumentList ))
+            if(cont->m_pDashboardWindow->GetSizerOrientation() != orient)
                 cont->m_pDashboardWindow->ChangePaneOrientation( orient, false );
+            else if(!cont->m_pDashboardWindow->isInstrumentListEqual( cont->m_aInstrumentList )) {
+                wxSize sz = cont->m_pDashboardWindow->GetSize();
+                cont->m_pDashboardWindow->SetInstrumentList( cont->m_aInstrumentList, orient );
+                cont->m_pDashboardWindow->SetSize(sz);
+            }
         }
     }
     m_pauimgr->Update();
@@ -2238,7 +2242,11 @@ void DashboardWindow::SetColorScheme( PI_ColorScheme cs )
 
 void DashboardWindow::ChangePaneOrientation( int orient, bool updateAUImgr )
 {
-    wxPoint p = m_pauimgr->GetPane( this ).floating_pos;
+    wxPoint pf = m_pauimgr->GetPane( this ).floating_pos;
+    bool bFloat = m_pauimgr->GetPane( this ).IsFloating();
+    wxSize floatSize = m_pauimgr->GetPane( this ).floating_size;
+    int old_orient = m_Container->m_pDashboardWindow->GetSizerOrientation();
+    
     m_pauimgr->DetachPane( this );
     SetSizerOrientation( orient );
     bool vertical = orient == wxVERTICAL;
@@ -2246,10 +2254,22 @@ void DashboardWindow::ChangePaneOrientation( int orient, bool updateAUImgr )
     wxSize sz = GetMinSize();
     // We must change Name to reset AUI perpective
     m_Container->m_sName = GetUUID();
-    m_pauimgr->AddPane( this, wxAuiPaneInfo().Name( m_Container->m_sName ).Caption(
-        m_Container->m_sCaption ).CaptionVisible( true ).TopDockable( !vertical ).BottomDockable(
-        !vertical ).LeftDockable( vertical ).RightDockable( vertical ).MinSize( sz ).BestSize(
-            sz ).FloatingSize( sz ).FloatingPosition( p ).Float().Show( m_Container->m_bIsVisible ) );
+    
+    wxAuiPaneInfo p = wxAuiPaneInfo().Name( m_Container->m_sName ).Caption( m_Container->m_sCaption ).CaptionVisible( true ).
+        TopDockable(!vertical ).BottomDockable( !vertical ).LeftDockable( vertical ).RightDockable( vertical ).
+        MinSize(sz ).BestSize( sz ).FloatingSize( sz ).FloatingPosition( pf ).Float().
+        Show( m_Container->m_bIsVisible ).Gripper(false) ;
+    
+    if(bFloat){
+        p.Float();
+        if(old_orient != orient)
+                p.FloatingSize(wxSize(floatSize.y, floatSize.x));
+    }
+    else
+        p.Dock();
+            
+    m_pauimgr->AddPane( this, p);
+
     if ( updateAUImgr ) m_pauimgr->Update();
 }
 

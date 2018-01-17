@@ -1989,7 +1989,8 @@ bool MyApp::OnInit()
 //  or if the version string has changed at all
 //  We defer until here to allow for localization of the message
     if( !n_NavMessageShown || ( vs != g_config_version_string ) ) {
-        if( wxID_CANCEL == ShowNavWarning() ) return false;
+        if( wxID_CANCEL == ShowNavWarning() )
+            return false;
         n_NavMessageShown = 1;
     }
 
@@ -2617,6 +2618,10 @@ extern ocpnGLOptions g_GLOptions;
 
     OCPNPlatform::Initialize_3( );
     
+    if( n_NavMessageShown == 1 ) {
+        //In case the user accepted the "not for navigation" nag, persist it here...
+        pConfig->UpdateSettings();
+    }
 #ifdef __OCPN__ANDROID__
     androidHideBusyIcon();
 #endif
@@ -7903,7 +7908,7 @@ void MyFrame::HandlePianoRollover( int selected_index, int selected_dbIndex )
     } else {
         ArrayOfInts piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
 
-        if( ( pCurrentStack->nEntry > 1 ) || ( piano_chart_index_array.GetCount() > 1 ) ) {
+        if( ( pCurrentStack->nEntry > 1 ) || ( piano_chart_index_array.GetCount() >= 1 ) ) {
             cc1->ShowChartInfoWindow( key_location.x, selected_dbIndex );
             cc1->SetQuiltChartHiLiteIndex( selected_dbIndex );
 
