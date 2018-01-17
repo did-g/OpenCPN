@@ -342,6 +342,51 @@ void LLRegion::Subtract(const LLRegion& region)
 // ----------------------
 // p1-- p2 -- p3 -- p4
 //
+
+static bool LinesIntersect(
+double x1, double y1,
+double x2, double y2,
+double x3, double y3,
+double x4, double y4,
+double *x, double *y)
+{
+#define EPS 0.000000001
+
+   double mua,mub;
+   double denom,numera,numerb;
+
+   denom  = (y4-y3) * (x2-x1) - (x4-x3) * (y2-y1);
+   numera = (x4-x3) * (y1-y3) - (y4-y3) * (x1-x3);
+   numerb = (x2-x1) * (y1-y3) - (y2-y1) * (x1-x3);
+
+   /* Are the line coincident? */
+   if (fabs(numera) < EPS && fabs(numerb) < EPS && fabs(denom) < EPS) {
+      *x = (x1 + x2) / 2;
+      *y = (y1 + y2) / 2;
+      return true;
+   }
+
+   /* Are the line parallel */
+   if (fabs(denom) < EPS) {
+      *x = 0;
+      *y = 0;
+      return false;
+   }
+   /* Is the intersection along the segments */
+   mua = numera / denom;
+   mub = numerb / denom;
+#if 0
+   if (mua < 0 || mua > 1 || mub < 0 || mub > 1) {
+      *x = 0;
+      *y = 0;
+      return false;
+   }
+#endif
+   *x = x1 + mua * (x2 - x1);
+   *y = y1 + mua * (y2 - y1);
+   return true;
+}
+ 
 void LLRegion::Reduce2(double factor)
 {
     double factor2 = factor*factor;
@@ -354,11 +399,13 @@ void LLRegion::Reduce2(double factor)
             i++;
             continue;
         }
-
         // reduce segments
         // lee j k 
+        int c = 0;
         contour_pt p1 = *i->rbegin();
-        poly_contour::iterator j = i->begin(), p2, p3;
+        poly_contour::reverse_iterator pl = i->rbegin();
+        poly_contour::iterator j = i->begin(), pf, p2, p3;
+        pf = i->begin();
         j++;
         p2  = j;
         j++;
@@ -369,7 +416,7 @@ void LLRegion::Reduce2(double factor)
             bool doit = false;
             bool end = false;
             // find the smallest diff (chart scale?)
-            if( dist2(vector(*p2, p1)) < small2 ) {
+            if( 0 && dist2(vector(*p2, p1)) < small2 ) {
                 doit = true;
                 end = true;
             }
@@ -377,21 +424,52 @@ void LLRegion::Reduce2(double factor)
                 // (xq1,y1), (x2,y2), and (x3,y3) be the three points, with x1<x2<x3. 
                 // Let m1=(y2−y1)/(x2−x1) and m2=(y3−y2)/(x3−x2). If m1<m2 
                 // there is an arc that is concave up (but no arc that is concave down); 
-                // icf m1>m2, there is an arc that is concave down (but no arc that is concave up).
+                // if m1>m2, there is an arc that is concave down (but no arc that is concave up).
                 double m1 = (p2->y - p1.y)/fabs(p2->x - p1.x);
                 double m2 = (p3->y - p2->y)/fabs(p3->x - p2->x); 
                 if (p1.x < p2->x && p2->x < p3->x) {
                    end = true;
                    if (m1 >= m2)
                       skip = true;
-                   else {
-                      
-                   }
                 }
                 else if (p1.x > p2->x && p2->x > p3->x){
                    end = true;
                    if (m1 <= m2)
                       skip = true;
+                }
+                if (end && !skip) {
+                    contour_pt t3;
+
+                    if (LinesIntersect( p1.x, p1.y, p2->x, p2->y, p3->x, p3->y, p3->x, p3->y +10, &t3.x, &t3.y)) {
+                       contour_pt t1;
+                       double d1, d3;
+
+                       d3 = dist2(vector(*p3, t3));
+                       if (0 && LinesIntersect( p1.x, p1.y, p2->x, p2->y, p3->x, p3->y, p1.x, p1.y +10, &t1.x, &t1.y)) {
+                           d1 = dist2(vector(p1, t1));
+                           if (d1 < factor2/2. && d1 < d3) {
+                               if (c == 0) {
+                                   *pl = t1;
+                               }
+                               else {
+                                   *pf = t1;
+                               }
+                               p1 = t1;
+                               doit = true;
+                           }
+                           else if (d3 < factor2/2. ) { 
+                               *p3 = t3;
+                               doit = true;
+                           }
+
+                       }
+                       else if (d3 < factor2/2. ) { 
+                           *p3 = t3;
+                           //p1->y += (t.y -p3->y)/2;
+                           //p3->y += (t.y -p3->y)/2; 
+                           doit = true;
+                       }
+                    }
                 }
             }
             // ------------------------------------------
@@ -402,14 +480,22 @@ void LLRegion::Reduce2(double factor)
                    end = true;
                    if (m1 <= m2)
                       skip = true;
-                   else {
-                      
-                   }
                 }
                 else if (p1.y > p2->y && p2->y > p3->y){
                    end = true;
                    if (m1 >= m2)
                       skip = true;
+                }
+                if (end && !skip) {
+                    contour_pt t;
+                    if (LinesIntersect( p1.x, p1.y, p2->x, p2->y, p3->x, p3->y, p3->x +10, p3->y, &t.x, &t.y)) {
+                       if (dist2(vector(*p3, t)) < factor2/2. ) { 
+                           *p3 = t; 
+                           //p1->x += (t.x -p3->x)/2;
+                           //p3->x += (t.x -p3->x)/2; 
+                           doit = true;
+                       }
+                    }
                 }
             }
             if( !doit && skip && dist2(vector(*p2, p1)) < factor2 ) {
@@ -422,6 +508,8 @@ void LLRegion::Reduce2(double factor)
             }
             else {
                 p1 = *p2;
+                c = 1;
+                pf = p2;
                 p2 = p3;
             }
         }
@@ -686,11 +774,21 @@ void LLRegion::Optimize()
             continue;
         }
 
+        // Round coordinates to avoid numerical errors in region computations
+        const double eps = 6e-6;  // about 1cm on earth's surface at equator
+        for(poly_contour::iterator j = i->begin(); j != i->end(); j++) {
+            //j->x -= fmod(j->x, 1e-8);
+            j->x = round(j->x/eps)*eps;
+            j->y = round(j->y/eps)*eps;
+        }
+
+#if 0
         // round toward 180 and -180 as this is where adjusted longitudes
         // are split, and so zero contours can get eliminated by the next step
         for(poly_contour::iterator j = i->begin(); j != i->end(); j++)
             if(fabs(j->x - 180) < 2e-4) j->x = 180;
             else if(fabs(j->x + 180) < 2e-4) j->x = -180;
+#endif
 
         // eliminiate parallel segments
         contour_pt l = *i->rbegin();

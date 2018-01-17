@@ -7929,7 +7929,7 @@ PI_S57Obj::~PI_S57Obj()
         if( geoPtz ) free( geoPtz );
         if( geoPtMulti ) free( geoPtMulti );
 
-        if( pPolyTessGeo ) delete (PolyTessGeo*)pPolyTessGeo;
+        delete (PolyTessGeo*)pPolyTessGeo;
         
 //        if(S52_Context) delete (S52PLIB_Context *)S52_Context;
         
@@ -8931,7 +8931,6 @@ S57Obj::~S57Obj()
             #endif
             delete pPolyTessGeo;
         }
-        
         //if( pPolyTrapGeo ) delete pPolyTrapGeo;
         
         if( FText ) delete FText;
@@ -9518,17 +9517,13 @@ Extended_Geometry *eSENCChart::buildExtendedGeom( S57Obj *obj )
 
 WX_DEFINE_LIST(ListOfS57ObjRegion);
 
-static LLRegion *S57Obj2LLRegion(S57Obj *obj)
+LLRegion *eSENCChart::S57Obj2LLRegion(S57Obj *obj)
 {
     //     if(rzRules->obj->Index != 7574)
     //         return 0;
     
     // catch cm93 and legacy PlugIns (e.g.s63_pi)
     LLRegion *region = new LLRegion();
-    if( obj->m_n_lsindex  && !obj->m_ls_list) {
-        printf("legacy\n");
-        return region;
-    }
     eSENCChart *ch_s57;
 
     ch_s57 = dynamic_cast<eSENCChart*>( obj->m_chart_context->chart );
@@ -9539,176 +9534,84 @@ static LLRegion *S57Obj2LLRegion(S57Obj *obj)
     
     //double LOD = 2.0 / vp->view_scale_ppm;              // empirical value, by experiment
     double LOD = 0.; //wxMin(LOD, 10.0);
-    
-    if( !obj->m_n_lsindex ) {
+    if( !obj->pPolyTessGeo ) {
       printf("tcho\n");
       return region;
     }
-        
-    // Calculate the size of a work buffer
-    int max_points = 0;
-    if( obj->m_n_edge_max_points > 0 ) 
-        max_points = obj->m_n_edge_max_points;
-    else{
-        line_segment_element *lsa = obj->m_ls_list;
-        
-        while(lsa){
-            if( (lsa->ls_type == TYPE_EE) || (lsa->ls_type == TYPE_EE_REV) )
-                max_points += lsa->pedge->nCount;
-            else
-                max_points += 2;
-            
-            lsa = lsa->next;
-        }
+    
+    if(!obj->pPolyTessGeo->m_pxgeom) {
+        obj->pPolyTessGeo->m_pxgeom = ch_s57->buildExtendedGeom( obj );
     }
-    
+
+    if( !obj->pPolyTessGeo->m_pxgeom) {
+        printf("oops\n");
+        return region;
+    }
+
+    Extended_Geometry *xG = obj->pPolyTessGeo->m_pxgeom;
+//      Get total number of contours
+    int ncnt  = xG->n_contours;
+
+//      Allocate cntr array
+    int *cntr = (int *)malloc(ncnt * sizeof(int));
+
+//      Get total number of points(vertices)
+    int npta  = xG->contour_array[0];
+    cntr[0] = npta;
+    npta += 2;                            // fluff
+
+    for( int iir=0 ; iir < ncnt-1 ; iir++)
+    {
+            int nptr = xG->contour_array[iir+1];
+            cntr[iir+1] = nptr;
+
+            npta += nptr + 2;             // fluff
+    }
+
     //  Allocate some storage for converted points
-    double *pdp = (double *)malloc( 2 * ( max_points ) * sizeof(double) ); 
-    
-    unsigned char *vbo_point = (unsigned char *)obj->m_chart_context->chart->GetLineVertexBuffer();
-    line_segment_element *ls = obj->m_ls_list;
+    double *pdp = (double *)malloc( 2 * ( npta ) * sizeof(double) ); 
+
+    wxPoint2DDouble *pp = xG->vertex_array;
     
     unsigned int index = 0;
     unsigned int idouble = 0;
     int nls = 0;
     wxPoint2DDouble lp;
-    float *ppt;
-    
-    int direction = 1;
-    int ndraw = 0;
-    while(ls){
-        if( 1 /*ls->priority == priority_current */ ) {  
-            //transcribe the segment in the proper order into the output buffer
-            int nPoints;
-            int idir = 1;
-            // fetch the first point
-            if( (ls->ls_type == TYPE_EE) || (ls->ls_type == TYPE_EE_REV) ){
-                ppt = (float *)(vbo_point + ls->pedge->vbo_offset);
-                nPoints = ls->pedge->nCount;
-                if(ls->ls_type == TYPE_EE_REV)
-                    idir = -1;
-            }
-            else{
-                ppt = (float *)(vbo_point + ls->pcs->vbo_offset);
-                nPoints = 2;
-            }
-            
-            int vbo_index = 0;
-            int vbo_inc = 2;
-            if(idir == -1){
-                vbo_index = (nPoints-1) * 2;
-                vbo_inc = -2;
-            }
-            for(int ip=0 ; ip < nPoints ; ip++){
-                wxPoint2DDouble r;
-                fromSM_Plugin( /*east */ ppt[vbo_index], /* north */ ppt[vbo_index +1], ref_lat, ref_lon, &r.m_y, &r.m_x );
+//    Exterior Ring
+    int npte = xG->contour_array[0];
+    cntr[0] = npte;
+      double x0, y0, x, y;
 
-                if( (r.m_x != lp.m_x) || (r.m_y != lp.m_y) ){
-#if 0
-                    pdp[idouble++] = r.m_x;
-                    pdp[idouble++] = r.m_y;
-#else
-                    pdp[idouble++] = r.m_y;
-                    pdp[idouble++] = r.m_x;
-#endif                    
-                    nls++;
-                }
-                else{               // sKipping point
-                }
-                
-                lp = r;
-                vbo_index += vbo_inc;
-            }            
-        }  // priority
-        
-        // inspect the next segment to see if it can be connected, or if the chain breaks
-        int idir = 1;
-        if(ls->next){
-            
-            int nPoints_next;
-            line_segment_element *lsn = ls->next;
-            // fetch the first point
-            if( (lsn->ls_type == TYPE_EE) || (lsn->ls_type == TYPE_EE_REV) ){
-                ppt = (float *)(vbo_point + lsn->pedge->vbo_offset);
-                nPoints_next = lsn->pedge->nCount;
-                if(lsn->ls_type == TYPE_EE_REV)
-                    idir = -1;
-                
-            }
-            else{
-                ppt = (float *)(vbo_point + lsn->pcs->vbo_offset);
-                nPoints_next = 2;
-            }
-            
-            wxPoint2DDouble ptest;
-            if(idir == 1) {
-                // GetPointPixSingle( rzRules, ppt[1], ppt[0], &ptest, vp );
-                fromSM_Plugin( /*east */ ppt[0], /* north */ ppt[1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
-            }
-            else{
-            // fetch the last point
-                int index_last_next = (nPoints_next-1) * 2;
-                // GetPointPixSingle( rzRules, ppt[index_last_next +1], ppt[index_last_next], &ptest, vp );
-                fromSM_Plugin( ppt[index_last_next], ppt[index_last_next+1], ref_lat, ref_lon, &ptest.m_y, &ptest.m_x );
-            }
-            
-            // try to match the correct point in this segment with the last point in the previous segment
+      x0 = pp[npte-1].m_x;
+      y0 = pp[npte-1].m_y;
 
-            if(lp != ptest)         // not connectable?
+      for(int ip = 0 ; ip < npte ; ip++)
+      {
+            int pidx;
+            pidx = ip;
+
+            x = pp[pidx].m_x;
+            y = pp[pidx].m_y;
+
+
+            if((fabs(x-x0) > EQUAL_EPS) || (fabs(y-y0) > EQUAL_EPS))
             {
-                if(nls >= 3){
-                    #if 0
-                    wxPoint2DDouble *pReduced = 0;
-                    int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
-                    if (nPointReduced >= 3) {
-                        double *to = new double[nPointReduced *2];
-                        for (int v = 0; v < nPointReduced*2; v +=2) {
-                           to[v]    = pReduced[v/2].m_y;
-                           to[v +1] = pReduced[v/2].m_x;
-                        }
-                        region->Union(LLRegion(nPointReduced, to));
-                        delete [] to;
-                    }
-                    free(pReduced);
-                    #else
-                        region->Union(LLRegion(nls, pdp));
-                    #endif
-                    ndraw++;
-                }
-                
-                nls = 0;
-                index = 0;
-                idouble = 0;
-                lp = wxPoint2DDouble(0,0);
-                direction = 1;
+                wxPoint2DDouble r;
+                fromSM_Plugin( /*east */ x, /* north */ y, ref_lat, ref_lon, &r.m_y, &r.m_x );
+                nls++;
+                pdp[idouble++] = r.m_y;
+                pdp[idouble++] = r.m_x;
             }
-        }
-        else{
-            // no more segments, so render what is available
-            if(nls >= 3){
-                #if 0
-                wxPoint2DDouble *pReduced = 0;
-                int nPointReduced = ps52plib->reduceLOD( LOD, nls, pdp, &pReduced);
-                if (nPointReduced >= 3) {
-                    double *to = new double[nPointReduced *2];
-                    for (int v = 0; v < nPointReduced*2; v +=2) {
-                           to[v]    = pReduced[v/2].m_y;
-                           to[v +1] = pReduced[v/2].m_x;
-                    }
-                    region->Union(LLRegion(nPointReduced, to));
-                    delete [] to;
-                }
-                free(pReduced);
-                #else
-                    region->Union(LLRegion(nls, pdp));
-                #endif
-            }
-        }
-        
-        ls = ls->next;
-    }
+            else
+                  cntr[0]--;
+
+            x0 = x;
+            y0 = y;
+      }
+      region->Union(LLRegion(nls, pdp));
     
     free(pdp);
+    free(cntr);
     return region;
 }
 
@@ -9968,8 +9871,8 @@ printf("|");
         }
     }
     if (!land->Empty()) {
-        land->Reduce2(0.001);
-        sea->Reduce2(0.001);
+        land->Reduce2(0.0005);
+        sea->Reduce2(0.0005);
         land->Union(*sea);
         S57ObjRegion *l =  new S57ObjRegion(land_obj, land) ;
         pobj_list->Append( l );
@@ -9977,7 +9880,7 @@ printf("|");
     }
     else {
         delete land;
-        sea->Reduce2(0.001);
+        sea->Reduce2(0.0005);
         if (!sea->Empty()) {
             S57ObjRegion *l =  new S57ObjRegion(sea_obj, sea) ;
             pobj_list->Append( l );
