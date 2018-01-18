@@ -3279,7 +3279,7 @@ void s57chart::GetPointPix( ObjRazRules *rzRules, float north, float east, wxPoi
 */
 #endif
 
-LLRegion *S57Obj2LLRegion(S57Obj *obj)
+LLRegion *s57chart::S57Obj2LLRegion(S57Obj *obj)
 {
     //     if(rzRules->obj->Index != 7574)
     //         return 0;
