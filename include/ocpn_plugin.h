@@ -1238,6 +1238,9 @@ extern DECL_EXP wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily fa
                     const wxString &facename = wxEmptyString,
                     wxFontEncoding encoding = wxFONTENCODING_DEFAULT );
 
+extern DECL_EXP int PlugInGetMinAvailableGshhgQuality();
+extern DECL_EXP int PlugInGetMaxAvailableGshhgQuality();
+
 // API 1.15 Extra objects handling. 
 // chart file vfs plugin.
 

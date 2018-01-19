@@ -6436,6 +6436,9 @@ wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily family,
     return FontMgr::Get().FindOrCreateFont(point_size, family, style, weight, underline, facename, encoding);
 }
 
+int PluginGetMinAvailableGshhgQuality() { return cc1->GetMinAvailableGshhgQuality(); }
+int PluginGetMaxAvailableGshhgQuality() { return cc1->GetMaxAvailableGshhgQuality(); }
+
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(ListOfPI_ChartObj);
 static PI_ChartObj *CreatePluginChartObject(S57ObjRegion *pObjRegion )

@@ -52,13 +52,17 @@
 #include <wx/tokenzr.h>
 #include <wx/fileconf.h>
 
-
 extern float g_GLMinCartographicLineWidth;
 extern float g_GLMinSymbolLineWidth;
 extern double  g_overzoom_emphasis_base;
 extern bool    g_oz_vector_scale;
 extern float g_ChartScaleFactorExp;
 extern int g_chart_zoom_modifier_vector;
+
+#ifdef ocpnUSE_GL
+#include "glChartCanvas.h"
+extern ocpnGLOptions g_GLOptions;
+#endif
 
 float g_scaminScale;
 
@@ -393,8 +397,10 @@ s52plib::s52plib( const wxString& PLib, bool b_forceLegacy )
     m_bShowLdisText = true;
     m_bExtendLightSectors = true;
 
+    // Set a few initial states
+    AddObjNoshow( "M_QUAL" );
     m_lightsOff = false;
-    m_anchorOn = false;
+    m_anchorOn = true;
     m_qualityOfDataOn = false;
 
     GenerateStateHash();
@@ -591,15 +597,7 @@ bool s52plib::GetAnchorOn()
     OBJLElement *pOLE = NULL;
         
     if(  MARINERS_STANDARD == GetDisplayCategory()){
-            // Need to loop once for SBDARE, which is our "master", then for
-            // other categories, since order is unknown?
-            for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
-                OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
-                if( !strncmp( pOLE->OBJLName, "SBDARE", 6 ) ) {
-                    old_vis = pOLE->nViz;
-                    break;
-                }
-            }
+        old_vis = m_anchorOn;
     }
     else if(OTHER == GetDisplayCategory())
         old_vis = true;
@@ -3446,7 +3444,7 @@ int s52plib::RenderGLLS( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
     
 #else    
     glLineWidth(lineWidth);
-    if(lineWidth > 4.0){
+    if(lineWidth > 4.0 && g_GLOptions.m_GLLineSmoothing){
         glEnable( GL_LINE_SMOOTH );
         glEnable( GL_BLEND );
     }
@@ -3659,7 +3657,7 @@ int s52plib::RenderLS( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
             else
                 glDisable( GL_LINE_STIPPLE );
 #endif
-            if(w >= 2){    
+            if(w >= 2 && g_GLOptions.m_GLLineSmoothing){    
                 glEnable( GL_LINE_SMOOTH );
                 glEnable( GL_BLEND );
             }
@@ -3864,7 +3862,7 @@ int s52plib::RenderLSLegacy( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
         else
             glDisable( GL_LINE_STIPPLE );
 #endif
-        if(w >= 2){    
+        if(w >= 2 && g_GLOptions.m_GLLineSmoothing){
             glEnable( GL_LINE_SMOOTH );
             glEnable( GL_BLEND );
         }
@@ -4909,8 +4907,11 @@ next_seg_dc:
                     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glEnable (GL_BLEND);
                     
-                    glEnable (GL_LINE_SMOOTH);
-                    glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
+                    if( g_GLOptions.m_GLLineSmoothing )
+                    {
+                        glEnable (GL_LINE_SMOOTH);
+                        glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
+                    }
 #endif
                     {
                         glBegin( GL_LINES );
@@ -4946,8 +4947,10 @@ next_seg_dc:
                     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glEnable (GL_BLEND);
 
-                    glEnable (GL_LINE_SMOOTH);
-                    glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
+                    if( g_GLOptions.m_GLLineSmoothing ) {
+                        glEnable (GL_LINE_SMOOTH);
+                        glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
+                    }
 
 #endif
                     {
@@ -5499,7 +5502,8 @@ int s52plib::RenderCARC_VBO( ObjRazRules *rzRules, Rules *rules, ViewPort *vp )
 
 #ifndef __OCPN__ANDROID__
         glEnable( GL_BLEND );
-        glEnable( GL_LINE_SMOOTH );
+        if( g_GLOptions.m_GLLineSmoothing )
+            glEnable( GL_LINE_SMOOTH );
 #endif        
         glEnableClientState(GL_VERTEX_ARRAY);             // activate vertex coords array
 
@@ -8994,40 +8998,35 @@ void s52plib::PrepareForRender()
             if(!bshow_lights)                     // On, going off
                 AddObjNoshow("LIGHTS");
             else{                                   // Off, going on
-                if(pOLE)
-                    pOLE->nViz = 1;
                 RemoveObjNoshow("LIGHTS");
             }
-            
-            // Handle Anchor area toggle
-            bool bAnchor = m_anchorOn;
+
             
             const char * categories[] = { "ACHBRT", "ACHARE", "CBLSUB", "PIPARE", "PIPSOL", "TUNNEL", "SBDARE" };
             unsigned int num = sizeof(categories) / sizeof(categories[0]);
             
-            if(!bAnchor){
-                for( unsigned int c = 0; c < num; c++ ) {
-                    AddObjNoshow(categories[c]);
+            // Handle Anchor area toggle
+            if( (m_nDisplayCategory == OTHER) || (m_nDisplayCategory == MARINERS_STANDARD) ){
+                bool bAnchor = m_anchorOn;
+                
+                
+                if(!bAnchor){
+                    for( unsigned int c = 0; c < num; c++ ) {
+                        AddObjNoshow(categories[c]);
+                    }
+                }
+                else{
+                    for( unsigned int c = 0; c < num; c++ ) {
+                        RemoveObjNoshow(categories[c]);
+                    }
                 }
             }
-            else{
+            else{                               // if not category OTHER, then anchor-related features are always shown.
                 for( unsigned int c = 0; c < num; c++ ) {
                     RemoveObjNoshow(categories[c]);
                 }
-                
-                unsigned int cnt = 0;
-                for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
-                    OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
-                    for( unsigned int c = 0; c < num; c++ ) {
-                        if( !strncmp( pOLE->OBJLName, categories[c], 6 ) ) {
-                            pOLE->nViz = 1;         // force on
-                            cnt++;
-                            break;
-                        }
-                    }
-                    if( cnt == num ) break;
-                }
             }
+                
             // Handle Quality of data toggle
             bool bQuality = m_qualityOfDataOn;
             if(!bQuality){
@@ -9272,8 +9271,8 @@ void RenderFromHPGL::SetPen()
     }
 #ifdef ocpnUSE_GL
     if( renderToOpenGl ) {
-    //    glEnable( GL_LINE_SMOOTH );
-        glEnable( GL_POLYGON_SMOOTH );
+        if( g_GLOptions.m_GLPolygonSmoothing )
+            glEnable( GL_POLYGON_SMOOTH );
         
         glColor4ub( penColor.Red(), penColor.Green(), penColor.Blue(), transparency );
         int line_width = wxMax(g_GLMinSymbolLineWidth, (float) penWidth * 0.7);
@@ -9288,7 +9287,7 @@ void RenderFromHPGL::SetPen()
 #endif
         
 #ifndef __OCPN__ANDROID__
-        if(line_width >= 2)
+        if( line_width >= 2 && g_GLOptions.m_GLLineSmoothing )
             glEnable( GL_LINE_SMOOTH );
         else
             glDisable( GL_LINE_SMOOTH );

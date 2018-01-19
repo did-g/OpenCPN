@@ -85,6 +85,11 @@ millions of points.
 #include "navutil.h"
 #include "Select.h"
 
+#ifdef ocpnUSE_GL
+#include "glChartCanvas.h"
+extern ocpnGLOptions g_GLOptions;
+#endif
+
 extern ChartCanvas      *cc1;
 extern WayPointman *pWayPointMan;
 extern Routeman *g_pRouteMan;
@@ -651,7 +656,7 @@ void Track::Draw( ocpnDC& dc, ViewPort &VP, const LLBBox &box )
             radius = 0;
     }
 
-    if(dc.GetDC() || radius) {
+    if( dc.GetDC() || radius ) {
         dc.SetPen( *wxThePenList->FindOrCreatePen( col, width, style ) );
         dc.SetBrush( *wxTheBrushList->FindOrCreateBrush( col, wxBRUSHSTYLE_SOLID ) );
         for(std::list< std::list<wxPoint> >::iterator lines = pointlists.begin();
@@ -691,7 +696,8 @@ void Track::Draw( ocpnDC& dc, ViewPort &VP, const LLBBox &box )
     else { // opengl version
         glColor3ub(col.Red(), col.Green(), col.Blue());
         glLineWidth( wxMax( g_GLMinSymbolLineWidth, width ) );
-        glEnable( GL_LINE_SMOOTH );
+        if( g_GLOptions.m_GLLineSmoothing )
+            glEnable( GL_LINE_SMOOTH );
         glEnable( GL_BLEND );
         
         int size = 0;
