@@ -44,7 +44,6 @@ extern BoundaryList     *g_pBoundaryList;
 extern EBLList          *g_pEBLList;
 extern GZList           *g_pGZList;
 extern PILList          *g_pPILList;
-extern ODPointList      *g_pODPointList;
 extern ODSelect         *g_pODSelect;
 pugi::xml_node          gpx_path_child;
 pugi::xml_node          gpx_path_root;
@@ -742,7 +741,7 @@ bool ODNavObjectChanges::CreateNavObjGPXPoints( void )
     
     if(!g_pODPointMan)
         return false;
-    
+    // XXX m_ODPointIsolated;
     wxODPointListNode *node = g_pODPointMan->GetODPointList()->GetFirst();
     
     ODPoint *pOP;

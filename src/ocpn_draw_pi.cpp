@@ -70,7 +70,7 @@
 #include "PILPropertiesDialogImpl.h"
 
 #include "chcanv.h"
-#include "Layer.h"
+#include "ODLayer.h"
 #include "OCPNPlatform.h"
 #include "pluginmanager.h"
 #include "geodesic.h"
@@ -140,7 +140,6 @@ EBLList                 *g_pEBLList;
 DRList                  *g_pDRList;
 GZList                  *g_pGZList;
 PILList                 *g_pPILList;
-ODPointList             *g_pODPointList;
 ChartCanvas             *ocpncc1;
 ODPath                  *g_PathToEdit;
 int                     g_PILToEdit;
@@ -281,13 +280,10 @@ int             g_LayerIdx;
 bool            g_bShowLayers;
 wxString        g_VisibleLayers;
 wxString        g_InvisibleLayers;
-LayerList       *pLayerList;
+ODLayerList     *g_pLayerList;
 int             g_navobjbackups;
 int             g_EdgePanSensitivity;
 int             g_InitialEdgePanSensitivity;
-
-ODPoint       *pAnchorWatchPoint1;
-ODPoint       *pAnchorWatchPoint2;
 
 IDX_entry       *gpIDX;
 
@@ -474,7 +470,6 @@ int ocpn_draw_pi::Init(void)
     
     g_pODJSON = new ODJSON;
     g_pODAPI = new ODAPI;
-    g_pODPointList = new ODPointList;
     g_pBoundaryList = new BoundaryList;
     g_pEBLList = new EBLList;
     g_pDRList = new DRList;
@@ -482,7 +477,7 @@ int ocpn_draw_pi::Init(void)
     g_pPILList = new PILList;
     g_pPathList = new PathList;
     //    Layers
-    pLayerList = new LayerList;
+    g_pLayerList = new ODLayerList;
     
     if(m_bLOGShowIcon) {
 #ifdef ODraw_USE_SVG
@@ -2110,7 +2105,7 @@ bool ocpn_draw_pi::MouseEventHook( wxMouseEvent &event )
             FindSelectedObject();
 
             if( 0 != m_seltype ) {
-                if(m_pSelectedPath) {
+                if(m_pSelectedPath && !m_pSelectedPath->m_bIsInLayer) {
                     m_pSelectedBoundary = NULL;
                     m_pSelectedEBL = NULL;
                     m_pSelectedDR = NULL;
@@ -2165,7 +2160,7 @@ bool ocpn_draw_pi::MouseEventHook( wxMouseEvent &event )
                         m_PathMove_cursor_start_lat = m_cursor_lat;
                         m_PathMove_cursor_start_lon = m_cursor_lon;
                     }
-                } else if(m_pFoundODPoint) {
+                } else if(m_pFoundODPoint && !m_pFoundODPoint->m_bIsInLayer) {
                     m_iEditMode = ID_ODPOINT_MENU_MOVE;
                     m_pCurrentCursor = m_pCursorCross;
                     m_bODPointEditing = true;
@@ -2549,11 +2544,11 @@ void ocpn_draw_pi::FindSelectedObject()
             if( ( NULL == pFirstVizPoint ) && bop_viz ) pFirstVizPoint = pop;
             
             // Use path array to choose the appropriate path
-            // Give preference to any active path, otherwise select the first visible path in the array for this point
+            // Give preference to any visible active path, otherwise select the first visible path in the array for this point
             if( ppath_array ) {
                 for( unsigned int ip = 0; ip < ppath_array->GetCount(); ip++ ) {
                     ODPath *pp = (ODPath *) ppath_array->Item( ip );
-                    if( pp->m_bPathIsActive ) {
+                    if( pp->m_bPathIsActive && pp->IsVisible() ) {
                         pSelectedActivePath = pp;
                         pFoundActiveODPoint = pop;
                         break;
@@ -3130,7 +3125,8 @@ void ocpn_draw_pi::DrawAllODPointsInBBox( ODDC& dc, LLBBox& BltBBox )
     //        wxBoundingBox bbx;
     if(!g_pODPointMan)
         return;
-    
+    // XXX m_ODPointIsolated;
+
     wxODPointListNode *node = g_pODPointMan->GetODPointList()->GetFirst();
     while( node ) {
         ODPoint *pOP = node->GetData();
@@ -3205,6 +3201,8 @@ bool ocpn_draw_pi::CreatePointLeftClick( wxMouseEvent &event )
         
         g_pODConfig->AddNewODPoint( pMousePoint, -1 );    // use auto next num
         g_pODSelect->AddSelectableODPoint( rlat, rlon, pMousePoint );
+        if( g_pPathManagerDialog && g_pPathManagerDialog->IsShown() )
+            g_pPathManagerDialog->UpdateODPointsListCtrl();
         
     }
     
@@ -3268,6 +3266,8 @@ bool ocpn_draw_pi::CreateTextPointLeftClick( wxMouseEvent &event )
         
         g_pODConfig->AddNewODPoint( pMousePoint, -1 );    // use auto next num
         g_pODSelect->AddSelectableODPoint( rlat, rlon, pMousePoint );
+        if( g_pPathManagerDialog && g_pPathManagerDialog->IsShown() )
+            g_pPathManagerDialog->UpdateODPointsListCtrl();
         
     }
     
@@ -3491,6 +3491,9 @@ bool ocpn_draw_pi::CreateEBLLeftClick( wxMouseEvent &event )
     m_pMouseEBL->RebuildGUIDList();
     
     nEBL_State++;
+
+    if( g_pPathManagerDialog && g_pPathManagerDialog->IsShown() )
+        g_pPathManagerDialog->UpdatePathListCtrl();
     
     RequestRefresh( m_parent_window );
     
@@ -3610,6 +3613,8 @@ bool ocpn_draw_pi::CreateGZLeftClick( wxMouseEvent &event )
     if(m_pMouseGZ) {
         m_pMouseGZ->m_lastMousePointIndex = m_pMouseGZ->GetnPoints();
         m_pMouseGZ->RebuildGUIDList();
+        if( g_pPathManagerDialog && g_pPathManagerDialog->IsShown() )
+            g_pPathManagerDialog->UpdatePathListCtrl();
     }
 
     nGZ_State++;
@@ -3673,6 +3678,8 @@ bool ocpn_draw_pi::CreatePILLeftClick( wxMouseEvent &event )
     g_pODSelect->AddSelectablePathSegment( g_pfFix.Lat, g_pfFix.Lon, rlat, rlon, beginPoint, pMousePoint, m_pMousePIL );
 
     nPIL_State++;
+    if( g_pPathManagerDialog && g_pPathManagerDialog->IsShown() )
+        g_pPathManagerDialog->UpdatePathListCtrl();
 
     RequestRefresh( m_parent_window );
 
@@ -3795,7 +3802,8 @@ void ocpn_draw_pi::DrawAllPathsAndODPoints( PlugIn_ViewPort &pivp )
     }
         
     /* ODPoints not drawn as part of routes */
-    if( pivp.bValid && g_pODPointList ) {
+    if( pivp.bValid && g_pODPointMan ) {
+        // XXX m_ODPointIsolated;
         for(wxODPointListNode *pnode = g_pODPointMan->GetODPointList()->GetFirst(); pnode; pnode = pnode->GetNext() ) {
             ODPoint *pOP = pnode->GetData();
             if( ( pOP->m_lon >= pivp.lon_min && pOP->m_lon <= pivp.lon_max ) && ( pOP->m_lat >= pivp.lat_min && pOP->m_lat <= pivp.lat_max ) )

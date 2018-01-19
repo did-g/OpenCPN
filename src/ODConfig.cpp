@@ -26,7 +26,7 @@
 #include "ODConfig.h"
 #include "ODNavObjectChanges.h"
 #include "EBL.h"
-#include "Layer.h"
+#include "ODLayer.h"
 #include "PointMan.h"
 #include "pugixml.hpp"
 #include "wxWTranslateCatalog.h"
@@ -38,14 +38,18 @@
 #include <wx/stdpaths.h>
 #endif
 
+#ifdef OD_USE_CXX11
+#include <unordered_map>
+#else
 #include <map>
+#endif
 
 extern wxString         *g_pData;
 extern int              g_LayerIdx;
 extern bool             g_bShowLayers;
 extern wxString         g_VisibleLayers;
 extern wxString         g_InvisibleLayers;
-extern LayerList        *pLayerList;
+extern ODLayerList      *g_pLayerList;
 extern PointMan         *g_pODPointMan;  
 extern PathList         *g_pPathList;
 extern int              g_navobjbackups;
@@ -286,7 +290,7 @@ bool ODConfig::LoadLayers(wxString &path)
 {
     wxArrayString file_array;
     wxDir dir;
-    Layer *l;
+    ODLayer *l;
     dir.Open( path );
     if( dir.IsOpened() ) {
         wxString filename;
@@ -309,7 +313,7 @@ bool ODConfig::LoadLayers(wxString &path)
                 }
                 
                 if( file_array.GetCount() ){
-                    l = new Layer();
+                    l = new ODLayer();
                     l->m_LayerID = ++g_LayerIdx;
                     l->m_LayerFileName = file_array[0];
                     if( file_array.GetCount() <= 1 )
@@ -324,13 +328,13 @@ bool ODConfig::LoadLayers(wxString &path)
                     if( g_InvisibleLayers.Contains( l->m_LayerName ) )
                         bLayerViz = false;
                     
-                    l->m_bIsVisibleOnChart = bLayerViz;
+                    l->m_bIsVisible = bLayerViz;
                     
                     wxString laymsg;
                     laymsg.Printf( wxT("New layer %d: %s"), l->m_LayerID, l->m_LayerName.c_str() );
                     wxLogMessage( laymsg );
                     
-                    pLayerList->Insert( l );
+                    g_pLayerList->Insert( l );
                     
                     //  Load the entire file array as a single layer
                     
@@ -409,17 +413,24 @@ void ODConfig::ExportGPX( wxWindow* parent, bool bviz_only, bool blayer )
 
         //Points
         int ic = 0;
-        // build a temporary O(1)
-        std::map<ODPoint *, ODPoint *>   tp_hash;
+
         wxPathListNode *node1 = g_pPathList->GetFirst();
-        while( node1 ) {
+//#ifdef COMPILER_SUPPORTS_CXX11
+#ifdef OD_USE_CXX11
+        //build an unordered map list for high speed access
+        std::unordered_map<ODPoint *, ODPoint *> tp_hash;
+        tp_hash.reserve(count);
+#else        
+        std::map<ODPoint *, ODPoint *> tp_hash;
+#endif        
+        while (node1) {
             ODPath *pPath = node1->GetData();
             ODPointList *pODPointList = pPath->m_pODPointList;
             wxODPointListNode *node2 = pODPointList->GetFirst();
-            ODPoint *prp;
-            while( node2 ) {
-                prp = node2->GetData();
-                tp_hash[prp] = prp;
+            ODPoint *pop;
+            while (node2) {
+                pop = node2->GetData();
+                tp_hash[pop] = pop;
                 node2 = node2->GetNext();
             }
             node1 = node1->GetNext();
@@ -427,11 +438,16 @@ void ODConfig::ExportGPX( wxWindow* parent, bool bviz_only, bool blayer )
 
         wxODPointListNode *node = g_pODPointMan->GetODPointList()->GetFirst();
         ODPoint *pr;
+        time_t l_tStart = time(0);
+        time_t l_tCurrent;
         while( node ) {
             if(pprog && !(ic % 200)) {
+              l_tCurrent = time(0);
+              if(pprog && l_tStart != l_tCurrent) {
                 wxString msg;
                 msg.Printf(_T("%d/%d"), ic, count);
                 pprog->Update( ic, msg );
+              }
             }
             ic++;
 
@@ -445,8 +461,8 @@ void ODConfig::ExportGPX( wxWindow* parent, bool bviz_only, bool blayer )
             if( pr->m_bIsInLayer && !blayer )
                 b_add = false;
             if( b_add) {
-                if( pr->m_bKeepXPath || tp_hash.find( pr ) == tp_hash.end( ) )
-                    pgpx->AddGPXODPoint( pr);
+                if( pr->m_bKeepXPath || tp_hash.find( pr ) == tp_hash.end() )
+                        pgpx->AddGPXODPoint( pr);
             }
 
             node = node->GetNext();
@@ -484,7 +500,7 @@ void ODConfig::UI_ImportGPX( wxWindow* parent, bool islayer, wxString dirpath, b
 {
     int response = wxID_CANCEL;
     wxArrayString file_array;
-    Layer *l = NULL;
+    ODLayer *l = NULL;
 
     if( !islayer || dirpath.IsSameAs( _T("") ) ) {
         wxFileDialog openDialog( NULL, _( "Import GPX file" ), m_gpx_path, wxT ( "" ),
@@ -515,7 +531,7 @@ void ODConfig::UI_ImportGPX( wxWindow* parent, bool islayer, wxString dirpath, b
     if( response == wxID_OK ) {
 
         if( islayer ) {
-            l = new Layer();
+            l = new ODLayer();
             l->m_LayerID = ++g_LayerIdx;
             l->m_LayerFileName = file_array[0];
             if( file_array.GetCount() <= 1 ) wxFileName::SplitPath( file_array[0], NULL, NULL,
@@ -532,13 +548,13 @@ void ODConfig::UI_ImportGPX( wxWindow* parent, bool islayer, wxString dirpath, b
                 bLayerViz = true;
             if( g_InvisibleLayers.Contains( l->m_LayerName ) )
                 bLayerViz = false;
-            l->m_bIsVisibleOnChart = bLayerViz;
+            l->m_bIsVisible = bLayerViz;
 
             wxString laymsg;
             laymsg.Printf( _("New layer %d: %s"), l->m_LayerID, l->m_LayerName.c_str() );
             wxLogMessage( laymsg );
 
-            pLayerList->Insert( l );
+            g_pLayerList->Insert( l );
         }
 
         for( unsigned int i = 0; i < file_array.GetCount(); i++ ) {
@@ -550,7 +566,7 @@ void ODConfig::UI_ImportGPX( wxWindow* parent, bool islayer, wxString dirpath, b
                 pSet->load_file(path.fn_str());
 
                 if(islayer){
-                    l->m_NoOfItems += pSet->LoadAllGPXObjectsAsLayer(l->m_LayerID, l->m_bIsVisibleOnChart);
+                    l->m_NoOfItems += pSet->LoadAllGPXObjectsAsLayer(l->m_LayerID, l->m_bIsVisible);
                 }
                 else
                     pSet->LoadAllGPXObjects( true );    // Import with full vizibility of names and objects
