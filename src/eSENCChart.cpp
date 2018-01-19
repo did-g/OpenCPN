@@ -742,7 +742,6 @@ void eSENCChart::FreeObjectsAndRules()
 
 
 
-
 #define BUF_LEN_MAX 4000
 
 wxString eSENCChart::Get_eHDR_Name( const wxString& name000 )
@@ -9704,7 +9703,7 @@ ListOfS57ObjRegion *eSENCChart::GetHazards( const void *reg, ListOfS57ObjRegion 
                                if(expsou == 1 || depth_value < drval2 )
                                b_promote = true;
 #endif
-                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                               if(drval1 > safety_contour /*&& expsou != 1*/) {
                                    danger = true;
                                    break;
                                }
@@ -9740,11 +9739,13 @@ ListOfS57ObjRegion *eSENCChart::GetHazards( const void *reg, ListOfS57ObjRegion 
                        || !strncmp( obj->FeatureName, "DRGARE", 6 ) 
                        || !strncmp( obj->FeatureName, "DEPARE", 6 ) 
                        || !strncmp( obj->FeatureName, "UNSARE", 6 )
+                       || !strncmp( obj->FeatureName, "MARCUL", 6 ) 
                        || obj->m_bcategory_mutable
                       ))
                    continue;
 
                 if (   !strncmp( obj->FeatureName, "LNDARE", 6 ) ||
+                      !strncmp( obj->FeatureName, "MARCUL", 6 ) ||
                        !strncmp( obj->FeatureName, "UNSARE", 6 ) ) {                
                     LLRegion i(obj->BBObj);
                     i.Intersect(region);
