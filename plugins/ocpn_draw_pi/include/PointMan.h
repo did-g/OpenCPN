@@ -57,6 +57,7 @@ class wxFontEnumerator;
 class markicon_bitmap_list_type;
 class markicon_key_list_type;
 class markicon_description_list_type;
+#include <map>
 
 class PointMan
 {
@@ -110,6 +111,8 @@ private:
       double deg2rad(double degree) { return degree*(PI/180.0); };
       bool DistancePointLine( double pLon, double pLat, double StartLon, double StartLat, double EndLon, double EndLat, double Distance );
 
+      std::map<ODPoint *, ODPoint *> m_ODPointIsolated;
+
       ODPointList    *m_pODPointList;
       wxImageList       *pmarkicon_image_list;        // Current wxImageList, updated on colorscheme change
       int               m_markicon_image_list_base_count;
@@ -118,6 +121,7 @@ private:
       int         m_nGUID;
       
       wxArrayString     m_asFacenames;
+
 };
 
 #endif // POINTMAN_H

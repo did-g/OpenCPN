@@ -52,8 +52,6 @@
 
 //extern ocpnStyle::StyleManager* g_ODStyleManager;
 extern wxString         *g_PrivateDataDir;
-extern ODPoint          *pAnchorWatchPoint1;
-extern ODPoint          *pAnchorWatchPoint2;
 extern ODConfig         *g_pODConfig;
 extern PathMan          *g_pPathMan;
 extern ODSelect         *g_pODSelect;
@@ -744,7 +742,7 @@ bool PointMan::SharedODPointsExist()
     wxODPointListNode *node = m_pODPointList->GetFirst();
     while( node ) {
         ODPoint *prp = node->GetData();
-        if (prp->m_bKeepXPath && ( prp->m_bIsInPath || prp == pAnchorWatchPoint1 || prp == pAnchorWatchPoint2))
+        if (prp->m_bKeepXPath && prp->m_bIsInPath )
             return true;
         node = node->GetNext();
     }
@@ -760,7 +758,7 @@ void PointMan::DeleteAllODPoints( bool b_delete_used )
         // if argument is false, then only delete non-path ODPoints
         if( !prp->m_bIsInLayer && ( prp->GetIconName() != _T("mob") )
             && ( ( b_delete_used && prp->m_bKeepXPath )
-                        || ( ( !prp->m_bIsInPath ) && !( prp == pAnchorWatchPoint1 ) && !( prp == pAnchorWatchPoint2 ) ) ) ) {
+                        ||  !prp->m_bIsInPath   ) ) {
             DestroyODPoint(prp);
             if(prp->m_sTypeString == wxT("ODPoint"))
                 delete prp;
@@ -813,9 +811,6 @@ void PointMan::DestroyODPoint( ODPoint *pRp, bool b_update_changeset )
         
         g_pODSelect->DeleteSelectableODPoint( pRp );
 
-        //    The ODPoint might be currently in use as an anchor watch point
-        if( pRp == pAnchorWatchPoint1 ) pAnchorWatchPoint1 = NULL;
-        if( pRp == pAnchorWatchPoint2 ) pAnchorWatchPoint2 = NULL;
 
         RemoveODPoint( pRp);
 
@@ -867,20 +862,25 @@ wxString PointMan::FindLineCrossingBoundary( double StartLon, double StartLat, d
 {
     // search boundary point
     wxODPointListNode *node = GetODPointList()->GetFirst();
+    // XXX m_ODPointIsolated;
+
     while( node ) {
-        BoundaryPoint *op = dynamic_cast<BoundaryPoint *>(node->GetData());
-        if( op && op->IsListed() ) {
-            if( op->m_bIsInPath ) {
-                if( !op->m_bKeepXPath ) {
-                    node = node->GetNext();
-                    continue;
-                }
+        ODPoint *od = static_cast<ODPoint *>(node->GetData());
+        if( od->IsListed() ) {
+            if( od->m_bIsInPath && !od->m_bKeepXPath ) {
+                node = node->GetNext();
+                continue;
             }
             // if there's no ring there's nothing to do
-            if (!op->GetShowODPointRangeRings() || 
-                op->GetODPointRangeRingsNumber() == 0 ||
-                op->GetODPointRangeRingsStep() == 0.f)
+            if (!od->GetShowODPointRangeRings() || 
+                od->GetODPointRangeRingsNumber() == 0 ||
+                od->GetODPointRangeRingsStep() == 0.f)
             {
+                node = node->GetNext();
+                continue;
+            }
+            BoundaryPoint *op = dynamic_cast<BoundaryPoint *>(node->GetData());
+            if (!op) {
                 node = node->GetNext();
                 continue;
             }

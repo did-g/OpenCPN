@@ -21,8 +21,8 @@ SET(CPACK_PACKAGE_CONTACT "Jon Gough")
 
 SET(VERSION_MAJOR "1")
 SET(VERSION_MINOR "4")
-SET(VERSION_PATCH "49")
-SET(VERSION_DATE "08/01/2018")
+SET(VERSION_PATCH "59")
+SET(VERSION_DATE "19/01/2018")
 
 SET(BUNDLE_DATA FALSE)
 SET( CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build" )
@@ -31,6 +31,32 @@ SET_PROPERTY( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS None Debug Release RelWith
 MESSAGE (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
+
+OPTION(OD_CXX11 "Use c++11" OFF)
+
+IF ( OD_CXX11 )
+    MESSAGE(STATUS "Attempting to use c++11")
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+    CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+    if(COMPILER_SUPPORTS_CXX11)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+        SET(OD_USE_CXX11 ON)
+    elseif(COMPILER_SUPPORTS_CXX0X)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+        SET(OD_USE_CXX11 ON)
+    else()
+        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+        SET(OD_USE_CXX11 OFF)
+    endif()
+ELSE()
+    SET(OD_USE_CXX11 OFF)
+ENDIF()
+
+IF(OD_USE_CXX11)
+    MESSAGE(STATUS "Allowing use of c++11")
+    ADD_DEFINITIONS(-DOD_USE_CXX11)
+ENDIF()
 
 MESSAGE(STATUS "CMAKE version: ${CMAKE_VERSION}")
 if ( CMAKE_VERSION VERSION_GREATER 3.4 )
@@ -94,6 +120,7 @@ SET(SRCS
     src/ODicons.cpp
     src/ODIconCombo.cpp
     src/ODJSON.cpp
+    src/ODLayer.cpp
     src/ODMarkIcon.cpp
     src/ocpn_draw_pi.cpp
     src/ODNavObjectChanges.cpp
@@ -145,6 +172,7 @@ SET(HDRS
     include/ODDRDialogDef.h
     include/ODDRDialogImpl.h
     include/ODEventHandler.h
+    include/ODLayer.h
     include/ODMarkIcon.h
     include/ODNavObjectChanges.h
     include/ODNewODPointDialogDef.h
@@ -175,7 +203,6 @@ SET(OCPNSRC
     ocpnsrc/geodesic.cpp
     ocpnsrc/georef.cpp
     ocpnsrc/Hyperlink.cpp
-    ocpnsrc/Layer.cpp
     ocpnsrc/SelectItem.cpp
     ocpnsrc/wxJSON/jsonreader.cpp
     ocpnsrc/wxJSON/jsonval.cpp
@@ -213,7 +240,6 @@ SET(OCPNHDRS
     ocpninclude/Hyperlink.h
     ocpninclude/IDX_entry.h
     ocpninclude/LatLong.hpp
-    ocpninclude/Layer.h
     ocpninclude/LinkPropDlg.h
     ocpninclude/navutil.h
     ocpninclude/nmea0183.h

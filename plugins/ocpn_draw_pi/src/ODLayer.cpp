@@ -22,38 +22,32 @@
  ***************************************************************************
  */
 
-#ifndef __LAYER_H__
-#define __LAYER_H__
+#include "ODLayer.h"
 
-#include <wx/string.h>
-#include <wx/list.h>
-#include <wx/datetime.h>
+#include <wx/listimpl.cpp>
+WX_DEFINE_LIST(ODLayerList);
 
-class Layer
+extern bool g_bShowLayers;
+extern ODLayerList *g_pLayerList;
+
+ODLayer::ODLayer( void )
 {
-public:
-      Layer(void);
-      ~Layer(void);
-      wxString CreatePropString(void) { return m_LayerFileName; }
-      bool IsVisibleOnChart() { return m_bIsVisibleOnChart; }
-      void SetVisibleOnChart(bool viz = true){ m_bIsVisibleOnChart = viz; }
-      bool IsVisibleOnListing() { return m_bIsVisibleOnListing; }
-      void SetVisibleOnListing(bool viz = true){ m_bIsVisibleOnListing = viz; }
-      bool HasVisibleNames() { return m_bHasVisibleNames; }
-      void SetVisibleNames(bool viz = true){ m_bHasVisibleNames = viz; }
+    m_bIsVisibleOnListing = false;
+    m_bIsVisible = g_bShowLayers;
+    m_bHasVisibleNames = true;
+    m_NoOfItems = 0;
 
-      bool m_bIsVisibleOnChart;
-      bool m_bIsVisibleOnListing;
-      bool m_bHasVisibleNames;
-      long m_NoOfItems;
-      int m_LayerID;
+    m_LayerName = _T("");
+    m_LayerFileName = _T("");
+    m_LayerDescription = _T("");
+    m_CreateTime = wxDateTime::Now();
+}
 
-      wxString          m_LayerName;
-      wxString          m_LayerFileName;
-      wxString          m_LayerDescription;
-      wxDateTime        m_CreateTime;
-};
+ODLayer::~ODLayer( void )
+{
+//  Remove this layer from the global layer list
+    if( NULL != g_pLayerList ) g_pLayerList->DeleteObject( this );
 
-WX_DECLARE_LIST(Layer, LayerList);// establish class as list member
+}
 
-#endif
+

@@ -67,6 +67,7 @@ class ODEventHandler : public wxEvtHandler
         void SetPoint ( TextPoint *point );
         void SetPIL( int iPIL );
         void SetCanvas( ChartCanvas *canvas );
+        void SetWindow( wxWindow *window );
         void SetLatLon( double lat, double lon );
         
     protected:
@@ -77,6 +78,7 @@ class ODEventHandler : public wxEvtHandler
 
         ocpn_draw_pi    *m_parent;
         ChartCanvas     *m_parentcanvas;
+        wxWindow        *m_parent_window;
         ODPath          *m_pSelectedPath;
         ODPoint         *m_pFoundODPoint;
         TextPoint       *m_pFoundTextPoint;
