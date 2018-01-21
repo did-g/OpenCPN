@@ -3557,7 +3557,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                                if(expsou == 1 || depth_value < drval2 )
                                b_promote = true;
 #endif
-                               if(drval1 > safety_contour /*&& expsou != 1*/) {
+                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
                                    danger = true;
                                    break;
                                }
