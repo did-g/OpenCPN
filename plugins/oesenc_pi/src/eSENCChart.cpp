@@ -9703,7 +9703,8 @@ ListOfS57ObjRegion *eSENCChart::GetHazards( const void *reg, ListOfS57ObjRegion 
                                if(expsou == 1 || depth_value < drval2 )
                                b_promote = true;
 #endif
-                               if(drval1 > safety_contour /*&& expsou != 1*/) {
+                               if(drval1 >= safety_contour /*&& expsou != 1*/) {
+                                   // there's something but we are in safe water, flag it 
                                    danger = true;
                                    break;
                                }
