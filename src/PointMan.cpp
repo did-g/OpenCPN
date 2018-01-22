@@ -58,12 +58,15 @@ extern ODSelect         *g_pODSelect;
 extern ocpn_draw_pi     *g_ocpn_draw_pi;
 
 
+ODPointList             *g_pODPointCacheList;
+
 //--------------------------------------------------------------------------------
 //      PointMan   Implementation
 //--------------------------------------------------------------------------------
 
 PointMan::PointMan()
 {
+    m_CacheList = 0;
 
     m_pODPointList = new ODPointList;
 
@@ -83,6 +86,8 @@ PointMan::PointMan()
 
 PointMan::~PointMan()
 {
+    delete m_CacheList;
+
     //    Two step here, since the ODPoint dtor also touches the
     //    ODPoint list.
     //    Copy the master ODPoint list to a temporary list,
@@ -858,10 +863,43 @@ bool PointMan::DistancePointLine( double pLon, double pLat, double StartLon, dou
    return true;
 }
 
-wxString PointMan::FindLineCrossingBoundary( double StartLon, double StartLat, double EndLon, double EndLat, int type, int state )
+void PointMan::BuildCache()
+{
+    delete m_CacheList;
+    m_CacheList = 0;
+    wxODPointListNode *node = GetODPointList()->GetFirst();
+    if (!node)
+        return;
+
+    m_CacheList = new ODPointList;
+    for( ; node != 0; node = node->GetNext() ) {
+        ODPoint *od = static_cast<ODPoint *>(node->GetData());
+        if(!od || !od->IsListed())
+            continue;
+        if (od->m_bIsInPath && !od->m_bKeepXPath)
+            continue;
+        // if there's no ring there's nothing to do
+        if (!od->GetShowODPointRangeRings() || 
+            od->GetODPointRangeRingsNumber() == 0 ||
+            od->GetODPointRangeRingsStep() == 0.f)
+        {
+            continue;
+        }
+        BoundaryPoint *op = dynamic_cast<BoundaryPoint *>(node->GetData());
+        if (!op) 
+            continue;
+        m_CacheList->Append( op );
+    }
+    
+}
+
+wxString PointMan::FindLineCrossingBoundary( bool UseCache, double StartLon, double StartLat, double EndLon, double EndLat, int type, int state )
 {
     // search boundary point
     wxODPointListNode *node = GetODPointList()->GetFirst();
+    if (UseCache && m_CacheList != 0) 
+        node = m_CacheList->GetFirst();    
+
     // XXX m_ODPointIsolated;
 
     while( node ) {

@@ -27,7 +27,6 @@
 #include "Boundary.h"
 #include "ocpn_draw_pi.h"
 
-extern BoundaryList         *g_pBoundaryList;
 extern unsigned int         g_uiFillTransparency;
 extern int                  g_iInclusionBoundarySize;
 

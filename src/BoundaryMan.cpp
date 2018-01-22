@@ -41,6 +41,7 @@ extern PathList         *g_pPathList;
 extern BoundaryList     *g_pBoundaryList;
 extern PointMan         *g_pODPointMan;
 
+extern BoundaryList     *g_pBoundaryCacheList;
 
 
 wxString BoundaryMan::FindPointInBoundary( double lat, double lon, int type, int state )
@@ -437,7 +438,7 @@ bool BoundaryMan::FindPointInBoundaryPoint( wxString l_GUID, double lat, double 
     return bInPoly;
 }
 
-wxString BoundaryMan::FindLineCrossingBoundary( double StartLon, double StartLat, double EndLon, double EndLat, double *CrossingLon, double *CrossingLat, double *CrossingDist, int type, int state )
+wxString BoundaryMan::FindLineCrossingBoundary(bool UseCache, double StartLon, double StartLat, double EndLon, double EndLat, double *CrossingLon, double *CrossingLat, double *CrossingDist, int type, int state )
 {
     wxBoundaryListNode *boundary_node = g_pBoundaryList->GetFirst();
     Boundary *pboundary = NULL;
@@ -449,10 +450,17 @@ wxString BoundaryMan::FindLineCrossingBoundary( double StartLon, double StartLat
     RBBox.SetFromSegment(StartLat, StartLon, EndLat, EndLon);
 
     std::list<BOUNDARYCROSSING> BoundaryCrossingList;
+    if (UseCache && g_pBoundaryCacheList != 0) 
+        boundary_node = g_pBoundaryCacheList->GetFirst();    
     
     while( boundary_node ) {
         bool    l_bNext = false;
         pboundary = boundary_node->GetData();
+        if( !pboundary->IsListed() ) {
+            boundary_node = boundary_node->GetNext();
+            continue;
+        }
+
         switch (state) {
             case ID_PATH_STATE_ANY:
                 l_bNext = false;

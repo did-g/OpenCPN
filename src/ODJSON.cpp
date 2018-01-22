@@ -56,6 +56,8 @@ extern GZMan                *g_pGZMan;
 extern PointMan             *g_pODPointMan;
 extern BoundaryList         *g_pBoundaryList;
 
+extern BoundaryList         *g_pBoundaryCacheList;
+
 extern double               g_dVar;
 extern ODAPI                *g_pODAPI;
 
@@ -345,7 +347,7 @@ void ODJSON::ProcessMessage(wxString &message_id, wxString &message_body)
                 
                 if(l_sType == wxS("Request")) {
                     bool    l_bFoundBoundary = false;
-                    wxString l_sGUID = g_pBoundaryMan->FindLineCrossingBoundary( l_dStartLon, l_dStartLat, l_dEndLon, l_dEndLat, &l_dCrossingLon, &l_dCrossingLat, &l_dCrossingDist, l_BoundaryType, l_BoundaryState );
+                    wxString l_sGUID = g_pBoundaryMan->FindLineCrossingBoundary( false, l_dStartLon, l_dStartLat, l_dEndLon, l_dEndLat, &l_dCrossingLon, &l_dCrossingLat, &l_dCrossingDist, l_BoundaryType, l_BoundaryState );
                     if(l_sGUID.length() > 0) 
                         l_bFoundBoundary = true;
 
@@ -642,8 +644,27 @@ void ODJSON::ProcessMessage(wxString &message_id, wxString &message_body)
         decl.ToDouble(&decl_val);
 
         g_dVar = decl_val;
+
+    } else if(message_id == _T("OCPN_DRAW_PI_SET_CACHE")) {
+        if (g_pODPointMan) {
+            g_pODPointMan->BuildCache();
+            
+        }
+        g_pBoundaryCacheList = 0;
+        if (g_pBoundaryList) {
+            Boundary *pboundary;
+
+            g_pBoundaryCacheList = new BoundaryList;
+            wxBoundaryListNode *boundary_node = g_pBoundaryList->GetFirst();
+            while( boundary_node ) {
+                pboundary = boundary_node->GetData();
+                if( pboundary->IsListed() && pboundary->IsActive()) {
+                    g_pBoundaryCacheList->Append( pboundary );
+                }
+                boundary_node = boundary_node->GetNext();
+            }
+        }
     }
-    
     return;
 }
 

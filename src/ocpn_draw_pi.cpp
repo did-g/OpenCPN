@@ -148,6 +148,7 @@ SelectItem              *g_pRolloverPathSeg;
 SelectItem              *g_pRolloverPoint;
 PI_ColorScheme          g_global_color_scheme;
 
+BoundaryList            *g_pBoundaryCacheList;
 
 wxColour    g_colourActiveBoundaryLineColour;
 wxColour    g_colourInActiveBoundaryLineColour;

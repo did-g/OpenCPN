@@ -93,6 +93,7 @@ class PointMan
       bool AddODPoint(ODPoint *prp);
       bool RemoveODPoint(ODPoint *prp);
       ODPointList *GetODPointList(void) { return m_pODPointList; }
+      void BuildCache();
 
       void ProcessIcon(wxBitmap pimage, const wxString & key, const wxString & description);
       
@@ -101,7 +102,8 @@ class PointMan
 
       PI_ColorScheme    m_ColourScheme;
 
-      wxString FindLineCrossingBoundary( double StartLat, double StartLon, double EndLat, double EndLon, int type = ID_BOUNDARY_ANY, int state = ID_POINT_STATE_ANY );
+      wxString FindLineCrossingBoundary( bool useCache, double StartLat, double StartLon, double EndLat, double EndLon, 
+            int type = ID_BOUNDARY_ANY, int state = ID_POINT_STATE_ANY );
 
 protected:
 private:
@@ -114,6 +116,8 @@ private:
       std::map<ODPoint *, ODPoint *> m_ODPointIsolated;
 
       ODPointList    *m_pODPointList;
+      ODPointList    *m_CacheList;
+
       wxImageList       *pmarkicon_image_list;        // Current wxImageList, updated on colorscheme change
       int               m_markicon_image_list_base_count;
       wxArrayPtrVoid    *m_pIconArray;
