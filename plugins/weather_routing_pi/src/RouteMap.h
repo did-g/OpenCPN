@@ -250,7 +250,7 @@ struct RouteMapConfiguration {
     wxString Start, End;
     wxDateTime StartTime;
 
-    double dt; /* time in seconds between propagations */
+    double DeltaTime; /* time in seconds between propagations */
 
     Boat boat;
     wxString boatFileName;
