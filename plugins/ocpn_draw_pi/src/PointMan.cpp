@@ -893,36 +893,39 @@ void PointMan::BuildCache()
     
 }
 
-wxString PointMan::FindLineCrossingBoundary( bool UseCache, double StartLon, double StartLat, double EndLon, double EndLat, int type, int state )
+BoundaryPoint *PointMan::FindLineCrossingBoundary( bool UseCache, double StartLon, double StartLat, double EndLon, double EndLat, int type, int state )
 {
     // search boundary point
     wxODPointListNode *node = GetODPointList()->GetFirst();
     if (UseCache && m_CacheList != 0) 
-        node = m_CacheList->GetFirst();    
-
+        node = m_CacheList->GetFirst();
+    else
+        UseCache = false;
     // XXX m_ODPointIsolated;
 
     while( node ) {
         ODPoint *od = static_cast<ODPoint *>(node->GetData());
         if( od->IsListed() ) {
-            if( od->m_bIsInPath && !od->m_bKeepXPath ) {
-                node = node->GetNext();
-                continue;
-            }
-            // if there's no ring there's nothing to do
-            if (!od->GetShowODPointRangeRings() || 
-                od->GetODPointRangeRingsNumber() == 0 ||
-                od->GetODPointRangeRingsStep() == 0.f)
-            {
-                node = node->GetNext();
-                continue;
+            if ( !UseCache ) {
+                if( od->m_bIsInPath && !od->m_bKeepXPath ) {
+                    node = node->GetNext();
+                    continue;
+                }
+                // if there's no ring there's nothing to do
+                if (!od->GetShowODPointRangeRings() || 
+                    od->GetODPointRangeRingsNumber() == 0 ||
+                    od->GetODPointRangeRingsStep() == 0.f)
+                {
+                    node = node->GetNext();
+                    continue;
+                }
             }
             BoundaryPoint *op = dynamic_cast<BoundaryPoint *>(node->GetData());
             if (!op) {
                 node = node->GetNext();
                 continue;
             }
-            bool    l_bNext = false;
+            bool l_bNext = false;
             switch (type) {
                 case ID_BOUNDARY_ANY:
                     l_bNext = false;
@@ -941,11 +944,22 @@ wxString PointMan::FindLineCrossingBoundary( bool UseCache, double StartLon, dou
                double f = (op->m_iODPointRangeRingsStepUnits == 1)?1000.0:1852.31;
                double dst = op->GetODPointRangeRingsNumber() * op->GetODPointRangeRingsStep() * f;
                if (DistancePointLine( op->m_lon, op->m_lat, StartLon, StartLat, EndLon, EndLat, dst )) {
-                  return op->m_GUID;
+                  return op;
                }
             }
         }
         node = node->GetNext();
     }
+    return 0;
+}
+
+wxString PointMan::FindLineCrossingBoundary( double StartLon, double StartLat, double EndLon, double EndLat, int type, int state )
+{
+    BoundaryPoint *op;
+    wxString l_sGUID;
+    op = FindLineCrossingBoundary( false, StartLon, StartLat, EndLon, EndLat, type, state );
+    if ( op != 0)
+        return op->m_GUID;
     return _T("");
+    
 }

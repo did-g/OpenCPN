@@ -1959,6 +1959,7 @@ bool ocpn_draw_pi::CallPopupMenu(  )
                     m_pSelectedGZ = (GZ *)m_pSelectedPath;
                 else if(m_pSelectedPath->m_sTypeString == wxT("PIL"))
                     m_pSelectedPIL = (PIL *)m_pSelectedPath;
+                m_pSelectedPath->m_bPathPropertiesBlink = true;
             }
             g_ODEventHandler->SetCanvas( ocpncc1 );
             g_ODEventHandler->SetPath( m_pSelectedPath );
@@ -2243,6 +2244,9 @@ bool ocpn_draw_pi::MouseEventHook( wxMouseEvent &event )
                 } else if (m_pSelectedPIL) {
                     m_pSelectedPIL->UpdatePIL();
                 } else {
+                    if(m_pSelectedPath->m_sTypeString == wxT("Boundary")) {
+                       m_pSelectedPath->m_bPathPropertiesBlink = false;
+                    }
                     g_pODSelect->DeleteAllSelectablePathSegments( m_pSelectedPath );
                     g_pODSelect->DeleteAllSelectableODPoints( m_pSelectedPath );
                     g_pODSelect->AddAllSelectablePathSegments( m_pSelectedPath );
@@ -2619,6 +2623,7 @@ void ocpn_draw_pi::FindSelectedObject()
         }
         
         if( m_pSelectedPath ) {
+            m_pSelectedPath->m_bPathPropertiesBlink = true;
             if( NULL == m_pFoundODPoint ) m_pFoundODPoint =
                 (ODPoint *) pFindPathSeg->m_pData1;
             m_pFoundODPointSecond = (ODPoint *) pFindPathSeg->m_pData2;
