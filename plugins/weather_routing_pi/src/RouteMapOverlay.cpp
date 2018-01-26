@@ -44,7 +44,7 @@ RouteMapOverlayThread::RouteMapOverlayThread(RouteMapOverlay &routemapoverlay)
 
 void *RouteMapOverlayThread::Entry()
 {
-    while(!TestDestroy() && !m_RouteMapOverlay.Finished()) {
+    while(!TestDestroy() && !m_RouteMapOverlay.Finished())
         if(!m_RouteMapOverlay.Propagate())
             wxThread::Sleep(50);
         else {
@@ -52,7 +52,6 @@ void *RouteMapOverlayThread::Entry()
             m_RouteMapOverlay.UpdateDestination();
             wxThread::Sleep(5);
         }
-    }
 
 //    m_RouteMapOverlay.m_Thread = NULL;
     return 0;
@@ -983,10 +982,10 @@ std::list<PlotData> &RouteMapOverlay::GetPlotData(bool cursor_route)
 
             configuration.grib = (*it)->m_Grib;
             configuration.time = (*it)->time;
-
+            configuration.UsedDeltaTime = (*it)->delta;
             PlotData data;
 
-            double dt = configuration.DeltaTime;
+            double dt = configuration.UsedDeltaTime;
             data.time = (*it)->time;
 
             data.lat = pos->lat, data.lon = pos->lon;
@@ -1188,23 +1187,12 @@ void RouteMapOverlay::UpdateDestination()
             configuration.grib_is_data_deficient = isochron->m_Grib_is_data_deficient;
             
             configuration.time = isochron->time;
+            configuration.UsedDeltaTime = isochron->delta;
             (*it)->PropagateToEnd(configuration, mindt, endp, minH,
                                   mintacked, mindata_mask);
         }
-
-        if(1 && isinf(mindt)) {
-            /* can't reach destination, XXX check it's a boundary or inland error */
-            iit++; /* try from last one */
-            isochron = *iit;
-            for(IsoRouteList::iterator it = isochron->routes.begin(); it != isochron->routes.end(); ++it) {
-                configuration.grib = isochron->m_Grib;
-                configuration.grib_is_data_deficient = isochron->m_Grib_is_data_deficient;
-            
-                configuration.time = isochron->time;
-                (*it)->PropagateToEnd(configuration, mindt, endp, minH, mintacked, mindata_mask);
-            }
-        }
         Unlock();
+
         if(isinf(mindt)) {
             goto not_able_to_propagate;
         }

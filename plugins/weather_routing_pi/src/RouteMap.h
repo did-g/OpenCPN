@@ -40,6 +40,7 @@ typedef std::list<IsoRoute*> IsoRouteList;
 struct PlotData
 {
     wxDateTime time;
+    double delta;
     double lat, lon;
     double VBG, BG, VB, B, VW, W, VWG, WG, VC, C, WVHT;
     double VW_GUST;
@@ -70,7 +71,8 @@ public:
     bool CrossesLand(double dlat, double dlon);
     int SailChanges();
     bool EntersBoundary(double dlat, double dlon);
-    
+    bool EntersBoundary(double dlat, double dlon, double dist, bool *inc);
+   
     double lat, lon;
 
     double parent_heading; /* angle relative to true wind we sailed from parent to this position */
@@ -217,7 +219,7 @@ protected:
 class IsoChron
 {
 public:
-    IsoChron(IsoRouteList r, wxDateTime t, Shared_GribRecordSet &g, bool grib_is_data_deficient);
+    IsoChron(IsoRouteList r, wxDateTime t, double d, Shared_GribRecordSet &g, bool grib_is_data_deficient);
     ~IsoChron();
 
     void PropagateIntoList(IsoRouteList &routelist, RouteMapConfiguration &configuration);
@@ -228,6 +230,7 @@ public:
 
     IsoRouteList routes;
     wxDateTime time;
+    double delta;
     Shared_GribRecordSet m_SharedGrib;
     GribRecordSet *m_Grib;
     bool m_Grib_is_data_deficient;
@@ -244,13 +247,21 @@ struct RouteMapPosition {
 };
 
 struct RouteMapConfiguration {
-    RouteMapConfiguration () : StartLon(0), EndLon(0), grib_is_data_deficient(false) {} /* avoid waiting forever in update longitudes */
+    RouteMapConfiguration () : slow_start(false), slow_end(false), StartLon(0), EndLon(0), 
+          grib_is_data_deficient(false) {} /* avoid waiting forever in update longitudes */
     bool Update();
 
     wxString Start, End;
     wxDateTime StartTime;
 
-    double DeltaTime; /* time in seconds between propagations */
+    double DeltaTime; /* default time in seconds between propagations */
+    double UsedDeltaTime; /* time in seconds between propagations */
+    bool slow_start;
+    bool slow_end;
+
+    int  slow_step;
+    int  cur_step;
+
 
     Boat boat;
     wxString boatFileName;
@@ -287,6 +298,7 @@ struct RouteMapConfiguration {
     GribRecordSet *grib;
     wxDateTime time;
     bool grib_is_data_deficient, polar_failed, wind_data_failed;
+    bool land_crossing, boundary_crossing;
 };
 
 bool operator!=(const RouteMapConfiguration &c1, const RouteMapConfiguration &c2);
@@ -308,6 +320,8 @@ public:
     LOCKING_ACCESSOR(GribFailed, m_bGribFailed)
     LOCKING_ACCESSOR(PolarFailed, m_bPolarFailed)
     LOCKING_ACCESSOR(NoData, m_bNoData)
+    LOCKING_ACCESSOR(LandCrossing, m_bLandCrossing)
+    LOCKING_ACCESSOR(BoundaryCrossing, m_bBoundaryCrossing)
 
     bool Empty() { Lock(); bool empty = origin.size() == 0; Unlock(); return empty; }
     bool NeedsGrib() { Lock(); bool needsgrib = m_bNeedsGrib; Unlock(); return needsgrib; }
@@ -361,6 +375,7 @@ private:
     RouteMapConfiguration m_Configuration;
     bool m_bFinished, m_bValid;
     bool m_bReachedDestination, m_bGribFailed, m_bPolarFailed, m_bNoData;
+    bool m_bLandCrossing, m_bBoundaryCrossing;
 
     wxDateTime m_NewTime;
 };
