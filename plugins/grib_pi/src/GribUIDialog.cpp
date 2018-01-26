@@ -120,7 +120,7 @@ GribTimelineRecordSet::GribTimelineRecordSet(unsigned int cnt): GribRecordSet(cn
 
 GribTimelineRecordSet::~GribTimelineRecordSet()
 {
-    RemoveGribRecords();
+    // RemoveGribRecords();
     ClearCachedData();
 }
 
@@ -1288,8 +1288,8 @@ GribTimelineRecordSet* GRIBUICtrlBar::GetTimeLineRecordSet(wxDateTime time)
 
         double interp_const;
         if(minute1 == minute2) {
-            // with big grib a copy is slow.
-            set->RefGribRecord(i, GR1);
+            // with big grib a copy is slow use a reference.
+            set->m_GribRecordPtrArray[i] = GR1;
             continue;
         } else
             interp_const = (nminute-minute1) / (minute2-minute1);
@@ -1299,8 +1299,8 @@ GribTimelineRecordSet* GRIBUICtrlBar::GetTimeLineRecordSet(wxDateTime time)
             GribRecord *GR1y = GRS1->m_GribRecordPtrArray[i + Idx_WIND_VY];
             GribRecord *GR2y = GRS2->m_GribRecordPtrArray[i + Idx_WIND_VY];
             if(GR1y && GR2y) {
-                set->m_GribRecordPtrArray[i] = GribRecord::Interpolated2DRecord
-                    (set->m_GribRecordPtrArray[i + Idx_WIND_VY], *GR1, *GR1y, *GR2, *GR2y, interp_const);
+                set->SetUnRefGribRecord(i, GribRecord::Interpolated2DRecord
+                    (set->m_GribRecordPtrArray[i + Idx_WIND_VY], *GR1, *GR1y, *GR2, *GR2y, interp_const));
                 continue;
             }
         } else if(i <= Idx_WIND_VY300)
@@ -1309,14 +1309,14 @@ GribTimelineRecordSet* GRIBUICtrlBar::GetTimeLineRecordSet(wxDateTime time)
             GribRecord *GR1y = GRS1->m_GribRecordPtrArray[Idx_SEACURRENT_VY];
             GribRecord *GR2y = GRS2->m_GribRecordPtrArray[Idx_SEACURRENT_VY];
             if(GR1y && GR2y) {
-                set->m_GribRecordPtrArray[i] = GribRecord::Interpolated2DRecord
-                    (set->m_GribRecordPtrArray[Idx_SEACURRENT_VY], *GR1, *GR1y, *GR2, *GR2y, interp_const);
+                set->SetUnRefGribRecord(i,  GribRecord::Interpolated2DRecord
+                    (set->m_GribRecordPtrArray[Idx_SEACURRENT_VY], *GR1, *GR1y, *GR2, *GR2y, interp_const));
                 continue;
             }
         } else if(i == Idx_SEACURRENT_VY)
             continue;
 
-        set->m_GribRecordPtrArray[i] = GribRecord::InterpolatedRecord(*GR1, *GR2, interp_const, i == Idx_WVDIR);
+        set->SetUnRefGribRecord(i,  GribRecord::InterpolatedRecord(*GR1, *GR2, interp_const, i == Idx_WVDIR));
     }
 
     set->m_Reference_Time = time.GetTicks();
