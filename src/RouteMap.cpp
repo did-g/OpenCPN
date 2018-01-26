@@ -511,6 +511,7 @@ bool Position::GetPlotData(Position *next, double dt, RouteMapConfiguration &con
     data.WVHT = Swell(configuration.grib, lat, lon);
     data.VW_GUST = Gust(configuration.grib, lat, lon);
     data.tacks = tacks;
+    data.delta = dt;
 
     climatology_wind_atlas atlas;
     int data_mask = 0; // not used for plotting yet
@@ -646,6 +647,8 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
     Position *points = NULL;
     /* through all angles relative to wind */
     int count = 0;
+    bool boundary = false;
+    bool land = false;
 
     double S = Swell(configuration.grib, lat, lon);
     if(S > configuration.MaxSwellMeters)
@@ -675,7 +678,7 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
             return false;
     }
 
-    double timeseconds = configuration.DeltaTime;
+    double timeseconds = configuration.UsedDeltaTime;
     double dist;
 
     bool first_avoid = true;
@@ -686,11 +689,26 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
         bearing1 = heading_resolve( parent_bearing - configuration.MaxSearchAngle);
         bearing2 = heading_resolve( parent_bearing + configuration.MaxSearchAngle);
     }
+    // configuration.ByDegrees
+    int loop_count = (int)wxMax(trunc(configuration.ByDegrees) ,1.) -1;
+    double prev_deg = -1000;
+    double mid_deg = -1000;
+    // 0 ..  5 .. 10
+    //  1234  6789
+    // 0          10
 
     for(std::list<double>::iterator it = configuration.DegreeSteps.begin();
-        it != configuration.DegreeSteps.end(); it++) {
+        it != configuration.DegreeSteps.end(); it++, prev_deg = mid_deg) {
 
-        double H = heading_resolve(*it);
+        double degrees = (*it);
+
+        mid_deg = degrees;
+        bool   second_pass = (it == configuration.DegreeSteps.begin() || loop_count == 0);
+        int cnt = loop_count*2;
+        // ===================
+        loop:
+
+        double H = heading_resolve(degrees);
         double B, VB, BG, VBG;
 
         B = W + H; /* rotated relative to true wind */
@@ -781,9 +799,9 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
 
             double d1 = dlat - configuration.EndLat, d2 = dlon - configuration.EndLon;
             d2 *= cos(deg2rad(dlat))/2; // correct for latitude
-            bearing = rad2deg(atan2(d2, d1));
             dist = sqrt(pow(d1, 2) + pow(d2, 2));
 
+            bearing = rad2deg(atan2(d2, d1));
             d1 = configuration.StartLat - dlat, d2 = configuration.StartLon - dlon;
             bearing1 = rad2deg(atan2(d2, d1));
             dist1 = sqrt(pow(d1, 2) + pow(d2, 2));
@@ -801,13 +819,52 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
             continue;
 
         /* landfall test */
-        if(configuration.DetectLand && CrossesLand(dlat, nrdlon))
+        if(configuration.DetectLand && CrossesLand(dlat, nrdlon)) {
+            if (!second_pass) {
+                cnt--;
+                l1:
+                if (cnt > 0) {
+                    prev_deg += 1.;
+                    if (prev_deg == mid_deg)
+                    	    goto l1;
+                    degrees = prev_deg;
+                    goto loop;
+                }
+                second_pass = true;
+            }
+            configuration.land_crossing = true;
             continue;
-        
+        }
         /* Boundary test */
-        if(configuration.DetectBoundary && EntersBoundary(dlat, dlon))
-            continue;
+        if(configuration.DetectBoundary) {
+            double dlat1, dlon1; 
+            ll_gc_ll(lat, lon, heading_resolve(BG), dist +0.05, &dlat1, &dlon1);
+            double bearing, dist2end;
+            ll_gc_ll_reverse(lat, lon, configuration.EndLat, configuration.EndLon, &bearing, &dist2end);
+            if (!configuration.slow_end && dist *3 >= dist2end) {
+                // printf("enter slow end! %f %f\n", dist, dist2end);
+                configuration.slow_end = true;
+            }
 
+            bool inc;
+            if (EntersBoundary(dlat1, dlon1, dist2end /*-0.05*/, &inc )) {
+                if (!inc && !second_pass) {
+                    cnt--;
+                    l2:
+                    if (cnt > 0) {
+                        prev_deg += 1.;
+                    	if (prev_deg == mid_deg)
+                    	    goto l2;
+                        degrees = prev_deg;
+                        goto loop;
+                    }
+                    // printf("skip def %f %d  at %f %f to %f %f \n ", skip_deg, loop_count, lat, lon, dlat1, dlon1);
+                    second_pass = true;
+                }
+                configuration.boundary_crossing = true;
+                continue;
+            }
+        }
         /* crosses cyclone track(s)? */
         if(configuration.AvoidCycloneTracks &&
            RouteMap::ClimatologyCycloneTrackCrossings) {
@@ -845,9 +902,7 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
     return true;
 }
 
-/* propagate to the end position in the configuration, and return the number of seconds it takes
-   and heading H
-*/
+/* propagate to the end position in the configuration, and return the number of seconds it takes */
 double Position::PropagateToEnd(RouteMapConfiguration &configuration, double &H, int &data_mask)
 {
     double S = Swell(configuration.grib, lat, lon);
@@ -906,7 +961,7 @@ double Position::PropagateToEnd(RouteMapConfiguration &configuration, double &H,
        the maximum boat speed once, and using that before computing boat speed for
        this angle, but for now, we don't worry because propagating to the end is a
        small amount of total computation */
-    if(dist / VBG > configuration.DeltaTime / 3600.0)
+    if(dist / VBG > configuration.UsedDeltaTime / 3600.0)
         return NAN;
     
     /* quick test first to avoid slower calculation */
@@ -958,13 +1013,30 @@ int Position::SailChanges()
     return (polar != parent->polar) + parent->SailChanges();
 }
 
-bool Position::EntersBoundary(double dlat, double dlon)
+bool Position::EntersBoundary(double dlat, double dlon, double dist, bool *inc)
 {
     struct FindClosestBoundaryLineCrossing_t t;
-    t.dStartLat = lat, t.dStartLon = heading_resolve(lon);
-    t.dEndLat = dlat, t.dEndLon = heading_resolve(dlon);
+    t.dStartLat = lat; 
+    t.dStartLon = heading_resolve(lon);
+    t.dEndLat = dlat;
+    t.dEndLon = heading_resolve(dlon);
     t.sBoundaryState = wxT("Active");
-    return RouteMap::ODFindClosestBoundaryLineCrossing(&t);
+    t.dCrossingDistance = 0.;
+
+    // we request any type
+    bool ret = RouteMap::ODFindClosestBoundaryLineCrossing(&t);
+    if (ret && inc) {
+        // XXX should be leaving an inclusion boundary
+        *inc = t.sBoundaryType == wxT("Inclusion");
+    }
+    //if (ret && t.dCrossingDistance != 0) printf("%f from %f %f d %f %d\n", t.dCrossingDistance , dlat, dlon, dist, inc?*inc:-1); 
+    ret = ret && (t.dCrossingDistance <= dist);
+    return ret;
+}
+
+bool Position::EntersBoundary(double dlat, double dlon)
+{
+    return EntersBoundary(dlat, dlon, 100000., 0);
 }
 
 SkipPosition::SkipPosition(Position *p, int q)
@@ -1266,7 +1338,7 @@ bool IsoRoute::ApplyCurrents(GribRecordSet *grib, wxDateTime time, RouteMapConfi
 
     bool ret = false;
     Position *p = skippoints->point;
-    double timeseconds = configuration.DeltaTime;
+    double timeseconds = configuration.UsedDeltaTime;
     do {
         double C, VC;
         if(configuration.Currents && Current(grib, configuration.ClimatologyType,
@@ -2201,8 +2273,8 @@ typedef  wxWeakRef<Shared_GribRecordSet> Shared_GribRecordSetRef;
 static std::map<time_t, Shared_GribRecordSetRef> grib_key;
 static wxMutex s_key_mutex;
 
-IsoChron::IsoChron(IsoRouteList r, wxDateTime t, Shared_GribRecordSet &g, bool grib_is_data_deficient)
-    : routes(r), time(t), m_SharedGrib(g), m_Grib(0), m_Grib_is_data_deficient(grib_is_data_deficient)
+IsoChron::IsoChron(IsoRouteList r, wxDateTime t, double d, Shared_GribRecordSet &g, bool grib_is_data_deficient)
+    : routes(r), time(t), delta(d), m_SharedGrib(g), m_Grib(0), m_Grib_is_data_deficient(grib_is_data_deficient)
 {
     m_Grib = m_SharedGrib.GetGribRecordSet();
     if (m_Grib ) {
@@ -2432,9 +2504,12 @@ bool RouteMap::Propagate()
         return false;
     }
 
+    //
     RouteMapConfiguration configuration = m_Configuration;
     configuration.polar_failed = false;
     configuration.wind_data_failed = false;
+    configuration.boundary_crossing = false;
+    configuration.land_crossing = false;
 
     // reset grib data deficient flag
     bool grib_is_data_deficient = false;
@@ -2452,12 +2527,44 @@ bool RouteMap::Propagate()
 
     Shared_GribRecordSet shared_grib = m_SharedNewGrib;
     wxDateTime time = m_NewTime;
+    double delta;
+
+    m_NewGrib = 0;
+    m_SharedNewGrib.SetGribRecordSet(0);
 
     // request the next grib
     // in a different thread (grib record averaging going in parallel)
-    m_NewGrib = 0;
-    m_SharedNewGrib.SetGribRecordSet(0);
-    m_NewTime += wxTimeSpan(0, 0, configuration.DeltaTime);
+    delta = 60.;
+    if(origin.empty() && configuration.DeltaTime > delta && (configuration.DetectBoundary || configuration.DetectLand)) {
+        // for starting need a successfull propagate, which means 3 points.
+        m_Configuration.slow_start = true;
+        m_Configuration.slow_step = wxMin(trunc(configuration.DeltaTime/delta), 10);
+        m_Configuration.cur_step = 1;
+    }
+    else if (m_Configuration.slow_start == true) {
+        if (m_Configuration.cur_step < m_Configuration.slow_step) {
+            m_Configuration.cur_step++;
+        }
+        else {
+            m_Configuration.slow_start = false;
+            m_Configuration.slow_step = 1;
+            delta = m_Configuration.DeltaTime - m_Configuration.cur_step*delta;
+            if (delta <= 0.)
+                delta += m_Configuration.DeltaTime;
+        }
+    }
+    else if (m_Configuration.slow_end && configuration.DeltaTime > delta) {
+        m_Configuration.slow_step++;
+        delta = configuration.DeltaTime / m_Configuration.slow_step;
+        // printf("break %f\n", delta);
+        if (delta < 120) {
+            delta = 120.;
+        }
+    }
+    else {
+        delta = configuration.DeltaTime;
+    }
+    m_NewTime += wxTimeSpan(0, 0, delta);
     m_bNeedsGrib = configuration.UseGrib;
 
     Unlock();
@@ -2471,6 +2578,7 @@ bool RouteMap::Propagate()
     } else {
         configuration.grib = origin.back()->m_Grib;
         configuration.time = origin.back()->time;
+        configuration.UsedDeltaTime = origin.back()->delta;
         configuration.grib_is_data_deficient = origin.back()->m_Grib_is_data_deficient;
         // will the grib data work for us?
         if(m_Configuration.UseGrib &&
@@ -2500,7 +2608,7 @@ bool RouteMap::Propagate()
         for(IsoRouteList::iterator it = merged.begin(); it != merged.end(); ++it)
             (*it)->ReduceClosePoints();
 
-        update = new IsoChron(merged, time, shared_grib, grib_is_data_deficient);
+        update = new IsoChron(merged, time, delta, shared_grib, grib_is_data_deficient);
     }
 
     Lock();
@@ -2520,6 +2628,13 @@ bool RouteMap::Propagate()
     if(configuration.wind_data_failed)
         m_bNoData = true;
 
+    if(configuration.boundary_crossing)
+        m_bBoundaryCrossing = true;
+
+    if(configuration.land_crossing)
+        m_bLandCrossing = true;
+
+    m_Configuration.slow_end = configuration.slow_end;
     Unlock();
 
     return true;
@@ -2577,7 +2692,10 @@ void RouteMap::Reset()
     m_bPolarFailed = false;
     m_bNoData = false;
     m_bFinished = false;
-
+    m_bLandCrossing = false;
+    m_bBoundaryCrossing = false;
+    m_Configuration.slow_end = false;
+    m_Configuration.slow_start = false;
     Unlock();
 }
 
