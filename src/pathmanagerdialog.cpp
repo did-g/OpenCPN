@@ -2192,9 +2192,17 @@ void PathManagerDialog::OnChart2LayClick( wxCommandEvent &event )
                     BoundaryPoint *hazard = new BoundaryPoint( cobj->m_lat, cobj->m_lon, g_sODPointIconName, name , wxT("") );
                     hazard->SetNameShown( false );
                     hazard->SetTypeString( wxS("Boundary Point") );
-                    hazard->m_bIsolatedMark = TRUE;
-                    hazard->m_bIsolatedMark = TRUE;
+                    hazard->m_bIsolatedMark = true;
                     hazard->SetShowODPointRangeRings(true);
+                    if (hazard->GetODPointRangeRingsNumber() == 0) {
+                        hazard->SetODPointRangeRingsColour(wxColour( 255, 0, 0 ));
+                        hazard->CreateColourSchemes();
+                        hazard->SetColourScheme();
+
+                        hazard->SetShowODPointRangeRings(true);
+                        hazard->SetODPointRangeRingsNumber(1);
+                        hazard->SetODPointRangeRingsStep(0.05);
+                    }
                     g_pODConfig->AddNewODPoint( hazard, -1 );    // use auto next num
                     g_pODSelect->AddSelectableODPoint( cobj->m_lat, cobj->m_lon, hazard );
                 }

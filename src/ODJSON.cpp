@@ -347,7 +347,7 @@ void ODJSON::ProcessMessage(wxString &message_id, wxString &message_body)
                 
                 if(l_sType == wxS("Request")) {
                     bool    l_bFoundBoundary = false;
-                    wxString l_sGUID = g_pBoundaryMan->FindLineCrossingBoundary( false, l_dStartLon, l_dStartLat, l_dEndLon, l_dEndLat, &l_dCrossingLon, &l_dCrossingLat, &l_dCrossingDist, l_BoundaryType, l_BoundaryState );
+                    wxString l_sGUID = g_pBoundaryMan->FindLineCrossingBoundary( l_dStartLon, l_dStartLat, l_dEndLon, l_dEndLat, &l_dCrossingLon, &l_dCrossingLat, &l_dCrossingDist, l_BoundaryType, l_BoundaryState );
                     if(l_sGUID.length() > 0) 
                         l_bFoundBoundary = true;
 
