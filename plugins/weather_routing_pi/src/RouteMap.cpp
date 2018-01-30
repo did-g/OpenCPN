@@ -117,6 +117,7 @@ static double Gust(GribRecordSet *grib, double lat, double lon)
     double gust = grh->getInterpolatedValue(lon, lat, true );
     if(gust == GRIB_NOTDEF)
         return NAN;
+    gust *= 3.6 / 1.852; // knots
     return gust;
 }
 
@@ -689,6 +690,7 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
         bearing1 = heading_resolve( parent_bearing - configuration.MaxSearchAngle);
         bearing2 = heading_resolve( parent_bearing + configuration.MaxSearchAngle);
     }
+    bool moving_away = true;
     // configuration.ByDegrees
     int loop_count = (int)wxMax(trunc(configuration.ByDegrees) ,1.) -1;
     double prev_deg = -1000;
@@ -705,6 +707,8 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
         mid_deg = degrees;
         bool   second_pass = (it == configuration.DegreeSteps.begin() || loop_count == 0);
         int cnt = loop_count*2;
+        bool find = false;
+        bool fine_search = false;
         // ===================
         loop:
 
@@ -782,7 +786,7 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
         if(configuration.positive_longitudes && dlon < 0)
             dlon += 360;
 
-        if(configuration.MaxCourseAngle < 180) {
+        if(!configuration.slow_start && configuration.MaxCourseAngle < 180) {
             double bearing;
             // this is faster than gc distance, and actually works better in higher latitudes
             double d1 = dlat - configuration.StartLat, d2 = dlon - configuration.StartLon;
@@ -793,7 +797,7 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
                 continue;
         }
 
-        if(configuration.MaxDivertedCourse < 180) {
+        if(!configuration.slow_start && configuration.MaxDivertedCourse < 180) {
             double bearing, dist;
             double bearing1, dist1;
 
@@ -818,51 +822,86 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
            Polar::VelocityApparentWind(VB, H, VW) > configuration.MaxApparentWindKnots)
             continue;
 
-        /* landfall test */
-        if(configuration.DetectLand && CrossesLand(dlat, nrdlon)) {
-            if (!second_pass) {
-                cnt--;
-                l1:
-                if (cnt > 0) {
-                    prev_deg += 1.;
-                    if (prev_deg == mid_deg)
-                    	    goto l1;
-                    degrees = prev_deg;
-                    goto loop;
-                }
-                second_pass = true;
-            }
-            configuration.land_crossing = true;
-            continue;
-        }
-        /* Boundary test */
-        if(configuration.DetectBoundary) {
-            double dlat1, dlon1; 
-            ll_gc_ll(lat, lon, heading_resolve(BG), dist +0.05, &dlat1, &dlon1);
+        if(configuration.DetectLand || configuration.DetectBoundary) {
             double bearing, dist2end;
+            double dist2test;
+            double dlat1, dlon1; 
+
+            // it's not an error if there's boundaries after we reach destination
             ll_gc_ll_reverse(lat, lon, configuration.EndLat, configuration.EndLon, &bearing, &dist2end);
-            if (!configuration.slow_end && dist *3 >= dist2end) {
-                // printf("enter slow end! %f %f\n", dist, dist2end);
-                configuration.slow_end = true;
+            if (dist2end < dist) {
+                dist2test = dist2end;
+            }
+            else {
+                dist2test = dist + 0.05;
+            }
+            ll_gc_ll(lat, lon, heading_resolve(BG), dist2test, &dlat1, &dlon1);
+            /* landfall test */
+
+            if(configuration.DetectLand) {
+                double ndlon1 = dlon1;
+                if (ndlon1 > 360) {
+                    ndlon1 -360;
+                }
+                if (CrossesLand(dlat1, ndlon1)) {
+                    if (!second_pass) {
+                        cnt--;
+                        l1:
+                        if (cnt > 0) {
+                            prev_deg += 1.;
+                            if (prev_deg == mid_deg)
+                    	        goto l1;
+                            degrees = prev_deg;
+                            fine_search = true;
+                            goto loop;
+                        }
+                        second_pass = true;
+                        fine_search = false;
+                    }
+                    configuration.land_crossing = true;
+                    continue;
+                }
             }
 
-            bool inc;
-            if (EntersBoundary(dlat1, dlon1, dist2end /*-0.05*/, &inc )) {
-                if (!inc && !second_pass) {
-                    cnt--;
-                    l2:
-                    if (cnt > 0) {
-                        prev_deg += 1.;
-                    	if (prev_deg == mid_deg)
-                    	    goto l2;
-                        degrees = prev_deg;
-                        goto loop;
+            /* Boundary test */
+            if(configuration.DetectBoundary) {
+                bool inc = false;
+                if (dist *2.5 >= dist2end) {
+                    if (!configuration.slow_end) {
+                        // printf("enter slow end! %f %f\n", dist, dist2end);
+                        configuration.slow_end = true;
                     }
-                    // printf("skip def %f %d  at %f %f to %f %f \n ", skip_deg, loop_count, lat, lon, dlat1, dlon1);
-                    second_pass = true;
                 }
-                configuration.boundary_crossing = true;
-                continue;
+                else {
+                    if ((dist *3) * configuration.slow_step > dist2end)
+                        moving_away = false;
+                    // XXX hack resquest any crossing not the closest
+                    inc = true;
+                }
+
+                if (EntersBoundary(dlat1, dlon1, &inc )) {
+                    // entersBoundary set inc to true if boundary type is inclusive
+                    if (!second_pass && (fine_search || !inc )) {
+                        // printf(".");
+                        cnt--;
+                        l2:
+                        if (cnt > 0) {
+                            prev_deg += 1.;
+                            if (prev_deg == mid_deg)
+                    	        goto l2;
+                            degrees = prev_deg;
+                            fine_search = true;
+                            goto loop;
+                        }
+                        // printf("skip def %f %d  at %f %f to %f %f \n ", skip_deg, loop_count, lat, lon, dlat1, dlon1);
+                        second_pass = true;
+                        fine_search = false;
+                    }
+                    if (!find) {
+                        configuration.boundary_crossing = true;
+                    }
+                    continue;
+                }
             }
         }
         /* crosses cyclone track(s)? */
@@ -889,6 +928,22 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
             points = rp;
         }
         count++;
+        find = true;
+        if (fine_search) {
+            // printf("+");
+            cnt--;
+            l3:
+            if (cnt > 0) {
+                prev_deg += 1.;
+                if (prev_deg == mid_deg)
+                    goto l3;
+                degrees = prev_deg;
+                goto loop;
+            }
+            // printf("skip def %f %d  at %f %f to %f %f \n ", skip_deg, loop_count, lat, lon, dlat1, dlon1);
+            second_pass = true;
+            fine_search = false;
+        }
     }
 
     if(count < 3) { /* would get eliminated anyway, but save the extra steps */
@@ -931,6 +986,8 @@ double Position::PropagateToEnd(RouteMapConfiguration &configuration, double &H,
     double B, VB, BG = W, VBG;
     int iters = 0;
     H = 0;
+    bool old = configuration.OptimizeTacking;
+    configuration.OptimizeTacking = true;
     do {
         /* make our correction in range */
         while(bearing - BG > 180)
@@ -946,16 +1003,19 @@ double Position::PropagateToEnd(RouteMapConfiguration &configuration, double &H,
         int newpolar = configuration.boat.TrySwitchPolar(polar, VW, H, S, configuration.OptimizeTacking);
         if(newpolar == -1) {
             configuration.polar_failed = true;
+            configuration.OptimizeTacking = old;
             return NAN;
         }
         
         if(!ComputeBoatSpeed(configuration, 0, WG, VWG, W, VW, C, VC, H, atlas, data_mask,
-                             B, VB, BG, VBG, dummy_dist, newpolar))
+                             B, VB, BG, VBG, dummy_dist, newpolar)
+                || ++iters == 10 // give up
+          ) {
+            configuration.OptimizeTacking = old;
             return NAN;
-
-        if(++iters == 10) // give up
-            return NAN;
+        }
     } while((bearing - BG) > 1e-3);
+    configuration.OptimizeTacking = old;
 
     /* only allow if we fit in the isochron time.  We could optimize this by finding
        the maximum boat speed once, and using that before computing boat speed for
@@ -1013,7 +1073,7 @@ int Position::SailChanges()
     return (polar != parent->polar) + parent->SailChanges();
 }
 
-bool Position::EntersBoundary(double dlat, double dlon, double dist, bool *inc)
+bool Position::EntersBoundary(double dlat, double dlon, bool *inc)
 {
     struct FindClosestBoundaryLineCrossing_t t;
     t.dStartLat = lat; 
@@ -1022,21 +1082,26 @@ bool Position::EntersBoundary(double dlat, double dlon, double dist, bool *inc)
     t.dEndLon = heading_resolve(dlon);
     t.sBoundaryState = wxT("Active");
     t.dCrossingDistance = 0.;
+    if (inc && *inc == true) {
+        // XXX FIXME hack overload inclusion detection for saying:
+        // find any boundary not the c.
+        t.dCrossingDistance = -1.;
+    }
 
     // we request any type
     bool ret = RouteMap::ODFindClosestBoundaryLineCrossing(&t);
     if (ret && inc) {
         // XXX should be leaving an inclusion boundary
         *inc = t.sBoundaryType == wxT("Inclusion");
+        //printf("%c", *inc?'=':'_');
     }
     //if (ret && t.dCrossingDistance != 0) printf("%f from %f %f d %f %d\n", t.dCrossingDistance , dlat, dlon, dist, inc?*inc:-1); 
-    ret = ret && (t.dCrossingDistance <= dist);
     return ret;
 }
 
 bool Position::EntersBoundary(double dlat, double dlon)
 {
-    return EntersBoundary(dlat, dlon, 100000., 0);
+    return EntersBoundary(dlat, dlon, 0);
 }
 
 SkipPosition::SkipPosition(Position *p, int q)
@@ -1308,7 +1373,7 @@ bool IsoRoute::ContainsRoute(IsoRoute *r)
    computation time */
 void IsoRoute::ReduceClosePoints()
 {
-    const double eps = 2e-5; /* resolution of 2 meters should be sufficient */
+    const double eps = 3e-4; /* resolution of 30 meters should be sufficient */
     Position *p = skippoints->point;
     while(p != skippoints->point->prev) {
         Position *n = p->next;
@@ -2559,6 +2624,9 @@ bool RouteMap::Propagate()
         // printf("break %f\n", delta);
         if (delta < 120) {
             delta = 120.;
+            m_Configuration.slow_step--;
+            m_Configuration.slow_step =wxMax(m_Configuration.slow_step, 1);            
+
         }
     }
     else {
