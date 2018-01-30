@@ -310,7 +310,13 @@ wxString BoundaryMan::FindPointInBoundaryPoint( double lat, double lon, int type
             if(l_pBoundaryPoint->m_bShowODPointRangeRings && l_pBoundaryPoint->m_iODPointRangeRingsNumber > 0 && !l_bNext) {
                 double l_dRangeRingSize = l_pBoundaryPoint->m_iODPointRangeRingsNumber * l_pBoundaryPoint->m_fODPointRangeRingsStep;
                 double brg;
-                double l_dPointDistance;
+                double factor = 1.00;
+                if( l_pBoundaryPoint->m_iODPointRangeRingsStepUnits == 1 )          // convert kilometer to nautical miles
+                    factor = 1 / 1.852;
+
+                l_dRangeRingSize = factor * l_dRangeRingSize;
+                double l_dPointDistance; // l_dPointDistance is in nautical mile
+
                 DistanceBearingMercator_Plugin( l_pBoundaryPoint->m_lat, l_pBoundaryPoint->m_lon, lat, lon, &brg, &l_dPointDistance );
                 //l_dPointDistance = sqrt(((pboundarypoint->m_lat - lat) * (pboundarypoint->m_lat - lat)) + ((pboundarypoint->m_lon - lon) * (pboundarypoint->m_lon - lon)));
                 if( l_dRangeRingSize > l_dPointDistance ) {
@@ -448,6 +454,12 @@ Boundary *BoundaryMan::FindLineCrossingBoundary(bool UseCache, double StartLon, 
     bool l_bCrosses;
     LLBBox RBBox;
     RBBox.SetFromSegment(StartLat, StartLon, EndLat, EndLon);
+    // XXX hack
+    bool firstOne = false;
+    if (*CrossingDist == -1.) {
+        *CrossingDist = 0.;
+        firstOne = true;
+    }
 
     std::list<BOUNDARYCROSSING> BoundaryCrossingList;
     if (UseCache && g_pBoundaryCacheList != 0) 
@@ -513,6 +525,8 @@ Boundary *BoundaryMan::FindLineCrossingBoundary(bool UseCache, double StartLon, 
                     DistanceBearingMercator_Plugin( StartLat, StartLon, l_dCrossingLat, l_dCrossingLon, &brg, &len );
                     l_BoundaryCrossing.Len = len;
                     BoundaryCrossingList.push_back(l_BoundaryCrossing);
+                    if (firstOne)
+                        goto end;
                 }
                 popFirst = popSecond;
                 OCPNpoint_next_node = OCPNpoint_next_node->GetNext();
@@ -520,6 +534,7 @@ Boundary *BoundaryMan::FindLineCrossingBoundary(bool UseCache, double StartLon, 
         }
         boundary_node = boundary_node->GetNext();                         // next boundary
     }
+    end:
     // if list of crossings <> 0 then find one closest to start point
     if(!BoundaryCrossingList.empty()) {
         std::list<BOUNDARYCROSSING>::iterator it = BoundaryCrossingList.begin();
