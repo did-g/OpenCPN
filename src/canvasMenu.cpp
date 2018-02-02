@@ -528,8 +528,9 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
 
     for( unsigned int i = 0; i < item_array.GetCount(); i++ ) {
         PlugInMenuItemContainer *pimis = item_array[i];
-        {
-            if( pimis->b_viz ) {
+        if( !pimis->b_viz )
+            continue;
+
                 wxMenu *submenu = NULL;
                 if(pimis->pmenu_item->GetSubMenu()) {
                     submenu = new wxMenu();
@@ -569,8 +570,6 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
 #endif
                 contextMenu->Append( pmi );
                 contextMenu->Enable( pimis->id, !pimis->b_grey );
-            }
-        }
     }
 
     //  This is the default context menu
