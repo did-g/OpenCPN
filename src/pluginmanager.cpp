@@ -1673,7 +1673,7 @@ void PlugInManager::CloseAllPlugInPanels( int ok_apply_cancel)
 
 }
 
-int PlugInManager::AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin )
+int PlugInManager::AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name )
 {
     PlugInMenuItemContainer *pmic = new PlugInMenuItemContainer;
     pmic->pmenu_item = pitem;
@@ -1681,6 +1681,7 @@ int PlugInManager::AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *p
     pmic->id = pitem->GetId()==wxID_SEPARATOR?wxID_SEPARATOR:m_plugin_menu_item_id_next;
     pmic->b_viz = true;
     pmic->b_grey = false;
+    pmic->m_in_menu = name;
 
     m_PlugInMenuItems.Add(pmic);
 
@@ -2379,15 +2380,19 @@ void SetToolbarToolBitmapsSVG(int item, wxString SVGfile, wxString SVGfileRollov
 }
 
 
-
-int AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin )
+int AddCanvasMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name  )
 {
     if(s_ppim)
-        return s_ppim->AddCanvasContextMenuItem(pitem, pplugin );
+        return s_ppim->AddCanvasContextMenuItem(pitem, pplugin, name );
     else
         return -1;
 }
 
+int AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin )
+{
+    /* main context popup menu */
+    return AddCanvasMenuItem(pitem, pplugin, "");
+}
 
 void SetCanvasContextMenuItemViz(int item, bool viz)
 {
