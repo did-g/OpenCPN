@@ -182,6 +182,7 @@ class PlugInMenuItemContainer
             bool              b_viz;
             bool              b_grey;
             int               id;
+            wxString          m_in_menu;
 };
 
 //    Define an array of PlugIn MenuItem Containers
@@ -279,7 +280,7 @@ public:
       void ShowDeferredBlacklistMessages();
 
       ArrayOfPlugInMenuItems &GetPluginContextMenuItemArray(){ return m_PlugInMenuItems; }
-      int AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin );
+      int AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name = "" );
       void RemoveCanvasContextMenuItem(int item);
       void SetCanvasContextMenuItemViz(int item, bool viz);
       void SetCanvasContextMenuItemGrey(int item, bool grey);
