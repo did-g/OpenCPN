@@ -532,19 +532,19 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
         if( !pimis->b_viz )
             continue;
 
-                wxMenu *submenu = NULL;
-                if(pimis->pmenu_item->GetSubMenu()) {
-                    submenu = new wxMenu();
-                    const wxMenuItemList &items = pimis->pmenu_item->GetSubMenu()->GetMenuItems();
-                    for( wxMenuItemList::const_iterator it = items.begin(); it != items.end(); ++it ) {
-                        int id = -1;
-                        for( unsigned int j = 0; j < item_array.GetCount(); j++ ) {
-                            PlugInMenuItemContainer *pimis = item_array.Item( j );
-                            if(pimis->pmenu_item == *it)
-                                id = pimis->id;
-                        }
+        wxMenu *submenu = NULL;
+        if(pimis->pmenu_item->GetSubMenu()) {
+            submenu = new wxMenu();
+            const wxMenuItemList &items = pimis->pmenu_item->GetSubMenu()->GetMenuItems();
+            for( wxMenuItemList::const_iterator it = items.begin(); it != items.end(); ++it ) {
+                int id = -1;
+                for( unsigned int j = 0; j < item_array.GetCount(); j++ ) {
+                    PlugInMenuItemContainer *pimis = item_array.Item( j );
+                    if(pimis->pmenu_item == *it)
+                        id = pimis->id;
+                }
 
-                        wxMenuItem *pmi = new wxMenuItem( submenu, id,
+                wxMenuItem *pmi = new wxMenuItem( submenu, id,
 #if wxCHECK_VERSION(3,0,0)
                                                         (*it)->GetItemLabelText(),
 #else
@@ -552,12 +552,12 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
 #endif
                                                         (*it)->GetHelp(),
                                                           (*it)->GetKind());
-                        submenu->Append(pmi);
-                        pmi->Check((*it)->IsChecked());
-                    }
-                }
+                submenu->Append(pmi);
+                pmi->Check((*it)->IsChecked());
+            }
+        }
                 
-                wxMenuItem *pmi = new wxMenuItem( contextMenu, pimis->id,
+        wxMenuItem *pmi = new wxMenuItem( contextMenu, pimis->id,
 #if wxCHECK_VERSION(3,0,0)
                                                   pimis->pmenu_item->GetItemLabelText(),
 #else
@@ -567,10 +567,10 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
                                                   pimis->pmenu_item->GetKind(),
                                                   submenu );
 #ifdef __WXMSW__
-                pmi->SetFont(pimis->pmenu_item->GetFont());
+        pmi->SetFont(pimis->pmenu_item->GetFont());
 #endif
-                contextMenu->Append( pmi );
-                contextMenu->Enable( pimis->id, !pimis->b_grey );
+        contextMenu->Append( pmi );
+        contextMenu->Enable( pimis->id, !pimis->b_grey );
     }
 
     //  This is the default context menu
