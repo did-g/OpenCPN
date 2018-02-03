@@ -608,6 +608,7 @@ bool PlugInManager::CallLateInit(void)
             case 113:
             case 114:
             case 115:
+            case 116:
                 if(pic->m_cap_flag & WANTS_LATE_INIT) {
                     wxString msg(_T("PlugInManager: Calling LateInit PlugIn: "));
                     msg += pic->m_plugin_file;
@@ -642,6 +643,7 @@ void PlugInManager::SendVectorChartObjectInfo(const wxString &chart, const wxStr
                 case 113:
                 case 114:
 		case 115:
+		case 116:
                 {
                     opencpn_plugin_112 *ppi = dynamic_cast<opencpn_plugin_112 *>(pic->m_pplugin);
                     if(ppi)
@@ -1407,6 +1409,7 @@ PlugInContainer *PlugInManager::LoadPlugIn(wxString plugin_file)
         pic->m_pplugin = dynamic_cast<opencpn_plugin_114*>(plug_in);
         break;
     case 115:
+    case 116:
         pic->m_pplugin = dynamic_cast<opencpn_plugin_115*>(plug_in);
         break;
         
@@ -1475,6 +1478,7 @@ bool PlugInManager::RenderAllCanvasOverlayPlugIns( ocpnDC &dc, const ViewPort &v
                     case 113:
                     case 114:
 		    case 115:
+		    case 116:
                     {
                         opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                         if(ppi)
@@ -1528,6 +1532,7 @@ bool PlugInManager::RenderAllCanvasOverlayPlugIns( ocpnDC &dc, const ViewPort &v
                     case 113:
                     case 114:
                     case 115:
+                    case 116:
                     {
                         opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                         if(ppi)
@@ -1591,6 +1596,7 @@ bool PlugInManager::RenderAllGLCanvasOverlayPlugIns( wxGLContext *pcontext, cons
                 case 113:
                 case 114:
                 case 115:
+                case 116:
                 {
                     opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                     if(ppi)
@@ -1623,6 +1629,7 @@ bool PlugInManager::SendMouseEventToPlugins( wxMouseEvent &event)
                     case 113:
                     case 114:
                     case 115:
+                    case 116:
                     {
                         opencpn_plugin_112 *ppi = dynamic_cast<opencpn_plugin_112*>(pic->m_pplugin);
                         if(ppi)
@@ -1655,6 +1662,7 @@ bool PlugInManager::SendKeyEventToPlugins( wxKeyEvent &event)
                         case 113:
                         case 114:
                         case 115:
+                        case 116:
                         {
                             opencpn_plugin_113 *ppi = dynamic_cast<opencpn_plugin_113*>(pic->m_pplugin);
                             if(ppi && ppi->KeyboardEventHook( event ))
@@ -1717,6 +1725,7 @@ void NotifySetupOptionsPlugin( PlugInContainer *pic )
             case 113:
             case 114:
             case 115:
+            case 116:
             {
                 opencpn_plugin_19 *ppi = dynamic_cast<opencpn_plugin_19 *>(pic->m_pplugin);
                 if(ppi) {
@@ -1895,6 +1904,7 @@ void PlugInManager::SendMessageToAllPlugins(const wxString &message_id, const wx
                 case 113:
                 case 114:
                 case 115:
+                case 116:
                 {
                     opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                     if(ppi)
@@ -1975,6 +1985,7 @@ void PlugInManager::SendPositionFixToAllPlugIns(GenericPosDatEx *ppos)
                 case 113:
                 case 114:
                 case 115:
+                case 116:
                 {
                     opencpn_plugin_18 *ppi = dynamic_cast<opencpn_plugin_18 *>(pic->m_pplugin);
                     if(ppi)
