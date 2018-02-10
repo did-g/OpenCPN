@@ -2754,6 +2754,7 @@ void RouteMap::Reset()
     
     m_NewTime = m_Configuration.StartTime;
     m_bNeedsGrib = m_Configuration.UseGrib;
+    m_ErrorMsg = wxEmptyString;
 
     m_bReachedDestination = false;
     m_bGribFailed = false;
