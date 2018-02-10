@@ -707,6 +707,8 @@ static int tick_idx;
 int               g_sticky_chart;
 int               g_sticky_projection;
 
+bool              g_benableUDPNullHeader;
+
 extern wxString OpenCPNVersion; //Gunther
 extern options          *g_pOptions;
 
@@ -2059,6 +2061,9 @@ bool MyApp::OnInit()
         }
         XCloseDisplay(disp);
     }
+#endif
+#ifdef __WXOSX__
+    g_bTransparentToolbarInOpenGLOK = true;
 #endif
 #endif
 
@@ -4490,7 +4495,11 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
         case wxID_ABOUT:
         case ID_ABOUT: {
             if( !g_pAboutDlg )
+#ifdef __WXOSX__
+                g_pAboutDlg = new about( cc1, g_Platform->GetSharedDataDir() );
+#else
                 g_pAboutDlg = new about( this, g_Platform->GetSharedDataDir() );
+#endif
             else
                 g_pAboutDlg->SetFocus();
             g_pAboutDlg->Show();
