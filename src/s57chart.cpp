@@ -3618,8 +3618,7 @@ ListOfS57ObjRegion *s57chart::GetHazards(const LLRegion &region, ListOfS57ObjReg
                             land->Union( *e );
                             #endif
                         }
-                        else
-                            delete e;
+                        delete e;
                     }
                     continue; // done
                 }
