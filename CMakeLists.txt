@@ -710,7 +710,6 @@ IF(OCPN_USE_CURL)
 ENDIF(OCPN_USE_CURL)
 
 OPTION(OCPN_USE_SVG "Use SVG graphics" ON)
-OPTION(OCPN_USE_LZMA "Use LZMA for chart compression" ON)
 
 IF(OCPN_USE_SVG)
   MESSAGE(STATUS "SVG support enabled...")
@@ -797,7 +796,7 @@ IF(OCPN_USE_SVG)
       INCLUDE(FindEXIF.cmake)
     ELSE(NOT WIN32)
       #On Windows, we have our own expat
-      SET(EXPAT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/buildwin/expat-2.2.5/include)
+      SET(EXPAT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/buildwin/expat-2.1.0/include)
       INCLUDE_DIRECTORIES(${EXPAT_INCLUDE_DIR})
       #And cairo
       SET(CAIRO_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/buildwin/gtk/include)
@@ -815,12 +814,11 @@ IF(OCPN_USE_SVG)
     IF(WIN32)
       SET(SVG_LIBS
         ${CMAKE_SOURCE_DIR}/buildwin/gtk/cairo.lib
-        ${CMAKE_SOURCE_DIR}/buildwin/expat-2.2.5/expat.lib
-        ${CMAKE_SOURCE_DIR}/buildwin/archive.lib
+        ${CMAKE_SOURCE_DIR}/buildwin/expat-2.1.0/expat.lib
       )
       FILE(GLOB gtkdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/gtk/*.dll")
       INSTALL(FILES ${gtkdll_files} DESTINATION ".")
-      FILE(GLOB expatdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/expat-2.2.5/*.dll")
+      FILE(GLOB expatdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/expat-2.1.0/*.dll")
       INSTALL(FILES ${expatdll_files} DESTINATION ".")
       MESSAGE(STATUS "GTK and Expat DLLs bundled into the installer package...")
     ELSE(WIN32)
@@ -1039,16 +1037,14 @@ IF(WIN32)
   LIST(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/buildwin")
   LIST(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/include")
 ENDIF(WIN32)
-IF(OCPN_USE_LZMA)
-  FIND_PACKAGE(LibLZMA)
-  IF(LIBLZMA_FOUND)
+FIND_PACKAGE(LibLZMA)
+IF(LIBLZMA_FOUND)
     message (STATUS "Building with lzma support")
     ADD_DEFINITIONS(-DUSE_LZMA)
     INCLUDE_DIRECTORIES(${LIBLZMA_INCLUDE_DIR})
-  ELSE(LIBLZMA_FOUND)
+ELSE(LIBLZMA_FOUND)
     message (STATUS "lzma library not found")
-  ENDIF(LIBLZMA_FOUND)
-ENDIF(OCPN_USE_LZMA)
+ENDIF(LIBLZMA_FOUND)
 
 # For convenience we define the sources as a variable. You can add
 # header files and cpp/c files and CMake will sort them out
@@ -2304,52 +2300,34 @@ ENDIF(WIN32 OR APPLE)
 
 # On Windows builds, copy the wxWidgets dlls and helpers to the executable directory
 IF(WIN32 AND NOT UNIX)
-  OPTION (BUNDLE_WXDLLS "Bundle the prebuilt WX DLLs" ON)
-  IF(BUNDLE_WXDLLS)
-    FILE(GLOB wxdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/wxWidgets/*.dll")
-    INSTALL(FILES ${wxdll_files} DESTINATION ".")
-    MESSAGE(STATUS "wxWidgets DLLs bundled into the installer package...")
-  ENDIF(BUNDLE_WXDLLS)
-  OPTION (BUNDLE_VCDLLS "Bundle the VC redistributable libraries" ON)
-  IF(BUNDLE_VCDLLS)
-    FILE(GLOB vcdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/vc/*.dll")
-    INSTALL(FILES ${vcdll_files} DESTINATION ".")
-    MESSAGE(STATUS "MSVC redistributable DLLs bundled into the installer package...")
-  ENDIF(BUNDLE_VCDLLS)
-  OPTION (BUNDLE_LIBARCHIVEDLLS "Bundle the prebuilt LibArchive and LibLZMA DLLs" ON)
-  IF(BUNDLE_LIBARCHIVEDLLS)
-    FILE(GLOB libarchivedll_files
-	 "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/archive.dll"
-	 "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/liblzma.dll"
-	 "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/zlib1.dll"
-    )
-    INSTALL(FILES ${libarchivedll_files} DESTINATION ".")
-    MESSAGE(STATUS "LibArchive DLLs bundled into the installer package...")
-  ENDIF(BUNDLE_LIBARCHIVEDLLS)
+    OPTION (BUNDLE_WXDLLS "Bundle the prebuilt WX DLLs" ON)
+    IF(BUNDLE_WXDLLS)
+        FILE(GLOB wxdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/wxWidgets/*.dll")
+        INSTALL(FILES ${wxdll_files} DESTINATION ".")
+	MESSAGE(STATUS "wxWidgets DLLs bundled into the installer package...")
+    ENDIF(BUNDLE_WXDLLS)
+    OPTION (BUNDLE_VCDLLS "Bundle the VC redistributable libraries" ON)
+    IF(BUNDLE_VCDLLS)
+        FILE(GLOB vcdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/vc/*.dll")
+        INSTALL(FILES ${vcdll_files} DESTINATION ".")
+	MESSAGE(STATUS "MSVC redistributable DLLs bundled into the installer package...")
+    ENDIF(BUNDLE_VCDLLS)
+    OPTION (BUNDLE_LIBARCHIVEDLLS "Bundle the prebuilt LibArchive and LibLZMA DLLs" ON)
+    IF(BUNDLE_LIBARCHIVEDLLS)
+        FILE(GLOB libarchivedll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/archive.dll" "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/liblzma.dll")
+        INSTALL(FILES ${libarchivedll_files} DESTINATION ".")
+	MESSAGE(STATUS "LibArchive DLLs bundled into the installer package...")
+    ENDIF(BUNDLE_LIBARCHIVEDLLS)
 ENDIF(WIN32 AND NOT UNIX)
 
 IF(MSVC AND OCPN_USE_CRASHREPORT)
-  INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/CrashRpt1403.dll
-    DESTINATION ${PREFIX_PKGDATA}
-    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  )
-  INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/CrashSender1403.exe
-    DESTINATION ${PREFIX_PKGDATA}
-    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  )
-  INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/crashrpt_lang.ini
-    DESTINATION ${PREFIX_PKGDATA}
-    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  )
-  INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/dbghelp.dll
-    DESTINATION ${PREFIX_PKGDATA}
-    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  )
-  INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/PrivacyPolicy.txt
-    DESTINATION ${PREFIX_PKGDATA}
-    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  )
-  MESSAGE(STATUS "CrashRpt bundled into the installer package...")
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/CrashRpt1403.dll DESTINATION ${PREFIX_PKGDATA} PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/CrashSender1403.exe DESTINATION ${PREFIX_PKGDATA} PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/crashrpt_lang.ini DESTINATION ${PREFIX_PKGDATA} PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/dbghelp.dll DESTINATION ${PREFIX_PKGDATA} PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/crashrpt/PrivacyPolicy.txt DESTINATION ${PREFIX_PKGDATA} PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/buildwin/ocpn_gltest1.exe DESTINATION ${PREFIX_PKGDATA} PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+    MESSAGE(STATUS "CrashRpt bundled into the installer package...")
 ENDIF(MSVC AND OCPN_USE_CRASHREPORT)
 
 MESSAGE (STATUS "")
