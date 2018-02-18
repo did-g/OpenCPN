@@ -107,7 +107,8 @@ class ODNavObjectChanges : public pugi::xml_document
 
     protected:
     private:
-        ODPoint *GPXLoadODPoint1( pugi::xml_node &opt_node, 
+        ODPoint *GPXLoadODPoint1( bool *b_new, 
+                               pugi::xml_node &opt_node, 
                                wxString def_symbol_name,
                                wxString GUID,
                                bool b_fullviz,

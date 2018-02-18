@@ -119,8 +119,17 @@ PointMan::~PointMan()
 
     if( pmarkicon_image_list ) pmarkicon_image_list->RemoveAll();
     delete pmarkicon_image_list;
+    m_ODPointGUIDKey.clear();
     
     delete m_pFontEnumerator;
+}
+
+ODPoint *PointMan::ODPointExists( const wxString& guid )
+{
+    std::map<wxString, ODPoint *>::iterator it = m_ODPointGUIDKey.find( guid );
+    if (it == m_ODPointGUIDKey.end( ))
+        return 0;
+    return it->second;
 }
 
 bool PointMan::AddODPoint(ODPoint *prp)
@@ -129,6 +138,8 @@ bool PointMan::AddODPoint(ODPoint *prp)
         return false;
     
     wxODPointListNode *prpnode = m_pODPointList->Append(prp);
+    m_ODPointGUIDKey[ prp->m_GUID ] = prp;
+
     prp->SetManagerListNode( prpnode );
     
     return true;
@@ -145,6 +156,8 @@ bool PointMan::RemoveODPoint(ODPoint *prp)
         delete prpnode;
     else
         m_pODPointList->DeleteObject(prp);
+
+    m_ODPointGUIDKey.erase( prp->m_GUID );
     
     prp->SetManagerListNode( NULL );
     

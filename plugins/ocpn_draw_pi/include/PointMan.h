@@ -91,6 +91,7 @@ class PointMan
 
       wxImageList *Getpmarkicon_image_list(void);
 
+      ODPoint *ODPointExists( const wxString& guid );
       bool AddODPoint(ODPoint *prp);
       bool RemoveODPoint(ODPoint *prp);
       ODPointList *GetODPointList(void) { return m_pODPointList; }
@@ -120,6 +121,8 @@ private:
       std::map<ODPoint *, ODPoint *> m_ODPointIsolated;
 
       ODPointList    *m_pODPointList;
+      std::map<wxString , ODPoint *> m_ODPointGUIDKey;
+
       ODPointList    *m_CacheList;
 
       wxImageList       *pmarkicon_image_list;        // Current wxImageList, updated on colorscheme change

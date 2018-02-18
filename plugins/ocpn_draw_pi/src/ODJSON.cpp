@@ -650,6 +650,10 @@ void ODJSON::ProcessMessage(wxString &message_id, wxString &message_body)
             g_pODPointMan->BuildCache();
             
         }
+        if (g_pBoundaryCacheList) {
+            g_pBoundaryCacheList->Clear();
+            delete g_pBoundaryCacheList;
+        }
         g_pBoundaryCacheList = 0;
         if (g_pBoundaryList) {
             Boundary *pboundary;

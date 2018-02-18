@@ -673,7 +673,9 @@ int ocpn_draw_pi::Init(void)
         
         g_pODConfig->LoadLayers(*g_pLayerDir);
     }
-    
+
+    m_position_menu_id = AddCanvasMenuItem (new wxMenuItem(&dummy_menu, -1, _("Validate this Route")), this, "Route" );
+
     return (
     WANTS_OVERLAY_CALLBACK  |
     WANTS_CURSOR_LATLON       |
@@ -847,7 +849,10 @@ void ocpn_draw_pi::SendVectorChartObjectInfo(wxString &chart, wxString &feature,
 
 void ocpn_draw_pi::OnContextMenuItemCallback(int id)
 {
-    switch ( id ) {
+    if (id == m_position_menu_id) {
+      // m_pWeather_Routing->AddPosition(m_cursor_lat, m_cursor_lon);
+    }            
+    else switch ( id ) {
         case ID_PATH_MENU_PROPERTIES: {
             //        ShowPathPropertiesDialog( wxT("Path Properties"), m_pSelectedPath );
             break;
@@ -1302,6 +1307,7 @@ void ocpn_draw_pi::SaveConfig()
             pConf->Write( wxS( "ShowLOGIcon" ), m_bLOGShowIcon );
             pConf->Write( wxS( "PathLineWidth" ), g_path_line_width );
             pConf->Write( wxS( "DefaultODPointIcon" ), g_sODPointIconName );
+            pConf->Write( wxS( "DefaultODPointShowRangeRings" ), g_bODPointShowRangeRings );
             pConf->Write( wxS( "ODPointRangeRingsNumber" ), g_iODPointRangeRingsNumber );
             pConf->Write( wxS( "ODPointRangeRingsStep" ), g_fODPointRangeRingsStep );
             pConf->Write( wxS( "ODPointRangeRingsStepUnits" ), g_iODPointRangeRingsStepUnits );
@@ -1498,6 +1504,7 @@ void ocpn_draw_pi::LoadConfig()
         pConf->Read( wxS( "ShowLOGIcon" ),  &m_bLOGShowIcon, 1 );
         pConf->Read( wxS( "PathLineWidth" ), &g_path_line_width, 2 );
         pConf->Read( wxS( "DefaultODPointIcon" ), &g_sODPointIconName, wxS("triangle") );
+        pConf->Read( wxS( "DefaultODPointShowRangeRings" ), &g_bODPointShowRangeRings, false );
         pConf->Read( wxS( "ODPointRangeRingsNumber" ), &g_iODPointRangeRingsNumber, 0 );
         pConf->Read( wxS( "ODPointRangeRingsStep" ), &val, wxS("1.0") );
         g_fODPointRangeRingsStep = atof( val.mb_str() );
@@ -3143,7 +3150,11 @@ void ocpn_draw_pi::DrawAllODPointsInBBox( ODDC& dc, LLBBox& BltBBox )
                 node = node->GetNext();
                 continue;
             } else {
-                if( BltBBox.Contains( pOP->m_lat, pOP->m_lon ) ) pOP->Draw( dc, NULL );
+                if( !pOP->m_bShowODPointRangeRings) {
+                    if( BltBBox.Contains(pOP->m_lat, pOP->m_lon) ) pOP->Draw( dc, NULL );
+                } else {
+                    if( !BltBBox.IntersectOut(pOP->m_RangeRingsBBox) ) pOP->Draw( dc, NULL );
+                }
             }
         }
         
@@ -3810,10 +3821,17 @@ void ocpn_draw_pi::DrawAllPathsAndODPoints( PlugIn_ViewPort &pivp )
     /* ODPoints not drawn as part of routes */
     if( pivp.bValid && g_pODPointMan ) {
         // XXX m_ODPointIsolated;
+        LLBBox llbb;
+        llbb.Set( pivp.lat_min, pivp.lon_min, pivp.lat_max, pivp.lon_max );
+        
         for(wxODPointListNode *pnode = g_pODPointMan->GetODPointList()->GetFirst(); pnode; pnode = pnode->GetNext() ) {
             ODPoint *pOP = pnode->GetData();
-            if( ( pOP->m_lon >= pivp.lon_min && pOP->m_lon <= pivp.lon_max ) && ( pOP->m_lat >= pivp.lat_min && pOP->m_lat <= pivp.lat_max ) )
-                pOP->DrawGL( pivp );
+            if( !pOP->m_bShowODPointRangeRings) {
+                if( llbb.Contains(pOP->m_lat, pOP->m_lon) ) pOP->DrawGL( pivp );
+            } else {
+                if( !llbb.IntersectOut(pOP->m_RangeRingsBBox) ) pOP->DrawGL( pivp );
+            }
+            
         }
     }
         

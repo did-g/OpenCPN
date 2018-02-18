@@ -510,6 +510,7 @@ private:
     int               m_hide_id;
     bool                show;
     int                m_config_button_id;
+    int               m_position_menu_id;
 
     bool              m_bLOGShowIcon;
     
