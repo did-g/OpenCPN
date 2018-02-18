@@ -1241,7 +1241,9 @@ extern DECL_EXP wxFont* FindOrCreateFont_PlugIn( int point_size, wxFontFamily fa
 extern DECL_EXP int PlugInGetMinAvailableGshhgQuality();
 extern DECL_EXP int PlugInGetMaxAvailableGshhgQuality();
 
-// API 1.16 Extra objects handling.
+// API 1.16 Extra objects handling. 
+extern DECL_EXP void PlugInHandleAutopilotRoute(bool enable);
+
 // chart file vfs plugin.
 
 extern "C"  DECL_EXP  int AddCanvasMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name );

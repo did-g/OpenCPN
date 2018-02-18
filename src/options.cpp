@@ -2589,7 +2589,7 @@ void options::CreatePanel_Ownship(size_t parent, int border_size,
       new wxCheckBox(itemPanelShip, ID_TRACKHILITE, _("Highlight Tracks"));
   hTrackGrid->Add(pTrackHighlite, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, border_size);
   wxStaticText* trackColourText =
-      new wxStaticText( itemPanelShip, wxID_STATIC, _("Highlight Colour"));
+      new wxStaticText( itemPanelShip, wxID_STATIC, _("Track Colour"));
   hTrackGrid->Add(trackColourText, 1, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, border_size);
   m_colourTrackLineColour = new wxColourPickerCtrl(
       itemPanelShip, wxID_STATIC, *wxRED, wxDefaultPosition, wxDefaultSize, 0,
@@ -3865,7 +3865,7 @@ void options::CreatePanel_Display(size_t parent, int border_size,
     wxBoxSizer *defaultBoatSpeedSizer = new wxBoxSizer(wxHORIZONTAL);
     boxDispStatusBar->Add(defaultBoatSpeedSizer, wxALL, group_item_spacing);
     defaultBoatSpeedSizer->Add(new wxStaticText(pDisplayPanel, wxID_ANY, _("Default Boat Speed ")),
-                               groupLabelFlags);
+                               groupLabelFlagsHoriz);
     pSDefaultBoatSpeed = new wxTextCtrl(pDisplayPanel, ID_DEFAULT_BOAT_SPEED, _T(""), wxDefaultPosition,
                                         wxSize(50, -1), wxTE_RIGHT);
     defaultBoatSpeedSizer->Add(pSDefaultBoatSpeed, 0, wxALIGN_CENTER_VERTICAL, group_item_spacing);
@@ -4780,7 +4780,7 @@ void options::CreateControls(void) {
   }
 
   labelFlags = wxSizerFlags(0)
-                   .Align(wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL)
+                   .Align(wxALIGN_RIGHT)
                    .Border(wxALL, group_item_spacing);
   inputFlags = wxSizerFlags(0)
                    .Align(wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL)
@@ -4791,6 +4791,9 @@ void options::CreateControls(void) {
   groupLabelFlags = wxSizerFlags(0)
                         .Align(wxALIGN_RIGHT | wxALIGN_TOP)
                         .Border(wxALL, group_item_spacing);
+  groupLabelFlagsHoriz = wxSizerFlags(0)
+    .Align( wxALIGN_TOP)
+    .Border(wxALL, group_item_spacing);
   groupInputFlags = wxSizerFlags(0)
                         .Align(wxALIGN_LEFT | wxALIGN_TOP)
                         .Border(wxBOTTOM, group_item_spacing * 2)

@@ -687,7 +687,7 @@ void RouteManagerDialog::Create()
     itemBoxSizer1->Add( itemBoxSizer5, 0, wxALL | wxEXPAND );
     
     wxBoxSizer *itemBoxSizer6 = new wxBoxSizer( wxHORIZONTAL );
-    itemBoxSizer5->Add( itemBoxSizer6, 1, wxALL | wxEXPAND | wxALIGN_LEFT );
+    itemBoxSizer5->Add( itemBoxSizer6, 1, wxALL | wxEXPAND );
     
     btnImport = new wxButton( this, -1, _("I&mport GPX...") );
     itemBoxSizer6->Add( btnImport, 0, wxALL | wxALIGN_LEFT, DIALOG_MARGIN );
@@ -774,7 +774,7 @@ void RouteManagerDialog::Create()
     // Dialog buttons
     wxSizer *szButtons = CreateButtonSizer( wxOK );
     
-    itemBoxSizer5->Add( szButtons, 0, wxALL , DIALOG_MARGIN );
+    itemBoxSizer5->Add( szButtons, 0, wxALL, DIALOG_MARGIN );
     
     RecalculateSize();
 
