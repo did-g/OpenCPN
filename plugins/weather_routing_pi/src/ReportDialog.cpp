@@ -162,25 +162,43 @@ void ReportDialog::GenerateRoutesReport()
 
     wxString page;
     for(std::map<wxString, std::list<RouteMapOverlay *> >::iterator it = routes.begin();
-        it != routes.end(); it++) {
+                          it != routes.end(); it++)
+    {
         std::list<RouteMapOverlay *> overlays = it->second;
-        assert(overlays.begin() != overlays.end());
+        if (overlays.begin() == overlays.end()) {
+            // XXX not possible? but shut up compilers warnings
+            continue;
+        }
         RouteMapOverlay *first = *overlays.begin();
 
-        /* determine fastest time */
-        wxTimeSpan fastest_time;
-        RouteMapOverlay *fastest;
-        for(std::list<RouteMapOverlay *>::iterator it2 = overlays.begin(); it2 != overlays.end(); it2++) {
-            wxTimeSpan current_time = ((*it2)->EndTime() - (*it2)->StartTime());
-            if(*it2 == first || current_time < fastest_time) {
-                fastest_time = current_time;
-                fastest = *it2;
-            }
-        }
         RouteMapConfiguration c = first->GetConfiguration();
         page += _T("<p>");
         page += c.Start + _T(" ") + _("to") + _T(" ") + c.End + _T(" ") + wxString::Format
             (_T("(%ld ") + wxString(_("configurations")) + _T(")\n"), overlays.size());
+
+        /* determine fastest time */
+        wxTimeSpan fastest_time;
+        RouteMapOverlay *fastest;
+
+        std::multimap< wxDateTime, RouteMapOverlay * > sort_by_start;
+        bool any_bad = false;
+        bool any_good = false;
+
+        for(std::list<RouteMapOverlay *>::iterator it2 = overlays.begin(); it2 != overlays.end(); it2++) {
+            RouteMapOverlay *r = *it2;
+            wxTimeSpan current_time = r->EndTime() - r->StartTime();
+            sort_by_start.insert(std::pair< wxDateTime, RouteMapOverlay * >(r->StartTime() , r));
+            if(r == first || current_time < fastest_time) {
+                fastest_time = current_time;
+                fastest = r;
+            }
+            if (r->RouteInfo(RouteMapOverlay::PERCENTAGE_UPWIND) > 50) {
+                any_bad = true;
+            } else {
+                any_good = true;
+            }
+        }
+
         page += _("<dt>Fastest configuration ") + fastest->StartTime().Format(_T("%x %X"));
         page += wxString(_T(" ")) + _("avg speed") + wxString::Format
             (_T(": %.2f "), fastest->RouteInfo(RouteMapOverlay::AVGSPEED))
@@ -189,61 +207,49 @@ void ReportDialog::GenerateRoutesReport()
         /* determine best times if upwind percentage is below 50 */
         page += _T("<dt>");
         page += _("Best Times (mostly downwind)") + wxString(_T(": "));
-
-        bool last_bad, any_bad, any_good = false, first_print = true;
-
-        wxDateTime best_time_start;
-
-        std::list<RouteMapOverlay *>::iterator it2, it2end = overlays.begin(), prev;
-        last_bad = overlays.back()->RouteInfo(RouteMapOverlay::PERCENTAGE_UPWIND) > 50;
-
-        for(it2 = overlays.begin(); it2 != overlays.end(); it2++)
-            if((*it2)->RouteInfo(RouteMapOverlay::PERCENTAGE_UPWIND) > 50) {
-                any_bad = last_bad = true;
-            } else {
-                if(!best_time_start.IsValid() && last_bad) {
-                    best_time_start = (*it2)->StartTime();
-                    it2end = it2;
-                    it2++;
+        if (any_good == false) {
+            // no downwind route
+            page += _("none");
+        }
+        else if (any_bad == false) {
+            // all routes are downwind
+            page += _("any");
+        }
+        else {
+            bool first_print = true;
+            std::multimap< wxDateTime, RouteMapOverlay * > reduce_by_start;
+            // merge downwind routes in bigger interval
+            // assume most routes with same start time are of same kind (downwind or upwind)
+            std::multimap< wxDateTime, RouteMapOverlay * >::iterator it = sort_by_start.begin();
+            while (it != sort_by_start.end() ) {
+                // remove first upwind routes, from any_good test there's at least one downwind route
+                for(; it != sort_by_start.end(); it++) {
+                    RouteMapOverlay *r = it->second;
+                    if (r->RouteInfo(RouteMapOverlay::PERCENTAGE_UPWIND) <= 50) {
+                        break;
+                     }
+                }
+                if (it == sort_by_start.end()) 
                     break;
-                }
-                last_bad = false;
-            }
 
-        if(it2 == overlays.end())
-            it2++;
-        for(;;) {
-            if(it2 == it2end)
-                break;
-            it2++;
-            if(it2 == overlays.end())
-                it2++;
-
-            if((*it2)->RouteInfo(RouteMapOverlay::PERCENTAGE_UPWIND) > 50) {
-                if(!last_bad) {
-                    prev = it2;
-                    prev--;
-                    if(prev == overlays.end()) prev--;
-                    if(first_print)
-                        first_print = false;
-                    else
-                        page += _(" and ");
-                    page += best_time_start.Format(_T("%d %B ")) +
-                        _("to") + (*prev)->EndTime().Format(_T(" %d %B"));
+                RouteMapOverlay *r = it->second;
+                wxDateTime s = r->StartTime();
+                wxDateTime e = r->EndTime();
+                // merge downwind
+                for(; it != sort_by_start.end(); it++) {
+                    RouteMapOverlay *r = it->second;
+                    if (r->RouteInfo(RouteMapOverlay::PERCENTAGE_UPWIND) > 50) {
+                        break;
+                    }
+                    e = r->EndTime();
                 }
-                last_bad = any_bad = true;
-            } else {
-                if(last_bad)
-                    best_time_start = (*it2)->StartTime();
-                last_bad = false;
-                any_good = true;
+                if(first_print)
+                    first_print = false;
+                else
+                    page += _(" and ");
+                page += s.Format(_T("%d %B ")) + _("to") + e.Format(_T(" %d %B"));
             }
         }
-
-        if(!any_bad)
-            page += _("any");
-        else if(!any_good)
-            page += _("none");
 
         page += _T("<dt>");
         page += _("Cyclones") + wxString(_T(": "));
@@ -255,7 +261,7 @@ void ReportDialog::GenerateRoutesReport()
         int cyclonemonths[12] = {0};
         std::list<RouteMapOverlay *> cyclone_safe_routes;
         bool allsafe = true, nonesafe = true;
-        for(it2 = overlays.begin(); it2 != overlays.end(); it2++) {
+        for(std::list<RouteMapOverlay *>::iterator it2 = overlays.begin(); it2 != overlays.end(); it2++) {
             switch((*it2)->Cyclones(cyclonemonths)) {
             case -1:
                 page += _("Climatology data unavailable.");
@@ -307,7 +313,9 @@ void ReportDialog::GenerateRoutesReport()
             /* note: does not merge beginning and end of linked list for safe times,
                this sometimes might be nice, but they will be in different years. */
             bool first = true;
-            for(it2 = cyclone_safe_routes.begin(); it2 != cyclone_safe_routes.end(); it2++) {
+            for(std::list<RouteMapOverlay *>::iterator it2 = cyclone_safe_routes.begin(); it2 != cyclone_safe_routes.end();
+                        it2++)
+            {
                 if(!*it2) continue;
                 if(!first)
                     page += _(" and ");

@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Dec 20 2017)
+// C++ code generated with wxFormBuilder (version Feb 17 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO *NOT* EDIT THIS FILE!
+// PLEASE DO "NOT" EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __WEATHERROUTINGUI_H__
@@ -37,6 +37,7 @@
 #include <wx/combobox.h>
 #include <wx/datectrl.h>
 #include <wx/dateevt.h>
+#include <wx/timectrl.h>
 #include <wx/textctrl.h>
 #include <wx/choice.h>
 #include <wx/valtext.h>
@@ -88,6 +89,7 @@ class WeatherRoutingBase : public wxFrame
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
+		virtual void OnEditPositionClick( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnPositionKeyDown( wxListEvent& event ) { event.Skip(); }
 		virtual void OnEditConfigurationClick( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnWeatherRoutesListLeftDown( wxMouseEvent& event ) { event.Skip(); }
@@ -193,9 +195,7 @@ class ConfigurationDialogBase : public wxDialog
 		wxStaticText* m_staticText28;
 		wxButton* m_bGribTime;
 		wxStaticText* m_staticText30;
-		wxSpinCtrl* m_sStartHour;
-		wxStaticText* m_staticText134;
-		wxTextCtrl* m_tStartMinute;
+		wxTimePickerCtrl* m_tpTime;
 		wxButton* m_bCurrentTime;
 		wxTextCtrl* m_tBoat;
 		wxButton* m_bBoatFilename;
@@ -261,11 +261,12 @@ class ConfigurationDialogBase : public wxDialog
 		virtual void OnUpdate( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUpdateDate( wxDateEvent& event ) { event.Skip(); }
 		virtual void OnGribTime( wxCommandEvent& event ) { event.Skip(); }
-		virtual void EnableSpin( wxMouseEvent& event ) { event.Skip(); }
-		virtual void OnUpdateSpin( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnUpdateTime( wxDateEvent& event ) { event.Skip(); }
 		virtual void OnCurrentTime( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBoatFilename( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEditBoat( wxCommandEvent& event ) { event.Skip(); }
+		virtual void EnableSpin( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnUpdateSpin( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnClose( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAvoidCyclones( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetAdvanced( wxCommandEvent& event ) { event.Skip(); }
@@ -608,6 +609,7 @@ class CursorPositionDialog : public wxDialog
 	private:
 	
 	protected:
+		wxStaticText* m_staticText134;
 		wxStaticText* m_staticText128;
 		wxStaticText* m_staticText124;
 		wxStaticText* m_staticText130;
@@ -617,6 +619,7 @@ class CursorPositionDialog : public wxDialog
 		wxButton* m_sdbSizer5OK;
 	
 	public:
+		wxStaticText* m_stTime;
 		wxStaticText* m_stPosition;
 		wxStaticText* m_stPolar;
 		wxStaticText* m_stSailChanges;
