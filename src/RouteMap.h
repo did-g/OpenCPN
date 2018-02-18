@@ -30,10 +30,10 @@
 #include <list>
 
 #include "ODAPI.h"
+#include "GribRecordSet.h"
 
 struct RouteMapConfiguration;
 class IsoRoute;
-class GribRecordSet;
 
 typedef std::list<IsoRoute*> IsoRouteList;
 
@@ -150,20 +150,23 @@ public:
     IsoRouteList children; /* inner inverted regions */
 };
 
+// -----------------
+typedef GribRecordSet WR_GribRecordSet;
+
 // ------
 class Shared_GribRecordSetData: public wxRefCounter
 {
 public:
-    Shared_GribRecordSetData( GribRecordSet *gribset = 0 ) : m_GribRecordSet(gribset) { }
+    Shared_GribRecordSetData( WR_GribRecordSet *gribset = 0 ) : m_GribRecordSet(gribset) { }
     Shared_GribRecordSetData( const Shared_GribRecordSetData& data ) : m_GribRecordSet(data.m_GribRecordSet) { }
 
-    void SetGribRecordSet( GribRecordSet *gribset )  { m_GribRecordSet = gribset; }
-    GribRecordSet * GetGribRecordSet() const { return m_GribRecordSet; }
+    void SetGribRecordSet( WR_GribRecordSet *gribset )  { m_GribRecordSet = gribset; }
+    WR_GribRecordSet * GetGribRecordSet() const { return m_GribRecordSet; }
 
     ~Shared_GribRecordSetData();
 
 protected:
-     GribRecordSet *m_GribRecordSet;
+     WR_GribRecordSet *m_GribRecordSet;
                     
 };
 
@@ -173,7 +176,7 @@ class Shared_GribRecordSet: public wxTrackable
 public:
     // initializes this, assigning to the
     // internal data pointer a new instance of Shared_GribRecordSetData
-    Shared_GribRecordSet( GribRecordSet * ptr = 0 ) : m_data( new Shared_GribRecordSetData(ptr) )
+    Shared_GribRecordSet( WR_GribRecordSet * ptr = 0 ) : m_data( new Shared_GribRecordSetData(ptr) )
     {
     }
     Shared_GribRecordSet& operator =( const Shared_GribRecordSet& tocopy )
@@ -184,7 +187,7 @@ public:
         return *this;
     }
 
-    void SetGribRecordSet( GribRecordSet * ptr )
+    void SetGribRecordSet( WR_GribRecordSet * ptr )
     {
         // make sure changes to this class do not affect other instances
         // currently sharing our same refcounted data:
@@ -192,7 +195,7 @@ public:
         m_data->SetGribRecordSet( ptr );
     }
 
-    GribRecordSet * GetGribRecordSet() const
+    WR_GribRecordSet * GetGribRecordSet() const
     {
        return m_data->GetGribRecordSet();
     }
@@ -225,14 +228,14 @@ public:
     void PropagateIntoList(IsoRouteList &routelist, RouteMapConfiguration &configuration);
     bool Contains(Position &p);
     bool Contains(double lat, double lon);
-    Position *ClosestPosition(double lat, double lon, double *dist=0);
+    Position *ClosestPosition(double lat, double lon, wxDateTime *t = 0, double *dist=0);
     void ResetDrawnFlag();
 
     IsoRouteList routes;
     wxDateTime time;
     double delta;
     Shared_GribRecordSet m_SharedGrib;
-    GribRecordSet *m_Grib;
+    WR_GribRecordSet *m_Grib;
     bool m_Grib_is_data_deficient;
 };
 
@@ -258,6 +261,7 @@ struct RouteMapConfiguration {
     double UsedDeltaTime; /* time in seconds between propagations */
     bool slow_start;
     bool slow_end;
+    bool closing;
 
     int  slow_step;
     int  cur_step;
@@ -295,7 +299,7 @@ struct RouteMapConfiguration {
     by about 8%.  Is it even useful?  */
 
     // parameters
-    GribRecordSet *grib;
+    WR_GribRecordSet *grib;
     wxDateTime time;
     bool grib_is_data_deficient, polar_failed, wind_data_failed;
     bool land_crossing, boundary_crossing;
@@ -369,7 +373,7 @@ public:
 protected:
     virtual void Clear();
     bool ReduceList(IsoRouteList &merged, IsoRouteList &routelist, RouteMapConfiguration &configuration);
-    Position *ClosestPosition(double lat, double lon, double *dist=0);
+    Position *ClosestPosition(double lat, double lon, wxDateTime *t=0, double *dist=0);
 
     /* protect any member variables with mutexes if needed */
     virtual void Lock() = 0;
@@ -379,7 +383,7 @@ protected:
     IsoChronList origin; /* list of route isos in order of time */
     bool m_bNeedsGrib;
     Shared_GribRecordSet m_SharedNewGrib;
-    GribRecordSet *m_NewGrib;
+    WR_GribRecordSet *m_NewGrib;
 
 private:
  

@@ -73,7 +73,6 @@
 #include <map>
 
 #include "ocpn_plugin.h"
-#include "GribRecordSet.h"
 
 #include "Utilities.h"
 #include "Boat.h"
@@ -87,7 +86,7 @@
 #define distance(X, Y) sqrt((X)*(X) + (Y)*(Y)) // much faster than hypot
 
 
-static double Swell(GribRecordSet *grib, double lat, double lon)
+static double Swell(WR_GribRecordSet *grib, double lat, double lon)
 {
     if(!grib)
         return 0;
@@ -105,7 +104,7 @@ static double Swell(GribRecordSet *grib, double lat, double lon)
     return height;
 }
 
-static double Gust(GribRecordSet *grib, double lat, double lon)
+static double Gust(WR_GribRecordSet *grib, double lat, double lon)
 {
     if(!grib)
         return NAN;
@@ -122,7 +121,7 @@ static double Gust(GribRecordSet *grib, double lat, double lon)
 }
 
 
-static inline bool GribWind(GribRecordSet *grib, double lat, double lon,
+static inline bool GribWind(WR_GribRecordSet *grib, double lat, double lon,
                             double &WG, double &VWG)
 {
     if(!grib)
@@ -139,7 +138,7 @@ static inline bool GribWind(GribRecordSet *grib, double lat, double lon,
 
 enum {WIND, CURRENT};
 
-static inline bool GribCurrent(GribRecordSet *grib, double lat, double lon,
+static inline bool GribCurrent(WR_GribRecordSet *grib, double lat, double lon,
                                double &C, double &VC)
 {
     if(!grib)
@@ -601,7 +600,7 @@ static inline bool ComputeBoatSpeed
 }
 
 bool rk_step(Position *p, double timeseconds, double BG, double dist, double H,
-             RouteMapConfiguration &configuration, GribRecordSet *grib,
+             RouteMapConfiguration &configuration, WR_GribRecordSet *grib,
              const wxDateTime &time, int newpolar,
              double &rk_BG, double &rk_dist, int &data_mask)
 {
@@ -844,6 +843,13 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
                     ndlon1 -360;
                 }
                 if (CrossesLand(dlat1, ndlon1)) {
+                    if (dist *3 >= dist2end) {
+                        if (!configuration.slow_end) {
+                            // printf("enter slow end! %f %f\n", dist, dist2end);
+                            configuration.slow_end = true;
+                        }
+                        configuration.closing = true;
+                    }
                     if (!second_pass) {
                         cnt--;
                         l1:
@@ -866,20 +872,20 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
             /* Boundary test */
             if(configuration.DetectBoundary) {
                 bool inc = false;
-                if (dist *2.5 >= dist2end) {
-                    if (!configuration.slow_end) {
-                        // printf("enter slow end! %f %f\n", dist, dist2end);
-                        configuration.slow_end = true;
-                    }
-                }
-                else {
-                    if ((dist *3) * configuration.slow_step > dist2end)
-                        moving_away = false;
+                if (dist *3 < dist2end) {
+                    // unlikely we'd reach destination in the next 3 loop
                     // XXX hack resquest any crossing not the closest
                     inc = true;
                 }
 
                 if (EntersBoundary(dlat1, dlon1, &inc )) {
+                    if (dist *3 >= dist2end) {
+                        if (!configuration.slow_end) {
+                            // printf("enter slow end! %f %f\n", dist, dist2end);
+                            configuration.slow_end = true;
+                        }
+                        configuration.closing = true;
+                    }
                     // entersBoundary set inc to true if boundary type is inclusive
                     if (!second_pass && (fine_search || !inc )) {
                         // printf(".");
@@ -2423,20 +2429,24 @@ bool IsoChron::Contains(double lat, double lon)
     return Contains(p);
 }
 
-Position* IsoChron::ClosestPosition(double lat, double lon, double *dist)
+Position* IsoChron::ClosestPosition(double lat, double lon, wxDateTime *t, double *d)
 {
     Position *minpos = NULL;
     double mindist = INFINITY;
+    wxDateTime mint;
     for(IsoRouteList::iterator it = routes.begin(); it != routes.end(); ++it) {
         double dist;
         Position *pos = (*it)->ClosestPosition(lat, lon, &dist);
         if(pos && dist < mindist) {
             minpos = pos;
             mindist = dist;
+            mint = time;
         }
     }
-    if(dist)
-        *dist = mindist;
+    if(d)
+        *d = mindist;
+    if(t)
+        *t = mint;
     return minpos;
 }
 
@@ -2570,6 +2580,9 @@ bool RouteMap::Propagate()
     }
 
     //
+    // 
+    bool prev_closing = m_Configuration.closing;
+    m_Configuration.closing = false;
     RouteMapConfiguration configuration = m_Configuration;
     configuration.polar_failed = false;
     configuration.wind_data_failed = false;
@@ -2599,11 +2612,11 @@ bool RouteMap::Propagate()
 
     // request the next grib
     // in a different thread (grib record averaging going in parallel)
-    delta = 60.;
+    delta = 120.;
     if(origin.empty() && configuration.DeltaTime > delta && (configuration.DetectBoundary || configuration.DetectLand)) {
         // for starting need a successfull propagate, which means 3 points.
         m_Configuration.slow_start = true;
-        m_Configuration.slow_step = wxMin(trunc(configuration.DeltaTime/delta), 10);
+        m_Configuration.slow_step = wxMax(1, wxMin(trunc(configuration.DeltaTime/delta), 5));
         m_Configuration.cur_step = 1;
     }
     else if (m_Configuration.slow_start == true) {
@@ -2618,15 +2631,26 @@ bool RouteMap::Propagate()
                 delta += m_Configuration.DeltaTime;
         }
     }
-    else if (m_Configuration.slow_end && configuration.DeltaTime > delta) {
-        m_Configuration.slow_step++;
-        delta = configuration.DeltaTime / m_Configuration.slow_step;
-        // printf("break %f\n", delta);
-        if (delta < 120) {
-            delta = 120.;
-            m_Configuration.slow_step--;
-            m_Configuration.slow_step =wxMax(m_Configuration.slow_step, 1);            
-
+    else if (m_Configuration.slow_end) {
+        //printf ("%d %d === \n", prev_closing, m_Configuration.slow_step);
+        if (configuration.DeltaTime > delta) {
+            if (prev_closing) {
+                m_Configuration.slow_step++;
+            }
+            else {
+                m_Configuration.slow_step--;
+                m_Configuration.slow_step =wxMax(m_Configuration.slow_step, 1);
+            }
+            delta = configuration.DeltaTime / m_Configuration.slow_step;
+            // printf("break %f\n", delta);
+            if (delta < 120.) {
+                delta = 120.;
+                m_Configuration.slow_step--;
+                m_Configuration.slow_step =wxMax(m_Configuration.slow_step, 1);
+            }
+        }
+        else {
+            delta = configuration.DeltaTime;
         }
     }
     else {
@@ -2703,18 +2727,22 @@ bool RouteMap::Propagate()
         m_bLandCrossing = true;
 
     m_Configuration.slow_end = configuration.slow_end;
+    m_Configuration.closing = configuration.closing;
     Unlock();
 
     return true;
 }
 
-Position *RouteMap::ClosestPosition(double lat, double lon, double *dist)
+Position *RouteMap::ClosestPosition(double lat, double lon, wxDateTime *t, double *d)
 {
     if(origin.empty())
         return NULL;
 
     Position *minpos = NULL;
     double mindist = INFINITY;
+    bool inside;
+    bool first = (t !=0);
+    wxDateTime min_t;
     Lock();
 
     IsoChronList::iterator it = origin.end();
@@ -2723,24 +2751,34 @@ Position *RouteMap::ClosestPosition(double lat, double lon, double *dist)
     do {
         it--;
         double dist;
-        Position *pos = (*it)->ClosestPosition(p.lat, p.lon, &dist);
+        wxDateTime cur_t;
+        Position *pos = (*it)->ClosestPosition(p.lat, p.lon, &cur_t, &dist);
         
-        if(pos && dist < mindist) {
+        if(dist > mindist)
+            break;
+
+        if(pos && dist <= mindist) {
             minpos = pos;
             mindist = dist;
-        } else if(dist > mindist)
-            break;
+            if (!min_t.IsValid() || (cur_t.IsValid() && cur_t < min_t))
+                min_t = cur_t;
+        }
+        /* bail if we don't contain because obviously we aren't getting any closer
+        */
 
-        /* bail if we don't contain because obviously we aren't getting any closer */
-        if(!(*it)->Contains(p))
+        inside = (*it)->Contains(p);
+        if(!inside && !first) 
             break;
-
+        if(inside)
+            first = false;
     } while(it != origin.begin());
 
     Unlock();
 
-    if(dist)
-        *dist = mindist;
+    if(d)
+        *d = mindist;
+    if(t)
+        *t = min_t;
     return minpos;
 }
 
@@ -2764,10 +2802,10 @@ void RouteMap::Reset()
     m_bLandCrossing = false;
     m_bBoundaryCrossing = false;
     m_Configuration.slow_end = false;
+    m_Configuration.closing = false;
     m_Configuration.slow_start = false;
     Unlock();
 }
-
 
 void RouteMap::SetNewGrib(GribRecordSet *grib)
 {
@@ -2789,7 +2827,7 @@ void RouteMap::SetNewGrib(GribRecordSet *grib)
         }
     }
     /* copy the grib record set */
-    m_NewGrib = new GribRecordSet(grib->m_ID);
+    m_NewGrib = new WR_GribRecordSet(grib->m_ID);
     m_NewGrib->m_Reference_Time = grib->m_Reference_Time;
     for(int i=0; i<Idx_COUNT; i++) {
         switch (i) {
@@ -2808,6 +2846,7 @@ void RouteMap::SetNewGrib(GribRecordSet *grib)
         }
     }
     m_SharedNewGrib.SetGribRecordSet(m_NewGrib);
+
 }
 
 void RouteMap::GetStatistics(int &isochrons, int &routes, int &invroutes, int &skippositions, int &positions)
