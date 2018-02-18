@@ -853,11 +853,16 @@ bool ODNavObjectChanges::LoadAllGPXObjects( bool b_full_viz )
     for (pugi::xml_node object = objects.first_child(); object; object = object.next_sibling())
     {
         if( !strcmp(object.name(), "opencpn:ODPoint") ) {
-            ODPoint *pOp = GPXLoadODPoint1( object, _T("circle"), _T(""), b_full_viz, false, false, 0 );
+            bool is_new;
+            ODPoint *pOp = GPXLoadODPoint1( &is_new, object, _T("circle"), _T(""), b_full_viz, false, false, 0 );
             
             if(pOp) {
                 pOp->m_bIsolatedMark = true;      // This is an isolated mark
-                ODPoint *pExisting = ODPointExists( pOp->GetName(), pOp->m_lat, pOp->m_lon );
+                ODPoint *pExisting = 0;
+                if (is_new)
+                    pExisting = ODPointExists( pOp->GetName(), pOp->m_lat, pOp->m_lon );
+                else
+                    pExisting = pOp;
                 if( !pExisting ) {
                     if( NULL != g_pODPointMan )
                         g_pODPointMan->AddODPoint( pOp );
@@ -891,7 +896,7 @@ bool ODNavObjectChanges::LoadAllGPXObjects( bool b_full_viz )
     return true;
 }
 
-ODPoint * ODNavObjectChanges::GPXLoadODPoint1( pugi::xml_node &opt_node, 
+ODPoint * ODNavObjectChanges::GPXLoadODPoint1( bool *b_new, pugi::xml_node &opt_node, 
                             wxString def_symbol_name,
                             wxString GUID,
                             bool b_fullviz,
@@ -908,6 +913,8 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( pugi::xml_node &opt_node,
     bool bshared = false;
     bool b_propvizname = false;
     bool b_propviz = false;
+    if (b_new)
+        *b_new = true;
 
     wxString SymString = def_symbol_name;       // default icon
     wxString NameString;
@@ -1132,7 +1139,11 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( pugi::xml_node &opt_node,
 
     // Check to see if this point already exits
     pOP = tempODPointExists( GuidString );
-    if(!pOP) pOP = ODPointExists( GuidString );
+    if(!pOP) {
+        pOP = ODPointExists( GuidString );
+        // ODPointExists on name/lat/lon is true shortcut
+        if (b_new && pOP) *b_new = false;
+    }
     if( !pOP ) {
         if( TypeString == wxT("Text Point") ) {
             pTP = new TextPoint( rlat, rlon, SymString, NameString, GuidString, false );
@@ -1285,7 +1296,7 @@ ODPath *ODNavObjectChanges::GPXLoadPath1( pugi::xml_node &odpoint_node  , bool b
         wxString ChildName = wxString::FromUTF8( tschild.name() );
 
         if( ChildName == _T ( "opencpn:ODPoint" ) ) {
-            ODPoint *tpOp = GPXLoadODPoint1(  tschild, _T("square"), _T(""), b_fullviz, b_layer, b_layerviz, layer_id, true );
+            ODPoint *tpOp = GPXLoadODPoint1(  0, tschild, _T("square"), _T(""), b_fullviz, b_layer, b_layerviz, layer_id, true );
             
             pTentPath->AddPoint( tpOp, false, true, true);          // defer BBox calculation
             if(pTentBoundary) tpOp->m_bIsInBoundary = true;                      // Hack
@@ -1563,19 +1574,7 @@ ODPoint *ODNavObjectChanges::ODPointExists( const wxString& name, double lat, do
 
 ODPoint *ODNavObjectChanges::ODPointExists( const wxString& guid )
 {
-    wxODPointListNode *node = g_pODPointMan->GetODPointList()->GetFirst();
-    while( node ) {
-        ODPoint *pr = node->GetData();
-
-//        if( pr->m_bIsInLayer ) return NULL;
-
-        if( guid == pr->m_GUID ) {
-            return pr;
-        }
-        node = node->GetNext();
-    }
-
-    return NULL;
+    return g_pODPointMan->ODPointExists( guid );
 }
 
 ODPoint *ODNavObjectChanges::tempODPointExists( const wxString& guid )
@@ -1730,7 +1729,7 @@ bool ODNavObjectChanges::ApplyChanges(void)
     while(strlen(object.name()))
     {
         if( !strcmp(object.name(), "opencpn:ODPoint") ) {
-            ODPoint *pOp = GPXLoadODPoint1( object, _T("circle"), _T(""), false, false, false, 0 );
+            ODPoint *pOp = GPXLoadODPoint1( 0, object, _T("circle"), _T(""), false, false, false, 0 );
             
             if(pOp && g_pODPointMan) {
                 pOp->m_bIsolatedMark = true;
@@ -1814,7 +1813,7 @@ int ODNavObjectChanges::LoadAllGPXObjectsAsLayer(int layer_id, bool b_layerviz)
     for (pugi::xml_node object = objects.first_child(); object; object = object.next_sibling())
     {
         if( !strcmp(object.name(), "opencpn:ODPoint") ) {
-            ODPoint *pOp = GPXLoadODPoint1( object, _T("circle"), _T(""), true, true, b_layerviz, layer_id );
+            ODPoint *pOp = GPXLoadODPoint1( 0, object, _T("circle"), _T(""), true, true, b_layerviz, layer_id );
             if(pOp) {
                 pOp->m_bIsolatedMark = true;      // This is an isolated mark
                 g_pODPointMan->AddODPoint( pOp );
