@@ -129,6 +129,7 @@ wxPoint otcurrentOverlayFactory::ScaleCurrentArrow(int index, wxPoint myPoint, i
 			return dummy;
 		}
 	}
+	return dummy;
 }
 
 

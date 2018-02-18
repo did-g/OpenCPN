@@ -42,6 +42,8 @@ before_build:
   - ps: Start-FileDownload https://downloads.sourceforge.net/project/opencpnplugins/opencpn_lib/4.2-vc120_xp/opencpn.lib
   - ps: Start-FileDownload http://downloads.sourceforge.net/project/opencpnplugins/opencpn_packaging_data/OpenCPN_buildwin.7z
   - cmd: 7z x -y OpenCPN_buildwin.7z -oc:\project\otcurrent_pi
+  # copy our temporary WIP version
+  - cmd: copy c:\project\otcurrent_pi\buildwin\opencpn.lib c:\project\otcurrent_pi\build
   - cmake -T v120_xp ..
 
 build_script:
