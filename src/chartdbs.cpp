@@ -39,6 +39,7 @@
 #include "chartdbs.h"
 #include "chartbase.h"
 #include "pluginmanager.h"
+#include "mbtiles.h"
 #include "mygeom.h"                     // For DouglasPeucker();
 #include "FlexHash.h"
 #ifndef UINT32
@@ -1101,6 +1102,8 @@ void ChartDatabase::UpdateChartClassDescriptorArray(void)
       m_ChartClassDescriptorArray.Add(pcd);
       pcd = new ChartClassDescriptor(_T("cm93compchart"), _T("00300000.a"), BUILTIN_DESCRIPTOR);
       m_ChartClassDescriptorArray.Add(pcd);
+      pcd = new ChartClassDescriptor(_T("ChartMBTiles"), _T("*.mbtiles"), BUILTIN_DESCRIPTOR);
+      m_ChartClassDescriptorArray.Add(pcd);
       
       //    If the PlugIn Manager exists, get the array of dynamically loadable chart class names
       if(g_pi_manager)
@@ -1465,6 +1468,8 @@ wxString ChartDatabase::GetFullChartInfo(ChartBase *pc, int dbIndex, int *char_w
                   line += _("Transverse Mercator");
             else if(PROJECTION_POLYCONIC == cte.GetChartProjectionType())
                   line += _("Polyconic");
+            else if(PROJECTION_WEB_MERCATOR == cte.GetChartProjectionType())
+                line += _("Web Mercator (EPSG:3857)");
             line += _T("\n");
             max_width = wxMax(max_width, line.Len());
             r += line;
