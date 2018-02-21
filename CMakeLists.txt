@@ -894,59 +894,17 @@ ENDIF(NOT WIN32 AND NOT APPLE AND NOT QT_ANDROID)
 
 # SQLite3 support required for MBTiles.
 
-set(SQLITECPP_SRC
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Backup.cpp
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Column.cpp
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Database.cpp
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Exception.cpp
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Statement.cpp
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Transaction.cpp
-)
-# list of header files of the library
-set(SQLITECPP_INC
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/SQLiteCpp.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Assertion.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Backup.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Column.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Database.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Exception.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Statement.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Transaction.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Utils.h
- ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/VariadicBind.h
-)
-include_directories( src/SQLiteCpp/include )
-ADD_LIBRARY(SQLiteCpp ${SQLITECPP_SRC} ${SQLITECPP_INC})
-SET(EXTRA_LIBS ${EXTRA_LIBS} SQLiteCpp)
-
-
 IF(UNIX AND NOT APPLE)
-    SET(SQLITE3_INC_LOOK_PATHS /usr/local/include /usr/include )
-    FIND_PATH( SQLITE3_INCLUDE_DIR sqlite.h
-              PATHS ${SQLITE3_INC_LOOK_PATHS})
+        SET(SQLITECPP_INTERNAL_SQLITE OFF CACHE BOOL "Don't use internal sqlites3 " FORCE)
+	MESSAGE(STATUS "Using system sqlite3...")
 
-    message(STATUS " SQLite3 include directory found: ${SQLITE3_INCLUDE_DIR}")
-
-    SET(SQLITE3_LIB_LOOK_PATHS /usr/lib /usr/local/lib /usr/lib/i386-linux-gnu)
-    FIND_LIBRARY(SQLITE3_LIBRARY NAMES PATHS ${SQLITE3_LIB_LOOK_PATHS} NAMES sqlite3 libsqlite3)
-    message(STATUS " SQLite3 runtime library: ${SQLITE3_LIBRARY}")
-    
-    IF( SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY )
-      MESSAGE(STATUS "Found SQLite3 dev environment.")
-      INCLUDE_DIRECTORIES(${SQLITE3_INCLUDE_DIR})
-    ELSE(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
-      MESSAGE(STATUS "Could not find SQLite3 dev environment.")
-    ENDIF(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
-    
-    add_definitions(-DSQLITE_USE_LEGACY_STRUCT)
-   
+	# XXX fixme 
+        SET(SQLITE_USE_LEGACY_STRUCT ON CACHE BOOL "Use legacy structure " FORCE)
+	MESSAGE(STATUS "Using legacy slqite3 structure...")
 ENDIF(UNIX AND NOT APPLE)
 
-IF(WIN32 OR APPLE)
-    ADD_LIBRARY(sqlite3 ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.c ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.h)
-    include_directories( src/SQLiteCpp/sqlite3 )
-    SET(EXTRA_LIBS ${EXTRA_LIBS} sqlite3)
-ENDIF(WIN32 OR APPLE)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/thirdparty/SQLiteCpp)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/thirdparty/SQLiteCpp/include)
 
 FIND_PACKAGE(Gettext REQUIRED)
 
