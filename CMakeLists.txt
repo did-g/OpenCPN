@@ -35,6 +35,9 @@ IF (COMMAND cmake_policy)
   if (POLICY CMP0043)
     CMAKE_POLICY(SET CMP0043 NEW)
   endif (POLICY CMP0043)
+  if (POLICY CMP0025)
+    CMAKE_POLICY(SET CMP0025 NEW)
+  endif ()
 ENDIF (COMMAND cmake_policy)
 
 PROJECT(OpenCPN)
@@ -47,7 +50,25 @@ ELSE(APPLE)
   SET(PACKAGE_NAME opencpn)
 ENDIF(APPLE)
 
-OPTION(OCPN_USE_LIBCPP "Use C++11 and libc++ instead of libstdc++ on macOS" OFF)
+if (CMAKE_VERSION VERSION_LESS "3.1")
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+  CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+  if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    message(STATUS "Setting C++11 standard via CXX flags")
+  elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    message(STATUS "Setting C++0x standard via CXX FLAGS")
+  else()
+        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+  endif()
+else ()
+  set (CMAKE_CXX_STANDARD 11)
+  message(STATUS "Setting C++11 standard via cmake standard mecahnism")
+endif ()
+
+OPTION(OCPN_USE_LIBCPP "Use C++11 and libc++ instead of libstdc++ on macOS" ON)
 
 if ( CMAKE_VERSION VERSION_GREATER 3.4 )
   set(ENABLE_CLANG_TIDY OFF CACHE BOOL "Add clang-tidy automatically to builds")
@@ -916,9 +937,9 @@ ADD_LIBRARY(SQLiteCpp ${SQLITECPP_SRC} ${SQLITECPP_INC})
 SET(EXTRA_LIBS ${EXTRA_LIBS} SQLiteCpp)
 
 
-IF(UNIX)
+IF(UNIX AND NOT APPLE)
     SET(SQLITE3_INC_LOOK_PATHS /usr/local/include /usr/include )
-    FIND_PATH( SQLITE3_INCLUDE_DIR sqlite.h
+    FIND_PATH( SQLITE3_INCLUDE_DIR sqlite3.h
               PATHS ${SQLITE3_INC_LOOK_PATHS})
 
     message(STATUS " SQLite3 include directory found: ${SQLITE3_INCLUDE_DIR}")
@@ -936,13 +957,13 @@ IF(UNIX)
     
     add_definitions(-DSQLITE_USE_LEGACY_STRUCT)
    
-ENDIF(UNIX)
+ENDIF(UNIX AND NOT APPLE)
 
-IF(WIN32)
+IF(WIN32 OR APPLE)
     ADD_LIBRARY(sqlite3 ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.c ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.h)
     include_directories( src/SQLiteCpp/sqlite3 )
     SET(EXTRA_LIBS ${EXTRA_LIBS} sqlite3)
-ENDIF(WIN32)
+ENDIF(WIN32 OR APPLE)
 
 FIND_PACKAGE(Gettext REQUIRED)
 
@@ -2059,8 +2080,10 @@ ENDIF(BUNDLE_DOCS MATCHES "ON")
 
 IF(UNIX)
   INSTALL(FILES data/opencpn.png DESTINATION ${PREFIX_DATA}/icons/hicolor/48x48/apps PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+  INSTALL(FILES src/bitmaps/opencpn-64.png DESTINATION ${PREFIX_DATA}/icons/hicolor/64x64/apps/opencpn.png PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
   INSTALL(FILES src/bitmaps/other_svg_src/opencpn.svg DESTINATION ${PREFIX_DATA}/icons/hicolor/scalable/apps PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
   INSTALL(FILES data/opencpn.desktop DESTINATION ${PREFIX_DATA}/applications PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ )
+  INSTALL(FILES data/opencpn.appdata.xml DESTINATION ${PREFIX_DATA}/appdata PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ )
 ENDIF(UNIX)
 
 ENDIF(NOT APPLE)
