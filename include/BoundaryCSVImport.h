@@ -1,6 +1,8 @@
-/******************************************************************************
+/***************************************************************************
  *
  * Project:  OpenCPN
+ * Purpose:  OCPN Draw Import Boundary support
+ * Author:   Jon Gough
  *
  ***************************************************************************
  *   Copyright (C) 2010 by David S. Register                               *
@@ -19,42 +21,30 @@
  *   along with this program; if not, write to the                         *
  *   Free Software Foundation, Inc.,                                       *
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,  USA.         *
- ***************************************************************************
- */
+ **************************************************************************/
+ 
+#ifndef BOUNDARYCSVIMPORT_H
+#define BOUNDARYCSVIMPORT_H
 
-#ifndef __ODLAYER_H__
-#define __ODLAYER_H__
+class wxStringTokenizer;
 
-#include <wx/string.h>
-#include <wx/list.h>
-#include <wx/datetime.h>
-
-class ODLayer
+class BoundaryCSVImport 
 {
-public:
-      ODLayer(void);
-      ~ODLayer(void);
-      wxString CreatePropString(void) { return m_LayerFileName; }
-      bool IsVisible() { return m_bIsVisible; }
-      void SetVisible(bool viz = true){ m_bIsVisible = viz; }
-      bool IsVisibleOnListing() { return m_bIsVisibleOnListing; }
-      void SetVisibleOnListing(bool viz = true){ m_bIsVisibleOnListing = viz; }
-      bool HasVisibleNames() { return m_bHasVisibleNames; }
-      void SetVisibleNames(bool viz = true){ m_bHasVisibleNames = viz; }
+    public:
+        BoundaryCSVImport();
+        BoundaryCSVImport(wxStringTokenizer BoundaryCSV);
+        virtual ~BoundaryCSVImport();
 
-      bool m_bIsVisibleOnListing;
-      bool m_bIsVisible;
-      bool m_bHasVisibleNames;
-      long m_NoOfItems;
-      int m_LayerID;
+        wxString    m_sName;
+        bool        m_bExclusion;
+        bool        m_bInclusion;
+        bool        m_bVisible;
+        wxColour    m_LineColour;
+        wxColour    m_FillColour;
+        bool        m_bIsBeingCreated;
+        
+    protected:
+    private:
 
-      wxString          m_LayerName;
-      wxString          m_LayerFileName;
-      wxString          m_LayerDescription;
-      bool              m_bIsVisibleOnChart;
-      wxDateTime        m_CreateTime;
 };
-
-WX_DECLARE_LIST(ODLayer, ODLayerList);// establish class as list member
-
-#endif
+#endif // BOUNDARYCSVIMPORT_H

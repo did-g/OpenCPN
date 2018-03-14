@@ -310,6 +310,9 @@ int             g_iDRDistanceUnits;
 int             g_iDRTimeUnits;
 int             g_iDRPersistenceType;
 
+wxString        g_sDefaultImportPath;
+wxString        g_sDefaultImportType;
+
 ODPlugIn_Position_Fix_Ex  g_pfFix;
 
 ODJSON          *g_pODJSON;
@@ -464,10 +467,11 @@ int ocpn_draw_pi::Init(void)
     //    g_pODConfig->m_pODNavObjectChangesSet = new ODNavObjectChanges( wxS("/home/jon/.opencpn/odnavobj.xml.changes") );
     wxString sChangesFile = g_pODConfig->m_sODNavObjSetChangesFile;
     //    g_pODConfig->m_pODNavObjectChangesSet = new ODNavObjectChanges( sChangesFile );
+
+    LoadConfig();
+    g_pODConfig->LateInit();
     
     g_pODSelect = new ODSelect();
-    
-    LoadConfig();
     
     g_pODJSON = new ODJSON;
     g_pODAPI = new ODAPI;
@@ -1355,6 +1359,8 @@ void ocpn_draw_pi::SaveConfig()
             pConf->Write( wxS( "DefaultTextPointFaceName" ), g_DisplayTextFont.GetFaceName() );
             pConf->Write( wxS( "DefaultTextPointFontEncoding" ), (int)g_DisplayTextFont.GetEncoding() );
             pConf->Write( wxS( "DefaultTextPointDisplayTextWhen"), g_iTextPointDisplayTextWhen );
+            pConf->Write( wxS( "DefaultImportPath" ), g_sDefaultImportPath );
+            pConf->Write( wxS( "DefaultImportType" ), g_sDefaultImportType );
             
         }
     }
@@ -1600,6 +1606,9 @@ void ocpn_draw_pi::LoadConfig()
         pConf->Read( wxS( "DefaultTextPointFontEncoding" ), &l_fontInfo, (int)l_pDisplayTextFont->GetEncoding() );
         g_DisplayTextFont.SetEncoding( (wxFontEncoding)l_fontInfo );
         pConf->Read( wxS( "DefaultTextPointDisplayTextWhen" ), &g_iTextPointDisplayTextWhen, ID_TEXTPOINT_DISPLAY_TEXT_SHOW_ALWAYS );
+        pConf->Read( wxS( "DefaultImportPath" ), &g_sDefaultImportPath, _T("") );
+        pConf->Read( wxS( "DefaultImportType" ), &g_sDefaultImportType, _T("gpx") );
+        
     }
 
 }
@@ -1967,6 +1976,8 @@ bool ocpn_draw_pi::CallPopupMenu(  )
                 else if(m_pSelectedPath->m_sTypeString == wxT("PIL"))
                     m_pSelectedPIL = (PIL *)m_pSelectedPath;
                 m_pSelectedPath->m_bPathPropertiesBlink = true;
+            } else if(m_pFoundODPoint) {
+                m_pFoundODPoint->m_bPointPropertiesBlink = true;
             }
             g_ODEventHandler->SetCanvas( ocpncc1 );
             g_ODEventHandler->SetPath( m_pSelectedPath );

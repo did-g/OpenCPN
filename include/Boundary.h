@@ -31,6 +31,8 @@ class Boundary : public ODPath
     public:
         Boundary();
         virtual ~Boundary();
+
+        bool IsTypeAndState ( int type, int state ) const;
         void Draw( ODDC& dc, PlugIn_ViewPort &VP );
         void DrawGL( PlugIn_ViewPort &piVP );
         void DeletePoint( ODPoint *op, bool bRenamePoints );

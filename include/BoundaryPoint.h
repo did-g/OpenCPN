@@ -29,11 +29,12 @@
 class BoundaryPoint : public ODPoint
 {
 public:
-    BoundaryPoint(double lat, double lon, const wxString& icon_ident, const wxString& name, const wxString& pGUID, bool bAddToList = true);
+    BoundaryPoint(double lat, double lon, const wxString& icon_ident, const wxString& name, const wxString& pGUID = wxT(""), bool bAddToList = true);
     BoundaryPoint(BoundaryPoint* orig);
     BoundaryPoint();
     void Draw(ODDC& dc, wxPoint* rpn );
     void DrawGL(PlugIn_ViewPort& pivp);
+    bool IsTypeAndState ( int type, int state ) const;
     
     int             m_iInclusionBoundaryPointSize;
     bool            m_bExclusionBoundaryPoint;

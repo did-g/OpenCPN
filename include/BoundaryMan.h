@@ -43,11 +43,11 @@ class BoundaryMan : public PathMan
         bool        FindPointInBoundaryPoint( BoundaryPoint *pBoundaryPoint, double lat, double lon, int type = ID_BOUNDARY_ANY, int state = ID_PATH_STATE_ANY );
         bool        FindPointInBoundaryPoint( wxString l_GUID, double lat, double lon, int type = ID_BOUNDARY_ANY, int state = ID_PATH_STATE_ANY );
 
-        Boundary *  FindLineCrossingBoundary( bool useCache, double StartLat, double StartLon, double EndLat, double EndLon, double *CrossingLat, double *CrossingLon, double *Crossingdist,  
-                                                int type = ID_BOUNDARY_ANY, int state = ID_PATH_STATE_ANY );
+        Boundary *  FindLineCrossingBoundaryPtr( bool useCache, double StartLat, double StartLon, double EndLat, double EndLon, double *CrossingLat, double *CrossingLon, double *Crossingdist,  
+                                                int type = ID_BOUNDARY_ANY, int state = ID_PATH_STATE_ANY, bool FindFirst =  false );
 
         wxString    FindLineCrossingBoundary( double StartLat, double StartLon, double EndLat, double EndLon, double *CrossingLat, double *CrossingLon, double *Crossingdist,  
-                                                int type = ID_BOUNDARY_ANY, int state = ID_PATH_STATE_ANY );
+                                                int type = ID_BOUNDARY_ANY, int state = ID_PATH_STATE_ANY, bool FindFirst = false );
     private:
         struct BOUNDARYCROSSING {
             Boundary *  ptr;

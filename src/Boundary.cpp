@@ -94,6 +94,41 @@ Boundary::~Boundary()
     //dtor
 }
 
+bool Boundary::IsTypeAndState ( int type, int state ) const
+{
+    bool l_bOk = true;
+
+    switch (state) {
+        case ID_PATH_STATE_ANY:
+            l_bOk = true;
+            break;
+        case ID_PATH_STATE_ACTIVE:
+            l_bOk = IsActive();
+            break;
+        case ID_PATH_STATE_INACTIVE:
+            l_bOk = !IsActive();
+            break;
+    }
+
+    if(l_bOk) {
+        switch (type) {
+            case ID_BOUNDARY_ANY:
+                l_bOk = true;
+                break;
+            case ID_BOUNDARY_EXCLUSION:
+                if(!m_bExclusionBoundary) l_bOk = false;
+                break;
+            case ID_BOUNDARY_INCLUSION:
+                if(!m_bInclusionBoundary) l_bOk = false;
+                break;
+            case ID_BOUNDARY_NIETHER:
+                if(m_bExclusionBoundary || m_bInclusionBoundary) l_bOk = false;
+                break;
+        }
+    }
+    return l_bOk;
+}
+
 void Boundary::CreateColourSchemes(void)
 {
     ODPath::CreateColourSchemes();
