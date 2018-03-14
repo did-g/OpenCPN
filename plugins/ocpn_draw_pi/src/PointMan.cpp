@@ -920,7 +920,7 @@ void PointMan::BuildCache()
     
 }
 
-BoundaryPoint *PointMan::FindLineCrossingBoundary( bool UseCache, double StartLon, double StartLat, double EndLon, double EndLat, int type, int state )
+BoundaryPoint *PointMan::FindLineCrossingBoundaryPtr( bool UseCache, double StartLon, double StartLat, double EndLon, double EndLat, int type, int state )
 {
     // search boundary point
     wxODPointListNode *node = GetODPointList()->GetFirst();
@@ -986,7 +986,7 @@ wxString PointMan::FindLineCrossingBoundary( double StartLon, double StartLat, d
 {
     BoundaryPoint *op;
     wxString l_sGUID;
-    op = FindLineCrossingBoundary( false, StartLon, StartLat, EndLon, EndLat, type, state );
+    op = FindLineCrossingBoundaryPtr( false, StartLon, StartLat, EndLon, EndLat, type, state );
     if ( op != 0)
         return op->m_GUID;
     return _T("");

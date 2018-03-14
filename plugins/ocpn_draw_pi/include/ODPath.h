@@ -103,10 +103,10 @@ public:
     bool CrossesIDL(){ return m_bcrosses_idl; }
     void SetVisible(bool visible = true, bool includeODPoints = true);
     void SetListed(bool visible = true);
-    bool IsVisible() { return m_bVisible; }
-    bool IsListed() { return m_bListed; }
-    bool IsActive() { return m_bPathIsActive; }
-    bool IsSelected() { return m_bPathIsSelected; }
+    bool IsVisible() const { return m_bVisible; }
+    bool IsListed() const { return m_bListed; }
+    bool IsActive() const { return m_bPathIsActive; }
+    bool IsSelected() const { return m_bPathIsSelected; }
 
     int SendToGPS(const wxString & com_name, bool bsend_waypoints, wxGauge *pProgress);
 
