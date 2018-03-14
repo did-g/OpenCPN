@@ -208,12 +208,14 @@ WeatherRouting::WeatherRouting(wxWindow *parent, weather_routing_pi &plugin)
 			wxCopyFile(cfg, m_default_configuration_path);
 		}
             }
+            pConf->SetPath ( _T( "/PlugIns/WeatherRouting" ) ); // path can change after modal dialog
             pConf->Write (  _T ( "ConfigVersion" ), PLUGIN_VERSION_MAJOR * 100 + PLUGIN_VERSION_MINOR);
         }
     }
 
     m_SettingsDialog.LoadSettings();
     
+    pConf->SetPath ( _T( "/PlugIns/WeatherRouting" ) ); // path can change after modal dialog
     pConf->Read ( _T ( "DisableColPane" ), &m_disable_colpane, false);
     wxBoxSizer* bSizer;
     bSizer = new wxBoxSizer(wxVERTICAL);
@@ -367,6 +369,11 @@ void WeatherRouting::Render(wrDC &dc, PlugIn_ViewPort &vp)
     for(std::list<RouteMapOverlay*>::iterator it = currentroutemaps.begin();
         it != currentroutemaps.end(); it++) {
         (*it)->Render(time, m_SettingsDialog, dc, vp, false);
+        
+        // Start WindBarbsOnRoute customization
+        if (it == currentroutemaps.begin() &&
+            m_SettingsDialog.m_cbDisplayWindBarbsOnRoute->GetValue())
+             (*it)->RenderWindBarbsOnRoute(dc, vp);
 
         if(it == currentroutemaps.begin() &&
            m_SettingsDialog.m_cbDisplayWindBarbs->GetValue())
@@ -1114,6 +1121,7 @@ void WeatherRouting::OnFilter( wxCommandEvent& event )
 
 void WeatherRouting::OnResetAll( wxCommandEvent& event )
 {
+    m_StatisticsDialog.SetRunTime(m_RunTime = wxTimeSpan(0));
     Reset();
     UpdateStates();
 }
@@ -1164,7 +1172,7 @@ void WeatherRouting::OnCursorPosition( wxCommandEvent& event )
 
 void WeatherRouting::OnManual ( wxCommandEvent& event )
 {
-    wxLaunchDefaultBrowser(_T("https://opencpn.org/wiki/dokuwiki/doku.php?id=opencpn:opencpn_user_manual:toolbar_buttons:plugins:weather:weather_routing"));
+    wxLaunchDefaultBrowser("https://opencpn.org/wiki/dokuwiki/doku.php?id=opencpn:opencpn_user_manual:plugins:weather:weather_routing");    
 }
 
 void WeatherRouting::OnInformation ( wxCommandEvent& event )
@@ -1312,8 +1320,10 @@ bool WeatherRouting::OpenXML(wxString filename, bool reportfailure)
         int i=0;
         for(TiXmlElement* e = root.FirstChild().Element(); e; e = e->NextSiblingElement(), i++) {
             if(progressdialog) {
-                if(!progressdialog->Update(i))
+                if(!progressdialog->Update(i)) {
+                    delete progressdialog;
                     return true;
+                }
             } else {
                 wxDateTime now = wxDateTime::UNow();
                 /* if it's going to take more than a half second, show a progress dialog */
@@ -1432,6 +1442,7 @@ bool WeatherRouting::OpenXML(wxString filename, bool reportfailure)
     return true;
 failed:
 
+    delete progressdialog;
     if(reportfailure) {
         wxMessageDialog mdlg(this, error, _("Weather Routing"), wxOK | wxICON_ERROR);
         mdlg.ShowModal();
@@ -2247,6 +2258,7 @@ RouteMapConfiguration WeatherRouting::DefaultConfiguration()
     configuration.DetectLand = true;
     configuration.DetectBoundary = false;
     configuration.Currents = false;
+    configuration.OptimizeTacking = false;
     configuration.InvertedRegions = false;
     configuration.Anchoring = false;
 
