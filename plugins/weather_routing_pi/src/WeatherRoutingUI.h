@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Feb 18 2018)
+// C++ code generated with wxFormBuilder (version Feb 20 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -193,6 +193,7 @@ class SettingsDialogBase : public wxDialog
 		wxCheckBox* m_cbAlternatesForAll;
 		wxCheckBox* m_cbMarkAtPolarChange;
 		wxCheckBox* m_cbDisplayWindBarbs;
+		wxCheckBox* m_cbDisplayWindBarbsOnRoute;
 		wxCheckBox* m_cbDisplayCurrent;
 		wxSpinCtrl* m_sConcurrentThreads;
 		wxCheckListBox* m_cblFields;
@@ -411,7 +412,6 @@ class BoatDialogBase : public wxDialog
 		wxChoice* m_cPlotType;
 		wxChoice* m_cPlotVariable;
 		wxCheckBox* m_cbFullPlot;
-		wxCheckBox* m_cbOrientation;
 		wxPanel* m_panel21;
 		wxListCtrl* m_lPolars;
 		wxButton* m_bUp;
@@ -432,7 +432,6 @@ class BoatDialogBase : public wxDialog
 		virtual void OnOverlapPercentage( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnVMGWindSpeed( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnUpdatePlot( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnOrientation( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnPolarSelected( wxListEvent& event ) { event.Skip(); }
 		virtual void OnUpPolar( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDownPolar( wxCommandEvent& event ) { event.Skip(); }

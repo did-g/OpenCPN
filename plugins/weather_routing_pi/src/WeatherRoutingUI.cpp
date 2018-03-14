@@ -1,7 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-
-// C++ code generated with wxFormBuilder (version Feb 18 2018)
-
+// C++ code generated with wxFormBuilder (version Feb 20 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -407,6 +405,9 @@ SettingsDialogBase::SettingsDialogBase( wxWindow* parent, wxWindowID id, const w
 	m_cbDisplayWindBarbs = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display Wind Barbs"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer82->Add( m_cbDisplayWindBarbs, 0, wxALL, 5 );
 	
+	m_cbDisplayWindBarbsOnRoute = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display Wind Barbs On Route"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer82->Add( m_cbDisplayWindBarbsOnRoute, 0, wxALL, 5 );
+	
 	m_cbDisplayCurrent = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display current"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_cbDisplayCurrent->SetValue(true); 
 	fgSizer82->Add( m_cbDisplayCurrent, 0, wxALL, 5 );
@@ -486,6 +487,7 @@ SettingsDialogBase::SettingsDialogBase( wxWindow* parent, wxWindowID id, const w
 	m_cbAlternatesForAll->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbMarkAtPolarChange->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayWindBarbs->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
+	m_cbDisplayWindBarbsOnRoute->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayCurrent->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cblFields->Connect( wxEVT_COMMAND_CHECKLISTBOX_TOGGLED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
 	m_cbUseLocalTime->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
@@ -503,6 +505,7 @@ SettingsDialogBase::~SettingsDialogBase()
 	m_cbAlternatesForAll->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbMarkAtPolarChange->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayWindBarbs->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
+	m_cbDisplayWindBarbsOnRoute->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayCurrent->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cblFields->Disconnect( wxEVT_COMMAND_CHECKLISTBOX_TOGGLED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
 	m_cbUseLocalTime->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
@@ -982,7 +985,7 @@ ConfigurationDialogBase::ConfigurationDialogBase( wxWindow* parent, wxWindowID i
 	m_staticText139->Wrap( -1 );
 	fgSizer115->Add( m_staticText139, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
-	m_cIntegrator = new wxComboBox( sbSizer29->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	m_cIntegrator = new wxComboBox( sbSizer29->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY );
 	m_cIntegrator->Append( _("Newton") );
 	m_cIntegrator->Append( _("Runge Kutta") );
 	fgSizer115->Add( m_cIntegrator, 0, wxALL, 5 );
@@ -1783,9 +1786,6 @@ BoatDialogBase::BoatDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_cbFullPlot = new wxCheckBox( m_panel20, wxID_ANY, _("Full Plot"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer1021->Add( m_cbFullPlot, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
-	m_cbOrientation = new wxCheckBox( m_panel20, wxID_ANY, _("Vert"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer1021->Add( m_cbOrientation, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-	
 	
 	fgSizer106->Add( fgSizer1021, 1, wxEXPAND, 5 );
 	
@@ -1884,7 +1884,6 @@ BoatDialogBase::BoatDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_cPlotType->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( BoatDialogBase::OnUpdatePlot ), NULL, this );
 	m_cPlotVariable->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( BoatDialogBase::OnUpdatePlot ), NULL, this );
 	m_cbFullPlot->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BoatDialogBase::OnUpdatePlot ), NULL, this );
-	m_cbOrientation->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BoatDialogBase::OnOrientation ), NULL, this );
 	m_lPolars->Connect( wxEVT_COMMAND_LIST_ITEM_DESELECTED, wxListEventHandler( BoatDialogBase::OnPolarSelected ), NULL, this );
 	m_lPolars->Connect( wxEVT_COMMAND_LIST_ITEM_SELECTED, wxListEventHandler( BoatDialogBase::OnPolarSelected ), NULL, this );
 	m_bUp->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BoatDialogBase::OnUpPolar ), NULL, this );
@@ -1921,7 +1920,6 @@ BoatDialogBase::~BoatDialogBase()
 	m_cPlotType->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( BoatDialogBase::OnUpdatePlot ), NULL, this );
 	m_cPlotVariable->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( BoatDialogBase::OnUpdatePlot ), NULL, this );
 	m_cbFullPlot->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BoatDialogBase::OnUpdatePlot ), NULL, this );
-	m_cbOrientation->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BoatDialogBase::OnOrientation ), NULL, this );
 	m_lPolars->Disconnect( wxEVT_COMMAND_LIST_ITEM_DESELECTED, wxListEventHandler( BoatDialogBase::OnPolarSelected ), NULL, this );
 	m_lPolars->Disconnect( wxEVT_COMMAND_LIST_ITEM_SELECTED, wxListEventHandler( BoatDialogBase::OnPolarSelected ), NULL, this );
 	m_bUp->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BoatDialogBase::OnUpPolar ), NULL, this );
