@@ -395,6 +395,10 @@ SettingsDialogBase::SettingsDialogBase( wxWindow* parent, wxWindowID id, const w
 	fgSizer82->SetFlexibleDirection( wxBOTH );
 	fgSizer82->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
+	m_cbDisplayCursorRoute = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display Cursor Route"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cbDisplayCursorRoute->SetValue(true); 
+	fgSizer82->Add( m_cbDisplayCursorRoute, 0, wxALL, 5 );
+	
 	m_cbAlternatesForAll = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Alternates for all IsoChrons"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer82->Add( m_cbAlternatesForAll, 0, wxALL, 5 );
 	
@@ -402,15 +406,18 @@ SettingsDialogBase::SettingsDialogBase( wxWindow* parent, wxWindowID id, const w
 	m_cbMarkAtPolarChange->SetValue(true); 
 	fgSizer82->Add( m_cbMarkAtPolarChange, 0, wxALL, 5 );
 	
+	m_cbDisplayCurrent = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display current"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cbDisplayCurrent->SetValue(true); 
+	fgSizer82->Add( m_cbDisplayCurrent, 0, wxALL, 5 );
+	
 	m_cbDisplayWindBarbs = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display Wind Barbs"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer82->Add( m_cbDisplayWindBarbs, 0, wxALL, 5 );
 	
 	m_cbDisplayWindBarbsOnRoute = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display Wind Barbs On Route"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer82->Add( m_cbDisplayWindBarbsOnRoute, 0, wxALL, 5 );
 	
-	m_cbDisplayCurrent = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display current"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_cbDisplayCurrent->SetValue(true); 
-	fgSizer82->Add( m_cbDisplayCurrent, 0, wxALL, 5 );
+	m_cbDisplayComfort = new wxCheckBox( sbSizer25->GetStaticBox(), wxID_ANY, _("Display Sailing Comfort on Route"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer82->Add( m_cbDisplayComfort, 0, wxALL, 5 );
 	
 	
 	fgSizer18->Add( fgSizer82, 1, wxEXPAND, 5 );
@@ -484,11 +491,13 @@ SettingsDialogBase::SettingsDialogBase( wxWindow* parent, wxWindowID id, const w
 	m_sRouteThickness->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( SettingsDialogBase::OnUpdateSpin ), NULL, this );
 	m_sIsoChronThickness->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( SettingsDialogBase::OnUpdateSpin ), NULL, this );
 	m_sAlternateRouteThickness->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( SettingsDialogBase::OnUpdateSpin ), NULL, this );
+	m_cbDisplayCursorRoute->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbAlternatesForAll->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbMarkAtPolarChange->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
+	m_cbDisplayCurrent->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayWindBarbs->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayWindBarbsOnRoute->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
-	m_cbDisplayCurrent->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
+	m_cbDisplayComfort->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cblFields->Connect( wxEVT_COMMAND_CHECKLISTBOX_TOGGLED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
 	m_cbUseLocalTime->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
 	m_sdbSizer1Help->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnHelp ), NULL, this );
@@ -502,11 +511,13 @@ SettingsDialogBase::~SettingsDialogBase()
 	m_sRouteThickness->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( SettingsDialogBase::OnUpdateSpin ), NULL, this );
 	m_sIsoChronThickness->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( SettingsDialogBase::OnUpdateSpin ), NULL, this );
 	m_sAlternateRouteThickness->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( SettingsDialogBase::OnUpdateSpin ), NULL, this );
+	m_cbDisplayCursorRoute->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbAlternatesForAll->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbMarkAtPolarChange->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
+	m_cbDisplayCurrent->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayWindBarbs->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cbDisplayWindBarbsOnRoute->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
-	m_cbDisplayCurrent->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
+	m_cbDisplayComfort->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdate ), NULL, this );
 	m_cblFields->Disconnect( wxEVT_COMMAND_CHECKLISTBOX_TOGGLED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
 	m_cbUseLocalTime->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnUpdateColumns ), NULL, this );
 	m_sdbSizer1Help->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SettingsDialogBase::OnHelp ), NULL, this );
@@ -1351,6 +1362,8 @@ PlotDialogBase::PlotDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	
 	m_PlotWindow = new wxScrolledWindow( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
 	m_PlotWindow->SetScrollRate( 5, 5 );
+	m_PlotWindow->SetMinSize( wxSize( -1,210 ) );
+	
 	fgSizer3->Add( m_PlotWindow, 1, wxEXPAND | wxALL, 5 );
 	
 	wxFlexGridSizer* fgSizer12;
@@ -1388,15 +1401,9 @@ PlotDialogBase::PlotDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	fgSizer97->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	wxFlexGridSizer* fgSizer78;
-	fgSizer78 = new wxFlexGridSizer( 0, 3, 0, 0 );
+	fgSizer78 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer78->SetFlexibleDirection( wxBOTH );
 	fgSizer78->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	m_staticText140 = new wxStaticText( this, wxID_ANY, _("Variable"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText140->Wrap( -1 );
-	m_staticText140->SetForegroundColour( wxColour( 255, 0, 0 ) );
-	
-	fgSizer78->Add( m_staticText140, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	wxString m_cVariable1Choices[] = { _("Speed Over Ground (SOG)"), _("Course Over Ground (COG)"), _("Speed Over Water (SOW)"), _("Course Over Water (COW)"), _("Wind Velocity"), _("Wind Direction"), _("Wind Course"), _("Wind Velocity Ground"), _("Wind Direction Ground"), _("Wind Course Ground"), _("Apparent Wind Speed (AWS)"), _("Apparent Wind Angle (AWA)"), _("Wind Gust"), _("Current Velocity"), _("Current Direction"), _("Sig Wave Height"), _("Tacks") };
 	int m_cVariable1NChoices = sizeof( m_cVariable1Choices ) / sizeof( wxString );
@@ -1406,13 +1413,10 @@ PlotDialogBase::PlotDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	
 	m_stMousePosition1 = new wxStaticText( this, wxID_ANY, _("        N/A         "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stMousePosition1->Wrap( -1 );
+	m_stMousePosition1->SetForegroundColour( wxColour( 251, 2, 7 ) );
+	m_stMousePosition1->SetMinSize( wxSize( 130,-1 ) );
+	
 	fgSizer78->Add( m_stMousePosition1, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-	
-	m_staticText1401 = new wxStaticText( this, wxID_ANY, _("Variable"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText1401->Wrap( -1 );
-	m_staticText1401->SetForegroundColour( wxColour( 0, 255, 0 ) );
-	
-	fgSizer78->Add( m_staticText1401, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	wxString m_cVariable2Choices[] = { _("Speed Over Ground (SOG)"), _("Course Over Ground (COG)"), _("Speed Over Water (SOW)"), _("Course Over Water (COW)"), _("Wind Velocity"), _("Wind Direction"), _("Wind Course"), _("Wind Velocity Ground"), _("Wind Direction Ground"), _("Wind Course Ground"), _("Apparent Wind Speed (AWS)"), _("Apparent Wind Angle (AWA)"), _("Wind Gust"), _("Current Velocity"), _("Current Direction"), _("Sig Wave Height"), _("Tacks") };
 	int m_cVariable2NChoices = sizeof( m_cVariable2Choices ) / sizeof( wxString );
@@ -1422,13 +1426,9 @@ PlotDialogBase::PlotDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	
 	m_stMousePosition2 = new wxStaticText( this, wxID_ANY, _("        N/A         "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stMousePosition2->Wrap( -1 );
+	m_stMousePosition2->SetForegroundColour( wxColour( 33, 255, 6 ) );
+	
 	fgSizer78->Add( m_stMousePosition2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-	
-	m_staticText14011 = new wxStaticText( this, wxID_ANY, _("Variable"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText14011->Wrap( -1 );
-	m_staticText14011->SetForegroundColour( wxColour( 0, 0, 255 ) );
-	
-	fgSizer78->Add( m_staticText14011, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	wxString m_cVariable3Choices[] = { _("Speed Over Ground (SOG)"), _("Course Over Ground (COG)"), _("Speed Over Water (SOW)"), _("Course Over Water (COW)"), _("Wind Velocity"), _("Wind Direction"), _("Wind Course"), _("Wind Velocity Ground"), _("Wind Direction Ground"), _("Wind Course Ground"), _("Apparent Wind Speed (AWS)"), _("Apparent Wind Angle (AWA)"), _("Wind Gust"), _("Current Velocity"), _("Current Direction"), _("Sig Wave Height"), _("Tacks") };
 	int m_cVariable3NChoices = sizeof( m_cVariable3Choices ) / sizeof( wxString );
@@ -1438,6 +1438,8 @@ PlotDialogBase::PlotDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	
 	m_stMousePosition3 = new wxStaticText( this, wxID_ANY, _("        N/A         "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stMousePosition3->Wrap( -1 );
+	m_stMousePosition3->SetForegroundColour( wxColour( 0, 0, 255 ) );
+	
 	fgSizer78->Add( m_stMousePosition3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
@@ -1496,6 +1498,7 @@ PlotDialogBase::PlotDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_PlotWindow->Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( PlotDialogBase::OnMouseEventsPlot ), NULL, this );
 	m_PlotWindow->Connect( wxEVT_PAINT, wxPaintEventHandler( PlotDialogBase::OnPaintPlot ), NULL, this );
 	m_PlotWindow->Connect( wxEVT_SIZE, wxSizeEventHandler( PlotDialogBase::OnSizePlot ), NULL, this );
+	m_PlotWindow->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( PlotDialogBase::OnUpdateUI ), NULL, this );
 	m_sPosition->Connect( wxEVT_SCROLL_TOP, wxScrollEventHandler( PlotDialogBase::OnUpdatePlot ), NULL, this );
 	m_sPosition->Connect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( PlotDialogBase::OnUpdatePlot ), NULL, this );
 	m_sPosition->Connect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( PlotDialogBase::OnUpdatePlot ), NULL, this );
@@ -1538,6 +1541,7 @@ PlotDialogBase::~PlotDialogBase()
 	m_PlotWindow->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( PlotDialogBase::OnMouseEventsPlot ), NULL, this );
 	m_PlotWindow->Disconnect( wxEVT_PAINT, wxPaintEventHandler( PlotDialogBase::OnPaintPlot ), NULL, this );
 	m_PlotWindow->Disconnect( wxEVT_SIZE, wxSizeEventHandler( PlotDialogBase::OnSizePlot ), NULL, this );
+	m_PlotWindow->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( PlotDialogBase::OnUpdateUI ), NULL, this );
 	m_sPosition->Disconnect( wxEVT_SCROLL_TOP, wxScrollEventHandler( PlotDialogBase::OnUpdatePlot ), NULL, this );
 	m_sPosition->Disconnect( wxEVT_SCROLL_BOTTOM, wxScrollEventHandler( PlotDialogBase::OnUpdatePlot ), NULL, this );
 	m_sPosition->Disconnect( wxEVT_SCROLL_LINEUP, wxScrollEventHandler( PlotDialogBase::OnUpdatePlot ), NULL, this );
@@ -1779,8 +1783,6 @@ BoatDialogBase::BoatDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	int m_cPlotVariableNChoices = sizeof( m_cPlotVariableChoices ) / sizeof( wxString );
 	m_cPlotVariable = new wxChoice( m_panel20, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_cPlotVariableNChoices, m_cPlotVariableChoices, 0 );
 	m_cPlotVariable->SetSelection( 0 );
-	m_cPlotVariable->SetMaxSize( wxSize( 120,-1 ) );
-	
 	fgSizer1021->Add( m_cPlotVariable, 0, wxALL, 5 );
 	
 	m_cbFullPlot = new wxCheckBox( m_panel20, wxID_ANY, _("Full Plot"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -2793,6 +2795,10 @@ EditPolarDialogBase::EditPolarDialogBase( wxWindow* parent, wxWindowID id, const
 	m_gPolar->SetMaxSize( wxSize( -1,400 ) );
 	
 	fgSizer93->Add( m_gPolar, 0, wxALL|wxEXPAND, 5 );
+	
+	m_staticText1351 = new wxStaticText( m_panel19, wxID_ANY, _("Leave any cell blank to automatically interpolate from nearby values.\n View the polar plot in the boat dialog while editing the polar."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1351->Wrap( -1 );
+	fgSizer93->Add( m_staticText1351, 0, wxALL, 5 );
 	
 	
 	m_panel19->SetSizer( fgSizer93 );
