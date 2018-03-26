@@ -951,12 +951,17 @@ IF(UNIX AND NOT APPLE)
     IF( SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY )
       MESSAGE(STATUS "Found SQLite3 dev environment.")
       INCLUDE_DIRECTORIES(${SQLITE3_INCLUDE_DIR})
+
+      file(STRINGS "${SQLITE3_INCLUDE_DIR}/sqlite3.h" SQLITE3_VERSION_LINE REGEX "^[ \t]*#define[ \t]+SQLITE_VERSION_NUMBER[ \t]+[0-9]+.*$")
+      string(REGEX REPLACE "[ \t]*#define[ \t]+SQLITE_VERSION_NUMBER[ \t]+([0-9]+).*$" "\\1" SQLITE3_VERSION ${SQLITE3_VERSION_LINE})
+      MESSAGE(STATUS "SQLite3 version is ${SQLITE3_VERSION}")
+      IF( ${SQLITE3_VERSION} LESS "3019000" )
+        add_definitions(-DSQLITE_USE_LEGACY_STRUCT)
+      ENDIF( ${SQLITE3_VERSION} LESS "3019000" )
+
     ELSE(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
       MESSAGE(STATUS "Could not find SQLite3 dev environment.")
     ENDIF(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
-    
-    add_definitions(-DSQLITE_USE_LEGACY_STRUCT)
-   
 ENDIF(UNIX AND NOT APPLE)
 
 IF(WIN32 OR APPLE)
@@ -1150,7 +1155,6 @@ SET(HDRS
 		include/ais.h
 		include/pluginmanager.h
 		include/ocpn_plugin.h
-		include/gpxdocument.h
 		include/wx/json_defs.h
 		include/wx/jsonwriter.h
 		include/wx/jsonreader.h
@@ -1247,7 +1251,6 @@ SET(SRCS
 		src/about.cpp
 		src/ais.cpp
 		src/pluginmanager.cpp
-		src/gpxdocument.cpp
 		src/wxJSON/jsonwriter.cpp
 		src/wxJSON/jsonreader.cpp
 		src/wxJSON/jsonval.cpp
@@ -2080,7 +2083,7 @@ ENDIF(BUNDLE_DOCS MATCHES "ON")
 
 IF(UNIX)
   INSTALL(FILES data/opencpn.png DESTINATION ${PREFIX_DATA}/icons/hicolor/48x48/apps PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-  INSTALL(FILES src/bitmaps/opencpn-64.png DESTINATION ${PREFIX_DATA}/icons/hicolor/64x64/apps/opencpn.png PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+  INSTALL(FILES src/bitmaps/opencpn-64.png DESTINATION ${PREFIX_DATA}/icons/hicolor/64x64/apps RENAME opencpn.png PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
   INSTALL(FILES src/bitmaps/other_svg_src/opencpn.svg DESTINATION ${PREFIX_DATA}/icons/hicolor/scalable/apps PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
   INSTALL(FILES data/opencpn.desktop DESTINATION ${PREFIX_DATA}/applications PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ )
   INSTALL(FILES data/opencpn.appdata.xml DESTINATION ${PREFIX_DATA}/appdata PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ )
@@ -2189,6 +2192,9 @@ GETTEXT_BUILD_MO(po/opencpn_zh_TW.po zh_TW)
 GETTEXT_BUILD_MO(po/opencpn_hu_HU.po hu_HU)
 GETTEXT_BUILD_MO(po/opencpn_gl_ES.po gl_ES)
 GETTEXT_BUILD_MO(po/opencpn_ca_ES.po ca_ES)
+GETTEXT_BUILD_MO(po/opencpn_ar_SA.po ar_SA)
+GETTEXT_BUILD_MO(po/opencpn_ja_JP.po ja_JP)
+GETTEXT_BUILD_MO(po/opencpn_vi_VN.po vi_VN)
 ADD_CUSTOM_TARGET(i18n COMMENT "i18n: Done." DEPENDS ${_gmoFiles})
 
 IF(NOT QT_ANDROID)

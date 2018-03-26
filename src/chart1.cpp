@@ -796,9 +796,10 @@ bool stConnection::OnExec(const wxString& topic, const wxString& data)
         gFrame->Raise();
     }
     else {
+        int wpt_dups;
         NavObjectCollection1 *pSet = new NavObjectCollection1;
         pSet->load_file(path.fn_str());
-        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), true ); // Import with full vizibility of names and objects
+        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), wpt_dups, true ); // Import with full vizibility of names and objects
         if( pRouteManagerDialog && pRouteManagerDialog->IsShown() )
             pRouteManagerDialog->UpdateLists();
         
@@ -1632,6 +1633,8 @@ bool MyApp::OnInit()
 
     if( !wxApp::OnInit() ) return false;
 
+    GpxDocument::SeedRandom();
+    
     last_own_ship_sog_cog_calc_ts = wxInvalidDateTime;
 
 #if defined(__WXGTK__)  && defined(ocpnUSE_GLES) && defined(__ARM_ARCH)
@@ -3707,7 +3710,7 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
 
             wxString name = now.Format();
             name.Prepend( _("Anchorage created ") );
-            RoutePoint *pWP = new RoutePoint( gLat, gLon, _T("anchorage"), name, GPX_EMPTY_STRING );
+            RoutePoint *pWP = new RoutePoint( gLat, gLon, _T("anchorage"), name, wxEmptyString );
             pWP->m_bShowName = false;
             pWP->m_bIsolatedMark = true;
 
@@ -4865,7 +4868,7 @@ void MyFrame::ActivateMOB( void )
     mob_label += _T(" at ");
     mob_label += mob_time.FormatTime();
 
-    RoutePoint *pWP_MOB = new RoutePoint( gLat, gLon, _T ( "mob" ), mob_label, GPX_EMPTY_STRING );
+    RoutePoint *pWP_MOB = new RoutePoint( gLat, gLon, _T ( "mob" ), mob_label, wxEmptyString );
     pWP_MOB->m_bKeepXRoute = true;
     pWP_MOB->m_bIsolatedMark = true;
     pWP_MOB->SetWaypointArrivalRadius( -1.0 ); // Negative distance is code to signal "Never Arrive"
@@ -4880,7 +4883,7 @@ void MyFrame::ActivateMOB( void )
         ll_gc_ll( gLat, gLon, gCog, 1.0, &zlat, &zlon );
 
         RoutePoint *pWP_src = new RoutePoint( zlat, zlon, g_default_wp_icon,
-                wxString( _( "1.0 NM along COG" ) ), GPX_EMPTY_STRING );
+                wxString( _( "1.0 NM along COG" ) ), wxEmptyString );
         pSelect->AddSelectableRoutePoint( zlat, zlon, pWP_src );
 
         Route *temp_route = new Route();
@@ -6874,10 +6877,11 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
                     wxString path = g_params[n];
                     if( ::wxFileExists( path ) ) 
                     {
+                        int wpt_dups;
                         NavObjectCollection1 *pSet = new NavObjectCollection1;
                         pSet->load_file(path.fn_str());
 
-                        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), true ); // Import with full vizibility of names and objects
+                        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), wpt_dups, true ); // Import with full vizibility of names and objects
                         LLBBox box = pSet->GetBBox();
                         if (box.GetValid()) {
                             CenterView(box);
@@ -10151,16 +10155,17 @@ void MyFrame::ActivateAISMOBRoute( AIS_Target_Data *ptarget )
     mob_label += _T(" at ");
     mob_label += mob_time.FormatTime();
 
-    RoutePoint *pWP_MOB = new RoutePoint( ptarget->Lat, ptarget->Lon, _T ( "mob" ), mob_label, GPX_EMPTY_STRING );
+    RoutePoint *pWP_MOB = new RoutePoint( ptarget->Lat, ptarget->Lon, _T ( "mob" ), mob_label, wxEmptyString );
     pWP_MOB->m_bKeepXRoute = true;
     pWP_MOB->m_bIsolatedMark = true;
     pSelect->AddSelectableRoutePoint( ptarget->Lat, ptarget->Lon, pWP_MOB );
     pConfig->AddNewWayPoint( pWP_MOB, -1 );       // use auto next num
 
 
-    if( bGPSValid && !wxIsNaN(gCog) && !wxIsNaN(gSog) ) {
+    /* We want to start tracking any MOB in range (Which will trigger false alarms with messages received over the network etc., but will a) not discard nearby event even in case our GPS is momentarily unavailable and b) work even when the boat is stationary, in which case some GPS units do not provide COG)
+    if( bGPSValid && !wxIsNaN(gCog) && !wxIsNaN(gSog) ) { */
         RoutePoint *pWP_src = new RoutePoint( gLat, gLon, g_default_wp_icon,
-                                              wxString( _( "Own ship" ) ), GPX_EMPTY_STRING );
+                                              wxString( _( "Own ship" ) ), wxEmptyString );
         pSelect->AddSelectableRoutePoint( gLat, gLon, pWP_src );
 
         pAISMOBRoute = new Route();
@@ -10187,7 +10192,7 @@ void MyFrame::ActivateAISMOBRoute( AIS_Target_Data *ptarget )
         v[_T("GUID")] = pAISMOBRoute->m_GUID;
         wxString msg_id( _T("OCPN_MAN_OVERBOARD") );
         g_pi_manager->SendJSONMessageToAllPlugins( msg_id, v );
-    }
+    //}
 
     if( pRouteManagerDialog && pRouteManagerDialog->IsShown() ) {
         pRouteManagerDialog->UpdateRouteListCtrl();
