@@ -351,14 +351,14 @@ void watchdog_pi::OnTimer( wxTimerEvent & )
     }
     
     double dt = m_lastfix.FixTime - m_lasttimerfix.FixTime;
-    if(!isnan(m_lastfix.Lat) && !isnan(m_lasttimerfix.Lat) && dt > 0) {
+    if(!wxIsNaN(m_lastfix.Lat) && !wxIsNaN(m_lasttimerfix.Lat) && dt > 0) {
         /* this way helps avoid surge speed from gps from surfing waves etc... */
         double cog, sog;
         DistanceBearingMercator_Plugin(m_lastfix.Lat, m_lastfix.Lon,
                                        m_lasttimerfix.Lat, m_lasttimerfix.Lon, &cog, &sog);
         sog *= (3600.0 / dt);
 
-        if(isnan(m_cog))
+        if(wxIsNaN(m_cog))
             m_cog = cog, m_sog = sog;
         else {
             m_cog = .25*cog + .75*m_cog;
