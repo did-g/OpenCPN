@@ -38,40 +38,31 @@
 #include "climatology_pi.h"
 #include "ClimatologyConfigDialog.h"
 
-static const wxString units0_names[] = {_("Knots"), _("M/S"), _("MPH"), _("KPH"), wxEmptyString};
-static const wxString units1_names[] = {_("MilliBars"), _("mmHG"), wxEmptyString};
-static const wxString units2_names[] = {_("Meters"), _("Feet"), _("Inches"), wxEmptyString};
-static const wxString units3_names[] = {_("Celcius"), _("Fahrenheit"), wxEmptyString};
-static const wxString units4_names[] = {_("Percent"), wxEmptyString};
-static const wxString units5_names[] = {_("Unknown"), wxEmptyString};
+static const wxString units0_names[] = {"Knots", "M/S", "MPH", "KPH", wxEmptyString};
+static const wxString units1_names[] = {"MilliBars", "mmHG", wxEmptyString};
+static const wxString units2_names[] = {"mm/day", "in/day", "mm/month", "M/month",
+                                        "in/month", "ft/month", "M/year", "in/year",
+                                        "ft/year", wxEmptyString};
+static const wxString units3_names[] = {"Celcius", "Fahrenheit", wxEmptyString};
+static const wxString units4_names[] = {"Percent", wxEmptyString};
+static const wxString units5_names[] = {"Unknown", wxEmptyString};
+static const wxString units6_names[] = {"Meters", "Feet", wxEmptyString};
 static const wxString *unit_names[] = {units0_names, units1_names, units2_names,
-                                       units3_names, units4_names, units5_names};
+                                       units3_names, units4_names, units5_names,
+				       units6_names};
 
-static const wxString name_from_index[] = {_T("Wind"), _T("Current"),
-                                           _T("SeaLevelPressure"), _T("SeaSurfaceTemperature"),
-                                           _T("AirTemperature"),
-                                           _T("CloudCover"), _T("Precipitation"),
-                                           _T("RelativeHumidity"), _T("Lightning"), _T("Depth")};
+static const wxString name_from_index[] = {"Wind", "Current",
+                                           "Sea Level Pressure", "Sea Surface Temperature",
+                                           "Air Temperature",
+                                           "Cloud Cover", "Precipitation",
+                                           "Relative Humidity", "Lightning", "Sea Depth"};
 
-/* somehow translations don't work in arrays */
+static const int unittype[ClimatologyOverlaySettings::SETTINGS_COUNT] = {0, 0, 1, 3, 3, 4, 2, 4, 5, 6};
+
 wxString ClimatologyConfigDialog::SettingName(int setting)
 {
-    switch(setting) {
-    case ClimatologyOverlaySettings::WIND:                return _("Wind");
-    case ClimatologyOverlaySettings::CURRENT:             return _("Current");
-    case ClimatologyOverlaySettings::SLP:                 return _("Sea Level Pressure");
-    case ClimatologyOverlaySettings::SST:                 return _("Sea Surface Temperature");
-    case ClimatologyOverlaySettings::AT:                  return _("Air Temperature");
-    case ClimatologyOverlaySettings::CLOUD:               return _("Cloud Cover");
-    case ClimatologyOverlaySettings::PRECIPITATION:       return _("Precipitation");
-    case ClimatologyOverlaySettings::RELATIVE_HUMIDITY:   return _("Relative Humidity");
-    case ClimatologyOverlaySettings::LIGHTNING:           return _("Lightning");
-    case ClimatologyOverlaySettings::SEADEPTH:            return _("Sea Depth");
-    }
-    return _T("");
+    return _(name_from_index[setting]);
 }
-
-static const int unittype[ClimatologyOverlaySettings::SETTINGS_COUNT] = {0, 0, 1, 3, 3, 4, 2, 4, 5, 2};
 
 double ClimatologyOverlaySettings::CalibrationOffset(int setting)
 {
@@ -94,20 +85,29 @@ double ClimatologyOverlaySettings::CalibrationFactor(int setting)
         case MILLIBARS: return 1;
         case MMHG: return 1 / (1.33);
         } break;
-    case 2: switch(Settings[setting].m_Units) {
-        case METERS: return 1;
-        case FEET:   return 3.28;
-        case INCHES: return 39.37;
-        } break;
+    case 2: {
+        double mul = 1;
+        switch(Settings[setting].m_Units) {
+        case MM_DAY:   case IN_DAY:   mul /= 365.24; break;
+        case MM_MONTH: case IN_MONTH: mul /= 12.; break;
+        }
+        switch(Settings[setting].m_Units) {
+        case MM_DAY: case MM_MONTH:               mul *= 1000.; break;
+        case IN_DAY: case IN_MONTH: case IN_YEAR: mul *= 39.37; break;
+        case FT_MONTH: case FT_YEAR:              mul *= 3.28; break;
+        }
+        return mul;
+    }
     case 3: switch(Settings[setting].m_Units) {
         case CELCIUS:     return 1;
         case FAHRENHEIT: return 9./5;
         } break;
-    case 4: switch(Settings[setting].m_Units) {
-        case METERS: return 1;
-        case INCHES: return 39.37;
-        } break;
+    case 4: return 1;
     case 5: return 1;
+    case 6: switch(Settings[setting].m_Units) {
+        case METERS: return 1;
+        case FEET:   return 3.28;
+        } break;
     }
         
     return 1;
@@ -217,7 +217,11 @@ void ClimatologyOverlaySettings::Save()
 }
 
 ClimatologyConfigDialog::ClimatologyConfigDialog(ClimatologyDialog *parent)
-  : ClimatologyConfigDialogBase(parent)
+#ifndef __WXOSX__
+    : ClimatologyConfigDialogBase(parent)
+#else
+    : ClimatologyConfigDialogBase(parent, wxID_ANY, _("Climatology Configuration"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP)
+#endif
 {
     pParent = parent;
 
@@ -229,7 +233,7 @@ ClimatologyConfigDialog::ClimatologyConfigDialog(ClimatologyDialog *parent)
     LoadSettings();
  
     for(int i=0; i<ClimatologyOverlaySettings::SETTINGS_COUNT; i++)
-        m_cDataType->Append(SettingName(i));
+        m_cDataType->Append(_(name_from_index[i]));
 
     m_cDataType->SetSelection(m_lastdatatype);
     PopulateUnits(m_lastdatatype);
@@ -396,7 +400,7 @@ void ClimatologyConfigDialog::PopulateUnits(int settings)
 {
     m_cDataUnits->Clear();
     for(int i=0; !unit_names[unittype[settings]][i].empty(); i++)
-        m_cDataUnits->Append(unit_names[unittype[settings]][i]);
+        m_cDataUnits->Append(_(unit_names[unittype[settings]][i]));
 }
 
 void ClimatologyConfigDialog::OnPageChanged( wxNotebookEvent& event )

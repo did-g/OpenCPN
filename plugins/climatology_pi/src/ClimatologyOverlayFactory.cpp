@@ -42,6 +42,8 @@
 #include "climatology_pi.h"
 #include "gldefs.h"
 
+#define FAILED_FILELIST_MSG_LEN 500
+
 static int s_multitexturing = 0;
 static PFNGLACTIVETEXTUREARBPROC s_glActiveTextureARB = 0;
 static PFNGLMULTITEXCOORD2DARBPROC s_glMultiTexCoord2dARB = 0;
@@ -440,16 +442,19 @@ ClimatologyOverlayFactory::ClimatologyOverlayFactory( ClimatologyDialog &dlg )
     BuildCycloneCache();
 
     if(m_bFailedLoading) {
-        wxMessageDialog mdlg(&m_dlg, 
+        wxString failed_msg = m_sFailedMessage.Left(FAILED_FILELIST_MSG_LEN);
+        if( m_sFailedMessage.Len() > FAILED_FILELIST_MSG_LEN )
+            failed_msg.Append("...\n\n");
+        wxMessageDialog mdlg(&m_dlg,
                              _("Some Data Failed to load:\n")
-                             + m_sFailedMessage +
+                             + failed_msg +
                              _("Would you like to try to download?"),
                              _("Climatology"), wxYES | wxNO | wxICON_WARNING);
         if(mdlg.ShowModal() == wxID_YES) {
             wxLaunchDefaultBrowser(
                 _T("http://sourceforge.net/projects/opencpnplugins/files/climatology_pi/"));
             wxMessageDialog mdlg(&m_dlg, _("You must extract this data, and place in: ") + path +
-                                 _("\nthen restart opencpn"),
+                                 _("\nthen restart OpenCPN"),
                                  _("Climatology"), wxOK);
             mdlg.ShowModal();
         }
@@ -1000,7 +1005,7 @@ void ClimatologyOverlayFactory::BuildCycloneCache()
                     int month = (*it2)->datetime.month;
                     double value = elninoyear.months[month];
         
-                    if(isnan(value)) {
+                    if(wxIsNaN(value)) {
                         if(!m_dlg.m_cfgdlg->m_cbNotAvailable->GetValue())
                             continue;
                     } else {
@@ -1212,7 +1217,7 @@ const int ColorMapLens[] = { (sizeof WindMap) / (sizeof *WindMap),
 
 wxColour ClimatologyOverlayFactory::GetGraphicColor(int setting, double val_in)
 {
-    if(isnan(val_in))
+    if(wxIsNaN(val_in))
         return wxColour(0, 0, 0, 0); /* transparent */
 
     int colormap_index = setting;
@@ -1540,14 +1545,14 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
 wxImage &ClimatologyOverlayFactory::getLabel(double value)
 {
     std::map <double, wxImage >::iterator it;
-    double nvalue = isnan(value) ? 99999999 : value;
+    double nvalue = wxIsNaN(value) ? 99999999 : value;
             
     it = m_labelCache.find(nvalue);
     if (it != m_labelCache.end())
         return m_labelCache[nvalue];
 
     wxString labels;
-    if(isnan(value))
+    if(wxIsNaN(value))
         labels = _("N/A");
     else
         labels.Printf(_T("%.0f"), round(value));
@@ -1616,8 +1621,8 @@ static double interp_value(double v0, double v1, double d)
 // interpolate two angles in range +- PI, with resulting angle in the same range
 static double interp_angle(double a0, double a1, double d)
 {
-    if(isnan(a0)) return a1;
-    if(isnan(a1)) return a0;
+    if(wxIsNaN(a0)) return a1;
+    if(wxIsNaN(a1)) return a0;
     if(a0 - a1 > M_PI) a0 -= 2*M_PI;
     else if(a1 - a0 > M_PI) a1 -= 2*M_PI;
     double a = (1-d)*a0 + d*a1;
@@ -1779,7 +1784,7 @@ double ClimatologyOverlayFactory::getValueMonth(enum Coord coord, int setting,
        setting != ClimatologyOverlaySettings::CURRENT)
         return NAN;
 
-    if(isnan(lat) || isnan(lon))
+    if(wxIsNaN(lat) || wxIsNaN(lon))
         return NAN;
 
     switch(setting) {
@@ -2108,7 +2113,7 @@ void ClimatologyOverlayFactory::RenderNumber(wxPoint p, double v, const wxColour
 	}
 
 	wxString labels;
-	if(isnan(v))
+	if(wxIsNaN(v))
 	    labels = _("N/A");
 	else
 	    labels.Printf(_T("%.0f"), round(v));
