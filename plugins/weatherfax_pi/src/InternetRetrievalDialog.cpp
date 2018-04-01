@@ -5,7 +5,7 @@
  * Author:   Sean D'Epagnier
  *
  ***************************************************************************
- *   Copyright (C) 2014 by Sean D'Epagnier                                 *
+ *   Copyright (C) 2018 by Sean D'Epagnier                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -29,6 +29,7 @@
 #include <wx/progdlg.h>
 #include <wx/url.h>
 #include <wx/wfstream.h>
+#include <wx/arrstr.h>
 
 #include <list>
 
@@ -39,7 +40,12 @@
 #include "WeatherFax.h"
 
 InternetRetrievalDialog::InternetRetrievalDialog( weatherfax_pi &_weatherfax_pi, wxWindow* parent)
-    : InternetRetrievalDialogBase( parent ), m_weatherfax_pi(_weatherfax_pi),
+#ifndef __WXOSX__
+    : InternetRetrievalDialogBase( parent ),
+#else
+    : InternetRetrievalDialogBase( parent, wxID_ANY, _("Internet Retrieval"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER|wxSTAY_ON_TOP ),
+#endif
+      m_weatherfax_pi(_weatherfax_pi),
       m_bLoaded(false), m_bDisableServers(false), m_bDisableRegions(false),
       m_bDisableFilter(true), m_bRebuilding(false)
 {
@@ -78,9 +84,9 @@ InternetRetrievalDialog::~InternetRetrievalDialog()
     ClearInternetRetrieval();
 }
 
-void InternetRetrievalDialog::Load()
+void InternetRetrievalDialog::Load(bool force)
 {
-    if(m_bLoaded)
+    if(m_bLoaded && !force)
         return;
 
     m_bLoaded = true;
@@ -138,7 +144,10 @@ void InternetRetrievalDialog::Load()
     }
 
     s = wxFileName::GetPathSeparator();
-    OpenXML(*GetpSharedDataLocation() + _T("plugins")
+    if( wxFileExists( m_weatherfax_pi.StandardPath() + _T("WeatherFaxInternetRetrieval.xml") ) )
+        OpenXML( m_weatherfax_pi.StandardPath() + _T("WeatherFaxInternetRetrieval.xml") );
+    else
+        OpenXML(*GetpSharedDataLocation() + _T("plugins")
             + s + _T("weatherfax_pi") + s + _T("data") + s
             + _T("WeatherFaxInternetRetrieval.xml"));
 
@@ -192,6 +201,8 @@ bool InternetRetrievalDialog::OpenXML(wxString filename)
 {
     ClearInternetRetrieval();
     m_lServers->Clear();
+    m_Servers.clear();
+    m_Regions.clear();
 
     TiXmlDocument doc;
     wxString error;
@@ -280,7 +291,11 @@ bool InternetRetrievalDialog::OpenXML(wxString filename)
                                             url.Contents = wxString::Format
                                                 (wxString::FromUTF8(h->Attribute("Contents")), index);
                                             url.area_name = wxString::FromUTF8(h->Attribute("Area"));
-                                        
+
+                                            url.hour_offset = url.hour_round = url.hour_round_offset = 0;
+                                            const char*hour = h->Attribute( "Hour" );
+                                            if(hour)
+                                                sscanf(hour, "%d;%d;%d", &url.hour_offset, &url.hour_round, &url.hour_round_offset);
                                             urls.push_back(url);
                                         }
                                     } else
@@ -296,7 +311,11 @@ bool InternetRetrievalDialog::OpenXML(wxString filename)
                                 url.Url = region_url + wxString::FromUTF8(g->Attribute("Url"));
                                 url.Contents = wxString::FromUTF8(g->Attribute("Contents"));
                                 url.area_name = wxString::FromUTF8(g->Attribute("Area"));
-
+                                
+                                url.hour_offset = url.hour_round = url.hour_round_offset = 0;
+                                const char*hour = g->Attribute( "Hour" );
+                                if(hour)
+                                    sscanf(hour, "%d;%d;%d", &url.hour_offset, &url.hour_round, &url.hour_round_offset);
                                 urls.push_back(url);
                             } else if(!strcmp(g->Value(), "Area")) {
                                 FaxArea Area;
@@ -554,9 +573,26 @@ void InternetRetrievalDialog::OnRetrieve( wxCommandEvent& event )
 
         count++;
 
+
+        /* compute actual url */
+        wxString url = faxurl->Url;
+        wxDateTime now = wxDateTime::Now();
+
+        // now deal with hour
+        int hour = now.GetHour(wxDateTime::UTC);
+        if(faxurl->hour_round) {
+            int nhour = wxRound(((double)hour+faxurl->hour_offset-faxurl->hour_round_offset)/faxurl->hour_round)*faxurl->hour_round+faxurl->hour_round_offset;
+            now+=wxTimeSpan::Hours(nhour - hour);
+        }
+            
+        wxString formats[] = {"%Y", "%y", "%m", "%d", "%H"};
+        for(unsigned int i=0; i<(sizeof formats) / (sizeof *formats); i++)
+            url.Replace(formats[i], now.Format(formats[i], wxDateTime::UTC));
+
+        
         wxString path = weatherfax_pi::StandardPath();
 
-        wxString filename = faxurl->Url;
+        wxString filename = url;
         filename.Replace(_T("/"), _T("!"));
         filename.Replace(_T(":"), _T("!"));
 
@@ -578,18 +614,21 @@ Use existing file?"), _("Weather Fax"), wxYES | wxNO | wxCANCEL);
 
         {
 
-        _OCPN_DLStatus res = OCPN_downloadFile( faxurl->Url, filename, _("WeatherFax InternetRetrieval"),
+        _OCPN_DLStatus res = OCPN_downloadFile( url, filename, _("WeatherFax InternetRetrieval"),
                               _("Reading Headers: ") + faxurl->Contents, wxNullBitmap, this,
                                                OCPN_DLDS_CAN_PAUSE|OCPN_DLDS_CAN_ABORT|OCPN_DLDS_SHOW_ALL|OCPN_DLDS_AUTO_CLOSE, 10 );
 
         switch( res )
         {
         case OCPN_DL_NO_ERROR: break;
+        case OCPN_DL_STARTED: break;
         case OCPN_DL_FAILED:
+        case OCPN_DL_UNKNOWN:
+        case OCPN_DL_USER_TIMEOUT:
         {
             wxMessageDialog mdlg(this, _("Failed to Download: ") +
                                  faxurl->Contents + _T("\n") +
-                                 faxurl->Url + _T("\n") +
+                                 url + _T("\n") +
                                  _("Verify there is a working internet connection.") + _T("\n") +
                                  _("If the url is incorrect please edit the xml and/or post a bug report."),
                                  _("Weather Fax"), wxOK | wxICON_ERROR);
@@ -651,13 +690,21 @@ void InternetRetrievalDialog::Filter()
         lon = NAN;
 
     /* reset filter flags */
+    wxArrayString servers;
     for(std::list<FaxServer>::iterator it = m_Servers.begin();
-        it != m_Servers.end(); it++)
+        it != m_Servers.end(); it++) {
         it->Filtered = true;
+        if(HasServer(it->Name))
+            servers.Add(it->Name);
+    }
 
+    wxArrayString regions;
     for(std::list<FaxRegion>::iterator it = m_Regions.begin();
-        it != m_Regions.end(); it++)
+        it != m_Regions.end(); it++) {
         it->Filtered = true;
+        if(HasRegion(it->Name))
+            regions.Add(it->Name);
+    }
 
     for(std::list<FaxUrl*>::iterator it = m_InternetRetrieval.begin();
         it != m_InternetRetrieval.end(); it++) {
@@ -674,7 +721,7 @@ void InternetRetrievalDialog::Filter()
                     it2->Filtered = false;
         }
             
-        (*it)->Filtered = !(boat_in_area && HasServer((*it)->Server) && HasRegion((*it)->Region));
+        (*it)->Filtered = !(boat_in_area && servers.Index((*it)->Server) != wxNOT_FOUND && regions.Index((*it)->Region) != wxNOT_FOUND);
     }
 
     RebuildServers();

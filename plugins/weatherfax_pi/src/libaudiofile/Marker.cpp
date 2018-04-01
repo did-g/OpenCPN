@@ -203,7 +203,7 @@ void afSetMarkPosition (AFfilehandle file, int trackid, int markid,
 
 	if (position < 0)
 	{
-		_af_error(AF_BAD_MARKPOS, "invalid marker position %"PRId64,
+		_af_error(AF_BAD_MARKPOS, "invalid marker position %jd",
 			static_cast<intmax_t>(position));
 		position = 0;
 	}

@@ -40,7 +40,6 @@
 #include "byteorder.h"
 #include "util.h"
 #include "../pcm.h"
-#include <algorithm>
 
 struct ms_adpcm_state
 {
