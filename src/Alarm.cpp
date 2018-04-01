@@ -85,7 +85,7 @@ public:
 
         PlugIn_Position_Fix_Ex lastfix = g_watchdog_pi->LastFix();
 
-        if(isnan(lastfix.Lat))
+        if(wxIsNaN(lastfix.Lat))
             return false;
 
         double lat1 = lastfix.Lat, lon1 = lastfix.Lon, lat2, lon2;
@@ -196,7 +196,7 @@ public:
             return;
 
         PlugIn_Position_Fix_Ex lastfix = g_watchdog_pi->LastFix();
-        if(isnan(m_crossinglat1))
+        if(wxIsNaN(m_crossinglat1))
             return;
 
         wxPoint r1, r2, r3, r4;
@@ -358,7 +358,7 @@ public:
     bool Test() {
         PlugIn_Position_Fix_Ex lastfix = g_watchdog_pi->LastFix();
 
-        if(isnan(lastfix.Lat))
+        if(wxIsNaN(lastfix.Lat))
             return false;
 
         double lat, lon;
@@ -1724,7 +1724,7 @@ public:
 
         double anchordist = Distance();
         wxString s;
-        if(isnan(anchordist))
+        if(wxIsNaN(anchordist))
             s = _T("N/A");
         else {
             wxString fmt(_T("%.0f "));
@@ -1829,7 +1829,7 @@ public:
     wxString GetStatus() {
         double courseerror = CourseError();
         wxString s;
-        if(isnan(courseerror))
+        if(wxIsNaN(courseerror))
             s = _T("N/A");
         else {
             wxString fmt(_T("%.0f "));
@@ -1850,7 +1850,7 @@ public:
         double lat1 = lastfix.Lat, lon1 = lastfix.Lon, lat2, lon2, lat3, lon3;
         double dist = lastfix.Sog;
 
-        if(isnan(dist))
+        if(wxIsNaN(dist))
             return;
 
         PositionBearingDistanceMercator_Plugin(lat1, lon1, m_Course+m_Tolerance,
@@ -1943,7 +1943,7 @@ public:
 
     wxString GetStatus() {
         wxString s;
-        if(isnan(g_watchdog_pi->m_sog))
+        if(wxIsNaN(g_watchdog_pi->m_sog))
             s = _T("N/A");
         else {
             wxString fmt(_T("%.1f"));
@@ -2033,14 +2033,14 @@ public:
     void OnTimer( wxTimerEvent &tEvent )
     {
         Alarm::OnTimer( tEvent );
-        if(!isnan(g_watchdog_pi->LastFix().Sog)) m_SOGqueue.push_front(Knots()) ;
+        if(!wxIsNaN(g_watchdog_pi->LastFix().Sog)) m_SOGqueue.push_front(Knots()) ;
         while((int)m_SOGqueue.size() > m_iAverageTime) m_SOGqueue.pop_back();
         return;
     }
     
 private:
     double Knots() {
-        if(isnan(g_watchdog_pi->LastFix().Sog)) return 0.;
+        if(wxIsNaN(g_watchdog_pi->LastFix().Sog)) return 0.;
         else return g_watchdog_pi->LastFix().Sog;
     }
 
@@ -2089,7 +2089,7 @@ public:
                 val = 360 - val;
         }
 
-        if(isnan(val))
+        if(wxIsNaN(val))
             s = _T("N/A");
         else {
             wxString fmt(_T("%.1f"));
@@ -2281,7 +2281,7 @@ public:
         s += _T(" ");
         
         double val = Value();
-        if(isnan(val))
+        if(wxIsNaN(val))
             s += _T("N/A");
         else {
             wxString fmt(_T("%.2f"));
@@ -2416,7 +2416,7 @@ private:
                 value = nmea.Mtw.Temperature;
             break;
         }
-        if(isnan(value))
+        if(wxIsNaN(value))
             return;
 
         if(m_Mode == INCREASING || m_Mode == DECREASING) {
