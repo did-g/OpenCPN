@@ -37,7 +37,12 @@
 #include "WeatherFax.h"
 
 SchedulesDialog::SchedulesDialog( weatherfax_pi &_weatherfax_pi, wxWindow* parent)
-    : SchedulesDialogBase( parent ), m_CaptureWizard(NULL), m_weatherfax_pi(_weatherfax_pi),
+#ifndef __WXOSX__
+    : SchedulesDialogBase( parent ),
+#else
+    : SchedulesDialogBase( parent, wxID_ANY, _("HF Radio Schedules"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSTAY_ON_TOP ),
+#endif
+      m_CaptureWizard(NULL), m_weatherfax_pi(_weatherfax_pi),
       m_ExternalCaptureProcess(NULL), m_CurrentSchedule(NULL), m_bLoaded(false),
       m_bDisableFilter(true), m_bKilled(false), m_bRebuilding(false)
 {
@@ -102,9 +107,9 @@ SchedulesDialog::~SchedulesDialog()
     }
 }
 
-void SchedulesDialog::Load()
+void SchedulesDialog::Load(bool force)
 {
-    if(m_bLoaded)
+    if(m_bLoaded && !force)
         return;
 
     m_bLoaded = true;
@@ -212,7 +217,10 @@ void SchedulesDialog::Load()
     }
 
     s = wxFileName::GetPathSeparator();
-    OpenXML(*GetpSharedDataLocation() + _T("plugins")
+    if( wxFileExists( m_weatherfax_pi.StandardPath() + _T("WeatherFaxSchedules.xml") ) )
+        OpenXML( m_weatherfax_pi.StandardPath() + _T("WeatherFaxSchedules.xml") );
+    else
+        OpenXML(*GetpSharedDataLocation() + _T("plugins")
             + s + _T("weatherfax_pi") + s + _T("data") + s
             + _T("WeatherFaxSchedules.xml"));
 

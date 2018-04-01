@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct  3 2017)
+// C++ code generated with wxFormBuilder (version Dec 20 2017)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __WEATHERFAXUI_H__
@@ -46,6 +46,8 @@
 WX_DEFINE_ARRAY_PTR( wxWizardPageSimple*, WizardPages );
 #include <wx/choicebk.h>
 
+#include "wxWTranslateCatalog.h"
+
 ///////////////////////////////////////////////////////////////////////////
 
 
@@ -86,6 +88,7 @@ class WeatherFaxBase : public wxFrame
 		virtual void OnCapture( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSchedules( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnInternet( wxCommandEvent& event ) { event.Skip(); }
+        virtual void OnUpdateData( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
 		
 	

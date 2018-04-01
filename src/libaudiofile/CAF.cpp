@@ -30,7 +30,7 @@
 #include "byteorder.h"
 #include "util.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <string.h>
 #include <string>
 #include <vector>
@@ -121,8 +121,8 @@ status CAFFile::readInit(AFfilesetup setup)
 			chunkLength = fileLength - currentOffset;
 		else if (chunkLength < 0)
 			_af_error(AF_BAD_HEADER,
-				"invalid chunk length %"PRId64" for chunk type %s\n",
-                                  static_cast<intmax_t>(chunkLength), chunkType.name().c_str());
+				"invalid chunk length %jd for chunk type %s\n",
+				static_cast<intmax_t>(chunkLength), chunkType.name().c_str());
 
 		if (chunkType == "desc")
 		{

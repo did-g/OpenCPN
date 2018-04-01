@@ -40,7 +40,13 @@ IF (MSVC)
     INCLUDE_DIRECTORIES(BEFORE ${PLUGIN_SOURCE_DIR}/include/msvc)
 ENDIF (MSVC)
 
+OPTION(WEATHERFAX_USE_SVG "Use SVG graphics" ON)
+
 INCLUDE("cmake/PluginConfigure.cmake")
+
+IF(WEATHERFAX_USE_SVG)
+  ADD_DEFINITIONS(-DWEATHERFAX_USE_SVG)
+ENDIF(WEATHERFAX_USE_SVG)
 
 SET(SRC_WEATHERFAX
             src/weatherfax_pi.cpp
@@ -74,6 +80,8 @@ SET(SRC_WEATHERFAX
             src/libaudiofile/VOC.cpp
 
             src/libaudiofile/AudioFormat.cpp
+            src/libaudiofile/Buffer.cpp
+            src/libaudiofile/FLACFile.cpp
             src/libaudiofile/File.cpp
             src/libaudiofile/FileHandle.cpp
             src/libaudiofile/Instrument.cpp
@@ -91,42 +99,39 @@ SET(SRC_WEATHERFAX
             src/libaudiofile/debug.cpp
             src/libaudiofile/format.cpp
             src/libaudiofile/openclose.cpp
+            src/libaudiofile/PacketTable.cpp
             src/libaudiofile/pcm.cpp
             src/libaudiofile/query.cpp
             src/libaudiofile/units.cpp
             src/libaudiofile/util.cpp
-            src/libaudiofile/Buffer.cpp 
-            src/libaudiofile/FLACFile.cpp 
-            src/libaudiofile/PacketTable.cpp
 
+            src/libaudiofile/alac/ALACEncoder.cpp
+            src/libaudiofile/alac/ALACDecoder.cpp
             src/libaudiofile/alac/ag_dec.c
             src/libaudiofile/alac/ag_enc.c
             src/libaudiofile/alac/ALACBitUtilities.c
-            src/libaudiofile/alac/ALACDecoder.cpp
-            src/libaudiofile/alac/ALACEncoder.cpp
             src/libaudiofile/alac/dp_dec.c
             src/libaudiofile/alac/dp_enc.c
             src/libaudiofile/alac/EndianPortable.c
             src/libaudiofile/alac/matrix_dec.c
             src/libaudiofile/alac/matrix_enc.c
-
+            
             src/libaudiofile/modules/ALAC.cpp
-            src/libaudiofile/modules/BlockCodec.cpp
-            src/libaudiofile/modules/FileModule.cpp
+            src/libaudiofile/modules/BlockCodec.cpp            
             src/libaudiofile/modules/FLAC.cpp
+            src/libaudiofile/modules/FileModule.cpp
             src/libaudiofile/modules/G711.cpp
             src/libaudiofile/modules/IMA.cpp
+            src/libaudiofile/modules/MSADPCM.cpp
             src/libaudiofile/modules/Module.cpp
             src/libaudiofile/modules/ModuleState.cpp
-            src/libaudiofile/modules/MSADPCM.cpp
             src/libaudiofile/modules/PCM.cpp
             src/libaudiofile/modules/RebufferModule.cpp
-            src/libaudiofile/modules/RebufferModule.h
             src/libaudiofile/modules/SimpleModule.cpp
 	)
 
 
-IF(UNIX AND NOT APPLE)
+IF(UNIX)
   find_library(RTLSDR_LIBRARY NAMES rtlsdr
     DOC "The rtlsdr library"
     )
@@ -144,7 +149,7 @@ IF(UNIX AND NOT APPLE)
     MESSAGE (STATUS "============================================")
     MESSAGE (STATUS "")
   ENDIF()
-ENDIF(UNIX AND NOT APPLE)
+ENDIF(UNIX)
 
       
 IF(UNIX)
@@ -156,7 +161,7 @@ IF(TINYXML_FOUND)
  message (STATUS "Building with system tinyxml")
  INCLUDE_DIRECTORIES(${TINYXML_INCLUDE_DIR})
  ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC_WEATHERFAX})
- TARGET_LINK_LIBRARIES(${PACKAGE_NAME} ${TINYXML_LIBRARIES})
+ TARGET_LINK_LIBRARIES(${PACKAGE_NAME} ${TINYXML_LIBRARIES} ${EXTRA_LIBS})
 ELSE(TINYXML_FOUND)
  message (STATUS "Building with embedded tinyxml")
  INCLUDE_DIRECTORIES(src/tinyxml/)
@@ -166,9 +171,9 @@ ELSE(TINYXML_FOUND)
             src/tinyxml/tinyxmlerror.cpp
  )
  ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC_WEATHERFAX} ${SRC_LTINYXML})
+ TARGET_LINK_LIBRARIES(${PACKAGE_NAME} ${EXTRA_LIBS})
 ENDIF(TINYXML_FOUND)
 ADD_DEFINITIONS(-DTIXML_USE_STL)
-
 
 IF(WIN32)
  INSTALL(FILES "buildwin/PVW32Con.exe" DESTINATION "plugins\\\\${PACKAGE_NAME}")
