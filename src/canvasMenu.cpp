@@ -570,7 +570,7 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
         }
     }
 
-    if( seltype & SELTYPE_ROUTESEGMENT ) {
+    if( menuFocus != menuAIS && (seltype & SELTYPE_ROUTESEGMENT) ) {
         bool blay = false;
         if( m_pSelectedRoute && m_pSelectedRoute->m_bIsInLayer )
             blay = true;
@@ -636,7 +636,7 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
         menuFocus = menuRoute;
     }
 
-    if( seltype & SELTYPE_TRACKSEGMENT ) {
+    if( menuFocus != menuAIS && (seltype & SELTYPE_TRACKSEGMENT) ) {
         bool blay = false;
         if( m_pSelectedTrack && m_pSelectedTrack->m_bIsInLayer )
             blay = true;
@@ -656,7 +656,7 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
         menuFocus = menuTrack;
     }
 
-    if( seltype & SELTYPE_ROUTEPOINT ) {
+    if( menuFocus != menuAIS && (seltype & SELTYPE_ROUTEPOINT) ) {
         bool blay = false;
         if( m_pFoundRoutePoint && m_pFoundRoutePoint->m_bIsInLayer )
             blay = true;
@@ -712,7 +712,7 @@ void CanvasMenuHandler::CanvasPopupMenu( int x, int y, int seltype )
         menuFocus = menuWaypoint;
     }
 
-    if( seltype & SELTYPE_MARKPOINT ) {
+    if( menuFocus != menuAIS && (seltype & SELTYPE_MARKPOINT) ) {
         bool blay = false;
         if( m_pFoundRoutePoint && m_pFoundRoutePoint->m_bIsInLayer )
             blay = true;
