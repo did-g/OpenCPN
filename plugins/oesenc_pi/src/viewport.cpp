@@ -102,7 +102,8 @@
 #define new DEBUG_NEW
 #endif
 
-#ifndef __WXMSW__
+// #ifndef __WXMSW__
+#if 0
 #include <signal.h>
 #include <setjmp.h>
 
@@ -747,7 +748,8 @@ OCPNRegion ViewPort::GetVPRegionIntersect( const OCPNRegion &Region, size_t nPoi
 #endif    
         
     
-#ifdef __WXGTK__
+// XXXX #ifdef __WXGTK__
+#if 0
     sigaction(SIGSEGV, NULL, &sa_all_old);             // save existing action for this signal
 
     struct sigaction temp;
