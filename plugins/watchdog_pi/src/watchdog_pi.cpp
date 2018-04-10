@@ -99,17 +99,14 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
 watchdog_pi *g_watchdog_pi = NULL;
 
 watchdog_pi::watchdog_pi(void *ppimgr)
-    : opencpn_plugin_110(ppimgr)
+    : opencpn_plugin_113(ppimgr)
 {
     // Create the PlugIn icons
     initialize_images();
     m_lastfix.Lat = NAN;
-    m_lastfix.FixTime = 0;
-
     m_lasttimerfix.Lat = NAN;
-    m_lasttimerfix.FixTime = 0;
-
-    m_sog = m_cog = NAN;
+    m_lasttimerfix.FixTime = m_lastfix.FixTime = 0;
+    m_sog = m_cog = m_hdm = 0;
     m_declination = NAN;
     
     g_ReceivedPathGUIDMessage = wxEmptyString;
@@ -131,7 +128,7 @@ watchdog_pi::watchdog_pi(void *ppimgr)
     g_AISTarget.m_dHDG = 0.;
     g_AISTarget.m_iMMSI = 0;
     g_AISTarget.m_sShipName = wxEmptyString;
-    
+
     g_watchdog_pi = this;
 }
 
@@ -146,30 +143,32 @@ int watchdog_pi::Init(void)
     AddLocaleCatalog( PLUGIN_CATALOG_NAME );
 
     Alarm::LoadConfigAll();
-    
+
+#ifdef WATCHDOG_USE_SVG
+    m_leftclick_tool_id = InsertPlugInToolSVG( _T( "Watchdog" ), _svg_watchdog, _svg_watchdog_rollover,
+        _svg_watchdog_toggled, wxITEM_CHECK, _( "Watchdog" ), _T( "" ), NULL, WATCHDOG_TOOL_POSITION, 0, this);
+#else
     m_leftclick_tool_id  = InsertPlugInTool
         (_T(""), _img_watchdog, _img_watchdog, wxITEM_NORMAL,
          _("Watchdog"), _T(""), NULL, WATCHDOG_TOOL_POSITION, 0, this);
+#endif
     
-    m_WatchdogDialog = NULL;
-    m_ConfigurationDialog = NULL;
     m_PropertiesDialog = NULL;
     m_Timer.Connect(wxEVT_TIMER, wxTimerEventHandler
                     ( watchdog_pi::OnTimer ), NULL, this);
     m_Timer.Start(3000);
     
-    if(!m_WatchdogDialog)
-    {
-        m_WatchdogDialog = new WatchdogDialog(*this, GetOCPNCanvasWindow());
-        m_ConfigurationDialog = new ConfigurationDialog(*this, m_WatchdogDialog);
+    m_WatchdogDialog = new WatchdogDialog(*this, GetOCPNCanvasWindow());
+    m_ConfigurationDialog = new ConfigurationDialog(*this, m_WatchdogDialog);
         
-        wxIcon icon;
-        icon.CopyFromBitmap(*_img_watchdog);
-        m_WatchdogDialog->SetIcon(icon);
-        m_ConfigurationDialog->SetIcon(icon);
-    }
+    wxIcon icon;
+    icon.CopyFromBitmap(*_img_watchdog);
+    m_WatchdogDialog->SetIcon(icon);
+    m_ConfigurationDialog->SetIcon(icon);
+
     m_bWatchdogDialogShown = false;
     m_cursor_time = wxDateTime::Now();
+    m_ValidFixTime = wxDateTime::Now();
 
     return (WANTS_OVERLAY_CALLBACK |
             WANTS_OPENGL_OVERLAY_CALLBACK |
@@ -345,11 +344,6 @@ void watchdog_pi::Render(wdDC &dc, PlugIn_ViewPort &vp)
 void watchdog_pi::OnTimer( wxTimerEvent & )
 {
     /* calculate course and speed over ground from gps */
-    if(m_lasttimerfix.FixTime == 0) {
-        m_lasttimerfix = m_lastfix;
-        return;
-    }
-    
     double dt = m_lastfix.FixTime - m_lasttimerfix.FixTime;
     if(!wxIsNaN(m_lastfix.Lat) && !wxIsNaN(m_lasttimerfix.Lat) && dt > 0) {
         /* this way helps avoid surge speed from gps from surfing waves etc... */
@@ -364,8 +358,15 @@ void watchdog_pi::OnTimer( wxTimerEvent & )
             m_cog = .25*cog + .75*m_cog;
             m_sog = .25*sog + .75*m_sog;
         }
-    } else
-        m_sog = m_cog = NAN;
+        m_hdm = m_lastfix.Hdm;
+        m_ValidFixTime = wxDateTime::Now();
+    } else {
+        wxLongLong dt = (wxDateTime::Now() - m_ValidFixTime).GetSeconds();
+        //printf("wddt %ld\n", dt.ToLong());
+        if(dt > 60 || (dt > 11 && m_lastfix.FixTime > 0))
+            // wait 60 seconds from startup because of slowness to receive first nmea message
+            m_sog = m_cog = m_hdm = NAN;
+    }
     
     m_lasttimerfix = m_lastfix;
 }
@@ -386,9 +387,6 @@ void watchdog_pi::SetNMEASentence(wxString &sentence)
 
 void watchdog_pi::SetPositionFixEx(PlugIn_Position_Fix_Ex &pfix)
 {
-    if(pfix.FixTime && pfix.nSats)
-        m_LastFixTime = wxDateTime::Now();
-
     m_lastfix = pfix;
 }
 
