@@ -23,10 +23,15 @@ SET(VERSION_DATE ${PLUGIN_VERSION_DATE})
 
 SET(PLUGIN_VERSION "${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}.${PLUGIN_VERSION_PATCH}" )
 
+OPTION(WATCHDOG_USE_SVG "Use SVG graphics" ON)
+
 INCLUDE("cmake/PluginConfigure.cmake")
 
+IF(WATCHDOG_USE_SVG)
+  ADD_DEFINITIONS(-DWATCHDOG_USE_SVG)
+ENDIF(WATCHDOG_USE_SVG)
+
 SET(SRC_WATCHDOG
-            src/watchdog_pi.cpp
             src/watchdog_pi.cpp
             src/WatchdogDialog.cpp
             src/WatchdogPropertiesDialog.cpp

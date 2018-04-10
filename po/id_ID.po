@@ -1,0 +1,758 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: opencpn\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-02-07 06:39+1100\n"
+"PO-Revision-Date: 2018-03-03 08:24-0500\n"
+"Last-Translator: nohal <pavel@kalian.cz>\n"
+"Language-Team: Indonesian\n"
+"Language: id_ID\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: crowdin.com\n"
+"X-Crowdin-Project: opencpn\n"
+"X-Crowdin-Language: id\n"
+"X-Crowdin-File: /plugins/watchdog_pi/po/watchdog_pi.pot\n"
+
+#: src/Alarm.cpp:54
+msgid "landfall alarm without gshhs data"
+msgstr "alarm pendaratan tanpa data gshhs"
+
+#: src/Alarm.cpp:60
+msgid "LandFall"
+msgstr "Pendaratan"
+
+#: src/Alarm.cpp:63 src/Alarm.cpp:320 src/Alarm.cpp:1275
+msgid "Time"
+msgstr "Waktu"
+
+#: src/Alarm.cpp:64 src/Alarm.cpp:169 src/Alarm.cpp:321
+msgid "Distance"
+msgstr "Jarak"
+
+#: src/Alarm.cpp:126
+msgid "No GSHHS Data"
+msgstr "Tidak ada GSHHS Data"
+
+#: src/Alarm.cpp:132
+msgid "LandFall Time Invalid"
+msgstr "Waktu LandFall tidak valid"
+
+#: src/Alarm.cpp:137 src/Alarm.cpp:1406
+msgid "Days"
+msgstr "Hari"
+
+#: src/Alarm.cpp:140 src/Alarm.cpp:1409
+msgid "Day"
+msgstr "Hari"
+
+#: src/Alarm.cpp:144 src/Alarm.cpp:1413
+msgid "Hours"
+msgstr "Jam"
+
+#: src/Alarm.cpp:147 src/Alarm.cpp:1416
+msgid "Hour"
+msgstr "Jam"
+
+#: src/Alarm.cpp:151 src/Alarm.cpp:1420
+msgid "Minutes"
+msgstr "Menit"
+
+#: src/Alarm.cpp:154 src/Alarm.cpp:1423
+msgid "Minute"
+msgstr "Menit"
+
+#: src/Alarm.cpp:158 src/Alarm.cpp:1427
+msgid "Seconds"
+msgstr "Detik"
+
+#: src/Alarm.cpp:160 src/Alarm.cpp:1429
+msgid "Second"
+msgstr "Kedua"
+
+#: src/Alarm.cpp:219
+msgid "invalid LandFall mode"
+msgstr "tidak valid Pendaratan mode"
+
+#: src/Alarm.cpp:310
+msgid "Boundary Time"
+msgstr "Batas Waktu"
+
+#: src/Alarm.cpp:311 src/Alarm.cpp:314
+msgid "Boundary Distance"
+msgstr "Batas Jarak"
+
+#: src/Alarm.cpp:312 src/WatchdogUI.cpp:603
+msgid "Inclusion Alarm"
+msgstr "Masuknya alarm"
+
+#: src/Alarm.cpp:313 src/Alarm.cpp:1028 src/Alarm.cpp:1030
+#: src/watchdog_pi.cpp:582
+msgid "Guard Zone"
+msgstr "Penjaga Zona"
+
+#: src/Alarm.cpp:324 src/Alarm.cpp:916 src/Alarm.cpp:956 src/WatchdogUI.cpp:606
+msgid "Boundary GUID"
+msgstr "Batas GUID"
+
+#: src/Alarm.cpp:326
+msgid "Boundary Name"
+msgstr "Batas nama"
+
+#: src/Alarm.cpp:330 src/WatchdogUI.cpp:580
+msgid "Guard Zone GUID"
+msgstr "Penjaga zona GUID"
+
+#: src/Alarm.cpp:332 src/Alarm.cpp:1272 src/Alarm.cpp:1293
+msgid "Guard Zone Name"
+msgstr "Menjaga Nama Zona"
+
+#: src/Alarm.cpp:914 src/Alarm.cpp:954
+msgid "Boundary name"
+msgstr "Batas nama"
+
+#: src/Alarm.cpp:920
+msgid "No Boundary within "
+msgstr "Tidak ada Batas dalam "
+
+#: src/Alarm.cpp:922
+msgid " minutes"
+msgstr " menit"
+
+#: src/Alarm.cpp:927 src/Alarm.cpp:960
+msgid " - inside any boundary"
+msgstr " - dalam setiap batas"
+
+#: src/Alarm.cpp:930 src/Alarm.cpp:963
+msgid " - inside active boundary"
+msgstr " - dalam batas aktif"
+
+#: src/Alarm.cpp:933 src/Alarm.cpp:966
+msgid " - inside inactive boundary"
+msgstr " - dalam batas yang tidak aktif"
+
+#: src/Alarm.cpp:938
+msgid " in "
+msgstr " di "
+
+#: src/Alarm.cpp:978
+msgid "Any Boundary Distance"
+msgstr "Batas Jarak"
+
+#: src/Alarm.cpp:981
+msgid "Active Boundary Distance"
+msgstr "Aktif batas jarak"
+
+#: src/Alarm.cpp:984
+msgid "Inactive Boundary Distance"
+msgstr "Batas jarak tidak aktif"
+
+#: src/Alarm.cpp:995 src/Alarm.cpp:999
+msgid "Boat"
+msgstr "Perahu"
+
+#: src/Alarm.cpp:996 src/Alarm.cpp:1000
+msgid "outside"
+msgstr "di luar"
+
+#: src/Alarm.cpp:996 src/Alarm.cpp:1000
+msgid "inside"
+msgstr "dalam"
+
+#: src/Alarm.cpp:997 src/Alarm.cpp:1001
+msgid " boundary area: "
+msgstr " batas wilayah: "
+
+#: src/Alarm.cpp:1031
+msgid "AIS Target in zone"
+msgstr "AIS target di zona"
+
+#: src/Alarm.cpp:1031
+msgid "NO AIS tagets found in zone"
+msgstr "Tagboard NO AIS ditemukan di zona"
+
+#: src/Alarm.cpp:1168
+msgid "invalid Boundary mode"
+msgstr "batas Mode tidak valid"
+
+#: src/Alarm.cpp:1222 src/Alarm.cpp:2174
+msgid "Failed to execute command: "
+msgstr "Gagal mengeksekusi perintah: "
+
+#: src/Alarm.cpp:1223 src/Alarm.cpp:2175 src/watchdog_pi.cpp:146
+#: src/watchdog_pi.cpp:232
+msgid "Watchdog"
+msgstr "Pengawas"
+
+#: src/Alarm.cpp:1231 src/Alarm.cpp:1244 src/Alarm.cpp:1260 src/Alarm.cpp:1271
+#: src/Alarm.cpp:1292 src/Alarm.cpp:2181
+msgid "ALARM!"
+msgstr "ALARM!"
+
+#: src/Alarm.cpp:1232 src/Alarm.cpp:1245 src/Alarm.cpp:1262
+msgid "Name"
+msgstr "Nama"
+
+#: src/Alarm.cpp:1233 src/Alarm.cpp:1246 src/Alarm.cpp:1263 src/Alarm.cpp:1273
+#: src/Alarm.cpp:1294
+msgid "Description"
+msgstr "Deskripsi"
+
+#: src/Alarm.cpp:1234 src/Alarm.cpp:1247 src/Alarm.cpp:1264 src/Alarm.cpp:1274
+#: src/Alarm.cpp:1295 src/EditAlarmDialog.cpp:207 src/EditAlarmDialog.cpp:233
+#: src/EditAlarmDialog.cpp:286 src/EditAlarmDialog.cpp:311
+msgid "GUID"
+msgstr "GUID"
+
+#: src/Alarm.cpp:1236 src/Alarm.cpp:1249
+msgid "inside boundary"
+msgstr "dalam batas"
+
+#: src/Alarm.cpp:1238 src/Alarm.cpp:1251
+msgid "in"
+msgstr "di"
+
+#: src/Alarm.cpp:1239 src/Alarm.cpp:1255 src/Alarm.cpp:1265 src/Alarm.cpp:1284
+#: src/Alarm.cpp:1296 src/Alarm.cpp:2182 src/EditAlarmDialog.cpp:208
+#: src/EditAlarmDialog.cpp:234 src/EditAlarmDialog.cpp:287
+#: src/EditAlarmDialog.cpp:312
+msgid "Watchman"
+msgstr "Penjaga"
+
+#: src/Alarm.cpp:1261
+msgid "Outside"
+msgstr "Di luar"
+
+#: src/Alarm.cpp:1281
+msgid "Ship Name"
+msgstr "Nama kapal"
+
+#: src/Alarm.cpp:1282
+msgid "Ship MMSI"
+msgstr "Kapal MMSI"
+
+#: src/Alarm.cpp:1295
+msgid "Guard Zone not Found"
+msgstr "Penjaga Zona tidak Ditemukan"
+
+#: src/Alarm.cpp:1542 src/NewAlarmDialog.cpp:36
+msgid "NMEA Data"
+msgstr "Data NMEA"
+
+#: src/Alarm.cpp:1552
+msgid "second(s)"
+msgstr "kedua(s)"
+
+#: src/Alarm.cpp:1623 src/NewAlarmDialog.cpp:37
+msgid "Deadman"
+msgstr "Orang mati"
+
+#: src/Alarm.cpp:1685 src/NewAlarmDialog.cpp:38
+msgid "Anchor"
+msgstr "Jangkar"
+
+#: src/Alarm.cpp:1687
+msgid "radius"
+msgstr "radius"
+
+#: src/Alarm.cpp:1687 src/WatchdogUI.cpp:841
+msgid "meters"
+msgstr "meter"
+
+#: src/Alarm.cpp:1688
+msgid "bAutoSync"
+msgstr "bAutoSync"
+
+#: src/Alarm.cpp:1711
+msgid "meter(s)"
+msgstr "meter(s)"
+
+#: src/Alarm.cpp:1794 src/NewAlarmDialog.cpp:39
+msgid "Course"
+msgstr "Kursus"
+
+#: src/Alarm.cpp:1798 src/Alarm.cpp:1822 src/WatchdogUI.cpp:887
+msgid "Port"
+msgstr "Pelabuhan"
+
+#: src/Alarm.cpp:1799 src/Alarm.cpp:1820 src/WatchdogUI.cpp:887
+msgid "Starboard"
+msgstr "Sisi kanan"
+
+#: src/Alarm.cpp:1802
+msgid "course"
+msgstr "kursus"
+
+#: src/Alarm.cpp:1816
+msgid "degrees(s)"
+msgstr "derajat(s)"
+
+#: src/Alarm.cpp:1874
+msgid "invalid Course mode"
+msgstr "sah Saja mode"
+
+#: src/Alarm.cpp:1914 src/NewAlarmDialog.cpp:40
+msgid "Speed"
+msgstr "Kecepatan"
+
+#: src/Alarm.cpp:1918
+msgid "UnderSpeed"
+msgstr "UnderSpeed"
+
+#: src/Alarm.cpp:1919
+msgid "OverSpeed"
+msgstr "OverSpeed"
+
+#: src/Alarm.cpp:1990
+msgid "invalid Speed mode"
+msgstr "mode Kecepatan tidak valid"
+
+#: src/Alarm.cpp:2049
+msgid "Failed to read"
+msgstr "Gagal membaca"
+
+#: src/Alarm.cpp:2066
+msgid "invalid alarm type"
+msgstr "jenis alarm tidak valid"
+
+#: src/Alarm.cpp:2102
+msgid "failed to save"
+msgstr "gagal untuk menyimpan"
+
+#: src/Alarm.cpp:2157 src/WatchdogUI.cpp:364
+msgid "Sound"
+msgstr "Suara"
+
+#: src/Alarm.cpp:2158 src/WatchdogUI.cpp:370
+msgid "Command"
+msgstr "Perintah"
+
+#: src/Alarm.cpp:2159
+msgid "MessageBox"
+msgstr "Kotak pesan"
+
+#: src/Alarm.cpp:2160
+msgid "Repeat"
+msgstr "Ulangi"
+
+#: src/Alarm.cpp:2161
+msgid "Auto Reset"
+msgstr "Reset otomatis"
+
+#: src/Alarm.h:96 src/WatchdogUI.cpp:402
+msgid "Test"
+msgstr "Tes"
+
+#: src/ConfigurationDialog.cpp:48 src/WatchdogDialog.cpp:108
+#: src/WatchdogUI.cpp:883 src/WatchdogUI.cpp:950
+msgid "Type"
+msgstr "Jenis"
+
+#: src/ConfigurationDialog.cpp:49
+msgid "Options"
+msgstr "Pilihan"
+
+#: src/ConfigurationDialog.cpp:50
+msgid "Action"
+msgstr "Aksi"
+
+#: src/EditAlarmDialog.cpp:94
+msgid "Most alarms should be self-explanatory\n"
+"Normally a sound is played, however you can execute any command you like, eg:  \"aplay /usr/local/share/opencpn/sounds/2bells.wav\"\n"
+"Messagebox may be useful to interrupt other applications (like a movie player)\n"
+"Automatically Reset will reset the alarm once it is no longer triggered, and it may be triggered again later."
+msgstr "Sebagian besar alarm harus cukup jelas\n"
+" Biasanya suara diputar, namun Anda dapat menjalankan perintah yang Anda sukai, misalnya: \"aplay /usr/local/share/opencpn/sounds/2bells.wav\"\n"
+" Messagebox mungkin berguna untuk mengganggu aplikasi lain (seperti pemutar film)\n"
+" Otomatis Reset akan mengatur ulang alarm setelah tidak dipicu lagi, dan mungkin dipicu lagi nanti."
+
+#: src/EditAlarmDialog.cpp:101
+msgid "Watchdog Information"
+msgstr "Pengawas Informasi"
+
+#: src/EditAlarmDialog.cpp:206 src/EditAlarmDialog.cpp:232
+#: src/EditAlarmDialog.cpp:285 src/EditAlarmDialog.cpp:310
+msgid "Error!"
+msgstr "Kesalahan!"
+
+#: src/EditAlarmDialog.cpp:207 src/EditAlarmDialog.cpp:233
+#: src/EditAlarmDialog.cpp:286 src/EditAlarmDialog.cpp:311
+msgid " does not exist"
+msgstr " tidak ada"
+
+#: src/NewAlarmDialog.cpp:34
+msgid "Landfall"
+msgstr "Pendaratan"
+
+#: src/NewAlarmDialog.cpp:35
+msgid "Boundary Alarm"
+msgstr "Batas Alarm"
+
+#: src/WatchdogDialog.cpp:109
+msgid "Status"
+msgstr "Status"
+
+#: src/WatchdogUI.cpp:30
+msgid "Configuration"
+msgstr "Konfigurasi"
+
+#: src/WatchdogUI.cpp:33
+msgid "Reset"
+msgstr "Setel ulang"
+
+#: src/WatchdogUI.cpp:36
+msgid "Close"
+msgstr "Dekat"
+
+#: src/WatchdogUI.cpp:76
+msgid "Name:"
+msgstr "Nama:"
+
+#: src/WatchdogUI.cpp:84
+msgid "Version:"
+msgstr "Versi:"
+
+#: src/WatchdogUI.cpp:93
+msgid "Major:"
+msgstr "Utama:"
+
+#: src/WatchdogUI.cpp:101
+msgid "Minor:"
+msgstr "Minor:"
+
+#: src/WatchdogUI.cpp:109
+msgid "Patch:"
+msgstr "Patch:"
+
+#: src/WatchdogUI.cpp:120
+msgid "Date:"
+msgstr "Tanggal:"
+
+#: src/WatchdogUI.cpp:128
+msgid "Other:"
+msgstr "Lainnya:"
+
+#: src/WatchdogUI.cpp:132
+msgid "Please report problems using FlySpray at:\n"
+"https://www.opencpn.org/flyspray/index.php?project=34&do=index&switch=1\n\n"
+"or\n\n"
+"at the OpenCPN forum:\n"
+"http://www.cruisersforum.com/forums/f134\n\n"
+"or\n\n"
+"Raise an issue in GIT at:\n"
+"https://github.com/seandepagnier/watchdog_pi/issues\n"
+msgstr "Laporkan masalah menggunakan FlySpray di:\n"
+" https://www.opencpn.org/flyspray/index.php?project=34&do=index&switch=1\n\n"
+"atau\n\n"
+" di forum OpenCPN:\n"
+" http: //www.cruisersforum.com/forums/f134\n\n"
+"atau\n\n"
+" Tingkatkan masalah di GIT di:\n"
+" https://github.com/seandepagnier/watchdog_pi/issues\n"
+
+#: src/WatchdogUI.cpp:139
+msgid "&OK"
+msgstr "&BAIK"
+
+#: src/WatchdogUI.cpp:173
+msgid "General Setup"
+msgstr "Penyiapan Umum"
+
+#: src/WatchdogUI.cpp:180
+msgid "Enable All Alarms"
+msgstr "Aktifkan Semua Alarm"
+
+#: src/WatchdogUI.cpp:183
+msgid "Enabled after first time Watchdog Dialog is visible"
+msgstr "Diaktifkan setelah pertama kali Watchdog Dialog terlihat"
+
+#: src/WatchdogUI.cpp:186
+msgid "Enabled only if Watchdog Dialog is visible"
+msgstr "Diaktifkan hanya jika Pengawas Dialog terlihat"
+
+#: src/WatchdogUI.cpp:189
+msgid "Disable All Alarms"
+msgstr "Menonaktifkan Semua Alarm"
+
+#: src/WatchdogUI.cpp:206
+msgid "Alarms"
+msgstr "Alarm"
+
+#: src/WatchdogUI.cpp:220
+msgid "New"
+msgstr "Baru"
+
+#: src/WatchdogUI.cpp:223
+msgid "Edit"
+msgstr "Edit"
+
+#: src/WatchdogUI.cpp:226
+msgid "Delete"
+msgstr "Menghapus"
+
+#: src/WatchdogUI.cpp:229
+msgid "Delete All"
+msgstr "Hapus semua"
+
+#: src/WatchdogUI.cpp:253
+msgid "About Author"
+msgstr "Tentang Penulis"
+
+#: src/WatchdogUI.cpp:356
+msgid "Alarm Action"
+msgstr "Tindakan Alarm"
+
+#: src/WatchdogUI.cpp:367
+msgid "Select a file"
+msgstr "Pilih sebuah file"
+
+#: src/WatchdogUI.cpp:384
+msgid "Message Box"
+msgstr "Kotak pesan"
+
+#: src/WatchdogUI.cpp:390
+msgid "Repeat Alarm after seconds"
+msgstr "Mengulang Alarm setelah detik"
+
+#: src/WatchdogUI.cpp:396
+msgid "Automatically Reset"
+msgstr "Me-Reset secara Otomatis"
+
+#: src/WatchdogUI.cpp:399
+msgid "Graphics Enabled"
+msgstr "Grafis Diaktifkan"
+
+#: src/WatchdogUI.cpp:417
+msgid "Information"
+msgstr "Informasi"
+
+#: src/WatchdogUI.cpp:464
+msgid "GPS course crosses land in <"
+msgstr "Kursus GPS melintasi daratan di <"
+
+#: src/WatchdogUI.cpp:470 src/WatchdogUI.cpp:539
+msgid "minutes"
+msgstr "menit"
+
+#: src/WatchdogUI.cpp:482 src/WatchdogUI.cpp:551
+msgid "GPS fix is <"
+msgstr "Perbaikan GPS <"
+
+#: src/WatchdogUI.cpp:485 src/WatchdogUI.cpp:554
+msgid "3"
+msgstr "3"
+
+#: src/WatchdogUI.cpp:496
+msgid "nm from coastline\n"
+"(any direction)"
+msgstr "nm dari garis pantai\n"
+"(segala arah)"
+
+#: src/WatchdogUI.cpp:503
+msgid "Graphical overlay for time displays line from boat to location of land crossing"
+msgstr "Hamparan grafis untuk menampilkan time line dari kapal ke lokasi persimpangan darat"
+
+#: src/WatchdogUI.cpp:507
+msgid "Landfall detection uses gshhs (global heirarchical high-resolution shoreline data.)\n"
+"Consider installing the highest resolution database for best accuracy."
+msgstr "Pendaratan deteksi menggunakan gshhs (global heirarchical resolusi tinggi data garis pantai.)\n"
+"Consider menginstal resolusi tertinggi database untuk akurasi terbaik."
+
+#: src/WatchdogUI.cpp:533
+msgid "GPS course crosses boundary in <"
+msgstr "GPS melintasi batas saja <"
+
+#: src/WatchdogUI.cpp:565
+msgid "nm from boundary\n"
+"(any direction)"
+msgstr "nm dari perbatasan\n"
+"(ke segala arah)"
+
+#: src/WatchdogUI.cpp:577
+msgid "AIS Guard Zone"
+msgstr "AIS Penjaga Zona"
+
+#: src/WatchdogUI.cpp:621
+msgid "Get Boundary GUID"
+msgstr "Mendapatkan Batas GUID"
+
+#: src/WatchdogUI.cpp:632 src/WatchdogUI.cpp:638
+msgid "Any"
+msgstr "Setiap"
+
+#: src/WatchdogUI.cpp:632
+msgid "Exclusion"
+msgstr "Pengecualian"
+
+#: src/WatchdogUI.cpp:632
+msgid "Inclusion"
+msgstr "Inklusi"
+
+#: src/WatchdogUI.cpp:632
+msgid "Neither"
+msgstr "Tidak"
+
+#: src/WatchdogUI.cpp:634
+msgid "Boundary Type"
+msgstr "Batas Jenis"
+
+#: src/WatchdogUI.cpp:638
+msgid "Active"
+msgstr "Aktif"
+
+#: src/WatchdogUI.cpp:638
+msgid "Inactive"
+msgstr "Tidak aktif"
+
+#: src/WatchdogUI.cpp:640
+msgid "Boundary State"
+msgstr "Batas Negara"
+
+#: src/WatchdogUI.cpp:653
+msgid "Check Frequency  (Secs)\n"
+"(Note: not Guard Zone)"
+msgstr "Periksa Frekuensi  (Detik)\n"
+"(Catatan: tidak Guard Zone)"
+
+#: src/WatchdogUI.cpp:663
+msgid "Graphical overlay for GPS fix displays line from boat to location of the point in the found boundary"
+msgstr "Grafis overlay untuk memperbaiki GPS menampilkan garis dari perahu ke lokasi titik dalam menemukan batas"
+
+#: src/WatchdogUI.cpp:706
+msgid "Require following NMEA sentences:"
+msgstr "Memerlukan berikut kalimat NMEA:"
+
+#: src/WatchdogUI.cpp:710
+msgid "$GPGGA"
+msgstr "$GPGGA"
+
+#: src/WatchdogUI.cpp:726
+msgid "at least every"
+msgstr "setidaknya setiap"
+
+#: src/WatchdogUI.cpp:733
+msgid "seconds"
+msgstr "detik"
+
+#: src/WatchdogUI.cpp:762
+msgid "No User Activity for"
+msgstr "Tidak ada Aktivitas untuk pengguna"
+
+#: src/WatchdogUI.cpp:769
+msgid "minute(s)"
+msgstr "menit(s)"
+
+#: src/WatchdogUI.cpp:798
+msgid "Latitude"
+msgstr "Lintang"
+
+#: src/WatchdogUI.cpp:816
+msgid "Longitude"
+msgstr "Bujur"
+
+#: src/WatchdogUI.cpp:831
+msgid "Sync to Boat"
+msgstr "Sinkronkan ke Perahu"
+
+#: src/WatchdogUI.cpp:834
+msgid "Radius"
+msgstr "Radius"
+
+#: src/WatchdogUI.cpp:848
+msgid "Automatically syncronize to the boat whenever enabled"
+msgstr "Sinkronkan secara otomatis ke kapal kapan pun diaktifkan"
+
+#: src/WatchdogUI.cpp:851
+msgid "Graphical overlay displays bounding anchor area"
+msgstr "Hamparan grafis menampilkan area jangkar berlekuk"
+
+#: src/WatchdogUI.cpp:887
+msgid "Port or Starboard"
+msgstr "Pelabuhan atau Kanan"
+
+#: src/WatchdogUI.cpp:896
+msgid "Off Course By >"
+msgstr "Tentu Saja Dengan >"
+
+#: src/WatchdogUI.cpp:903
+msgid "Degrees"
+msgstr "Derajat"
+
+#: src/WatchdogUI.cpp:907
+msgid "With Course Of"
+msgstr "Dengan Course Of"
+
+#: src/WatchdogUI.cpp:914
+msgid "Current Course"
+msgstr "Kursus saat ini"
+
+#: src/WatchdogUI.cpp:920
+msgid "Graphical overlay displays lines bounding valid courses"
+msgstr "Grafis overlay menampilkan garis pembatas berlaku kursus"
+
+#: src/WatchdogUI.cpp:943
+msgid "Speed Alarm"
+msgstr "Kecepatan alaram"
+
+#: src/WatchdogUI.cpp:954
+msgid "Under Speed"
+msgstr "Di Bawah Kecepatan"
+
+#: src/WatchdogUI.cpp:954
+msgid "Over Speed"
+msgstr "Lebih dari kecepatan"
+
+#: src/WatchdogUI.cpp:963
+msgid "Speed over ground"
+msgstr "Kecepatan di atas tanah"
+
+#: src/WatchdogUI.cpp:967
+msgid "1"
+msgstr "1"
+
+#: src/WatchdogUI.cpp:978
+msgid "knots"
+msgstr "knot"
+
+#: src/WatchdogUI.cpp:991
+msgid "Seconds to Average\n"
+"SOG over"
+msgstr "Detik ke Rata-Rata\n"
+"SOG selesai"
+
+#: src/WatchdogUI.cpp:1001
+msgid "Graphical overlay displays circle with radius of this speed"
+msgstr "Grafis overlay menampilkan lingkaran dengan radius kecepatan ini"
+
+#: src/WatchdogUI.h:68
+msgid "WatchDog"
+msgstr "Pengawas"
+
+#: src/WatchdogUI.h:103
+msgid "About Watchdog Properties"
+msgstr "Tentang Pengawas Sifat"
+
+#: src/WatchdogUI.h:142
+msgid "Watchdog Configuration"
+msgstr "Pengawas konfigurasi"
+
+#: src/WatchdogUI.h:166
+msgid "New Alarm"
+msgstr "Alarm baru"
+
+#: src/WatchdogUI.h:202
+msgid "Edit Alarm"
+msgstr "Mengedit alarm"
+
+#: src/watchdog_pi.cpp:237
+msgid "Watchdog PlugIn for OpenCPN"
+msgstr "Pengawas plugIn untuk OpenCPN"
+
+#: src/watchdog_pi.cpp:242
+msgid "Watchdog PlugIn for OpenCPN\n"
+"Alarm user of changing conditions."
+msgstr "Pengawas PlugIn untuk OpenCPN\n"
+"nAlarm dari pengguna perubahan kondisi."
+
