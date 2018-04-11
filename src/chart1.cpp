@@ -4258,6 +4258,14 @@ void MyFrame::SetGroupIndex( int index )
     int current_chart_native_scale = cc1->GetCanvasChartNativeScale();
     ViewPort vp = cc1->GetVP();
 
+    int ref_db_i = -1;
+    if(cc1->GetQuiltMode()) {
+        ref_db_i = cc1->GetQuiltReferenceChartIndex();
+    }
+    else if( pCurrentStack ) {
+        ref_db_i = pCurrentStack->GetCurrentEntrydbIndex();
+    }
+
     g_GroupIndex = new_index;
 
     //  Invalidate the "sticky" chart on group change, since it might not be in the new group
@@ -4266,14 +4274,17 @@ void MyFrame::SetGroupIndex( int index )
     //    We need a new chartstack and quilt to figure out which chart to open in the new group
     cc1->UpdateCanvasOnGroupChange();
 
-    int dbi_hint = cc1->FindClosestCanvasChartdbIndex( current_chart_native_scale );
+    int dbi_hint;
 
-    double best_scale = cc1->GetBestStartScale(dbi_hint, vp);
-
-    cc1->SetVPScale( best_scale );
-
-    if(cc1->GetQuiltMode())
-        dbi_hint = cc1->GetQuiltReferenceChartIndex();
+    if( !pCurrentStack || ! pCurrentStack->DoesStackContaindbIndex(ref_db_i) ) {
+        dbi_hint = cc1->FindClosestCanvasChartdbIndex( current_chart_native_scale );
+        double best_scale = cc1->GetValidScale(dbi_hint, vp);
+        if (vp.view_scale_ppm != best_scale)
+           cc1->SetVPScale( best_scale );
+    }
+    else  {
+        dbi_hint = ref_db_i;
+    }
 
     //    Refresh the canvas, selecting the "best" chart,
     //    applying the prior ViewPort exactly
