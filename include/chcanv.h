@@ -203,6 +203,7 @@ public:
       void SetQuiltChartHiLiteIndex(int dbIndex);
       int GetQuiltReferenceChartIndex(void);
       double GetBestStartScale(int dbi_hint, const ViewPort &vp);
+      double GetValidScale(int db_index, const ViewPort &vp);
       
       int GetNextContextMenuId();
 
