@@ -3248,6 +3248,29 @@ double ChartCanvas::GetBestStartScale(int dbi_hint, const ViewPort &vp)
         return vp.view_scale_ppm;
 }
 
+double ChartCanvas::GetValidScale(int db_index, const ViewPort &vp)
+{
+    if(m_pQuilt) {
+        ChartBase *pc = ChartData->OpenChartFromDB( db_index, FULL_INIT );
+        if( pc ) {
+            double min_ref_scale = pc->GetNormalScaleMin( m_canvas_scale_factor, false );
+            double max_ref_scale = pc->GetNormalScaleMax( m_canvas_scale_factor, m_canvas_width );
+            double proposed_scale_onscreen = pc->GetNativeScale();
+            
+            if( VPoint.chart_scale < min_ref_scale )  {
+                proposed_scale_onscreen = min_ref_scale;
+            }
+            else if( VPoint.chart_scale > max_ref_scale )  {
+                proposed_scale_onscreen = max_ref_scale;
+            }
+            else {
+                return vp.view_scale_ppm;
+            }
+            return m_canvas_scale_factor / proposed_scale_onscreen;
+        }
+    }
+    return vp.view_scale_ppm;
+}
 
 //      Verify and adjust the current reference chart,
 //      so that it will not lead to excessive overzoom or underzoom onscreen
