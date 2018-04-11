@@ -1321,7 +1321,15 @@ void ChartCanvas::SetGroupIndex( int index, bool autoSwitch )
     //    Get the currently displayed chart native scale, and the current ViewPort
     int current_chart_native_scale = GetCanvasChartNativeScale();
     ViewPort vp = GetVP();
-    
+
+    int ref_db_i = -1;
+    if(GetQuiltMode()) {
+        ref_db_i = GetQuiltReferenceChartIndex();
+    }
+    else if( m_pCurrentStack ) {
+        ref_db_i = m_pCurrentStack->GetCurrentEntrydbIndex();
+    }
+
     m_groupIndex = new_index;
 
     // Are there  ENCs in this group
@@ -1341,20 +1349,18 @@ void ChartCanvas::SetGroupIndex( int index, bool autoSwitch )
     //    We need a chartstack and quilt to figure out which chart to open in the new group
     UpdateCanvasOnGroupChange();
 
-    int dbi_now = -1;
-    if(GetQuiltMode())
-        dbi_now = GetQuiltReferenceChartIndex();
-    
-    int dbi_hint = FindClosestCanvasChartdbIndex( current_chart_native_scale );
-    
-    // If a new reference chart is indicated, set a good scale for it.
-    if((dbi_now != dbi_hint) || !GetQuiltMode()){
-        double best_scale = GetBestStartScale(dbi_hint, vp);
-        SetVPScale( best_scale );
+    int dbi_hint;
+
+    if( !m_pCurrentStack || ! m_pCurrentStack->DoesStackContaindbIndex(ref_db_i) ) {
+        // If a new reference chart is indicated, set a good scale for it.
+        dbi_hint = FindClosestCanvasChartdbIndex( current_chart_native_scale );
+        double best_scale = GetValidScale(dbi_hint, vp);
+        if (vp.view_scale_ppm != best_scale)
+           SetVPScale( best_scale );
     }
-    
-    if(GetQuiltMode())
-        dbi_hint = GetQuiltReferenceChartIndex();
+    else  {
+        dbi_hint = ref_db_i;
+    }
     
     //    Refresh the canvas, selecting the "best" chart,
     //    applying the prior ViewPort exactly
@@ -4862,6 +4868,29 @@ double ChartCanvas::GetBestStartScale(int dbi_hint, const ViewPort &vp)
         return vp.view_scale_ppm;
 }
 
+double ChartCanvas::GetValidScale(int db_index, const ViewPort &vp)
+{
+    if(m_pQuilt) {
+        ChartBase *pc = ChartData->OpenChartFromDB( db_index, FULL_INIT );
+        if( pc ) {
+            double min_ref_scale = pc->GetNormalScaleMin( m_canvas_scale_factor, false );
+            double max_ref_scale = pc->GetNormalScaleMax( m_canvas_scale_factor, m_canvas_width );
+            double proposed_scale_onscreen = pc->GetNativeScale();
+
+            if( VPoint.chart_scale < min_ref_scale )  {
+                proposed_scale_onscreen = min_ref_scale;
+            }
+            else if( VPoint.chart_scale > max_ref_scale )  {
+                proposed_scale_onscreen = max_ref_scale;
+            }
+            else {
+                return vp.view_scale_ppm;
+            }
+            return m_canvas_scale_factor / proposed_scale_onscreen;
+        }
+    }
+    return vp.view_scale_ppm;
+}
 
 //      Verify and adjust the current reference chart,
 //      so that it will not lead to excessive overzoom or underzoom onscreen

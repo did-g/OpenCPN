@@ -244,6 +244,7 @@ public:
       int GetQuiltReferenceChartIndex(void);
       double GetBestStartScale(int dbi_hint, const ViewPort &vp);
       void ConfigureChartBar();
+      double GetValidScale(int db_index, const ViewPort &vp);
       
       int GetNextContextMenuId();
 
