@@ -4923,8 +4923,13 @@ void ChartPlugInWrapper::GetValidCanvasRegion(const ViewPort& VPoint, OCPNRegion
 
 void ChartPlugInWrapper::SetColorScheme(ColorScheme cs, bool bApplyImmediate)
 {
-    if(m_ppicb)
+    if(m_ppicb) {
         m_ppicb->SetColorScheme(cs, bApplyImmediate);
+    }
+    m_global_color_scheme = cs;
+    //      Force a new thumbnail
+    if(pThumbData)
+        pThumbData->pDIBThumb = NULL;
 }
 
 
@@ -5938,6 +5943,8 @@ PI_DLEvtHandler::~PI_DLEvtHandler()
 void PI_DLEvtHandler::onDLEvent( OCPN_downloadEvent &event)
 {
 //    qDebug() << "Got Event " << (int)event.getDLEventStatus() << (int)event.getDLEventCondition();
+
+    std::cout << "Got Event " << (int)event.getDLEventStatus() << (int)event.getDLEventCondition();
     g_download_status = event.getDLEventStatus();
     g_download_condition = event.getDLEventCondition();
 
