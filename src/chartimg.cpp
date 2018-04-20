@@ -368,7 +368,7 @@ InitReturn ChartGEO::Init( const wxString& name, ChartInitFlag init_flags)
       if(!ifs_hdr->IsOk())
             return INIT_FAIL_REMOVE;
 
-      int nPlypoint = 0;
+      size_t nPlypoint = 0;
       Plypoint *pPlyTable = (Plypoint *)malloc(sizeof(Plypoint));
 
       m_FullPath = name;
@@ -734,7 +734,7 @@ found_uclc_file:
 
       if(nPlypoint < 3)
       {
-          wxString msg(_T("   Chart File contains less than 3 PLY points: "));
+          wxString msg(_T("   Chart File contains less than 3 or too many PLY points: "));
           msg.Append(m_FullPath);
           wxLogMessage(msg);
           free(pPlyTable);
@@ -848,7 +848,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
             return INIT_FAIL_REMOVE;
 
     
-      int nPlypoint = 0;
+      size_t nPlypoint = 0;
       Plypoint *pPlyTable = (Plypoint *)malloc(sizeof(Plypoint));
 
       PreInit(name, init_flags, GLOBAL_COLOR_SCHEME_DAY);
@@ -1458,20 +1458,20 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
           m_LatMax = -90.0;
           m_LatMin = 90.0;
       
-          for(int i=0 ; i < nPlypoint ; i++){
+          for(size_t i=0 ; i < nPlypoint ; i++){
               m_LatMax = wxMax(m_LatMax, pPlyTable[i].ltp);
               m_LatMin = wxMin(m_LatMin, pPlyTable[i].ltp);
               m_LonMax = wxMax(m_LonMax, pPlyTable[i].lnp);
               m_LonMin = wxMin(m_LonMin, pPlyTable[i].lnp);
           }
           
-          int count = nPlypoint;
+          size_t count = nPlypoint;
           nPlypoint = 0;
           Plypoint *pOldPlyTable = pPlyTable;
           pPlyTable = NULL;
           double lastplylat = 0.0, lastplylon = 0.0, x1 = 0.0, y1 = 0.0, x2, y2;
           double plylat, plylon;
-          for( int i = 0; i < count+1; i++ ) {
+          for( size_t i = 0; i < count+1; i++ ) {
               plylat = pOldPlyTable[i%count].ltp;
               plylon = pOldPlyTable[i%count].lnp;
               latlong_to_chartpix(plylat, plylon, x2, y2);
@@ -1508,7 +1508,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
       // Set a tentative lat/lon range.
       m_LonMax = -360.;
       m_LonMin = 360.;
-      for(int i=0; i < nPlypoint; i++){
+      for(size_t i=0; i < nPlypoint; i++){
           m_LonMin  = wxMin(m_LonMin, pPlyTable[i].lnp);
           m_LonMax  = wxMax(m_LonMax, pPlyTable[i].lnp);
       }
@@ -1530,7 +1530,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
         bool bAdjustPly = false;
         wxRect bitRect(0, 0, Size_X, Size_Y);
         bitRect.Inflate(5);               // allow for a little roundoff error
-        for(int i=0; i < nPlypoint; i++){
+        for(size_t i=0; i < nPlypoint; i++){
             double pix_x, pix_y;
             latlong_to_chartpix(pPlyTable[i].ltp, pPlyTable[i].lnp, pix_x, pix_y);
             if(!bitRect.Contains(pix_x, pix_y)){
@@ -1542,7 +1542,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 
         if(bAdjustPly){
             float *points = new float[2*nPlypoint];
-            for(int i=0; i<nPlypoint; i++)
+            for(size_t i=0; i<nPlypoint; i++)
                 points[2*i+0] = pPlyTable[i].ltp, points[2*i+1] = pPlyTable[i].lnp;
             LLRegion covrRegion(nPlypoint, points);
             delete [] points;
