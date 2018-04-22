@@ -1545,8 +1545,8 @@ void glTextureManager::BuildCompressedCache()
             }
             rect.y += rect.height;
         }
-
-        //      Free all possible memory
+        //  Nothing to do
+        //  Free all possible memory
         ChartData->DeleteCacheChart(pchart);
         delete tex_fact;
         yield++;
@@ -1560,9 +1560,10 @@ void glTextureManager::BuildCompressedCache()
         }
         continue;
 
-        yield = 0;
-
+        // some work to do
         schedule:
+
+        yield = 0;
         ScheduleJob(tex_fact, wxRect(), 0, false, true, true, false);
         while(!m_skip) {
             ::wxYield();
