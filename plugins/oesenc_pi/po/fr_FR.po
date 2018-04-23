@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: opencpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-03-14 22:21-0400\n"
-"PO-Revision-Date: 2018-03-20 18:23-0400\n"
+"PO-Revision-Date: 2018-04-19 21:27-0400\n"
 "Last-Translator: nohal <pavel@kalian.cz>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -275,7 +275,7 @@ msgstr "Téléchargement : Prêt."
 
 #: src/ochartShop.cpp:261
 msgid "Please update Chart List."
-msgstr "Veuillez mettre à jour liste des pack de cartes."
+msgstr "Veuillez mettre à jour la liste des pack de cartes."
 
 #: src/ochartShop.cpp:265
 msgid "Ready for Download Request."
