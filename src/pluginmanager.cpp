@@ -278,6 +278,7 @@ PlugInManager::PlugInManager(MyFrame *parent)
 #ifndef __OCPN__ANDROID__
 #ifdef __OCPN_USE_CURL__
     m_pCurlThread = NULL;
+    m_pCurl = 0;
 #endif    
 #endif
     pParent = parent;
@@ -4423,7 +4424,21 @@ InitReturn ChartPlugInWrapper::Init( const wxString& name, ChartInitFlag init_fl
             m_depth_unit_id = (ChartDepthUnitType)m_ppicb->GetDepthUnitId();
             m_Chart_Skew = m_ppicb->GetChartSkew();
             m_Chart_Scale = m_ppicb->GetNativeScale();
-
+            
+            // We estimate ppm_avg as needed by raster texture cache logic...
+            // This number works for average BSB charts, scanned with average resolution
+            m_ppm_avg = 10000./m_ppicb->GetNativeScale();               // fallback value
+            
+            // Calcuculate a "better" ppm from the chart geo extent and raster size.
+            if( (fabs(m_Chart_Skew) < .01) && (CHART_FAMILY_RASTER == m_ChartFamily) ){
+                Extent extent;
+                if( GetChartExtent(&extent) ){
+                    double lon_range = extent.ELON - extent.WLON;
+                    if( (lon_range > 0) && (lon_range < 90.0) )              // Be safe about IDL crossing and huge charts
+                        m_ppm_avg = GetSize_X() / (lon_range * 1852 * 60);
+                }
+            }
+            
             bReadyToRender = m_ppicb->IsReadyToRender();
 
         }
@@ -4920,8 +4935,13 @@ void ChartPlugInWrapper::GetValidCanvasRegion(const ViewPort& VPoint, OCPNRegion
 
 void ChartPlugInWrapper::SetColorScheme(ColorScheme cs, bool bApplyImmediate)
 {
-    if(m_ppicb)
+    if(m_ppicb) {
         m_ppicb->SetColorScheme(cs, bApplyImmediate);
+    }
+    m_global_color_scheme = cs;
+    //      Force a new thumbnail
+    if(pThumbData)
+        pThumbData->pDIBThumb = NULL;
 }
 
 
@@ -4945,8 +4965,9 @@ void ChartPlugInWrapper::ComputeSourceRectangle(const ViewPort &VPoint, wxRect *
 
 double ChartPlugInWrapper::GetRasterScaleFactor(const ViewPort &vp)
 {
-    if(m_ppicb)
-        return m_ppicb->GetRasterScaleFactor();
+    if(m_ppicb){
+        return  (wxRound(100000 * GetPPM() / vp.view_scale_ppm)) / 100000.;
+     }
     else
         return 1.0;
 }
@@ -5935,6 +5956,8 @@ PI_DLEvtHandler::~PI_DLEvtHandler()
 void PI_DLEvtHandler::onDLEvent( OCPN_downloadEvent &event)
 {
 //    qDebug() << "Got Event " << (int)event.getDLEventStatus() << (int)event.getDLEventCondition();
+
+    std::cout << "Got Event " << (int)event.getDLEventStatus() << (int)event.getDLEventCondition();
     g_download_status = event.getDLEventStatus();
     g_download_condition = event.getDLEventCondition();
 
@@ -6228,12 +6251,21 @@ _OCPN_DLStatus OCPN_downloadFileBackground( const wxString& url, const wxString 
     if( g_pi_manager->m_pCurlThread ) //We allow just one download at a time. Do we want more? Or at least return some other status in this case?
         return OCPN_DL_FAILED;
     g_pi_manager->m_pCurlThread = new wxCurlDownloadThread( g_pi_manager, CurlThreadId );
+    bool http = (url.StartsWith(wxS("http:")) || url.StartsWith(wxS("https:")));
+    bool keep = false;
+    if (http && g_pi_manager->m_pCurl && dynamic_cast<wxCurlHTTP*>(g_pi_manager->m_pCurl.get())) {
+        keep = true;
+    }
+    if (!keep)  {
+        g_pi_manager->m_pCurl = 0;
+    }
 
     bool failed = false;
-    if ( !g_pi_manager->HandleCurlThreadError( g_pi_manager->m_pCurlThread->SetURL( url ), g_pi_manager->m_pCurlThread, url ) )
+    if ( !g_pi_manager->HandleCurlThreadError( g_pi_manager->m_pCurlThread->SetURL( url, g_pi_manager->m_pCurl ), g_pi_manager->m_pCurlThread, url ) )
         failed = true;
     if (!failed)
     {
+        g_pi_manager->m_pCurl = g_pi_manager->m_pCurlThread->GetCurlSharedPtr();
         if (!g_pi_manager->HandleCurlThreadError(g_pi_manager->m_pCurlThread->SetOutputStream(new wxFileOutputStream(outputFile)), g_pi_manager->m_pCurlThread))
             failed = true;
     }
@@ -6264,7 +6296,8 @@ _OCPN_DLStatus OCPN_downloadFileBackground( const wxString& url, const wxString 
         g_pi_manager->m_download_evHandler = NULL;
         g_pi_manager->m_downloadHandle = NULL;
     }
-#endif
+    g_pi_manager->m_pCurl = 0;
+ #endif
 
     return OCPN_DL_FAILED;
 #else
@@ -6290,7 +6323,8 @@ void OCPN_cancelDownloadFileBackground( long handle )
         g_pi_manager->m_download_evHandler = NULL;
         g_pi_manager->m_downloadHandle = NULL;
     }
-#endif
+    g_pi_manager->m_pCurl = 0;
+ #endif
 #endif
 }
 
@@ -6348,7 +6382,13 @@ bool OCPN_isOnline()
 void PlugInManager::OnEndPerformCurlDownload(wxCurlEndPerformEvent &ev)
 {
     OCPN_downloadEvent event( wxEVT_DOWNLOAD_EVENT, 0 );
-    event.setDLEventStatus( OCPN_DL_NO_ERROR );
+    if (ev.IsSuccessful()) {
+        event.setDLEventStatus( OCPN_DL_NO_ERROR );
+    }
+    else {
+        g_pi_manager->m_pCurl = 0;
+        event.setDLEventStatus( OCPN_DL_FAILED );
+    }
     event.setDLEventCondition( OCPN_DL_EVENT_TYPE_END );
     event.setComplete(true);
     

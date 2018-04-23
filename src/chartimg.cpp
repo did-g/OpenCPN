@@ -368,7 +368,7 @@ InitReturn ChartGEO::Init( const wxString& name, ChartInitFlag init_flags)
       if(!ifs_hdr->IsOk())
             return INIT_FAIL_REMOVE;
 
-      int nPlypoint = 0;
+      size_t nPlypoint = 0;
       Plypoint *pPlyTable = (Plypoint *)malloc(sizeof(Plypoint));
 
       m_FullPath = name;
@@ -583,15 +583,10 @@ InitReturn ChartGEO::Init( const wxString& name, ChartInitFlag init_flags)
       pBitmapFilePath->Prepend(Path);
 
       wxFileName NOS_filename(*pBitmapFilePath);
-      if(NOS_filename.FileExists())
+      if(! NOS_filename.FileExists())
       {
-            ifss_bitmap = new wxFFileInputStream(*pBitmapFilePath); // open the bitmap file
-            ifs_bitmap = new wxBufferedInputStream(*ifss_bitmap);
-      }
 //    File as fetched verbatim from the .geo file doesn't exist.
 //    Try all possible upper/lower cases
-      else
-      {
 //    Extract the filename and extension
             wxString fname(NOS_filename.GetName());
             wxString fext(NOS_filename.GetExt());
@@ -660,17 +655,10 @@ found_uclc_file:
 
             delete pBitmapFilePath;                   // fix up the member element
             pBitmapFilePath = new wxString(NOS_filename.GetFullPath());
-            ifss_bitmap = new wxFFileInputStream(*pBitmapFilePath); // open the bitmap file
-            ifs_bitmap = new wxBufferedInputStream(*ifss_bitmap);
 
-      }           //else
-
-
-      if(ifs_bitmap == NULL)
-      {
-          free(pPlyTable);
-          return INIT_FAIL_REMOVE;
       }
+      ifss_bitmap = new wxFFileInputStream(*pBitmapFilePath); // open the bitmap file
+      ifs_bitmap = new wxBufferedInputStream(*ifss_bitmap);
 
       if(!ifss_bitmap->IsOk())
       {
@@ -738,7 +726,7 @@ found_uclc_file:
 
 
 //    Validate some of the header data
-      if((Size_X == 0) || (Size_Y == 0))
+      if( Size_X <= 0 || Size_Y <= 0 )
       {
           free(pPlyTable);
           return INIT_FAIL_REMOVE;
@@ -746,7 +734,7 @@ found_uclc_file:
 
       if(nPlypoint < 3)
       {
-          wxString msg(_T("   Chart File contains less than 3 PLY points: "));
+          wxString msg(_T("   Chart File contains less than 3 or too many PLY points: "));
           msg.Append(m_FullPath);
           wxLogMessage(msg);
           free(pPlyTable);
@@ -814,6 +802,12 @@ found_uclc_file:
 
 //    Read the Color table bit size
       nColorSize = ifs_bitmap->GetC();
+      if ( nColorSize == wxEOF || nColorSize <= 0 || nColorSize > 7) {
+            wxString msg(_("   Invalid nColorSize data, corrupt on chart "));
+            msg.Append(m_FullPath);
+            wxLogMessage(msg);
+            return INIT_FAIL_REMOVE;
+      }
 
 
 //    Perform common post-init actions in ChartBaseBSB
@@ -854,7 +848,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
             return INIT_FAIL_REMOVE;
 
     
-      int nPlypoint = 0;
+      size_t nPlypoint = 0;
       Plypoint *pPlyTable = (Plypoint *)malloc(sizeof(Plypoint));
 
       PreInit(name, init_flags, GLOBAL_COLOR_SCHEME_DAY);
@@ -1101,7 +1095,6 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
                                   msg += m_FullPath;
                                   wxLogMessage(msg);
                                   free(pPlyTable);
-
                                   return INIT_FAIL_REMOVE;
                               }
                         }
@@ -1121,11 +1114,8 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
                               sscanf(&buffer[i], "%f,", &x);
                               m_dy = x;
                         }
-
-
                  }
             }
-
 
             else if (!strncmp(buffer, "RGB", 3))
                   CreatePaletteEntry(buffer, COLOR_RGB_DEFAULT);
@@ -1150,7 +1140,6 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 
             else if (!strncmp(buffer, "PRG", 3))
                   CreatePaletteEntry(buffer, PRG);
-
 
             else if (!strncmp(buffer, "REF", 3))
             {
@@ -1299,7 +1288,10 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
             {
                   int i;
                   float ltp,lnp;
-                  sscanf(&buffer[4], "%d,%f,%f", &i, &ltp, &lnp);
+                  if (sscanf(&buffer[4], "%d,%f,%f", &i, &ltp, &lnp) != 3) {
+                      free(pPlyTable);
+                      return INIT_FAIL_REMOVE;
+                  }
                   Plypoint *tmp = pPlyTable;
                   pPlyTable = (Plypoint *)realloc(pPlyTable, sizeof(Plypoint) * (nPlypoint+1));
                   if (NULL == pPlyTable)
@@ -1311,6 +1303,11 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
                       pPlyTable[nPlypoint].ltp = ltp;
                       pPlyTable[nPlypoint].lnp = lnp;
                       nPlypoint++;
+                  }
+                  if (NULL == pPlyTable || nPlypoint > 1000000) {
+                      // arbitrary 8MB for pPlyTable 
+                      nPlypoint = 0;
+                      break;
                   }
             }
 
@@ -1372,8 +1369,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 
                   }
             }
-
-      }
+      } // while
 
       //    Some charts improperly encode the DTM parameters.
       //    Identify them as necessary, for further processing
@@ -1402,7 +1398,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
             
 
 //    Validate some of the header data
-      if((Size_X == 0) || (Size_Y == 0))
+      if( Size_X <= 0 || Size_Y <= 0 )
       {
           free(pPlyTable);
           return INIT_FAIL_REMOVE;
@@ -1410,7 +1406,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 
       if(nPlypoint < 3)
       {
-            wxString msg(_("   Chart File contains less than 3 PLY points: "));
+            wxString msg(_("   Chart File contains less than 3 or too many PLY points: "));
             msg.Append(m_FullPath);
             wxLogMessage(msg);
             free(pPlyTable);
@@ -1462,20 +1458,20 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
           m_LatMax = -90.0;
           m_LatMin = 90.0;
       
-          for(int i=0 ; i < nPlypoint ; i++){
+          for(size_t i=0 ; i < nPlypoint ; i++){
               m_LatMax = wxMax(m_LatMax, pPlyTable[i].ltp);
               m_LatMin = wxMin(m_LatMin, pPlyTable[i].ltp);
               m_LonMax = wxMax(m_LonMax, pPlyTable[i].lnp);
               m_LonMin = wxMin(m_LonMin, pPlyTable[i].lnp);
           }
           
-          int count = nPlypoint;
+          size_t count = nPlypoint;
           nPlypoint = 0;
           Plypoint *pOldPlyTable = pPlyTable;
           pPlyTable = NULL;
           double lastplylat = 0.0, lastplylon = 0.0, x1 = 0.0, y1 = 0.0, x2, y2;
           double plylat, plylon;
-          for( int i = 0; i < count+1; i++ ) {
+          for( size_t i = 0; i < count+1; i++ ) {
               plylat = pOldPlyTable[i%count].ltp;
               plylon = pOldPlyTable[i%count].lnp;
               latlong_to_chartpix(plylat, plylon, x2, y2);
@@ -1512,7 +1508,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
       // Set a tentative lat/lon range.
       m_LonMax = -360.;
       m_LonMin = 360.;
-      for(int i=0; i < nPlypoint; i++){
+      for(size_t i=0; i < nPlypoint; i++){
           m_LonMin  = wxMin(m_LonMin, pPlyTable[i].lnp);
           m_LonMax  = wxMax(m_LonMax, pPlyTable[i].lnp);
       }
@@ -1534,7 +1530,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
         bool bAdjustPly = false;
         wxRect bitRect(0, 0, Size_X, Size_Y);
         bitRect.Inflate(5);               // allow for a little roundoff error
-        for(int i=0; i < nPlypoint; i++){
+        for(size_t i=0; i < nPlypoint; i++){
             double pix_x, pix_y;
             latlong_to_chartpix(pPlyTable[i].ltp, pPlyTable[i].lnp, pix_x, pix_y);
             if(!bitRect.Contains(pix_x, pix_y)){
@@ -1546,7 +1542,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
 
         if(bAdjustPly){
             float *points = new float[2*nPlypoint];
-            for(int i=0; i<nPlypoint; i++)
+            for(size_t i=0; i<nPlypoint; i++)
                 points[2*i+0] = pPlyTable[i].ltp, points[2*i+1] = pPlyTable[i].lnp;
             LLRegion covrRegion(nPlypoint, points);
             delete [] points;
@@ -1666,9 +1662,14 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
             return INIT_FAIL_REMOVE;
       }
 
-
 //    Read the Color table bit size
       nColorSize = ifs_hdr->GetC();
+      if ( nColorSize == wxEOF || nColorSize <= 0 || nColorSize > 7) {
+            wxString msg(_("   Invalid nColorSize data, corrupt on chart "));
+            msg.Append(m_FullPath);
+            wxLogMessage(msg);
+            return INIT_FAIL_REMOVE;
+      }
 
       nFileOffsetDataStart = ifs_hdr->TellI();
       delete ifs_hdr;
@@ -1690,8 +1691,7 @@ InitReturn ChartKAP::Init( const wxString& name, ChartInitFlag init_flags )
       InitReturn pi_ret = PostInit();
       if( pi_ret  != INIT_OK)
             return pi_ret;
-      else
-            return INIT_OK;
+      return INIT_OK;
 }
 
 
@@ -1968,6 +1968,21 @@ void ChartBaseBSB::CreatePaletteEntry(char *buffer, int palette_index)
 
 InitReturn ChartBaseBSB::PostInit(void)
 {
+      // catch undefined shift if not already done in derived classes
+      if ( nColorSize == wxEOF || nColorSize <= 0 || nColorSize > 7) {
+         wxString msg(_("   Invalid nColorSize data, corrupt in PostInit() on chart "));
+         msg.Append(m_FullPath);
+         wxLogMessage(msg);
+         return INIT_FAIL_REMOVE;
+      }
+
+      if (Size_X <= 0 || Size_X > INT_MAX / 4 ||  Size_Y <= 0 || Size_Y -1 > INT_MAX / 4) {
+         wxString msg(_("   Invalid Size_X/Size_Y data, corrupt in PostInit() on chart "));
+         msg.Append(m_FullPath);
+         wxLogMessage(msg);
+         return INIT_FAIL_REMOVE;
+      }
+
      //    Validate the palette array, substituting DEFAULT for missing entries
      int nfwd_def = 1;
      int nrev_def = 1;
