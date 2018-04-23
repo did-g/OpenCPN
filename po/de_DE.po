@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: opencpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-03-14 22:21-0400\n"
-"PO-Revision-Date: 2018-03-20 18:24-0400\n"
+"PO-Revision-Date: 2018-04-19 21:27-0400\n"
 "Last-Translator: nohal <pavel@kalian.cz>\n"
 "Language-Team: German\n"
 "Language: de_DE\n"
@@ -44,7 +44,8 @@ msgstr "Plugin für OpenCPN oeSENC Karten"
 #: src/oesenc_pi.cpp:723
 msgid "PlugIn for OpenCPN\n"
 "Provides support of oeSENC charts.\n\n"
-msgstr "oeSENC PlugIn für OpenCPN.\\nUnterstützt oeSENC Karten.\\n\\n\n\n"
+msgstr "oeSENC PlugIn für OpenCPN.\n"
+"Unterstützt oeSENC Karten.\n\n"
 
 #: src/oesenc_pi.cpp:929 src/oesenc_pi.cpp:3792
 msgid "To obtain a User Key, you must generate a unique System Identifier File.\n"
@@ -288,7 +289,7 @@ msgstr "Kann zum Herunterladen angefordert werden."
 
 #: src/ochartShop.cpp:444
 msgid "o-charts API error code: "
-msgstr "o-charts APF Fehler code: "
+msgstr "o-charts API Fehler code: "
 
 #: src/ochartShop.cpp:450
 msgid "Invalid user/email name or password."
