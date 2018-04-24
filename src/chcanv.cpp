@@ -3568,15 +3568,19 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
 
                 candidate_stack_index = 0;
                 while( candidate_stack_index <= pCurrentStack->nEntry - 1 ) {
-                    const ChartTableEntry &cte_candidate = ChartData->GetChartTableEntry(
-                            pCurrentStack->GetDBIndex( candidate_stack_index ) );
+                    int idx = pCurrentStack->GetDBIndex( candidate_stack_index );
+                    if ( idx < 0 ) {
+                        // XXX Is this possible ?
+                        candidate_stack_index++;
+                        continue;
+                    }
+                    const ChartTableEntry &cte_candidate = ChartData->GetChartTableEntry( idx );
                     int candidate_scale = cte_candidate.GetScale();
                     int candidate_type = cte_candidate.GetChartType();
 
                     if( ( candidate_scale >= target_scale ) && ( candidate_type == target_type ) ){
                         bool renderable = true;
-                        ChartBase* tentative_referenceChart = ChartData->OpenChartFromDB( pCurrentStack->GetDBIndex( candidate_stack_index ),
-                                                                                FULL_INIT );
+                        ChartBase* tentative_referenceChart = ChartData->OpenChartFromDB( idx, FULL_INIT );
                         if( tentative_referenceChart ) {
                             double chartMaxScale = tentative_referenceChart->GetNormalScaleMax( GetCanvasScaleFactor(), GetCanvasWidth() );
                             renderable = chartMaxScale*1.5 > VPoint.chart_scale;
@@ -3585,7 +3589,6 @@ bool ChartCanvas::SetViewPoint( double lat, double lon, double scale_ppm, double
                         if(renderable)
                             break;
                     }
-
                     candidate_stack_index++;
                 }
 
