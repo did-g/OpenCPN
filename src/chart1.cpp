@@ -11948,7 +11948,7 @@ void SetSystemColors( ColorScheme cs )
 
 wxColor GetDimColor(wxColor c)
 {
-    if( (global_color_scheme == GLOBAL_COLOR_SCHEME_DAY) || (global_color_scheme == GLOBAL_COLOR_SCHEME_DAY))
+    if( (global_color_scheme == GLOBAL_COLOR_SCHEME_DAY) || (global_color_scheme == GLOBAL_COLOR_SCHEME_RGB))
         return c;
     
     float factor = 1.0;
