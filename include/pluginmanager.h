@@ -281,9 +281,9 @@ public:
 
       ArrayOfPlugInMenuItems &GetPluginContextMenuItemArray(){ return m_PlugInMenuItems; }
       int AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name = "" );
-      void RemoveCanvasContextMenuItem(int item);
-      void SetCanvasContextMenuItemViz(int item, bool viz);
-      void SetCanvasContextMenuItemGrey(int item, bool grey);
+      void RemoveCanvasContextMenuItem(int item, const char *name = "" );
+      void SetCanvasContextMenuItemViz(int item, bool viz, const char *name = "" );
+      void SetCanvasContextMenuItemGrey(int item, bool grey, const char *name = "" );
 
       void SendNMEASentenceToAllPlugIns(const wxString &sentence);
       void SendPositionFixToAllPlugIns(GenericPosDatEx *ppos);

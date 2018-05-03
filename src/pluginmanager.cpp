@@ -1703,13 +1703,13 @@ int PlugInManager::AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *p
 
 
 
-void PlugInManager::RemoveCanvasContextMenuItem(int item)
+void PlugInManager::RemoveCanvasContextMenuItem(int item, const char *name )
 {
     for(unsigned int i=0; i < m_PlugInMenuItems.GetCount(); i++)
     {
         PlugInMenuItemContainer *pimis = m_PlugInMenuItems.Item(i);
         {
-            if(pimis->id == item)
+            if(pimis->id == item && !strcmp(name, pimis->m_in_menu))
             {
                 m_PlugInMenuItems.Remove(pimis);
                 delete pimis;
@@ -1719,13 +1719,13 @@ void PlugInManager::RemoveCanvasContextMenuItem(int item)
     }
 }
 
-void PlugInManager::SetCanvasContextMenuItemViz(int item, bool viz)
+void PlugInManager::SetCanvasContextMenuItemViz(int item, bool viz, const char *name)
 {
     for(unsigned int i=0; i < m_PlugInMenuItems.GetCount(); i++)
     {
         PlugInMenuItemContainer *pimis = m_PlugInMenuItems.Item(i);
         {
-            if(pimis->id == item)
+            if(pimis->id == item && !strcmp(name, pimis->m_in_menu))
             {
                 pimis->b_viz = viz;
                 break;
@@ -1734,13 +1734,13 @@ void PlugInManager::SetCanvasContextMenuItemViz(int item, bool viz)
     }
 }
 
-void PlugInManager::SetCanvasContextMenuItemGrey(int item, bool grey)
+void PlugInManager::SetCanvasContextMenuItemGrey(int item, bool grey, const char *name)
 {
     for(unsigned int i=0; i < m_PlugInMenuItems.GetCount(); i++)
     {
         PlugInMenuItemContainer *pimis = m_PlugInMenuItems.Item(i);
         {
-            if(pimis->id == item)
+            if(pimis->id == item && !strcmp(name, pimis->m_in_menu))
             {
                 pimis->b_grey = grey;
                 break;
@@ -2400,6 +2400,26 @@ int AddCanvasMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *na
         return -1;
 }
 
+void SetCanvasMenuItemViz(int item, bool viz, const char *name)
+{
+    if(s_ppim)
+        s_ppim->SetCanvasContextMenuItemViz(item, viz, name);
+}
+
+void SetCanvasMenuItemGrey(int item, bool grey, const char *name)
+{
+    if(s_ppim)
+        s_ppim->SetCanvasContextMenuItemGrey(item, grey, name);
+}
+
+
+void RemoveCanvasMenuItem(int item, const char *name)
+{
+    if(s_ppim)
+        s_ppim->RemoveCanvasContextMenuItem(item, name);
+}
+
+
 int AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin )
 {
     /* main context popup menu */
@@ -2408,21 +2428,18 @@ int AddCanvasContextMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin )
 
 void SetCanvasContextMenuItemViz(int item, bool viz)
 {
-    if(s_ppim)
-        s_ppim->SetCanvasContextMenuItemViz(item, viz);
+   SetCanvasMenuItemViz(item, viz);
 }
 
 void SetCanvasContextMenuItemGrey(int item, bool grey)
 {
-    if(s_ppim)
-        s_ppim->SetCanvasContextMenuItemGrey(item, grey);
+   SetCanvasMenuItemGrey(item, grey);
 }
 
 
 void RemoveCanvasContextMenuItem(int item)
 {
-    if(s_ppim)
-        s_ppim->RemoveCanvasContextMenuItem(item);
+   RemoveCanvasMenuItem(item);
 }
 
 
@@ -3078,6 +3095,28 @@ bool AddCustomWaypointIcon( wxBitmap *pimage, wxString key, wxString description
     return true;
 }
 
+static void cloneHyperlinkList(RoutePoint *dst, const PlugIn_Waypoint *src)
+{
+    //  Transcribe (clone) the html HyperLink List, if present
+    if( src->m_HyperlinkList == nullptr)
+       return;
+
+    if( src->m_HyperlinkList->GetCount() > 0 ) {
+       wxPlugin_HyperlinkListNode *linknode = src->m_HyperlinkList->GetFirst();
+       while( linknode ) {
+           Plugin_Hyperlink *link = linknode->GetData();
+
+           Hyperlink* h = new Hyperlink();
+           h->DescrText = link->DescrText;
+           h->Link = link->Link;
+           h->LType = link->Type;
+
+           dst->m_HyperlinkList->Append( h );
+
+           linknode = linknode->GetNext();
+       }
+    }
+}
 
 bool AddSingleWaypoint( PlugIn_Waypoint *pwaypoint, bool b_permanent)
 {
@@ -3106,29 +3145,11 @@ bool AddSingleWaypoint( PlugIn_Waypoint *pwaypoint, bool b_permanent)
 
     pWP->m_bIsolatedMark = true;                      // This is an isolated mark
 
-
-    //  Transcribe (clone) the html HyperLink List, if present
-    if( pwaypoint->m_HyperlinkList ) {
-        if( pwaypoint->m_HyperlinkList->GetCount() > 0 ) {
-            wxPlugin_HyperlinkListNode *linknode = pwaypoint->m_HyperlinkList->GetFirst();
-            while( linknode ) {
-                Plugin_Hyperlink *link = linknode->GetData();
-
-                Hyperlink* h = new Hyperlink();
-                h->DescrText = link->DescrText;
-                h->Link = link->Link;
-                h->LType = link->Type;
-            
-                pWP->m_HyperlinkList->Append( h );
-
-                linknode = linknode->GetNext();
-            }
-        }
-    }
+    cloneHyperlinkList(pWP, pwaypoint);
 
     pWP->m_MarkDescription = pwaypoint->m_MarkDescription;
-	pWP->SetCreateTime(pwaypoint->m_CreateTime);
-	pWP->m_btemp = (b_permanent == false);
+    pWP->SetCreateTime(pwaypoint->m_CreateTime);
+    pWP->m_btemp = (b_permanent == false);
 
     pSelect->AddSelectableRoutePoint( pwaypoint->m_lat, pwaypoint->m_lon, pWP );
     if(b_permanent)
@@ -3217,6 +3238,44 @@ bool UpdateSingleWaypoint( PlugIn_Waypoint *pwaypoint )
     return b_found;
 }
 
+// translate O route class to Plugin one
+static void PlugInFromRoutePoint(PlugIn_Waypoint *dst, /* const*/ RoutePoint *src)
+{
+    dst->m_lat = src->m_lat;
+    dst->m_lon = src->m_lon;
+    dst->m_IconName = src->GetIconName();
+    dst->m_MarkName = src->GetName(  );
+    dst->m_MarkDescription = src->m_MarkDescription;
+    dst->m_IsVisible = src->IsVisible();
+    dst->m_CreateTime = src->GetCreateTime(); // not const
+    dst->m_GUID = src->m_GUID;
+
+    //  Transcribe (clone) the html HyperLink List, if present
+    if( src->m_HyperlinkList == nullptr )
+        return;
+
+    delete dst->m_HyperlinkList;
+    dst->m_HyperlinkList = nullptr;
+
+    if( src->m_HyperlinkList->GetCount() > 0 ) {
+        dst->m_HyperlinkList = new Plugin_HyperlinkList;
+
+        wxHyperlinkListNode *linknode = src->m_HyperlinkList->GetFirst();
+        while( linknode ) {
+            Hyperlink *link = linknode->GetData();
+
+            Plugin_Hyperlink* h = new Plugin_Hyperlink();
+            h->DescrText = link->DescrText;
+            h->Link = link->Link;
+            h->Type = link->LType;
+
+            dst->m_HyperlinkList->Append( h );
+
+            linknode = linknode->GetNext();
+        }
+    }
+}
+
 bool GetSingleWaypoint(wxString GUID, PlugIn_Waypoint *pwaypoint)
 {
     //  Find the RoutePoint
@@ -3226,38 +3285,7 @@ bool GetSingleWaypoint(wxString GUID, PlugIn_Waypoint *pwaypoint)
     if(!prp)
         return false;
 
-    pwaypoint->m_lat = prp->m_lat;
-    pwaypoint->m_lon = prp->m_lon;
-    pwaypoint->m_IconName = prp->GetIconName();
-    pwaypoint->m_MarkName = prp->GetName(  );
-    pwaypoint->m_MarkDescription = prp->m_MarkDescription;
-	pwaypoint->m_IsVisible = prp->IsVisible();
-	pwaypoint->m_CreateTime = prp->GetCreateTime();
-
-    //  Transcribe (clone) the html HyperLink List, if present
-
-    if( prp->m_HyperlinkList ) {
-        delete pwaypoint->m_HyperlinkList;
-        pwaypoint->m_HyperlinkList = NULL;
-
-        if( prp->m_HyperlinkList->GetCount() > 0 ) {
-            pwaypoint->m_HyperlinkList = new Plugin_HyperlinkList;
-
-            wxHyperlinkListNode *linknode = prp->m_HyperlinkList->GetFirst();
-            while( linknode ) {
-                Hyperlink *link = linknode->GetData();
-                
-                Plugin_Hyperlink* h = new Plugin_Hyperlink();
-                h->DescrText = link->DescrText;
-                h->Link = link->Link;
-                h->Type = link->LType;
-                    
-                pwaypoint->m_HyperlinkList->Append( h );
-                
-                linknode = linknode->GetNext();
-            }
-        }
-    }
+    PlugInFromRoutePoint(pwaypoint, prp);
 
     return true;
 }
@@ -3306,24 +3334,7 @@ bool AddPlugInRoute( PlugIn_Route *proute, bool b_permanent )
                                           pwp->m_GUID );
 
         //  Transcribe (clone) the html HyperLink List, if present
-        if( pwp->m_HyperlinkList ) {
-            if( pwp->m_HyperlinkList->GetCount() > 0 ) {
-                wxPlugin_HyperlinkListNode *linknode = pwp->m_HyperlinkList->GetFirst();
-                while( linknode ) {
-                    Plugin_Hyperlink *link = linknode->GetData();
-
-                    Hyperlink* h = new Hyperlink();
-                    h->DescrText = link->DescrText;
-                    h->Link = link->Link;
-                    h->LType = link->Type;
-                    
-                    pWP->m_HyperlinkList->Append( h );
-
-                    linknode = linknode->GetNext();
-                }
-            }
-        }
-
+        cloneHyperlinkList(pWP, pwp);
         pWP->m_MarkDescription = pwp->m_MarkDescription;
         pWP->m_bShowName = false;
         pWP->SetCreateTime(pwp->m_CreateTime);
@@ -6506,6 +6517,77 @@ int PluginGetMaxAvailableGshhgQuality() { return cc1->GetMaxAvailableGshhgQualit
 /* API 1.16 */
 // disable builtin console canvas, and autopilot nmea sentences
 void PlugInHandleAutopilotRoute(bool enable) { g_bPluginHandleAutopilotRoute = enable; }
+
+//
+wxString GetSelectedWaypointGUID_Plugin(  )
+{
+    if (cc1 && cc1->GetSelectedRoutePoint() ) {
+        return cc1->GetSelectedRoutePoint()->m_GUID;
+    }
+    return wxEmptyString;
+}
+
+wxString GetSelectedRouteGUID_Plugin( )
+{
+    if (cc1 && cc1->GetSelectedRoute() ) {
+        return cc1->GetSelectedRoute()->m_GUID;
+    }
+    return wxEmptyString;
+}
+
+wxString GetSelectedTrackGUID_Plugin( )
+{
+    if (cc1 && cc1->GetSelectedTrack() ) {
+        return cc1->GetSelectedTrack()->m_GUID;
+    }
+    return wxEmptyString;
+}
+
+std::unique_ptr<PlugIn_Waypoint> GetWaypoint_Plugin( const wxString& GUID)
+{
+   std::unique_ptr<PlugIn_Waypoint> w(new PlugIn_Waypoint);
+   GetSingleWaypoint(GUID, w.get());
+   return w;
+}
+
+std::unique_ptr<PlugIn_Route> GetRoute_Plugin( const wxString& GUID)
+{
+   std::unique_ptr<PlugIn_Route> r;
+   Route *route = g_pRouteMan->FindRouteByGUID( GUID );
+   if (route == nullptr)
+       return r;
+
+   r = std::unique_ptr<PlugIn_Route>(new PlugIn_Route);
+   PlugIn_Route *dst_route = r.get();
+
+   // PlugIn_Waypoint *pwp;
+   RoutePoint *src_wp;
+   int ip = 0;
+   wxRoutePointListNode *node = route->pRoutePointList->GetFirst();
+
+   while( node ) {
+        src_wp = node->GetData();
+
+        PlugIn_Waypoint *dst_wp = new PlugIn_Waypoint();
+        PlugInFromRoutePoint(dst_wp, src_wp);
+
+        dst_route->pWaypointList->Append( dst_wp );
+
+        node = node->GetNext();
+   }
+   dst_route->m_NameString = route->m_RouteNameString;
+   dst_route->m_StartString = route->m_RouteStartString;
+   dst_route->m_EndString = route->m_RouteEndString;
+   dst_route->m_GUID = route->m_GUID;
+
+   return r;
+}
+
+std::unique_ptr<PlugIn_Track> GetTrack_Plugin( const wxString& GUID)
+{
+   std::unique_ptr<PlugIn_Track> t;
+   return t;
+}
 
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(ListOfPI_ChartObj);
