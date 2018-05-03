@@ -1276,8 +1276,12 @@ extern DECL_EXP wxString GetPluginDataDir(const char* plugin_name);
 
 // chart file vfs plugin.
 
-extern "C"  DECL_EXP  int AddCanvasMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name );
+extern "C"  DECL_EXP  int AddCanvasMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name = "");
+extern "C"  DECL_EXP void RemoveCanvasMenuItem(int item, const char *name = "");      // Fully remove this item
+extern "C"  DECL_EXP void SetCanvasMenuItemViz(int item, bool viz, const char *name = ""); // Temporarily change context menu options
+extern "C"  DECL_EXP void SetCanvasMenuItemGrey(int item, bool grey, const char *name = "");
 
+// chart file vfs plugin.
 class DECL_EXP PI_ChartObj
 {
 public:
