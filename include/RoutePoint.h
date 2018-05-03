@@ -50,20 +50,20 @@ public:
       void CalculateDCRect(wxDC& dc, wxRect *prect);
 
       bool IsSame(RoutePoint *pOtherRP);        // toh, 2009.02.11
-      bool IsVisible() { return m_bIsVisible; }
-      bool IsListed() { return m_bIsListed; }
-      bool IsNameShown() { return m_bShowName; }
+      bool IsVisible() const { return m_bIsVisible; }
+      bool IsListed() const { return m_bIsListed; }
+      bool IsNameShown() const { return m_bShowName; } 
       void SetVisible(bool viz = true){ m_bIsVisible = viz; }
       void SetListed(bool viz = true){ m_bIsListed = viz; }
       void SetNameShown(bool viz = true) { m_bShowName = viz; }
-      virtual wxString GetName(void){ return m_MarkName; }
-      wxString GetDescription(void) { return m_MarkDescription; }
+      virtual wxString GetName(void) const { return m_MarkName; }
+      wxString GetDescription(void) const { return m_MarkDescription; }
 
       wxDateTime GetCreateTime(void);
       void SetCreateTime( wxDateTime dt );
 
-      wxString GetIconName(void){ return m_IconName; }
-      wxBitmap *GetIconBitmap(){ return m_pbmIcon; }
+      wxString GetIconName(void) const { return m_IconName; }
+      wxBitmap *GetIconBitmap() const { return m_pbmIcon; }
       void SetIconName( wxString name ){ m_IconName = name; }
       
       void *GetSelectNode(void) { return m_SelectNode; }
