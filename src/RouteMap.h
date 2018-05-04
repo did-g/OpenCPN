@@ -242,11 +242,14 @@ public:
 typedef std::list<IsoChron*> IsoChronList;
 
 struct RouteMapPosition {
-    RouteMapPosition(wxString n, double lat0, double lon0)
-    : Name(n), lat(lat0), lon(lon0) {}
+    RouteMapPosition(wxString n, double lat0, double lon0, wxString guid = wxEmptyString)
+    : Name(n), GUID(guid), lat(lat0), lon(lon0) {ID = ++s_ID;}
 
     wxString Name;
+    wxString GUID;
     double lat, lon;
+    long  ID;
+    static long s_ID;
 };
 
 struct RouteMapConfiguration {
@@ -274,6 +277,7 @@ struct RouteMapConfiguration {
 
     double MaxDivertedCourse, MaxCourseAngle, MaxSearchAngle, MaxTrueWindKnots, MaxApparentWindKnots;
     double MaxSwellMeters, MaxLatitude, TackingTime, WindVSCurrent;
+    double SafetyMarginLand;
 
     bool AvoidCycloneTracks;
     int CycloneMonths, CycloneDays;

@@ -358,6 +358,46 @@ void WeatherRouting::Render(wrDC &dc, PlugIn_ViewPort &vp)
     if (vp.bValid == false)
         return;
 
+    // polling is bad
+    bool work = false;
+    for(auto it = RouteMap::Positions.begin();it != RouteMap::Positions.end(); it++) {
+        if((*it).GUID.IsEmpty())
+            continue;
+
+        PlugIn_Waypoint waypoint;
+        double lat = (*it).lat;
+        double lon = (*it).lon;
+
+        if (!GetSingleWaypoint( (*it).GUID, &waypoint ))
+            continue;
+        if (lat == waypoint.m_lat && lon == waypoint.m_lon && waypoint.m_MarkName.IsSameAs((*it).Name))
+            continue;
+
+        wxString name = waypoint.m_MarkName;
+        lat = waypoint.m_lat;
+        lon = waypoint.m_lon;
+        long index = m_panel->m_lPositions->FindItem(0, (*it).ID);
+        assert(index >= 0);
+        (*it).lat = lat;
+        (*it).lon = lon;
+
+        // XXX FIXME there's already this name, update m_ConfigurationDialog source
+        long exist = m_panel->m_lPositions->FindItem(0, name);
+        if (exist == -1 || exist == index) {
+            m_panel->m_lPositions->SetItem(index, POSITION_NAME, name);
+            m_panel->m_lPositions->SetColumnWidth(POSITION_NAME, wxLIST_AUTOSIZE);
+        }
+        m_panel->m_lPositions->SetItem(index, POSITION_LAT, wxString::Format(_T("%.5f"), lat));
+        m_panel->m_lPositions->SetColumnWidth(POSITION_LAT, wxLIST_AUTOSIZE);
+        m_panel->m_lPositions->SetItem(index, POSITION_LON, wxString::Format(_T("%.5f"), lon));
+        m_panel->m_lPositions->SetColumnWidth(POSITION_LON, wxLIST_AUTOSIZE);
+        work = true;
+    }
+    if (work) {
+        UpdateConfigurations();
+        Reset();
+    }
+
     if(!dc.GetDC()) {
         glPushAttrib(GL_LINE_BIT | GL_ENABLE_BIT | GL_HINT_BIT ); //Save state
         glEnable( GL_LINE_SMOOTH );
@@ -421,27 +461,73 @@ void WeatherRouting::AddPosition(double lat, double lon)
 
 void WeatherRouting::AddPosition(double lat, double lon, wxString name)
 {
-    for(std::list<RouteMapPosition>::iterator it = RouteMap::Positions.begin();
-        it != RouteMap::Positions.end(); it++) {
+    for(auto it = RouteMap::Positions.begin(); it != RouteMap::Positions.end(); it++) {
         if((*it).Name == name) {
             wxMessageDialog mdlg(this, _("This name already exists, replace?\n"),
                                  _("Weather Routing"), wxYES | wxNO | wxICON_WARNING);
             if(mdlg.ShowModal() == wxID_YES) {
-                long index = m_panel->m_lPositions->FindItem(0, name);
+                long index = m_panel->m_lPositions->FindItem(0, (*it).ID);
+                assert(index >=0);
+
                 (*it).lat = lat;
                 (*it).lon = lon;
+                (*it).GUID = wxEmptyString;  // no more an O waypoint
                 m_panel->m_lPositions->SetItem(index, POSITION_LAT, wxString::Format(_T("%.5f"), lat));
                 m_panel->m_lPositions->SetColumnWidth(POSITION_LAT, wxLIST_AUTOSIZE);
                 m_panel->m_lPositions->SetItem(index, POSITION_LON, wxString::Format(_T("%.5f"), lon));
                 m_panel->m_lPositions->SetColumnWidth(POSITION_LON, wxLIST_AUTOSIZE);
+                UpdateConfigurations();
             }
+            return;
+        }
+    }
+    
+    RouteMapPosition p(name, lat, lon);
+    RouteMap::Positions.push_back(p);
+    UpdateConfigurations();
 
+    wxListItem item;
+    long index = m_panel->m_lPositions->InsertItem(m_panel->m_lPositions->GetItemCount(), item);
+
+    m_panel->m_lPositions->SetItem(index, POSITION_NAME, name);
+    m_panel->m_lPositions->SetColumnWidth(POSITION_NAME, wxLIST_AUTOSIZE);
+    m_panel->m_lPositions->SetItem(index, POSITION_LAT, wxString::Format(_T("%.5f"), lat));
+    m_panel->m_lPositions->SetColumnWidth(POSITION_LAT, wxLIST_AUTOSIZE);
+    m_panel->m_lPositions->SetItem(index, POSITION_LON, wxString::Format(_T("%.5f"), lon));
+    m_panel->m_lPositions->SetColumnWidth(POSITION_LON, wxLIST_AUTOSIZE);
+
+    m_panel->m_lPositions->SetItemData(index, p.ID);
+    m_ConfigurationDialog.AddSource(name);
+    m_ConfigurationBatchDialog.AddSource(name);
+}
+
+void WeatherRouting::AddPosition(double lat, double lon, wxString name, wxString GUID)
+{
+    if (GUID.IsEmpty())
+        return AddPosition(lat, lon, name);
+
+    for(auto it = RouteMap::Positions.begin();it != RouteMap::Positions.end(); it++) {
+        if((*it).GUID.IsEmpty() /*&& !(*it).NameIsSameAs(name)*/)
+            continue;
+
+        if((*it).GUID.IsSameAs(GUID)) {
+            // wxMessageDialog mdlg(this, _("This name already exists, replace?\n"),_("Weather Routing"), wxYES | wxNO | wxICON_WARNING);
+            long index = m_panel->m_lPositions->FindItem(0, (*it).ID);
+            (*it).lat = lat;
+            (*it).lon = lon;
+            m_panel->m_lPositions->SetItem(index, POSITION_NAME, name);
+            m_panel->m_lPositions->SetColumnWidth(POSITION_NAME, wxLIST_AUTOSIZE);
+            m_panel->m_lPositions->SetItem(index, POSITION_LAT, wxString::Format(_T("%.5f"), lat));
+            m_panel->m_lPositions->SetColumnWidth(POSITION_LAT, wxLIST_AUTOSIZE);
+            m_panel->m_lPositions->SetItem(index, POSITION_LON, wxString::Format(_T("%.5f"), lon));
+            m_panel->m_lPositions->SetColumnWidth(POSITION_LON, wxLIST_AUTOSIZE);
             UpdateConfigurations();
             return;
         }
     }
     
-    RouteMap::Positions.push_back(RouteMapPosition(name, lat, lon));
+    RouteMapPosition p(name, lat, lon, GUID);
+    RouteMap::Positions.push_back(p);
     UpdateConfigurations();
 
     wxListItem item;
@@ -453,7 +539,7 @@ void WeatherRouting::AddPosition(double lat, double lon, wxString name)
     m_panel->m_lPositions->SetColumnWidth(POSITION_LAT, wxLIST_AUTOSIZE);
     m_panel->m_lPositions->SetItem(index, POSITION_LON, wxString::Format(_T("%.5f"), lon));
     m_panel->m_lPositions->SetColumnWidth(POSITION_LON, wxLIST_AUTOSIZE);
-    
+    m_panel->m_lPositions->SetItemData(index, p.ID);
 
     m_ConfigurationDialog.AddSource(name);
     m_ConfigurationBatchDialog.AddSource(name);
@@ -1352,6 +1438,7 @@ bool WeatherRouting::OpenXML(wxString filename, bool reportfailure)
         
             if(!strcmp(e->Value(), "Position")) {
                 wxString name = wxString::FromUTF8(e->Attribute("Name"));
+                wxString GUID = wxString::FromUTF8(e->Attribute("GUID"));
                 double lat = AttributeDouble(e, "Latitude", NAN);
                 double lon = AttributeDouble(e, "Longitude", NAN);
             
@@ -1369,7 +1456,7 @@ bool WeatherRouting::OpenXML(wxString filename, bool reportfailure)
                         goto skipadd;
                     }
                 }
-                AddPosition(lat, lon, name);
+                AddPosition(lat, lon, name, GUID);
             
             skipadd:;
             } else
@@ -1430,6 +1517,7 @@ bool WeatherRouting::OpenXML(wxString filename, bool reportfailure)
                     configuration.WindStrength = AttributeDouble(e, "WindStrength", 1);
 
                     configuration.DetectLand = AttributeBool(e, "DetectLand", true);
+                    configuration.SafetyMarginLand = AttributeDouble(e, "SafetyMarginLand", 2.);
                     configuration.DetectBoundary = AttributeBool(e, "DetectBoundary", false);
                     configuration.Currents = AttributeBool(e, "Currents", true);
                     configuration.OptimizeTacking = AttributeBool(e, "OptimizeTacking", false);
@@ -1491,6 +1579,8 @@ void WeatherRouting::SaveXML(wxString filename)
         c->SetAttribute("Name", (*it).Name.mb_str());
         c->SetAttribute("Latitude", wxString::Format(_T("%.5f"), (*it).lat).mb_str());
         c->SetAttribute("Longitude", wxString::Format(_T("%.5f"), (*it).lon).mb_str());
+        if (!(*it).GUID.IsEmpty())
+            c->SetAttribute("GUID", (*it).GUID.mb_str());
 
         root->LinkEndChild(c);
     }
@@ -1533,6 +1623,7 @@ void WeatherRouting::SaveXML(wxString filename)
         c->SetDoubleAttribute("WindStrength", configuration.WindStrength);
 
         c->SetAttribute("DetectLand", configuration.DetectLand);
+        c->SetAttribute("SafetyMarginLand", configuration.SafetyMarginLand);
         c->SetAttribute("DetectBoundary", configuration.DetectBoundary);
         c->SetAttribute("Currents", configuration.Currents);
         c->SetAttribute("OptimizeTacking", configuration.OptimizeTacking);
@@ -2270,6 +2361,7 @@ RouteMapConfiguration WeatherRouting::DefaultConfiguration()
     configuration.AllowDataDeficient = false;
     configuration.WindStrength = 1;
     configuration.DetectLand = true;
+    configuration.SafetyMarginLand = 2.;
     configuration.DetectBoundary = false;
     configuration.Currents = false;
     configuration.OptimizeTacking = false;
