@@ -85,6 +85,7 @@
 
 #define distance(X, Y) sqrt((X)*(X) + (Y)*(Y)) // much faster than hypot
 
+long RouteMapPosition::s_ID = 0;
 
 static double Swell(WR_GribRecordSet *grib, double lat, double lon)
 {
@@ -833,10 +834,14 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
 
             if(configuration.DetectLand) {
                 double ndlon1 = dlon1;
+                
+                // Check first if crossing land.
                 if (ndlon1 > 360) {
                     ndlon1 -= 360;
                 }
+                // ==================================
                 if (CrossesLand(dlat1, ndlon1)) {
+                    crossing:
                     if (dist *3 >= dist2end) {
                         if (!configuration.slow_end) {
                             // printf("enter slow end! %f %f\n", dist, dist2end);
@@ -860,6 +865,43 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
                     }
                     configuration.land_crossing = true;
                     continue;
+                }
+            
+                // CUSTOMIZATION - Safety distance from land
+                // -----------------------------------------
+                // Modify the routing according to a safety
+                // margin defined by the user from the land.
+                // CONFIG: 2 NM as a security distance by default.
+                double distSecure = configuration.SafetyMarginLand;
+                double latBorderUp1, lonBorderUp1, latBorderUp2, lonBorderUp2;
+                double latBorderDown1, lonBorderDown1, latBorderDown2, lonBorderDown2;
+                
+                // Test if land is found within a rectangle with
+                // dimensiosn (dist, distSecure). Tests borders, plus diag,
+                // and middle of each side...
+                //            <- dist ->
+                // |-------------------------------|
+                // |                               |    ^
+                // |                               |    distSafety
+                // |-------------------------------|    ^
+                // |                               |
+                // |                               |
+                // |-------------------------------|
+                
+                // Fist, find the (lat,long) of each
+                // points of the rectangle
+                ll_gc_ll(lat, lon, heading_resolve(BG)-90, distSecure, &latBorderUp1, &lonBorderUp1);
+                ll_gc_ll(dlat1, dlon1, heading_resolve(BG)-90, distSecure, &latBorderUp2, &lonBorderUp2);
+                ll_gc_ll(lat, lon, heading_resolve(BG)+90, distSecure, &latBorderDown1, &lonBorderDown1);
+                ll_gc_ll(dlat1, dlon1, heading_resolve(BG)+90, distSecure, &latBorderDown2, &lonBorderDown2);
+                
+                // Then, test if there is land
+                if (PlugIn_GSHHS_CrossesLand(latBorderUp1, lonBorderUp1, latBorderUp2, lonBorderUp2) ||
+                    PlugIn_GSHHS_CrossesLand(latBorderDown1, lonBorderDown1, latBorderDown2, lonBorderDown2) ||
+                    PlugIn_GSHHS_CrossesLand(latBorderUp1, lonBorderUp1, latBorderDown2, lonBorderDown2) ||
+                    PlugIn_GSHHS_CrossesLand(latBorderDown1, lonBorderDown1, latBorderUp2, lonBorderUp2))
+                {
+                    goto crossing;
                 }
             }
 
@@ -2453,16 +2495,30 @@ void IsoChron::ResetDrawnFlag()
 bool RouteMapConfiguration::Update()
 {
     bool havestart = false, haveend = false;
-    for(std::list<RouteMapPosition>::iterator it = RouteMap::Positions.begin();
-        it != RouteMap::Positions.end(); it++) {
+    PlugIn_Waypoint waypoint;
+
+    for(auto it = RouteMap::Positions.begin();it != RouteMap::Positions.end(); it++) {
         if(Start == (*it).Name) {
-            StartLat = (*it).lat;
-            StartLon = (*it).lon;
+            double lat = (*it).lat;
+            double lon = (*it).lon;
+            if (!(*it).GUID.IsEmpty() && GetSingleWaypoint( (*it).GUID, &waypoint )) {
+                lat = waypoint.m_lat;
+                lon = waypoint.m_lon;
+            }
+            StartLat = lat;
+            StartLon = lon;
+                
             havestart = true;
         }
         if(End == (*it).Name) {
-            EndLat = (*it).lat;
-            EndLon = (*it).lon;
+            double lat = (*it).lat;
+            double lon = (*it).lon;
+            if (!(*it).GUID.IsEmpty() && GetSingleWaypoint( (*it).GUID, &waypoint )) {
+                lat = waypoint.m_lat;
+                lon = waypoint.m_lon;
+            }
+            EndLat = lat;
+            EndLon = lon;
             haveend = true;
         }
     }
