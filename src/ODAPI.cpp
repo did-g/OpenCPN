@@ -300,7 +300,7 @@ bool ODAPI::OD_CreateBoundaryPoint(CreateBoundaryPoint_t* pCBP)
     l_pBP->SetODPointRangeRingsStepUnits(pCBP->ringsunits);
     l_pBP->SetODPointRangeRingsColour(pCBP->ringscolour);
     g_pODPointMan->AddODPoint(l_pBP);
-    l_pBP->m_bIsolatedMark = true;
+    l_pBP->m_bIsolatedMark = true; // XXX ????
     g_pODSelect->AddSelectableODPoint(pCBP->lat, pCBP->lon, l_pBP);
     l_pBP->m_bIsInBoundary = false;
     l_pBP->m_bIsInPath = false;
