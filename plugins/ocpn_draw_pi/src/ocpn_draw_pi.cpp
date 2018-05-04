@@ -3224,8 +3224,6 @@ bool ocpn_draw_pi::CreatePointLeftClick( wxMouseEvent &event )
 //        pMousePoint = new ODPoint( rlat, rlon, g_sODPointIconName, wxS(""), wxT("") );
         pMousePoint = new BoundaryPoint( rlat, rlon, g_sODPointIconName, wxS(""), wxT("") );
         pMousePoint->SetNameShown( false );
-        pMousePoint->SetTypeString( wxS("Boundary Point") );
-        pMousePoint->m_bIsolatedMark = TRUE;
         
         g_pODConfig->AddNewODPoint( pMousePoint, -1 );    // use auto next num
         g_pODSelect->AddSelectableODPoint( rlat, rlon, pMousePoint );
@@ -3368,9 +3366,8 @@ bool ocpn_draw_pi::CreateBoundaryLeftClick( wxMouseEvent &event )
     }
     
     if( NULL == pMousePoint ) {                 // need a new point
-        pMousePoint = new BoundaryPoint( rlat, rlon, g_sODPointIconName, wxS(""), wxT("") );
+        pMousePoint = new BoundaryPoint( rlat, rlon, g_sODPointIconName, wxS(""), wxT(""), false );
         pMousePoint->SetNameShown( false );
-        pMousePoint->SetTypeString( wxS("Boundary Point") );
         
         g_pODConfig->AddNewODPoint( pMousePoint, -1 );    // use auto next num
         g_pODSelect->AddSelectableODPoint( rlat, rlon, pMousePoint );
@@ -3417,9 +3414,8 @@ bool ocpn_draw_pi::CreateBoundaryLeftClick( wxMouseEvent &event )
                         
                         if( i < segmentCount ) {
                             gcPoint = new BoundaryPoint( gcCoord.y, gcCoord.x, wxS("xmblue"), wxS(""),
-                                                   wxT("") );
+                                                   wxT("") , false);
                             gcPoint->SetNameShown( false );
-                            gcPoint->SetTypeString( wxS("Boundary Point") );
                             g_pODConfig->AddNewODPoint( gcPoint, -1 );
                             g_pODSelect->AddSelectableODPoint( gcCoord.y, gcCoord.x, gcPoint );
                         } else {
