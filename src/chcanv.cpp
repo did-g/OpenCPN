@@ -7310,8 +7310,7 @@ void ChartCanvas::ShowTrackPropertiesDialog( Track* selected )
     pTrackPropDialog = TrackPropDlg::getInstance( this );    // There is one global instance of the RouteProp Dialog
 
     pTrackPropDialog->SetTrackAndUpdate( selected );
-    pTrackPropDialog->UpdateProperties();
-
+    pTrackPropDialog->Centre();
     pTrackPropDialog->Show();
 
     Refresh( false );
