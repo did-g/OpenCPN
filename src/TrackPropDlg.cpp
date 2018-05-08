@@ -128,7 +128,7 @@ TrackPropDlg::TrackPropDlg( wxWindow* parent, wxWindowID id, const wxString& tit
     RecalculateSize();
 
 
-    //Centre( );
+    Centre( );
 
     // Connect Events
     m_sdbBtmBtnsSizerCancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( TrackPropDlg::OnCancelBtnClick ), NULL, this );
@@ -219,7 +219,7 @@ void TrackPropDlg::RecalculateSize( void )
     }
     
 
-    Centre();
+    // Centre();
 
 }
 
