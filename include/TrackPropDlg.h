@@ -103,6 +103,11 @@ private:
         void OnHyperLinkClick(wxHyperlinkEvent &event);
         wxHyperlinkCtrl *m_pEditedLink;
 
+        bool UpdateProperties();
+        void InitializeList();
+
+        Track      *m_pTrack;
+
     protected:
         wxNotebook* m_notebook1;
         wxScrolledWindow* m_panelBasic;
@@ -188,13 +193,10 @@ public:
         }
         
         void SetTrackAndUpdate( Track *pt );
-        bool UpdateProperties();
-        void InitializeList();
         Track *GetTrack() { return m_pTrack; }
         
         void RecalculateSize( void );
         
-        Track      *m_pTrack;
         
         void m_hyperlinkContextMenu( wxMouseEvent &event );
 };
