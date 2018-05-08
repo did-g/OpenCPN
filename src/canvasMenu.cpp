@@ -896,6 +896,10 @@ void CanvasMenuHandler::PopupMenuHandler( wxCommandEvent& event )
     case ID_DEF_MENU_MOVE_BOAT_HERE:
         gLat = zlat;
         gLon = zlon;
+        // first distance and bearing displayed are from boat, update if visible
+        if ( pRoutePropDialog && pRoutePropDialog->IsShown() ) pRoutePropDialog->UpdateProperties();
+        // but not for track, could be too slow if a lot of points
+        //if ( pTrackPropDialog && pTrackPropDialog->IsShown() ) pTrackPropDialog->SetTrackAndUpdate( pTrackPropDialog->GetTrack() );
         break;
 
     case ID_DEF_MENU_GOTO_HERE: {
