@@ -633,7 +633,7 @@ void GshhsPolyReader::InitializeLoadQuality( int quality )  // 5 levels: 0=low .
     }
 }
 
-inline bool my_intersects( const wxLineF &line1, const wxLineF &line2 )
+static inline bool my_intersects( const wxLineF &line1, const wxLineF &line2 )
 {
     double x1 = line1.m_p1.x, y1 = line1.m_p1.y, x2 = line1.m_p2.x, y2 = line1.m_p2.y;
     double x3 = line2.m_p1.x, y3 = line2.m_p1.y, x4 = line2.m_p2.x, y4 = line2.m_p2.y;
