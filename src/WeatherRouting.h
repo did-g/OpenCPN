@@ -31,6 +31,8 @@
 #include <wx/fileconf.h>
 #include <wx/collpane.h>
 
+#include "ocpn_plugin.h"
+
 #include "WeatherRoutingUI.h"
 #include "ConfigurationDialog.h"
 #include "ConfigurationBatchDialog.h"
@@ -111,6 +113,7 @@ public:
     void AddPosition(double lat, double lon);
     void AddPosition(double lat, double lon, wxString name);
     void AddPosition(double lat, double lon, wxString name, wxString GUID);
+    void AddRoute(std::unique_ptr<PlugIn_Route> &rte);
 
     void CursorRouteChanged();
     void UpdateColumns();

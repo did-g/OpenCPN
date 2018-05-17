@@ -35,7 +35,7 @@
 #include "Boat.h"
 #include "RouteMapOverlay.h"
 #include "SettingsDialog.h"
-
+#include "georef.h"
 
 RouteMapOverlayThread::RouteMapOverlayThread(RouteMapOverlay &routemapoverlay)
     : wxThread(wxTHREAD_JOINABLE), m_RouteMapOverlay(routemapoverlay)
@@ -45,7 +45,17 @@ RouteMapOverlayThread::RouteMapOverlayThread(RouteMapOverlay &routemapoverlay)
 
 void *RouteMapOverlayThread::Entry()
 {
-    while(!TestDestroy() && !m_RouteMapOverlay.Finished())
+    RouteMapConfiguration cf = m_RouteMapOverlay.GetConfiguration();
+
+    if (!cf.RouteGUID.IsEmpty()) {
+        std::unique_ptr<PlugIn_Route> rte = GetRoute_Plugin(cf.RouteGUID);
+        PlugIn_Route *proute = rte.get();
+        if (proute == nullptr)
+           return 0;
+
+        m_RouteMapOverlay.RouteAnalysis(proute);
+    }
+    else while(!TestDestroy() && !m_RouteMapOverlay.Finished()) {
         if(!m_RouteMapOverlay.Propagate())
             wxThread::Sleep(50);
         else {
@@ -53,7 +63,7 @@ void *RouteMapOverlayThread::Entry()
             m_RouteMapOverlay.UpdateDestination();
             wxThread::Sleep(5);
         }
-
+    }
 //    m_RouteMapOverlay.m_Thread = NULL;
     return 0;
 }
@@ -111,6 +121,68 @@ bool RouteMapOverlay::Start(wxString &error)
     return true;
 }
 
+void RouteMapOverlay::RouteAnalysis(PlugIn_Route *proute)
+{
+    std::list<PlotData> &plotdata = last_destination_plotdata;
+    RouteMapConfiguration configuration =  GetConfiguration();
+    Lock();
+    wxPlugin_WaypointListNode *pwpnode = proute->pWaypointList->GetFirst();
+    PlugIn_Waypoint *pwp;
+    wxDateTime curtime;
+
+    RoutePoint rte, *next;
+    PlotData data;
+    data.time = configuration.StartTime;
+    curtime = data.time;
+    double dt = configuration.DeltaTime; //UsedDeltaTime;
+    // VBG, BG, VB, B, VW, W, VWG, WG, VC, C, WVHT;
+    // double VW_GUST;
+    data.WVHT = 0;
+    data.VW_GUST = 0;
+    data.delta = dt;
+    bool ok = true;
+    data.lat = configuration.StartLat, data.lon = configuration.StartLon;
+    while( pwpnode ) {
+        pwp = pwpnode->GetData();
+        configuration.time = data.time;
+        data.lat = pwp->m_lat, data.lon = pwp->m_lon;
+        double eta = dt;
+        pwpnode = pwpnode->GetNext(); //PlugInWaypoint
+        if (pwpnode) {
+            int data_mask;
+            double H;
+            pwp = pwpnode->GetData();
+            rte.lat = pwp->m_lat, rte.lon = pwp->m_lon;
+            next = &rte;
+            eta = data.PropagateToPoint(rte.lat, rte.lon, configuration, H, data_mask, false);
+            if(wxIsNaN(eta)) {
+                ok = false;
+                eta = dt;
+            }
+            // ll_gc_ll_reverse(data.lat, data.lon, next->lat, next->lon, &data.BG, &data.VBG);
+            curtime += wxTimeSpan(0, 0, eta);
+        }
+        else
+            next = &data;
+        data.GetPlotData(next, eta, configuration, data);
+        plotdata.push_back(data);
+        if (!ok)
+            break;
+        data.time = curtime;
+    }
+    m_bUpdated = true;
+    m_UpdateOverlay = true;
+    last_destination_position = new Position(data.lat, data.lon,
+                                            nullptr, /*minH*/ NAN, NAN, 0/*endp->polar*/, true , 0);
+
+    last_cursor_plotdata = last_destination_plotdata;
+    if (ok) {
+        m_EndTime = data.time;
+        SetFinish();
+    }
+    Unlock();
+}
+
 void RouteMapOverlay::DeleteThread()
 {
     if(!m_Thread)
@@ -145,7 +217,7 @@ static void SetWidth(wrDC &dc, int w, bool penifgl = false)
     dc.SetPen(pen);
 }
 
-void RouteMapOverlay::DrawLine(Position *p1, Position *p2,
+void RouteMapOverlay::DrawLine(RoutePoint *p1, RoutePoint *p2,
                                wrDC &dc, PlugIn_ViewPort &vp)
 {
     wxPoint p1p, p2p;
@@ -160,7 +232,7 @@ void RouteMapOverlay::DrawLine(Position *p1, Position *p2,
     }
 }
 
-void RouteMapOverlay::DrawLine(Position *p1, wxColour &color1, Position *p2, wxColour &color2,
+void RouteMapOverlay::DrawLine(RoutePoint *p1, wxColour &color1, RoutePoint *p2, wxColour &color2,
                                wrDC &dc, PlugIn_ViewPort &vp)
 {
 #if 0
@@ -596,11 +668,6 @@ void RouteMapOverlay::RenderCourse(Position *pos, wrDC &dc, PlugIn_ViewPort &vp,
 
     Lock();
 
-    /* draw lines to this route */
-    Position *p;
-    if(!dc.GetDC())
-        glBegin(GL_LINES);
-    
     /* ComfortDisplay Customization
      * ------------------------------------------------
      * To get weather data (wind, current, waves) on a
@@ -610,22 +677,48 @@ void RouteMapOverlay::RenderCourse(Position *pos, wrDC &dc, PlugIn_ViewPort &vp,
      */
     std::list<PlotData> plot = GetPlotData(false);
     std::list<PlotData>::reverse_iterator itt =  plot.rbegin();
+    std::list<PlotData>::reverse_iterator inext =  itt;
+
+    if (itt == plot.rend() || ++inext == plot.rend()) {
+        Unlock();
+        return;
+    }
 
     wxColor lc = sailingConditionColor(sailingConditionLevel(*itt));
-    for(p = pos; (p && p->parent) && (itt != plot.rend()); p = p->parent)
+
+    bool rte = !GetConfiguration().RouteGUID.IsEmpty();
+
+    /* draw lines to this route */
+    if(!dc.GetDC())
+        glBegin(GL_LINES);
+
+    if (rte) for(; itt != plot.rend(); inext = itt, itt++)
+    {
+        if (comfortRoute)
+        {
+            wxColor c = sailingConditionColor(sailingConditionLevel(*itt));
+            DrawLine(&(*itt), lc, &(*inext), c, dc, vp);
+            lc = c;
+        } 
+        else 
+            DrawLine(&(*itt), &(*inext), dc, vp);
+    }
+    else for(Position *p = pos; (p && p->parent) && (itt != plot.rend()); p = p->parent)
     {
         if (comfortRoute)
         {
             wxColor c = sailingConditionColor(sailingConditionLevel(*itt));
             DrawLine(p, lc, p->parent, c, dc, vp);
-            lc = c;
             itt++;
-        } else
+            lc = c;
+        } 
+        else 
             DrawLine(p, p->parent, dc, vp);
     }
     
     if(!dc.GetDC())
         glEnd();
+
     Unlock();
 }
 
@@ -704,11 +797,6 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
     
     RouteMapConfiguration configuration = GetConfiguration();
     
-    // if no route has been calculated by
-    // WeatherRouting, then stops the method.
-    // ([origin] is a list of all isochrons)
-    if (origin.size() < 2)
-        return;
     
     // Create a specific viewport at position (0,0)
     // to draw the winds barbs, and then translate it
@@ -723,8 +811,13 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
     // over [GetPlotData(false)] list which contains lat,
     // lon, wind info for each points, only if needed.
     std::list<PlotData> plot = GetPlotData(false);
-    std::list<PlotData>::iterator it;
-    for (it = plot.begin(); it != plot.end(); it++)
+
+    // if no route has been calculated by WeatherRouting, 
+    // then stops the method.
+    if (plot.empty())
+        return;
+
+    for (auto it = plot.begin(); it != plot.end(); it++)
     {
         wxPoint p;
         GetCanvasPixLL(&nvp, &p, it->lat, it->lon);
