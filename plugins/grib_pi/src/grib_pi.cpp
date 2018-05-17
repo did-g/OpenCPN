@@ -533,10 +533,18 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 {
     if(message_id == _T("GRIB_VALUES_REQUEST"))
     {
+        if(!m_pGribCtrlBar)
+            OnToolbarToolCallback(0);
+
         // lat, lon, time, what
         wxJSONReader r;
         wxJSONValue v;
         r.Parse(message_body, &v);
+        if (!v.HasMember(_T("Day"))) {
+            // bogus or loading grib
+            SendPluginMessage(wxString(_T("GRIB_VALUES")), _T(""));
+            return;
+        }
         wxDateTime time(v[_T("Day")].AsInt(),
                         (wxDateTime::Month)v[_T("Month")].AsInt(),
                         v[_T("Year")].AsInt(),
@@ -545,9 +553,6 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                         v[_T("Second")].AsInt());
         double lat = v[_T("lat")].AsDouble();
         double lon = v[_T("lon")].AsDouble();
-//printf("time %d:%d\n",  v[_T("Hour")].AsInt(),v[_T("Minute")].AsInt());
-        if(!m_pGribCtrlBar)
-            OnToolbarToolCallback(0);
 
         if(m_pGribCtrlBar) {
             //int idx = m_pGribCtrlBar->GetNearestIndex(time, 0);
