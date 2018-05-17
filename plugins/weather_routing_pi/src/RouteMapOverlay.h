@@ -27,6 +27,7 @@
 #include "LineBufferOverlay.h"
 
 class PlugIn_ViewPort;
+class PlugIn_Route;
 
 class wrDC;
 class RouteMapOverlay;
@@ -99,6 +100,7 @@ public:
 
     bool m_UpdateOverlay;
     bool m_bEndRouteVisible;
+    void RouteAnalysis(PlugIn_Route *proute);
 
 private:
     void RenderAlternateRoute(IsoRoute *r, bool each_parent,
@@ -109,8 +111,8 @@ private:
     wxMutex routemutex;
 
     void SetPointColor(wrDC &dc, Position *p);
-    void DrawLine(Position *p1, Position *p2, wrDC &dc, PlugIn_ViewPort &vp);
-    void DrawLine(Position *p1, wxColour &color1, Position *p2, wxColour &color2,
+    void DrawLine(RoutePoint *p1, RoutePoint *p2, wrDC &dc, PlugIn_ViewPort &vp);
+    void DrawLine(RoutePoint *p1, wxColour &color1, RoutePoint *p2, wxColour &color2,
                   wrDC &dc, PlugIn_ViewPort &vp);
 
     double last_cursor_lat, last_cursor_lon;
