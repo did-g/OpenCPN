@@ -7310,8 +7310,7 @@ void ChartCanvas::ShowTrackPropertiesDialog( Track* selected )
     pTrackPropDialog = TrackPropDlg::getInstance( this );    // There is one global instance of the RouteProp Dialog
 
     pTrackPropDialog->SetTrackAndUpdate( selected );
-    pTrackPropDialog->UpdateProperties();
-
+    pTrackPropDialog->Centre();
     pTrackPropDialog->Show();
 
     Refresh( false );
@@ -7491,7 +7490,6 @@ void pupHandler_PasteTrack() {
         curPoint = pasted->GetPoint( i );
 
         newPoint = new TrackPoint( curPoint );
-        newPoint->m_GPXTrkSegNo = 1;
 
         wxDateTime now = wxDateTime::Now();
         newPoint->SetCreateTime(curPoint->GetCreateTime());
