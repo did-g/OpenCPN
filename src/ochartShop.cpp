@@ -45,6 +45,8 @@
 #include <wx/zipstrm.h>
 #include <memory>
 
+#include "oesenc_pi.h"
+extern oesenc_pi  *g_pi;
 
 #include <wx/arrimpl.cpp> 
 WX_DEFINE_OBJARRAY(ArrayOfCharts);
@@ -444,7 +446,7 @@ wxBitmap& itemChart::GetChartThumbnail(int size)
 //Utility Functions
 
 //  Search g_ChartArray for chart having specified parameters
-int findOrderRefChartId(wxString &orderRef, wxString &chartId, wxString &quantity)
+static int findOrderRefChartId(wxString &orderRef, wxString &chartId, wxString &quantity)
 {
     for(unsigned int i = 0 ; i < g_ChartArray.GetCount() ; i++){
         if(g_ChartArray.Item(i)->orderRef.IsSameAs(orderRef)
@@ -457,7 +459,7 @@ int findOrderRefChartId(wxString &orderRef, wxString &chartId, wxString &quantit
 }
 
 
-void loadShopConfig()
+static void loadShopConfig()
 {
     //    Get a pointer to the opencpn configuration object
     wxFileConfig *pConf = GetOCPNConfigObject();
@@ -519,7 +521,7 @@ void loadShopConfig()
     }
 }
 
-void saveShopConfig()
+static void saveShopConfig()
 {
     wxFileConfig *pConf = GetOCPNConfigObject();
         
@@ -1267,7 +1269,7 @@ bool ExtractZipFiles( const wxString& aZipFile, const wxString& aTargetDir, bool
 }
 
 
-int doUnzip(itemChart *chart, int slot)
+static int doUnzip(itemChart *chart, int slot)
 {
     wxString installDir;
     wxString downloadFile;
@@ -1398,6 +1400,8 @@ int doUnzip(itemChart *chart, int slot)
                     ::wxRmdir(lastInstall);
                     
                 }
+                assert(g_pi);
+                g_pi->ScrubChartinfoList();
             }
         }
     }

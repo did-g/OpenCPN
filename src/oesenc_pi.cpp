@@ -167,7 +167,7 @@ wxString                        g_PrivateDataDir;
 int                             g_admin;
 wxString g_versionString;
 
-std::map<std::string, ChartInfoItem *> info_hash;
+static std::map<std::string, ChartInfoItem *> info_hash;
 
 double g_overzoom_emphasis_base;
 bool g_oz_vector_scale;
