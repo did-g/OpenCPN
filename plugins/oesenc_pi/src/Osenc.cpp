@@ -460,6 +460,7 @@ bool Osenc_instream::Open( unsigned char cmd, wxString senc_file_name, wxString 
         // Create a unique name for the private (i.e. data) pipe, valid for this session
         
         wxString tmp_file = wxFileName::CreateTempFileName( _T("") );
+        unlink(tmp_file);
         wxCharBuffer bufn = tmp_file.ToUTF8();
         if(bufn.data()) 
             strncpy(privatefifo_name, bufn.data(), sizeof(privatefifo_name));
@@ -4173,9 +4174,10 @@ PolyTessGeo *Osenc::BuildPolyTessGeoF16(_OSENC_AreaGeometryExt_Record_Payload *r
     
     if(n_TriPrim)
         pPTG->Set_OK( true );
-    else
+    else {
+        delete ppg;
         pPTG->Set_OK( false );                  // mark for deferred tesselation
-        
+    }
     return pPTG;
 }
 

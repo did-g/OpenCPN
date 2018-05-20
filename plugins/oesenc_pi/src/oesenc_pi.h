@@ -153,11 +153,10 @@ public:
     void OnShowFPRClick( wxCommandEvent &event );
     
     void ProcessChartManageResult(wxString result);
+    bool ScrubChartinfoList( void );
     
 private:
 //    wxString GetPermitDir();
-    bool ScrubChartinfoList( void );
-    
 
     int ProcessCellPermit( wxString &permit, bool b_confirm_existing );
 
