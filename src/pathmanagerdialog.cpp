@@ -1468,8 +1468,8 @@ void PathManagerDialog::SelectedPathToggleVisibility( bool visible )
         
         if( ppath ) {
             ppath->SetVisible(visible);
+            m_pPathListCtrl->SetItemImage( item, ppath->IsVisible() ? 0 : 1 );
         }
-        m_pPathListCtrl->SetItemImage( item, ppath->IsVisible() ? 0 : 1 );
     }
 }
 
@@ -1972,8 +1972,8 @@ void PathManagerDialog::SelectedODPointToggleVisibility( bool visible )
         
         if( ppoint ) {
             ppoint->SetVisible(visible);
+            m_pODPointListCtrl->SetItemImage( item, ppoint->IsVisible() ? g_pODPointMan->GetIconIndex( ppoint->GetIconBitmap() ) : g_pODPointMan->GetXIconIndex( ppoint->GetIconBitmap() ) );
         }
-        m_pODPointListCtrl->SetItemImage( item, ppoint->IsVisible() ? g_pODPointMan->GetIconIndex( ppoint->GetIconBitmap() ) : g_pODPointMan->GetXIconIndex( ppoint->GetIconBitmap() ) );
     }
 }
 
@@ -2115,7 +2115,7 @@ void PathManagerDialog::OnChart2LayClick( wxCommandEvent &event )
                 // --------------
                 lst = GetHazards( n, t );
 
-                delete t;
+                delete [] t;
             }
             else
                 l_pBoundary = 0;
@@ -2359,9 +2359,9 @@ void PathManagerDialog::SelectedLayerToggleVisibility( bool visible )
         
         if( player ) {
             player->SetVisible(visible);
+            m_pLayListCtrl->SetItemImage( item, player->IsVisible() ? 0 : 1 );
+            ToggleLayerContentsOnChart( player );
         }
-        m_pLayListCtrl->SetItemImage( item, player->IsVisible() ? 0 : 1 );
-        ToggleLayerContentsOnChart( player );
     }
 }
 
