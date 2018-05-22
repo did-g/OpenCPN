@@ -50,6 +50,7 @@ BoundaryPoint::BoundaryPoint(double lat, double lon, const wxString& icon_ident,
 : ODPoint( lat, lon, icon_ident, name, pGUID, bAddToList )
 {
     m_sTypeString = wxT("Boundary Point");
+    m_bIsInBoundary = false;
     m_uiBoundaryPointFillTransparency = g_uiBoundaryPointFillTransparency;
     m_bExclusionBoundaryPoint = g_bExclusionBoundaryPoint;
     m_bInclusionBoundaryPoint = g_bInclusionBoundaryPoint;
@@ -61,6 +62,8 @@ BoundaryPoint::BoundaryPoint(double lat, double lon, const wxString& icon_ident,
 BoundaryPoint::BoundaryPoint(BoundaryPoint* orig) : ODPoint( orig )
 {
     m_sTypeString = orig->m_sTypeString;
+    m_bIsInBoundary = orig->m_bIsInBoundary;
+    
 }
 
 bool BoundaryPoint::IsTypeAndState ( int type, int state ) const
@@ -90,7 +93,7 @@ bool BoundaryPoint::IsTypeAndState ( int type, int state ) const
             case ID_BOUNDARY_INCLUSION:
                 if(!m_bInclusionBoundaryPoint) l_bOk = false;
                 break;
-            case ID_BOUNDARY_NIETHER:
+            case ID_BOUNDARY_NEITHER:
                 if(m_bExclusionBoundaryPoint || m_bInclusionBoundaryPoint) l_bOk = false;
                 break;
         }
@@ -101,6 +104,7 @@ bool BoundaryPoint::IsTypeAndState ( int type, int state ) const
 BoundaryPoint::BoundaryPoint() : ODPoint()
 {
     m_sTypeString = wxT("Boundary Point");
+    m_bIsInBoundary = false;
     m_bInclusionBoundaryPoint = g_bInclusionBoundaryPoint;
     m_iInclusionBoundaryPointSize = g_iInclusionBoundaryPointSize;
     m_iRangeRingWidth = g_iBoundaryPointRangeRingLineWidth;

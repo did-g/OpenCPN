@@ -40,6 +40,8 @@ public:
     bool            m_bExclusionBoundaryPoint;
     bool            m_bInclusionBoundaryPoint;
     unsigned int    m_uiBoundaryPointFillTransparency;
+    bool            m_bIsInBoundary;
+    
 };
 
 #endif // BOUNDARYPOINT_H
