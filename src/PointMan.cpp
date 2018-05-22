@@ -963,7 +963,7 @@ BoundaryPoint *PointMan::FindLineCrossingBoundaryPtr( bool UseCache, double Star
                 case ID_BOUNDARY_INCLUSION:
                     if(!op->m_bInclusionBoundaryPoint) l_bNext = true;
                     break;
-                case ID_BOUNDARY_NIETHER:
+                case ID_BOUNDARY_NEITHER:
                     if(op->m_bExclusionBoundaryPoint || op->m_bInclusionBoundaryPoint) l_bNext = true;
                     break;
             }

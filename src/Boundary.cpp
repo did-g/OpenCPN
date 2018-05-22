@@ -121,7 +121,7 @@ bool Boundary::IsTypeAndState ( int type, int state ) const
             case ID_BOUNDARY_INCLUSION:
                 if(!m_bInclusionBoundary) l_bOk = false;
                 break;
-            case ID_BOUNDARY_NIETHER:
+            case ID_BOUNDARY_NEITHER:
                 if(m_bExclusionBoundary || m_bInclusionBoundary) l_bOk = false;
                 break;
         }
