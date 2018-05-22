@@ -1107,6 +1107,7 @@ double RoutePoint::PropagateToPoint(double dlat, double dlon, RouteMapConfigurat
     double B, VB, BG = W, VBG;
     int iters = 0;
     H = 0;
+    int newpolar = polar;
     bool old = configuration.OptimizeTacking;
     if (end)
         configuration.OptimizeTacking = true;
@@ -1122,7 +1123,7 @@ double RoutePoint::PropagateToPoint(double dlat, double dlon, RouteMapConfigurat
 
         double dummy_dist; // not used
 
-        int newpolar = configuration.boat.TrySwitchPolar(polar, VW, H, S, configuration.OptimizeTacking);
+        newpolar = configuration.boat.TrySwitchPolar(polar, VW, H, S, configuration.OptimizeTacking);
         if(newpolar == -1) {
             configuration.polar_failed = true;
             configuration.OptimizeTacking = old;
@@ -1174,6 +1175,7 @@ double RoutePoint::PropagateToPoint(double dlat, double dlon, RouteMapConfigurat
         if(crossings > 0)
             return NAN;
     }
+    polar = newpolar;
 
     return 3600.0 * dist / VBG;
 }
