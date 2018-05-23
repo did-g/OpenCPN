@@ -38,8 +38,9 @@
 
 #define RESOLUTIONS 4
 
-enum { SAILDOCS,ZYGRIB,NOAA };               //grib providers
-enum { GFS,COAMPS,RTOFS };                  //forecast models
+enum Provider { SAILDOCS,ZYGRIB,NOAA };      //grib providers
+enum { GFS=0,COAMPS,RTOFS, HRRR, OSCAR };      //forecast models
+
 
 static wxString toMailFormat ( int NEflag, int a )                 //convert position to mail necessary format
 {
@@ -112,7 +113,7 @@ void GribRequestSetting::InitRequestConfig()
         m_RequestConfigBase = _T( "000220XX.............." );
     }
     //populate model, mail to, waves model choices
-    wxString s1[] = {_T("GFS"),_T("COAMPS"),_T("RTOFS")};
+    wxString s1[] = {_T("GFS"),_T("COAMPS"),_T("RTOFS"), _T("HRRR"), _T("OSCAR")};
     for( unsigned int i= 0;  i<(sizeof(s1) / sizeof(wxString));i++)
         m_pModel->Append( s1[i] );
     wxString s2[] = {_T("Saildocs"),_T("zyGrib"),_T("NOAA")};
@@ -339,9 +340,11 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
 {
     //some useful  strings
     static const wxString res[][RESOLUTIONS] = {
-        {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},
-        {_T("0.2"), _T("0.8"), _T("1.6"), wxEmptyString},
-        {_T("0.05"), _T("0.25"), _T("1.0"), wxEmptyString}
+        {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},	           // GFS
+        {_T("0.2"), _T("0.8"), _T("1.6"), wxEmptyString},          // COAMPS
+        {_T("0.08"), _T("0.25"), _T("1.0"), wxEmptyString},        // RTOFS
+        {_T("0.03"), _T("0.25"), _T("0.5"), wxEmptyString},        // HRRR
+        {_T("0.33"), wxEmptyString, wxEmptyString, wxEmptyString}  // OSCAR
     };
 
     IsZYGRIB = m_pMailTo->GetCurrentSelection() == ZYGRIB;
@@ -359,7 +362,9 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
         if( res[m_pModel->GetCurrentSelection()][i] != wxEmptyString )
             m_pResolution->Append(res[m_pModel->GetCurrentSelection()][i]);
     }
-     m_pResolution->SetSelection(rs);
+    if (m_pModel->GetCurrentSelection() == OSCAR) rs = 0;
+
+    m_pResolution->SetSelection(rs);
 
     unsigned l;
      //populate time interval choice
@@ -376,6 +381,34 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     for( unsigned i=2; i<l+1; i++)
         m_pTimeRange->Append( wxString::Format(_T("%d"), i));
     m_pTimeRange->SetSelection( wxMin(l-2, tr));
+    //
+    enum field   {PRMSL  = (1 <<  0), // (presssure at sea level)
+                  WIND   = (1 <<  1), // (10 meters above surface)
+                  GUST   = (1 <<  2), //  (at 10 meters)
+                  AIRTMP = (1 <<  3), //  (temperature 2 meters above surface)
+                  SFCTMP = (1 <<  4), //  (temp at surface)
+                  RH     = (1 <<  5), //  (Relative Humidity 2m above surface)
+                  LFTX   = (1 <<  6), //  (LiFTed indeX)
+                  CAPE   = (1 <<  7), //  (Clear Air Potential Energy)
+                  RAIN   = (1 <<  8), //  (Precip rate, mm/hr)
+                  APCP   = (1 <<  9), //  (Accumulated precip)
+                  HGT500 = (1 << 10), //  (500mb height)
+                  TMP500 = (1 << 11), //  (temperature at 500mb level)
+                  WIND500= (1 << 12), //  (Wind velocity at 500mb level)
+                  ABSV   = (1 << 13), //  (Absolute vorticity at 500mb)
+                  CLOUDS = (1 << 14), //  (Total cloud cover)
+                  WAVES  = (1 << 15), //  can be added to include sign wave height from the WW3 model.
+                  SEATMP = (1 << 16), //  (sea temp at surface)
+                  CURRENT= (1 << 17), //  (current)
+    };
+
+    static const int f[] = {
+           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS|WAVES,// GFS
+           WIND,// COAMPS
+           SEATMP|CURRENT,// RTOFS
+           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,// HRRR
+           CURRENT,// OSCAR
+    };
 
     m_pModel->Enable(!(IsZYGRIB || IsNOAA));
     m_pWind->SetValue( !IsRTOFS );
