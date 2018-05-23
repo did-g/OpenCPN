@@ -485,6 +485,16 @@ void GRIBUICtrlBar::OpenFile(bool newestFile)
     }
 }
 
+void GRIBUICtrlBar::OpenFile( const wxString &file)
+{
+    wxFileName fn(file);
+    m_grib_dir = fn.GetPath();
+    m_file_names.Clear();
+    m_file_names.Add(file);
+    OpenFile();
+
+}
+
 bool GRIBUICtrlBar::GetGribZoneLimits(GribTimelineRecordSet *timelineSet, double *latmin, double *latmax, double *lonmin, double *lonmax)
 {
     //calculate the largest overlay size
@@ -1064,11 +1074,7 @@ void GRIBUICtrlBar::OpenFileFromJSON( wxString json)
     wxString file = root[( _T("grib_file") )].AsString();
 
      if(file.Length() && wxFileExists( file )){
-         wxFileName fn(file);
-         m_grib_dir = fn.GetPath();
-         m_file_names.Clear();
-         m_file_names.Add(file);
-         OpenFile();
+         OpenFile(file);
      }
 }
 
