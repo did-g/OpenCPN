@@ -26,6 +26,8 @@
  */
 
 #include "wx/wx.h"
+#include <wx/url.h>
+#include <wx/wfstream.h>
 
 #include "email.h"
 
@@ -36,10 +38,11 @@
 
 #define RESOLUTIONS 4
 
-enum { SAILDOCS,ZYGRIB };                   //grib providers
-enum { GFS,COAMPS,RTOFS };                  //forecast models
+enum Provider { SAILDOCS,ZYGRIB,NOAA };      //grib providers
+enum { GFS=0,COAMPS,RTOFS, HRRR, OSCAR };      //forecast models
 
-wxString toMailFormat ( int NEflag, int a )                 //convert position to mail necessary format
+
+static wxString toMailFormat ( int NEflag, int a )                 //convert position to mail necessary format
 {
     char c = NEflag == 1 ? a < 0 ? 'S' : 'N' : a < 0 ? 'W' : 'E';
     wxString s;
@@ -58,11 +61,13 @@ GribRequestSetting::GribRequestSetting(GRIBUICtrlBar &parent )
       m_parent(parent)
 {
     m_Vp = 0;
+    m_bconnected = false;
     InitRequestConfig();
 }
 
 GribRequestSetting::~GribRequestSetting( )
 {
+    Disconnect(wxEVT_DOWNLOAD_EVENT, (wxObjectEventFunction)(wxEventFunction)&GribRequestSetting::onDLEvent);
     delete m_Vp;
 }
 
@@ -108,10 +113,10 @@ void GribRequestSetting::InitRequestConfig()
         m_RequestConfigBase = _T( "000220XX.............." );
     }
     //populate model, mail to, waves model choices
-    wxString s1[] = {_T("GFS"),_T("COAMPS"),_T("RTOFS")};
+    wxString s1[] = {_T("GFS"),_T("COAMPS"),_T("RTOFS"), _T("HRRR"), _T("OSCAR")};
     for( unsigned int i= 0;  i<(sizeof(s1) / sizeof(wxString));i++)
         m_pModel->Append( s1[i] );
-    wxString s2[] = {_T("Saildocs"),_T("zyGrib")};
+    wxString s2[] = {_T("Saildocs"),_T("zyGrib"),_T("NOAA")};
     for( unsigned int i= 0;  i<(sizeof(s2) / sizeof(wxString));i++)
         m_pMailTo->Append( s2[i] );
     wxString s3[] = {_T("WW3-GLOBAL"),_T("WW3-MEDIT")};
@@ -334,14 +339,20 @@ void GribRequestSetting::OnVpChange(PlugIn_ViewPort *vp)
 void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned tr )
 {
     //some useful  strings
-    const wxString res[][RESOLUTIONS] = {
-        {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},
-        {_T("0.2"), _T("0.8"), _T("1.6"), wxEmptyString},
-        {_T("0.05"), _T("0.25"), _T("1.0"), wxEmptyString}
+    static const wxString res[][RESOLUTIONS] = {
+        {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},	           // GFS
+        {_T("0.2"), _T("0.8"), _T("1.6"), wxEmptyString},          // COAMPS
+        {_T("0.08"), _T("0.25"), _T("1.0"), wxEmptyString},        // RTOFS
+        {_T("0.03"), _T("0.25"), _T("0.5"), wxEmptyString},        // HRRR
+        {_T("0.33"), wxEmptyString, wxEmptyString, wxEmptyString}  // OSCAR
     };
 
     IsZYGRIB = m_pMailTo->GetCurrentSelection() == ZYGRIB;
     if(IsZYGRIB) m_pModel->SetSelection(GFS);                       //Model is always GFS when Zygrib selected
+
+    IsNOAA = m_pMailTo->GetCurrentSelection() == NOAA;
+    if (IsNOAA) m_pModel->SetSelection(GFS);
+
     IsGFS = m_pModel->GetCurrentSelection() == GFS;
     bool IsRTOFS = m_pModel->GetCurrentSelection() == RTOFS;
 
@@ -351,12 +362,15 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
         if( res[m_pModel->GetCurrentSelection()][i] != wxEmptyString )
             m_pResolution->Append(res[m_pModel->GetCurrentSelection()][i]);
     }
-     m_pResolution->SetSelection(rs);
+    if (m_pModel->GetCurrentSelection() == OSCAR) rs = 0;
+
+    m_pResolution->SetSelection(rs);
 
     unsigned l;
      //populate time interval choice
     l = IsGFS ? 3 : IsRTOFS ? 12 : 6;
     m_pInterval->Clear();
+    if (IsNOAA) m_pInterval->Append( _T("1"));
     for( unsigned i=l; i<25; i*=2)
         m_pInterval->Append( wxString::Format(_T("%d"), i));
     m_pInterval->SetSelection(wxMin(it,m_pInterval->GetCount()-1));
@@ -367,8 +381,36 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     for( unsigned i=2; i<l+1; i++)
         m_pTimeRange->Append( wxString::Format(_T("%d"), i));
     m_pTimeRange->SetSelection( wxMin(l-2, tr));
+    //
+    enum field   {PRMSL  = (1 <<  0), // (presssure at sea level)
+                  WIND   = (1 <<  1), // (10 meters above surface)
+                  GUST   = (1 <<  2), //  (at 10 meters)
+                  AIRTMP = (1 <<  3), //  (temperature 2 meters above surface)
+                  SFCTMP = (1 <<  4), //  (temp at surface)
+                  RH     = (1 <<  5), //  (Relative Humidity 2m above surface)
+                  LFTX   = (1 <<  6), //  (LiFTed indeX)
+                  CAPE   = (1 <<  7), //  (Clear Air Potential Energy)
+                  RAIN   = (1 <<  8), //  (Precip rate, mm/hr)
+                  APCP   = (1 <<  9), //  (Accumulated precip)
+                  HGT500 = (1 << 10), //  (500mb height)
+                  TMP500 = (1 << 11), //  (temperature at 500mb level)
+                  WIND500= (1 << 12), //  (Wind velocity at 500mb level)
+                  ABSV   = (1 << 13), //  (Absolute vorticity at 500mb)
+                  CLOUDS = (1 << 14), //  (Total cloud cover)
+                  WAVES  = (1 << 15), //  can be added to include sign wave height from the WW3 model.
+                  SEATMP = (1 << 16), //  (sea temp at surface)
+                  CURRENT= (1 << 17), //  (current)
+    };
 
-    m_pModel->Enable(!IsZYGRIB);
+    static const int f[] = {
+           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS|WAVES,// GFS
+           WIND,// COAMPS
+           SEATMP|CURRENT,// RTOFS
+           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,// HRRR
+           CURRENT,// OSCAR
+    };
+
+    m_pModel->Enable(!(IsZYGRIB || IsNOAA));
     m_pWind->SetValue( !IsRTOFS );
     m_pPress->SetValue( !IsRTOFS );
     m_pWaves->SetValue( m_RequestConfigBase.GetChar(8) == 'X' && IsGFS );
@@ -379,8 +421,8 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_pCloudCover->Enable( IsGFS );
     m_pAirTemp->SetValue( m_RequestConfigBase.GetChar(11) == 'X' && IsGFS );
     m_pAirTemp->Enable( IsGFS );
-    m_pSeaTemp->SetValue( (m_RequestConfigBase.GetChar(12) == 'X' && (!IsZYGRIB && IsGFS)) || IsRTOFS );
-    m_pSeaTemp->Enable( !IsZYGRIB && IsGFS );
+    m_pSeaTemp->SetValue( (m_RequestConfigBase.GetChar(12) == 'X' && (!(IsZYGRIB || IsNOAA) && IsGFS)) || IsRTOFS );
+    m_pSeaTemp->Enable( !(IsZYGRIB || IsNOAA) && IsGFS );
     m_pWindGust->SetValue( m_RequestConfigBase.GetChar(14) == 'X' && IsGFS);
     m_pWindGust->Enable( IsGFS );
     m_pCAPE->SetValue( m_RequestConfigBase.GetChar(15) == 'X' && IsGFS );
@@ -400,7 +442,7 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_pCurrent->Enable( false );
 
     //show parameters only if necessary
-    m_cMovingGribEnabled->Show(!IsZYGRIB);                                  //show/hide Moving settings
+    m_cMovingGribEnabled->Show(!(IsZYGRIB || IsNOAA));                             //show/hide Moving settings
     m_fgMovingParams->ShowItems( m_cMovingGribEnabled->IsChecked() && m_cMovingGribEnabled->IsShown() );
 
     m_fgLog->ShowItems(IsZYGRIB);                                           //show/hide zigrib login
@@ -732,22 +774,62 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
     OnClose ( evt );
 }
 
+/*
+"http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?file=gfs.t18z.pgrb2.0p25.f000&
+   lev_500_mb=on&var_HGT=on&
+   lev_entire_atmosphere=on&var_TCDC=on&
+   lev_surface=on&var_CAPE=on&var_GUST=on&var_PRATE=on&
+   lev_2_m_above_ground=on&var_TMP=on&
+   lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&
+   lev_mean_sea_level=on&var_PRMSL=on&
+   subregion=&leftlon=1&rightlon=-5&toplat=52&bottomlat=44&dir=%2Fgfs.2018052018
+
+http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p50.pl?file=gfs.t00z.pgrb2full.0p50.f003&
+lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018052300
+*/
 wxString GribRequestSetting::WriteMail()
 {
     //define size limits for zyGrib
     int limit = IsZYGRIB ? 2 : 0;                                            //new limit  2 mb
+    int model = m_pModel->GetCurrentSelection();
+    int resolution = m_pResolution->GetCurrentSelection();
 
     m_MailError_Nb = 0;
     //some useful strings
-    const wxString s[] = { _T(","), _T(" ") };        //separators
-    const wxString p[][11] = {{ _T("APCP"), _T("TCDC"), _T("AIRTMP"), _T("HTSGW,WVPER,WVDIR"),      //parameters Saildocs
-        _T("SEATMP"), _T("GUST"), _T("CAPE"), wxEmptyString, wxEmptyString, _T("WIND500,HGT500"), wxEmptyString},
+    // {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},
+    static const wxString f[] = { _T("0p25_1hr.pl"), _T("0p50.pl"), _T("1p00.pl"), wxEmptyString };
+    static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T("full.1p00"), wxEmptyString };
+
+    static const wxString m[] = { _T("gfs")};
+
+    static const wxString s[] = { _T(","), _T(" "), _T("&") };        //separators
+    static const wxString p[][13] = {{ _T("APCP"), _T("TCDC"), _T("AIRTMP"), _T("HTSGW,WVPER,WVDIR"),      //parameters Saildocs
+        _T("SEATMP"), _T("GUST"), _T("CAPE"), wxEmptyString, wxEmptyString, _T("WIND500,HGT500"), wxEmptyString,
+        _T("WIND"), _T("PRESS")},
+
         {_T("PRECIP"), _T("CLOUD"), _T("TEMP"), _T("WVSIG WVWIND"), wxEmptyString, _T("GUST"),      //parameters zigrib
-            _T("CAPE"), _T("A850"), _T("A700"), _T("A500"), _T("A300")} };
+            _T("CAPE"), _T("A850"), _T("A700"), _T("A500"), _T("A300"),_T("WIND"), _T("PRESS")} ,
+
+        {_T("var_PRATE=on"), _T("lev_entire_atmosphere=on&var_TCDC=on"), _T("lev_2_m_above_ground=on&var_TMP=on"), 
+            wxEmptyString, wxEmptyString, _T("var_GUST=on"),
+            _T("var_CAPE=on"),wxEmptyString, wxEmptyString, _T("lev_500_mb=on&var_HGT=on&"), wxEmptyString,
+            _T("lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on"),
+            _T("lev_surface=on&lev_mean_sea_level=on&var_PRMSL=on")
+        }  //parameters NOAA
+    };
 
     wxString r_topmess,r_parameters,r_zone;
     //write the top part of the mail
     switch( m_pMailTo->GetCurrentSelection() ) {
+    case NOAA:                                                                         //NOAA http download
+       r_zone.Printf ( _T ( "subregion=&leftlon=%d&rightlon=%d&toplat=%d&bottomlat=%d" ), 
+            m_spMinLon->GetValue(), m_spMaxLon->GetValue(), m_spMaxLat->GetValue(), m_spMinLat->GetValue()
+            );
+        r_topmess = _T("http://nomads.ncep.noaa.gov/cgi-bin/filter_") + m[model] + _T("_") + f[resolution];
+        r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.pgrb2") + r[resolution] + _T(".f%03d&"));
+        r_topmess.Append(_T("dir=%%2F") + m[model] + _T(".%d%02d%02d%02d&"));
+        r_topmess.Append( r_zone  + _T("&"));
+        break;
     case SAILDOCS:                                                                         //Saildocs
         r_zone = toMailFormat(1, m_spMaxLat->GetValue() ) + _T(",") + toMailFormat(1, m_spMinLat->GetValue() ) + _T(",")
             + toMailFormat(2, m_spMinLon->GetValue() ) + _T(",") + toMailFormat(2, m_spMaxLon->GetValue() );
@@ -791,7 +873,9 @@ wxString GribRequestSetting::WriteMail()
     //write the parameters part of the mail
     switch( m_pModel->GetCurrentSelection() ) {
     case GFS:                                                                           //GFS
-        r_parameters = wxT("WIND") + s[m_pMailTo->GetCurrentSelection()] + wxT("PRESS");    // the default minimum request parameters
+        // the default minimum request parameters 
+        r_parameters = p[m_pMailTo->GetCurrentSelection()][11];
+        r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][12] );
         if( m_pRainfall->IsChecked() )
             r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][0] );
         if( m_pCloudCover->IsChecked() )
@@ -943,6 +1027,33 @@ int GribRequestSetting::EstimateFileSize( double *size )
     return 0;
 }
 
+static wxString FormatBytes(double bytes)
+{
+    return wxString::Format( _T("%.1fMB"), bytes / 1024 / 1024 );
+}
+
+void GribRequestSetting::onDLEvent(OCPN_downloadEvent &ev)
+{
+//    wxString msg;
+//    msg.Printf(_T("onDLEvent  %d %d"),ev.getDLEventCondition(), ev.getDLEventStatus()); 
+//    wxLogMessage(msg);
+    
+    switch(ev.getDLEventCondition()){
+        case OCPN_DL_EVENT_TYPE_END:
+            m_bTransferComplete = true;
+            m_bTransferSuccess = (ev.getDLEventStatus() == OCPN_DL_NO_ERROR) ? true : false;
+            break;
+            
+        case OCPN_DL_EVENT_TYPE_PROGRESS:
+            m_totalsize = FormatBytes( ev.getTotal() );
+            m_transferredsize = FormatBytes( ev.getTransferred() );
+            break;
+
+        default:
+            break;
+    }
+}
+
 void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
 {
     StopGraphicalZoneSelection();                    //eventually stop graphical zone display
@@ -986,6 +1097,106 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
 
         ::wxEndBusyCursor();
 
+        return;
+    }
+
+    if (m_pMailTo->GetCurrentSelection() == NOAA) {
+        if(!m_bconnected){
+            Connect(wxEVT_DOWNLOAD_EVENT, (wxObjectEventFunction)(wxEventFunction)&GribRequestSetting::onDLEvent);
+            m_bconnected = true;
+        }
+
+        wxString q(WriteMail());
+        wxDateTime start = wxDateTime::Now().ToGMT();
+        // available 5 hours after at 00z 06z 12z and 18z
+        int req = (start.Subtract(wxTimeSpan( 5, 0 )).GetHour()/6)*6;
+
+        double v;
+        int it;
+        m_pInterval->GetStringSelection().ToDouble(&v);
+        it = (int)v;
+        bool one = false;
+        int d = start.GetHour() - req;
+        // round and if not crossing day start at n-1
+        if (it > 1) d = (d/it)*it;
+        if (d > it) d -= it;
+
+        int cnt;
+        m_pTimeRange->GetStringSelection().ToDouble(&v);
+        cnt = (int)v *24;
+        unsigned int to_download = (unsigned int)cnt/it;
+
+        wxFileName downloaded_p;
+        int idx = -1;
+        m_downloading = 0;
+        wxString output_path = wxFileName::CreateTempFileName( _T("O") ) ;
+        unlink(output_path);
+        output_path += _T(".grb");
+        wxFFileOutputStream *output = new wxFFileOutputStream(output_path );
+
+        if (output->IsOk()) while (it > 0 && cnt > 0) {
+            m_bTransferComplete  = false;
+            m_bTransferSuccess = true;
+            m_cancelled = false;
+            char buf[1024];
+            snprintf(buf, sizeof buf, (const char*)q.mb_str(), req, d, start.GetYear(), start.GetMonth() +1, start.GetDay() , req);
+            //printf("%s\n\n",buf);
+
+            wxURI url(buf);
+            long handle;
+            wxString file_path = wxFileName::CreateTempFileName( _T("") );
+            unlink(file_path);
+            file_path += _T(".grb");
+            m_downloading++;
+            if (OCPN_downloadFileBackground( url.BuildURI(), file_path, this, &handle) == OCPN_DL_FAILED) {
+                printf("failed...\n");            
+                break;
+            }
+            if (idx >= 0) {
+                {
+                    wxFFileInputStream i(downloaded_p.GetFullPath());
+                    if (i.IsOk()) output->Write(i);
+                }
+                one = true;
+                unlink(downloaded_p.GetFullPath());
+                idx = -1;
+            }
+
+            while( !m_bTransferComplete && m_bTransferSuccess  && !m_cancelled ) {
+                /*m_stCatalogInfo->SetLabel*/m_MailImage->SetValue( wxString::Format( _("Downloading grib %u of %u, (%s / %s)"),
+                                                         m_downloading, to_download, 
+                                                         m_transferredsize.c_str(), m_totalsize.c_str() ) );
+                wxYield();
+                wxMilliSleep(30);
+            }
+        
+            if( m_bTransferSuccess && !m_cancelled ) {
+                idx = 1;
+                downloaded_p = file_path;
+            } 
+            else {
+                idx = -1;
+                OCPN_cancelDownloadFileBackground( handle );
+                if( wxFileExists( file_path ) ) wxRemoveFile( file_path );
+                break;
+            }
+            
+            d += it;
+            cnt -= it;
+        }
+        if (idx >= 0) {
+            {
+                wxFFileInputStream i(downloaded_p.GetFullPath());
+                if (i.IsOk()) output->Write(i);
+            }
+            one = true;
+            unlink(downloaded_p.GetFullPath());
+        }
+        // close 
+        delete output;
+        if (one) m_parent.OpenFile(output_path);
+
+        ::wxEndBusyCursor();
         return;
     }
 
