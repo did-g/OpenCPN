@@ -96,11 +96,23 @@ private:
       wxMouseEvent   m_SingleClickEvent;
 
       bool IsZYGRIB;
+      bool IsNOAA;
       bool IsGFS;
       int  m_MailError_Nb;
       int  m_SendMethod;
       bool m_AllowSend;
-	  bool  m_IsMaxLong;
+	  bool m_IsMaxLong;
+
+	  bool m_cancelled;
+	  bool m_bTransferComplete;
+	  bool      m_bTransferSuccess;
+	  wxString  m_totalsize;
+	  wxString  m_transferredsize;
+	  int       m_failed_downloads;
+	  int       m_downloading;
+
+	  bool  m_bconnected;
+	  void      onDLEvent(OCPN_downloadEvent &ev);
 };
 
 #endif
