@@ -90,6 +90,7 @@ public:
     ~GRIBUICtrlBar();
 
     void OpenFile( bool newestFile = false );
+    void OpenFile( const wxString &f);
 
     void ContextMenuItemCallback(int id);
     void SetFactoryOptions();
