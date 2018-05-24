@@ -1156,8 +1156,10 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( bool *b_new, pugi::xml_node &opt_
             pBP = new BoundaryPoint( rlat, rlon, SymString, NameString, GuidString, false );
             pOP = pBP;
         }
-        else
+        else {
             pOP = new ODPoint( rlat, rlon, SymString, NameString, GuidString, false ); // do not add to global WP list yet...
+            pOP->m_sTypeString = TypeString;
+        }
             
         m_ptODPointMap[ pOP->m_GUID ] = pOP;
     } else {
