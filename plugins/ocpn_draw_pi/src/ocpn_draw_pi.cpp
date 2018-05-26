@@ -903,7 +903,9 @@ void ocpn_draw_pi::SetPositionFixEx( PlugIn_Position_Fix_Ex &pfix )
     
     g_pfFix.Lat = pfix.Lat;
     g_pfFix.Lon = pfix.Lon;
+    g_pfFix.validCog = true;
     if(wxIsNaN(pfix.Cog)) {
+        g_pfFix.validCog = false;
         if(g_pfFix.Cog != 0.)
             l_bBoatChange = true;
         g_pfFix.Cog = 0.;
@@ -916,13 +918,17 @@ void ocpn_draw_pi::SetPositionFixEx( PlugIn_Position_Fix_Ex &pfix )
     }
     g_pfFix.Sog = pfix.Sog;
     g_pfFix.Var = pfix.Var;
+    g_pfFix.validHdm = true;
     if(wxIsNaN(pfix.Hdm)) {
+        g_pfFix.validHdm = true;
         if(g_pfFix.Hdm != 0.)
             l_bBoatChange = true;
         g_pfFix.Hdm = 0.;
     }
     else g_pfFix.Hdm = pfix.Hdm;
+    g_pfFix.validHdt = true;
     if(wxIsNaN(pfix.Hdt)) {
+        g_pfFix.validHdt = false;
         if(g_pfFix.Hdt != 0.)
             l_bBoatChange = true;
         g_pfFix.Hdt = 0.;
@@ -3480,6 +3486,7 @@ bool ocpn_draw_pi::CreateEBLLeftClick( wxMouseEvent &event )
     beginPoint->SetNameShown( false );
     beginPoint->SetTypeString( wxT("EBL Point"));
     beginPoint->m_bIsolatedMark = false;
+    beginPoint->m_bSingleUse = true;
     m_pMouseEBL->AddPoint( beginPoint, false );
     
     pMousePoint = new ODPoint( rlat, rlon, g_sEBLEndIconName, _("End"), wxT("") );
@@ -3487,6 +3494,7 @@ bool ocpn_draw_pi::CreateEBLLeftClick( wxMouseEvent &event )
     pMousePoint->SetNameShown( false );
     pMousePoint->SetTypeString( wxS("EBL Point") );
     pMousePoint->m_bIsolatedMark = FALSE;
+    pMousePoint->m_bSingleUse = true;
     m_pMouseEBL->AddPoint( pMousePoint );
     m_pMouseEBL->m_bCentreOnBoat = true;
     DistanceBearingMercator_Plugin(rlat, rlon, m_dStartLat, m_dStartLon, &m_pMouseEBL->m_dEBLAngle, &m_pMouseEBL->m_dLength);

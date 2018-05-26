@@ -712,7 +712,7 @@ ODPoint *PointMan::GetNearbyODPoint( double lat, double lon, double radius_meter
         double b = lon - pr->m_lon;
         double l = sqrt( ( a * a ) + ( b * b ) );
 
-        if( ( l * 60. * 1852. ) < radius_meters ) return pr;
+        if( !pr->m_bSingleUse && ( l * 60. * 1852. ) < radius_meters ) return pr;
 
         node = node->GetNext();
     }
