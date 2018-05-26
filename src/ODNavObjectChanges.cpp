@@ -304,7 +304,7 @@ bool ODNavObjectChanges::GPXCreateODPoint( pugi::xml_node node, ODPoint *pop, un
     }       
     
     if( (flags & OUT_GUID) || (flags & OUT_VIZ) || (flags & OUT_VIZ_NAME) || (flags & OUT_SHARED)
-            || (flags & OUT_AUTO_NAME)  || (flags & OUT_EXTENSION) ) {
+            || (flags & OUT_AUTO_NAME)  || (flags & OUT_EXTENSION) || (flags & OUT_SINGLEUSE) ) {
         
         //pugi::xml_node child_ext = node.append_child("extensions");
         
@@ -358,6 +358,10 @@ bool ODNavObjectChanges::GPXCreateODPoint( pugi::xml_node node, ODPoint *pop, un
             width.set_value( pop->m_iRangeRingWidth );
             pugi::xml_attribute style = child.append_attribute( "line_style" );
             style.set_value( pop->m_iRangeRingStyle );
+        }
+        if((flags & OUT_SINGLEUSE) && pop->m_bSingleUse) {
+            child = node.append_child("opencpn:singleuse");
+            child.append_child(pugi::node_pcdata).set_value("1");
         }
     }
 
@@ -915,6 +919,7 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( bool *b_new, pugi::xml_node &opt_
     bool bviz_name = false;
     bool bauto_name = false;
     bool bshared = false;
+    bool bSingleUse = false;
     bool b_propvizname = false;
     bool b_propviz = false;
     if (b_new)
@@ -1050,47 +1055,39 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( bool *b_new, pugi::xml_node &opt_
         }
 
     //    OpenCPN Extensions....
-        else
-        if( !strcmp( pcn, "opencpn:viz" ) ) {
+        else if( !strcmp( pcn, "opencpn:viz" ) ) {
             b_propviz = true;
             wxString s = wxString::FromUTF8( child.first_child().value() );
             long v = 0;
             if( s.ToLong( &v ) )
                 bviz = ( v != 0 );
-        }
-        else
-        if( !strcmp( pcn, "opencpn:viz_name") ) {
+        } else if( !strcmp( pcn, "opencpn:viz_name") ) {
             b_propvizname = true;
             wxString s = wxString::FromUTF8( child.first_child().value() );
             long v = 0;
             if( s.ToLong( &v ) )
                 bviz_name = ( v != 0 );
-        }
-        else
-        if( !strcmp( pcn, "opencpn:guid" ) ) {
+        } else if( !strcmp( pcn, "opencpn:guid" ) ) {
             GuidString.clear();
             GuidString.append( wxString::FromUTF8(child.first_child().value()) );
-        }
-        else
-        if( !strcmp( pcn, "opencpn:auto_name" ) ) {
+        } else if( !strcmp( pcn, "opencpn:auto_name" ) ) {
             wxString s = wxString::FromUTF8( child.first_child().value() );
             long v = 0;
             if( s.ToLong( &v ) )
                 bauto_name = ( v != 0 );
-        }
-        else
-        if( !strcmp( pcn, "opencpn:shared" ) ) {
+        } else if( !strcmp( pcn, "opencpn:shared" ) ) {
             wxString s = wxString::FromUTF8( child.first_child().value() );
             long v = 0;
             if( s.ToLong( &v ) )
                 bshared = ( v != 0 );
-        }
-        else
-        if( !strcmp( pcn, "opencpn:arrival_radius" ) ) {
+        } else if( !strcmp( pcn, "opencpn:singleuse" ) ) {
+                wxString s = wxString::FromUTF8( child.first_child().value() );
+                long v = 0;
+                if( s.ToLong( &v ) )
+                    bSingleUse = ( v != 0 );
+        } else if( !strcmp( pcn, "opencpn:arrival_radius" ) ) {
             wxString::FromUTF8(child.first_child().value()).ToDouble(&ArrivalRadius ) ;
-        }
-        else
-        if ( !strcmp( pcn, "opencpn:ODPoint_range_rings") ) {
+        } else if ( !strcmp( pcn, "opencpn:ODPoint_range_rings") ) {
             for ( pugi::xml_attribute attr = child.first_attribute(); attr; attr = attr.next_attribute() ) {
                 if ( wxString::FromUTF8(attr.name()) == _T("number") )
                     l_iODPointRangeRingsNumber = attr.as_int();
@@ -1127,9 +1124,9 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( bool *b_new, pugi::xml_node &opt_
                     l_iInclusionBoundaryPointSize = attr.as_int();
                 
             }
-        }else if ( !strcmp( pcn, "opencpn:natural_scale" ) ){
+        } else if ( !strcmp( pcn, "opencpn:natural_scale" ) ){
         wxString::FromUTF8(child.first_child().value()).ToDouble( &l_natural_scale );
-        }else if ( !strcmp( pcn, "opencpn:display_text_when" ) ){
+        } else if ( !strcmp( pcn, "opencpn:display_text_when" ) ){
             wxString::FromUTF8(child.first_child().value()).ToLong( (long *) &l_display_text_when );
         }
     }   // for
@@ -1220,17 +1217,15 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( bool *b_new, pugi::xml_node &opt_
 
     if( b_propvizname )
         pOP->m_bShowName = bviz_name;
+    else if( b_fullviz )
+        pOP->m_bShowName = true;
     else
-        if( b_fullviz )
-            pOP->m_bShowName = true;
-        else
-            pOP->m_bShowName = false;
+        pOP->m_bShowName = false;
 
     if( b_propviz )
         pOP->m_bIsVisible = bviz;
-    else
-        if( b_fullviz )
-            pOP->m_bIsVisible = true;
+    else if( b_fullviz )
+        pOP->m_bIsVisible = true;
 
     if(b_layer) {
         pOP->m_bIsInLayer = true;
@@ -1242,6 +1237,7 @@ ODPoint * ODNavObjectChanges::GPXLoadODPoint1( bool *b_new, pugi::xml_node &opt_
 
     pOP->m_bKeepXPath = bshared;
     pOP->m_bDynamicName = bauto_name;
+    pOP->m_bSingleUse = bSingleUse;
 
     if(TimeString.Len()) {
         pOP->m_timestring = TimeString;
