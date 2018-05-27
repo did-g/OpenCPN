@@ -1279,6 +1279,7 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
             m_parent.OpenFile(output_path);
             m_parent.SetDialogsStyleSizePosition( true );
         }
+        m_AllowSend = true;
 
         ::wxEndBusyCursor();
         return;
