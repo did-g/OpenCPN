@@ -107,7 +107,7 @@ private:
 	  bool m_bTransferComplete;
 	  bool      m_bTransferSuccess;
 	  wxString  m_totalsize;
-	  wxString  m_transferredsize;
+	  double  	m_transferredsize;
 	  int       m_failed_downloads;
 	  int       m_downloading;
 
