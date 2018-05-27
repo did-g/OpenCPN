@@ -116,7 +116,7 @@ void GribRequestSetting::InitRequestConfig()
     wxString s1[] = {_T("GFS"),_T("COAMPS"),_T("RTOFS"), _T("HRRR"), _T("OSCAR")};
     for( unsigned int i= 0;  i<(sizeof(s1) / sizeof(wxString));i++)
         m_pModel->Append( s1[i] );
-    wxString s2[] = {_T("Saildocs"),_T("zyGrib"),_T("NOAA")};
+    wxString s2[] = {_T("Saildocs"),_T("zyGrib"),_T("NOAA (web)")};
     for( unsigned int i= 0;  i<(sizeof(s2) / sizeof(wxString));i++)
         m_pMailTo->Append( s2[i] );
     wxString s3[] = {_T("WW3-GLOBAL"),_T("WW3-MEDIT")};
@@ -335,13 +335,52 @@ void GribRequestSetting::OnVpChange(PlugIn_ViewPort *vp)
 
     SetVpSize(vp);
 }
+enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
+              WIND   = (1 <<  1), // (10 meters above surface)
+              GUST   = (1 <<  2), //  (at 10 meters)
+              AIRTMP = (1 <<  3), //  (temperature 2 meters above surface)
+              SFCTMP = (1 <<  4), //  (temp at surface)
+              RH     = (1 <<  5), //  (Relative Humidity 2m above surface)
+              LFTX   = (1 <<  6), //  (LiFTed indeX)
+              CAPE   = (1 <<  7), //  (Clear Air Potential Energy)
+              RAIN   = (1 <<  8), //  (Precip rate, mm/hr)
+              APCP   = (1 <<  9), //  (Accumulated precip)
+              HGT300 = (1 << 10), //  (300mb height)
+              TMP300 = (1 << 11), //  (temperature at 300mb level)
+              WIND300= (1 << 12), //  (Wind velocity at 300mb level)
+              HGT500 = (1 << 13), //  (500mb height)
+              TMP500 = (1 << 14), //  (temperature at 500mb level)
+              WIND500= (1 << 15), //  (Wind velocity at 500mb level)
+              ABSV   = (1 << 16), //  (Absolute vorticity at 500mb)
+              HGT700 = (1 << 17), //  (700mb height)
+              TMP700 = (1 << 18), //  (temperature at 700mb level)
+              WIND700= (1 << 19), //  (Wind velocity at 700mb level)
+              HGT850 = (1 << 20), //  (850mb height)
+              TMP850 = (1 << 21), //  (temperature at 850mb level)
+              WIND850= (1 << 22), //  (Wind velocity at 850mb level)
+              CLOUDS = (1 << 23), //  (Total cloud cover)
+              WAVES  = (1 << 24), //  can be added to include sign wave height from the WW3 model.
+              SEATMP = (1 << 25), //  (sea temp at surface)
+              CURRENT= (1 << 26), //  (current)
+};
+
+static const int f[] = {
+           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|
+               HGT300|TMP300|WIND300|HGT700|TMP700|WIND700|HGT850|TMP850|WIND850|CLOUDS|WAVES,// GFS
+           PRMSL|WIND,// COAMPS
+           SEATMP|CURRENT,// RTOFS
+           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,// HRRR
+           CURRENT,// OSCAR
+};
+#define Have(a) ((f[model] & (a)) != 0)
 
 void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned tr )
 {
     //some useful  strings
+    // cf http://saildocs.com/gribmodels
     static const wxString res[][RESOLUTIONS] = {
         {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},	           // GFS
-        {_T("0.2"), _T("0.8"), _T("1.6"), wxEmptyString},          // COAMPS
+        {_T("0.15"), wxEmptyString, wxEmptyString,  wxEmptyString},// COAMPS
         {_T("0.08"), _T("0.25"), _T("1.0"), wxEmptyString},        // RTOFS
         {_T("0.03"), _T("0.25"), _T("0.5"), wxEmptyString},        // HRRR
         {_T("0.33"), wxEmptyString, wxEmptyString, wxEmptyString}  // OSCAR
@@ -353,80 +392,62 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     IsNOAA = m_pMailTo->GetCurrentSelection() == NOAA;
     if (IsNOAA) m_pModel->SetSelection(GFS);
 
-    IsGFS = m_pModel->GetCurrentSelection() == GFS;
-    bool IsRTOFS = m_pModel->GetCurrentSelection() == RTOFS;
+    int model = m_pModel->GetCurrentSelection();
+    IsGFS = model == GFS;
+    bool IsRTOFS = model == RTOFS;
+    bool IsHRRR = model == HRRR;
 
     //populate resolution choice
     m_pResolution->Clear();
     for( int i = 0; i < RESOLUTIONS; i++ ) {
-        if( res[m_pModel->GetCurrentSelection()][i] != wxEmptyString )
-            m_pResolution->Append(res[m_pModel->GetCurrentSelection()][i]);
+        if( res[model][i] != wxEmptyString )
+            m_pResolution->Append(res[model][i]);
     }
-    if (m_pModel->GetCurrentSelection() == OSCAR) rs = 0;
+    if (model == OSCAR) rs = 0;
 
     m_pResolution->SetSelection(rs);
 
     unsigned l;
      //populate time interval choice
-    l = IsGFS ? 3 : IsRTOFS ? 12 : 6;
+    l = IsGFS ? 3 : IsRTOFS ? 24 : IsHRRR ? 1 : 6;
     m_pInterval->Clear();
-    if (IsNOAA) m_pInterval->Append( _T("1"));
+    if (IsNOAA || IsHRRR) m_pInterval->Append( _T("1"));
     for( unsigned i=l; i<25; i*=2)
         m_pInterval->Append( wxString::Format(_T("%d"), i));
     m_pInterval->SetSelection(wxMin(it,m_pInterval->GetCount()-1));
 
     //populate time range choice
-    l = IsZYGRIB ? 8 : IsGFS ? 16 : IsRTOFS ? 6 : 3;
+    l = IsZYGRIB ? 8 : IsGFS ? 16 : IsRTOFS ? 6 : IsHRRR ? 2 : 3;
     m_pTimeRange->Clear();
     for( unsigned i=2; i<l+1; i++)
         m_pTimeRange->Append( wxString::Format(_T("%d"), i));
     m_pTimeRange->SetSelection( wxMin(l-2, tr));
     //
-    enum field   {PRMSL  = (1 <<  0), // (presssure at sea level)
-                  WIND   = (1 <<  1), // (10 meters above surface)
-                  GUST   = (1 <<  2), //  (at 10 meters)
-                  AIRTMP = (1 <<  3), //  (temperature 2 meters above surface)
-                  SFCTMP = (1 <<  4), //  (temp at surface)
-                  RH     = (1 <<  5), //  (Relative Humidity 2m above surface)
-                  LFTX   = (1 <<  6), //  (LiFTed indeX)
-                  CAPE   = (1 <<  7), //  (Clear Air Potential Energy)
-                  RAIN   = (1 <<  8), //  (Precip rate, mm/hr)
-                  APCP   = (1 <<  9), //  (Accumulated precip)
-                  HGT500 = (1 << 10), //  (500mb height)
-                  TMP500 = (1 << 11), //  (temperature at 500mb level)
-                  WIND500= (1 << 12), //  (Wind velocity at 500mb level)
-                  ABSV   = (1 << 13), //  (Absolute vorticity at 500mb)
-                  CLOUDS = (1 << 14), //  (Total cloud cover)
-                  WAVES  = (1 << 15), //  can be added to include sign wave height from the WW3 model.
-                  SEATMP = (1 << 16), //  (sea temp at surface)
-                  CURRENT= (1 << 17), //  (current)
-    };
-
-    static const int f[] = {
-           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS|WAVES,// GFS
-           WIND,// COAMPS
-           SEATMP|CURRENT,// RTOFS
-           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,// HRRR
-           CURRENT,// OSCAR
-    };
 
     m_pModel->Enable(!(IsZYGRIB || IsNOAA));
-    m_pWind->SetValue( !IsRTOFS );
-    m_pPress->SetValue( !IsRTOFS );
-    m_pWaves->SetValue( m_RequestConfigBase.GetChar(8) == 'X' && IsGFS );
-    m_pWaves->Enable( IsGFS && m_pTimeRange->GetCurrentSelection() < 7 );      //gfs & time range less than 8 days
-    m_pRainfall->SetValue( m_RequestConfigBase.GetChar(9) == 'X' && IsGFS );
-    m_pRainfall->Enable( IsGFS );
-    m_pCloudCover->SetValue( m_RequestConfigBase.GetChar(10) == 'X' && IsGFS );
-    m_pCloudCover->Enable( IsGFS );
-    m_pAirTemp->SetValue( m_RequestConfigBase.GetChar(11) == 'X' && IsGFS );
-    m_pAirTemp->Enable( IsGFS );
-    m_pSeaTemp->SetValue( (m_RequestConfigBase.GetChar(12) == 'X' && (!(IsZYGRIB || IsNOAA) && IsGFS)) || IsRTOFS );
-    m_pSeaTemp->Enable( !(IsZYGRIB || IsNOAA) && IsGFS );
-    m_pWindGust->SetValue( m_RequestConfigBase.GetChar(14) == 'X' && IsGFS);
-    m_pWindGust->Enable( IsGFS );
-    m_pCAPE->SetValue( m_RequestConfigBase.GetChar(15) == 'X' && IsGFS );
-    m_pCAPE->Enable( IsGFS );
+    m_pWind->SetValue( Have(WIND) );
+    m_pPress->SetValue( Have(PRMSL) );
+
+    m_pWaves->SetValue( m_RequestConfigBase.GetChar(8) == 'X' && Have(WAVES) && IsZYGRIB);
+    m_pWaves->Enable( Have(WAVES) && IsZYGRIB && m_pTimeRange->GetCurrentSelection() < 7 );      //gfs & time range less than 8 days
+
+    m_pRainfall->SetValue( m_RequestConfigBase.GetChar(9) == 'X' && Have(RAIN) );
+    m_pRainfall->Enable(  Have(RAIN) );
+
+    m_pCloudCover->SetValue( m_RequestConfigBase.GetChar(10) == 'X' && Have(CLOUDS) );
+    m_pCloudCover->Enable(  Have(CLOUDS) );
+
+    m_pAirTemp->SetValue( m_RequestConfigBase.GetChar(11) == 'X' && Have(AIRTMP) );
+    m_pAirTemp->Enable(  Have(AIRTMP) );
+
+    m_pSeaTemp->SetValue( m_RequestConfigBase.GetChar(12) == 'X' && Have(SEATMP) );
+    m_pSeaTemp->Enable(  false /*Have(SEATMP)*/ );
+
+    m_pWindGust->SetValue( m_RequestConfigBase.GetChar(14) == 'X' && Have(GUST) );
+    m_pWindGust->Enable(  Have(GUST) );
+
+    m_pCAPE->SetValue( m_RequestConfigBase.GetChar(15) == 'X' && Have(CAPE) );
+    m_pCAPE->Enable(  Have(CAPE) );
 
     m_pAltitudeData->SetValue( IsGFS ? m_RequestConfigBase.GetChar(17) == 'X' : false );        //altitude data zigrib + saildocs only GFS
     m_pAltitudeData->Enable( IsGFS );
@@ -438,7 +459,7 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_p300hpa->SetValue(  IsZYGRIB ? m_RequestConfigBase.GetChar(21) == 'X' : false  );         //only zigrib
     m_p300hpa->Enable( IsZYGRIB );
 
-    m_pCurrent->SetValue( IsRTOFS );
+    m_pCurrent->SetValue(  Have(CURRENT) );
     m_pCurrent->Enable( false );
 
     //show parameters only if necessary
@@ -680,7 +701,7 @@ void GribRequestSetting::OnTimeRangeChange(wxCommandEvent &event)
             OCPNMessageBox_PlugIn(this, _("You request a forecast for more than 8 days horizon.\nThis is conflicting with Wave data which will be removed from your request.\nDon't forget that beyond the first 8 days, the resolution will be only 2.5\u00B0x2.5\u00B0\nand the time intervall 12 hours."),
                 _("Warning!") );
         } else
-            m_pWaves->Enable(true);
+            m_pWaves->Enable(IsZYGRIB);
     }
 
     if(m_AllowSend) m_MailImage->SetValue( WriteMail() );
@@ -793,6 +814,7 @@ wxString GribRequestSetting::WriteMail()
     int limit = IsZYGRIB ? 2 : 0;                                            //new limit  2 mb
     int model = m_pModel->GetCurrentSelection();
     int resolution = m_pResolution->GetCurrentSelection();
+    int provider = m_pMailTo->GetCurrentSelection();
 
     m_MailError_Nb = 0;
     //some useful strings
@@ -820,7 +842,7 @@ wxString GribRequestSetting::WriteMail()
 
     wxString r_topmess,r_parameters,r_zone;
     //write the top part of the mail
-    switch( m_pMailTo->GetCurrentSelection() ) {
+    switch( provider ) {
     case NOAA:                                                                         //NOAA http download
        r_zone.Printf ( _T ( "subregion=&leftlon=%d&rightlon=%d&toplat=%d&bottomlat=%d" ), 
             m_spMinLon->GetValue(), m_spMaxLon->GetValue(), m_spMaxLat->GetValue(), m_spMinLat->GetValue()
@@ -871,34 +893,36 @@ wxString GribRequestSetting::WriteMail()
         break;
     }
     //write the parameters part of the mail
-    switch( m_pModel->GetCurrentSelection() ) {
+    switch( model ) {
     case GFS:                                                                           //GFS
+    case HRRR:
         // the default minimum request parameters 
-        r_parameters = p[m_pMailTo->GetCurrentSelection()][11];
-        r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][12] );
+        r_parameters = p[provider][11];
+        r_parameters.Append( s[provider] + p[provider][12] );
+
         if( m_pRainfall->IsChecked() )
-            r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][0] );
+            r_parameters.Append( s[provider] + p[provider][0] );
         if( m_pCloudCover->IsChecked() )
-            r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][1] );
+            r_parameters.Append( s[provider] + p[provider][1] );
         if( m_pAirTemp->IsChecked() )
-            r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][2] );
+            r_parameters.Append( s[provider] + p[provider][2] );
         if( m_pWaves->IsChecked() )
-            r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][3] );
+            r_parameters.Append( s[provider] + p[provider][3] );
         if( m_pSeaTemp->IsChecked() )
-            r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][4] );
+            r_parameters.Append( s[provider] + p[provider][4] );
         if( m_pWindGust->IsChecked() )
-            r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][5] );
+            r_parameters.Append( s[provider] + p[provider][5] );
         if( m_pCAPE->IsChecked() )
-            r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][6] );
+            r_parameters.Append( s[provider] + p[provider][6] );
         if(m_pAltitudeData->IsChecked() ){
             if( m_p850hpa->IsChecked() )
-                r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][7] );
+                r_parameters.Append( s[provider] + p[provider][7] );
             if( m_p700hpa->IsChecked() )
-                r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][8] );
+                r_parameters.Append( s[provider] + p[provider][8] );
             if( m_p500hpa->IsChecked() )
-                r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][9] );
+                r_parameters.Append( s[provider] + p[provider][9] );
             if( m_p300hpa->IsChecked() )
-                r_parameters.Append( s[m_pMailTo->GetCurrentSelection()] + p[m_pMailTo->GetCurrentSelection()][10] );
+                r_parameters.Append( s[provider] + p[provider][10] );
         }
         break;
     case COAMPS:                                                                           //COAMPS
@@ -906,6 +930,9 @@ wxString GribRequestSetting::WriteMail()
         break;
     case RTOFS:                                                                           //RTOFS
         r_parameters = wxT("CUR,WTMP");                                   //the default parameters for this model
+        break;
+    case OSCAR:
+        r_parameters = wxT("CUR");
         break;
     }
     if( !IsZYGRIB && m_cMovingGribEnabled->IsChecked())            //moving grib
