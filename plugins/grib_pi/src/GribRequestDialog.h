@@ -83,7 +83,7 @@ private:
       void OnSendMaiL( wxCommandEvent& event );
       void OnSaveMail( wxCommandEvent& event );
       void OnZoneSelectionModeChange( wxCommandEvent& event  );
-      void OnCancel( wxCommandEvent& event ) { wxCloseEvent evt; OnClose( evt); }
+      void OnCancel( wxCommandEvent& event ) { m_cancelled = true; wxCloseEvent evt; OnClose( evt); }
       void OnCoordinatesChange( wxSpinEvent& event );
       void OnMouseEventTimer( wxTimerEvent & event);
       void SetCoordinatesText();
@@ -107,7 +107,7 @@ private:
 	  bool m_bTransferComplete;
 	  bool      m_bTransferSuccess;
 	  wxString  m_totalsize;
-	  wxString  m_transferredsize;
+	  double  	m_transferredsize;
 	  int       m_failed_downloads;
 	  int       m_downloading;
 
