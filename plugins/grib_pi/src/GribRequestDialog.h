@@ -83,7 +83,7 @@ private:
       void OnSendMaiL( wxCommandEvent& event );
       void OnSaveMail( wxCommandEvent& event );
       void OnZoneSelectionModeChange( wxCommandEvent& event  );
-      void OnCancel( wxCommandEvent& event ) { wxCloseEvent evt; OnClose( evt); }
+      void OnCancel( wxCommandEvent& event ) { m_cancelled = true; wxCloseEvent evt; OnClose( evt); }
       void OnCoordinatesChange( wxSpinEvent& event );
       void OnMouseEventTimer( wxTimerEvent & event);
       void SetCoordinatesText();
