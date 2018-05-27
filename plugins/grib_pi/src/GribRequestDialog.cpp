@@ -1262,7 +1262,10 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         }
         // close 
         delete output;
-        if (one) m_parent.OpenFile(output_path);
+        if (one) {
+            m_parent.OpenFile(output_path);
+            m_parent.SetDialogsStyleSizePosition( true );
+        }
 
         ::wxEndBusyCursor();
         return;
