@@ -418,8 +418,8 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
      //populate time interval choice
     l = IsGFS ? 3 : IsRTOFS ? 24 : (IsHRRR || IsFR)? 1 : 6;
     m_pInterval->Clear();
-    if (IsNOAA || IsHRRR) m_pInterval->Append( _T("1"));
-    for( unsigned i=l; i<25; i*=2)
+    if (IsNOAA || IsHRRR || IsFR) m_pInterval->Append( _T("1"));
+    if (!(IsHRRR || IsFR)) for( unsigned i=l; i<25; i*=2)
         m_pInterval->Append( wxString::Format(_T("%d"), i));
     m_pInterval->SetSelection(wxMin(it,m_pInterval->GetCount()-1));
     m_pInterval->Enable(m_pInterval->GetCount() > 1);
@@ -1225,6 +1225,7 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
                     wxFFileInputStream i(downloaded_p.GetFullPath());
                     if (i.IsOk()) output->Write(i);
                 }
+
                 one = true;
                 unlink(downloaded_p.GetFullPath());
                 idx = -1;
@@ -1266,6 +1267,8 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
             m_parent.OpenFile(output_path);
             m_parent.SetDialogsStyleSizePosition( true );
         }
+
+        m_MailImage->SetForegroundColour(wxColor( 255, 0, 0 ));
         m_AllowSend = true;
 
         ::wxEndBusyCursor();
