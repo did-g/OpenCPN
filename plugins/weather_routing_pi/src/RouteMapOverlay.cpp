@@ -549,8 +549,8 @@ void RouteMapOverlay::RenderPolarChangeMarks(bool cursor_route, wrDC &dc, PlugIn
     
     Lock();
     std::list<PlotData> plot = GetPlotData(cursor_route);
-    std::list<PlotData>::reverse_iterator itt =  plot.rbegin();
-    if (itt == plot.rend()) {
+    std::list<PlotData>::iterator itt =  plot.begin();
+    if (itt == plot.end()) {
         Unlock();
         return;
     }
@@ -559,7 +559,7 @@ void RouteMapOverlay::RenderPolarChangeMarks(bool cursor_route, wrDC &dc, PlugIn
         glBegin(GL_LINES);
     
     int polar = itt->polar;
-    for(; itt != plot.rend(); itt++)
+    for(; itt != plot.end(); itt++)
     {
         if(itt->polar == polar)
             continue;
@@ -732,7 +732,7 @@ void RouteMapOverlay::RenderCourse(bool cursor_route, wrDC &dc, PlugIn_ViewPort 
         if (comfortRoute)
         {
             wxColor c = sailingConditionColor(sailingConditionLevel(*itt));
-            DrawLine(to, lc, from, c, dc, vp);
+            DrawLine(to, c, from, lc, dc, vp);
             lc = c;
         } 
         else 
@@ -843,7 +843,7 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
         // Draw barbs
         g_barbsOnRoute_LineBufferOverlay.pushWindArrowWithBarbs(
             wind_barb_route_cache, p.x + xOffset, p.y - yOffset, VW,
-            deg2rad(W) + vp.rotation, it->lat < 0
+            deg2rad(W) + nvp.rotation, it->lat < 0
         );
     }
     wind_barb_route_cache.Finalize();
