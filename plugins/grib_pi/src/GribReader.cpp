@@ -166,8 +166,7 @@ void GribReader::readAllGribRecords()
                 delete rec;
                 rec = 0;
             }
-            else if (is_v2) {
-                // must delete it in the next iteration
+            else { // must delete it in the next iteration
                 prevDataSet = rec;
             }
             continue;
@@ -268,7 +267,7 @@ void GribReader::readAllGribRecords()
                 delete rec;
                 rec = 0;
             }
-            else if (is_v2) {
+            else {
                 prevDataSet = rec;
             }
         }
