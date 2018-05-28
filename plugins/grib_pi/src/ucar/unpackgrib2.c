@@ -434,7 +434,7 @@ void initialize(GRIB2Message *grib2_msg)
     grib2_msg->md.stat_proc.proc_code=NULL;
   }
 
-int unpackIS(FILE *fp,GRIB2Message *grib2_msg)
+int unpack_IS(FILE *fp,GRIB2Message *grib2_msg)
 {
   grib2_msg->num_grids=0;
   unsigned char temp[16];
@@ -528,7 +528,7 @@ int unpackIS(FILE *fp,GRIB2Message *grib2_msg)
   }
 }
 
-void unpackIDS(GRIB2Message *grib2_msg)
+void unpack_IDS(GRIB2Message *grib2_msg)
 {
   int length;
 /* length of the IDS */
@@ -566,11 +566,11 @@ void unpackIDS(GRIB2Message *grib2_msg)
   grib2_msg->offset+=length*8;
 }
 
-void unpackLUS(GRIB2Message *grib2_msg)
+void unpack_LUS(GRIB2Message *grib2_msg)
 {
 }
 
-void unpackGDS(GRIB2Message *grib2_msg)
+void unpack_GDS(GRIB2Message *grib2_msg)
 {
 /* source of grid definition */
   int src;
@@ -731,7 +731,7 @@ void unpackGDS(GRIB2Message *grib2_msg)
 }
 }
 
-void unpackPDS(GRIB2Message *grib2_msg)
+void unpack_PDS(GRIB2Message *grib2_msg)
 {
 /* indication of hybrid coordinate system */
   int num_coords;
@@ -955,7 +955,7 @@ void unpackPDS(GRIB2Message *grib2_msg)
 }
 }
 
-void unpackDRS(GRIB2Message *grib2_msg)
+void unpack_DRS(GRIB2Message *grib2_msg)
 {
   union {
     float fval;
@@ -1031,7 +1031,7 @@ void unpackDRS(GRIB2Message *grib2_msg)
 }
 }
 
-void unpackBMS(GRIB2Message *grib2_msg)
+void unpack_BMS(GRIB2Message *grib2_msg)
 {
 /* bit map indicator */
   int ind;
@@ -1067,7 +1067,7 @@ void unpackBMS(GRIB2Message *grib2_msg)
 }
 }
 
-void unpackDS(GRIB2Message *grib2_msg,int grid_num)
+void unpack_DS(GRIB2Message *grib2_msg,int grid_num)
 {
   float D=pow(10.,grib2_msg->md.D),E=pow(2.,grib2_msg->md.E);
   size_t off=grib2_msg->offset+40;
@@ -1299,10 +1299,10 @@ void unpackDS(GRIB2Message *grib2_msg,int grid_num)
 int unpackgrib2(FILE *fp,GRIB2Message *grib2_msg)
 {
   int status;
-  if ( (status=unpackIS(fp,grib2_msg)) != 0) {
+  if ( (status=unpack_IS(fp,grib2_msg)) != 0) {
     return status;
   }
-  unpackIDS(grib2_msg);
+  unpack_IDS(grib2_msg);
 /* find out how many grids are in this message */
   size_t off=grib2_msg->offset;
   while (strncmp(&((char *)grib2_msg->buffer)[off/8],"7777",4) != 0) {
@@ -1345,33 +1345,33 @@ int unpackgrib2(FILE *fp,GRIB2Message *grib2_msg)
     switch (sec_num) {
 	case 2:
 	{
-	  unpackLUS(grib2_msg);
+	  unpack_LUS(grib2_msg);
 	  break;
 	}
 	case 3:
 	{
-	  unpackGDS(grib2_msg);
+	  unpack_GDS(grib2_msg);
 	  break;
 	}
 	case 4:
 	{
-	  unpackPDS(grib2_msg);
+	  unpack_PDS(grib2_msg);
 	  break;
 	}
 	case 5:
 	{
-	  unpackDRS(grib2_msg);
+	  unpack_DRS(grib2_msg);
 	  break;
 	}
 	case 6:
 	{
-	  unpackBMS(grib2_msg);
+	  unpack_BMS(grib2_msg);
 	  break;
 	}
 	case 7:
 	{
 	  grib2_msg->grids[grid_num].md=grib2_msg->md;
-	  unpackDS(grib2_msg,grid_num);
+	  unpack_DS(grib2_msg,grid_num);
 	  ++grid_num;
 	  break;
     }
