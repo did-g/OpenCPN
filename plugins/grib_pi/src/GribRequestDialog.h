@@ -35,7 +35,7 @@
 #include "GribUIDialog.h"
 
 #include "ocpn_plugin.h"
-
+#include <vector>
 
 //----------------------------------------------------------------------------------------------------------
 //    Request setting Specification
@@ -76,6 +76,7 @@ private:
       void InitRequestConfig();
       void OnExit(wxCommandEvent &event) { wxCloseEvent evt; OnClose ( evt ); }
       void OnTopChange(wxCommandEvent &event);
+      void OnResolutionChange( wxCommandEvent& event ) override;
       void OnMovingClick( wxCommandEvent& event );
       void OnAnyChange( wxCommandEvent& event );
       void OnAnySpinChange( wxSpinEvent& event ) { wxCommandEvent evt; OnAnyChange( evt); }
@@ -95,6 +96,8 @@ private:
       wxTimer        m_tMouseClickTimer;
       wxMouseEvent   m_SingleClickEvent;
 
+      // map selection back to interval enum
+      std::vector<int> m_RevertMapIntervals;
       bool IsZYGRIB;
       bool IsNOAA;
       bool IsGFS;
