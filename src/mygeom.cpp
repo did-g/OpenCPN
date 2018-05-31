@@ -1622,8 +1622,10 @@ void __CALL_CONVENTION vertexCallback(GLvoid *vertex)
         s_pwork_buf = (GLdouble *)realloc(s_pwork_buf, new_buf_len * sizeof(GLdouble));
         if (NULL == s_pwork_buf)
         {
-            free(tmp);
-            tmp = NULL;
+            // keep the old one and give up?
+            // not sure other code can deal with a null s_pwork_buf
+            s_pwork_buf = tmp;
+            return;
         }
         else
             s_buf_len = new_buf_len;
