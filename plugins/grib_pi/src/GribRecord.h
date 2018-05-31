@@ -137,7 +137,7 @@ class GribRecord
 {
     public:
         GribRecord(const GribRecord &rec);
-        GribRecord() { m_bfilled = false;}
+        GribRecord() { m_bfilled = false; lat = 0; lon  = 0;}
         
         virtual ~GribRecord();
   
@@ -184,15 +184,15 @@ class GribRecord
         // Number of points in the grid
         int    getNi() const     { return Ni; }
         int    getNj() const     { return Nj; }
-        double  getDi() const    { return Di; }
-        double  getDj() const    { return Dj; }
+        double getDi() const    { return Di; }
+        double getDj() const    { return Dj; }
+        zuchar getGridType() const { return gridType; }
 
         // Value at one point of the grid
         double getValue(int i, int j) const  { return data[j*Ni+i];}
 
         void setValue(zuint i, zuint j, double v)
-                        { if (i<Ni && j<Nj)
-                              data[j*Ni+i] = v; }
+                        { if (i<Ni && j<Nj) data[j*Ni+i] = v; }
 
         // Value for one point interpolated
         double  getInterpolatedValue(double px, double py, bool numericalInterpolation=true, bool dir=false) const;
@@ -202,10 +202,13 @@ class GribRecord
                                           const GribRecord *GRX, const GribRecord *GRY,
                                           double px, double py, bool numericalInterpolation=true);
         
-        // coordiantes of grid point
-        inline double  getX(int i) const   { return Lo1+i*Di;}
-        inline double  getY(int j) const   { return La1+j*Dj;}
-        void    getXY(int i, int j, double *x, double *y) const { *x = getX(i); *y = getY(j);};
+        // coordinates of grid point
+        void    getXY(int i, int j, double *x, double *y) const {
+            *x = (lon != nullptr)?lon[j*Ni +i]:Lo1+i*Di;
+            *y = (lat != nullptr)?lat[j*Ni +i]:La1+j*Dj;
+        };
+        double  getX(int i) const   { return (lon)?lon[i]:Lo1+i*Di;}
+        double  getY(int j) const   { return (lat)?lat[j*Ni]:La1+j*Dj;}
 
         double  getLatMin() const   { return latMin;}
         double  getLonMin() const   { return lonMin;}
@@ -291,6 +294,9 @@ class GribRecord
         bool  isScanIpositive;
         bool  isScanJpositive;
         bool  isAdjacentI;
+        // unregular grids (Mercator or Lambert) XXX memory hog
+        double *lat;
+        double *lon;
         // SECTION 3: BIT MAP SECTION (BMS)
         zuint  BMSsize;
         zuchar *BMSbits;
@@ -336,6 +342,12 @@ inline bool GribRecord::isXInMap(double x) const
 {
 //    return x>=Lo1 && x<=Lo1+(Ni-1)*Di;
 //printf ("%f %f %f\n", Lo1, Lo2, x);
+#if 0
+    if (lon) {
+        return  x>= lon[0] && x <= lon[Ni -1];
+    }
+    else 
+#endif    
     if (Di > 0) {
         double maxLo = Lo2;
         if(Lo2+Di >= 360) /* grib that covers the whole world */
@@ -351,6 +363,12 @@ inline bool GribRecord::isXInMap(double x) const
 //-----------------------------------------------------------------
 inline bool GribRecord::isYInMap(double y) const
 {
+#if 0
+    if (lat) {
+        return y >= lat[0] && y <= lat[Ni -1];
+    }
+    else 
+#endif
     if (Dj < 0)
         return y<=La1 && y>=La2;
     else
