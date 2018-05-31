@@ -1051,7 +1051,7 @@ wxString GribRequestSetting::WriteMail()
     switch( provider ) {
     case METEO_F:
        r_zone.Printf ( _T ("x=%d&X=%d&y=%d&Y=%d"),
-           m_spMinLon->GetValue(), m_spMaxLon->GetValue(), m_spMaxLat->GetValue(), m_spMinLat->GetValue());
+           m_spMinLon->GetValue(), m_spMaxLon->GetValue(), m_spMinLat->GetValue(), m_spMaxLat->GetValue());
        r_topmess = _T("http://195.154.231.142/grib/") +M[resolution];
         r_topmess.Append( r_zone  + _T("&r="));
        break;
@@ -1476,13 +1476,13 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         // close 
         delete output;
         if (one) {
-            m_MailImage->SetForegroundColour(wxColor( 255, 0, 0 ));
+            m_MailImage->SetForegroundColour(wxColor( 0, 0, 0 ));
             m_MailImage->SetValue( wxString::Format( _("Ok downloading %u gribs"), m_downloading));
             m_parent.OpenFile(output_path);
             m_parent.SetDialogsStyleSizePosition( true );
         }
 
-        m_MailImage->SetForegroundColour(wxColor( 255, 0, 0 ));
+        m_MailImage->SetForegroundColour(wxColor( 0, 0, 0 ));
         m_AllowSend = true;
 
         ::wxEndBusyCursor();
