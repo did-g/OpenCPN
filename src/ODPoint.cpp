@@ -213,7 +213,8 @@ ODPoint::ODPoint( double lat, double lon, const wxString& icon_ident, const wxSt
     m_bSingleUse = false;
     m_CreateTimeX = wxDateTime::Now();
     m_GPXTrkSegNo = 1;
-    m_bShowName = g_bBoundaryPointShowName;
+    m_bIsolatedMark = false;
+    m_bShowName = false;
     m_bKeepXPath = false;
     m_bIsVisible = true;
     m_bIsListed = true;
