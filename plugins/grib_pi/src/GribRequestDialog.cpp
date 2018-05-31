@@ -405,69 +405,69 @@ typedef std::map<Provider, ModelDefs> Providers;
 
 static const Providers P = { 
     // 2018-05-25 GFS=0, HRRR, COAMPS, RTOFS, OSCAR, ARxxx
-    {SAILDOCS,{ {GFS, {.Parameters = PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS|WAVES,
-                       .Intervals  = {{r0_25, I3_12 },
+    {SAILDOCS,{ {GFS, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS|WAVES,
+                       /* .Intervals  = */ {{r0_25, I3_12 },
                                        {r0_5, I3_12 },
                                        {r1_0, I3_12 } 
                                        },
-                        .TimeRanges = T16
+                       /* .TimeRanges = */ T16
                        }
                 },
-                {HRRR, {.Parameters = PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,
-                        .Intervals = {{r0_025, I1 }, {r0_25, I1 }, {r0_5, I1} },
-                        .TimeRanges = T1, 
+                {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,
+                        /* .Intervals = */ {{r0_025, I1 }, {r0_25, I1 }, {r0_5, I1} },
+                        /* .TimeRanges = */ T1,
                        }
                 },
-                {COAMPS, {.Parameters = PRMSL|WIND,
-                          .Intervals = {{r0_15, { 3, 6} },},
-                          .TimeRanges = { 2, 3 , 4 }
+                {COAMPS, {/* .Parameters = */ PRMSL|WIND,
+                          /* .Intervals = */ {{r0_15, { 3, 6} },},
+                          /* .TimeRanges = */ { 2, 3 , 4 }
                           }
                 },
-                {RTOFS, {.Parameters = SEATMP|CURRENT,
-                         .Intervals = {{r0_08, { 24} } },
-                         .TimeRanges = { 2, 3 , 4, 5, 6, 7, 8 }
+                {RTOFS, {/* .Parameters = */ SEATMP|CURRENT,
+                         /* .Intervals =  */ {{r0_08, { 24} } },
+                         /* .TimeRanges = */ { 2, 3 , 4, 5, 6, 7, 8 }
                         }
                 },
-                {OSCAR, {.Parameters = CURRENT,
-                          .Intervals = {{r0_33, { 3, 6} }},
-                          .TimeRanges = T5,
+                {OSCAR, {/* .Parameters = */ CURRENT,
+                         /* .Intervals = */ {{r0_33, { 3, 6} }},
+                         /* .TimeRanges =*/  T5,
                        } 
                 }
             },
     },
     // ===================
-    {ZYGRIB, {{GFS, {.Parameters = PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|
+    {ZYGRIB, {{GFS, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|
                             HGT300|TMP300|WIND300|HGT700|TMP700|WIND700|HGT850|TMP850|WIND850|CLOUDS|WAVES,
-                     .Intervals = {{r0_25, I3_12 },
+                     /* .Intervals = */ {{r0_25, I3_12 },
                                    {r0_5, I3_12 },
                                    {r1_0, I3_12 },
                                    {r2_0, I3_24 } },
-                     .TimeRanges = T16
+                     /* .TimeRanges = */ T16
                    },
               }},
     },
     // ===================
-    {NOAA, {{GFS, { .Parameters = PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS,
-                   .Intervals = {{r0_25, I1 },
+    {NOAA, {{GFS, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS,
+                   /* .Intervals = */ {{r0_25, I1 },
                                  {r0_5,  I3 },
                                  {r1_0,  I3 },
                                 },
-                   .TimeRanges = T16
+                   /* .TimeRanges = */ T16
                   },
             },
-            {HRRR, {.Parameters = PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,
-                        .Intervals = {{r0_025, { 0, 1 } } },
-                        .TimeRanges = T1, 
+            {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,
+                    /* .Intervals =  */ {{r0_025, { 0, 1 } } },
+                    /* .TimeRanges = */ T1,
                    },
             },
         },
     },
     // ===================
-    {METEO_F, {{ARxxx, {.Parameters = PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|CLOUDS|WAVES|CURRENT,
-                     .Intervals = {{r0_01, I1,},
+    {METEO_F, {{ARxxx, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|CLOUDS|WAVES|CURRENT,
+                        /* .Intervals = */ {{r0_01, I1,},
                                    {r0_025, I1 },
                                    {r0_10, I1} },
-                     .TimeRanges = T5
+                     /* .TimeRanges = */ T5
                    },
               }},
     },
