@@ -176,13 +176,15 @@ void GribReader::readAllGribRecords()
         if (firstdate== -1)
 	    firstdate = rec->getRecordCurrentDate();
 
-        if ((rec->getDataType()==GRB_PRESSURE && rec->getLevelType()==LV_MSL && rec->getLevelValue()==0)
-                    || ( RecordIsWind(rec) && rec->getLevelType()==LV_ABOV_GND && rec->getLevelValue()==10)
-                    || ( RecordIsWind(rec) && rec->getLevelType()==LV_ISOBARIC //wind at x hpa
-                    && (  rec->getLevelValue()==850
-			|| rec->getLevelValue()==700
-			|| rec->getLevelValue()==500
-			|| rec->getLevelValue()==300 ) ) )
+        if ((rec->getDataType()==GRB_PRESSURE && rec->getLevelValue()==0 &&
+                (rec->getLevelType()==LV_MSL || rec->getLevelType()==LV_GND_SURF)
+            )
+            || ( RecordIsWind(rec) && rec->getLevelType()==LV_ABOV_GND && rec->getLevelValue()==10)
+                || ( RecordIsWind(rec) && rec->getLevelType()==LV_ISOBARIC //wind at x hpa
+                    && (  rec->getLevelValue()==850 || rec->getLevelValue()==700
+			|| rec->getLevelValue()==500 || rec->getLevelValue()==300 
+                       ) 
+               ) )
             storeRecordInMap(rec);
 
         else if( (rec->getDataType()==GRB_WIND_GUST
@@ -443,8 +445,8 @@ void GribReader::readGribFileContent()
 					for (zuint i=0; i<(zuint)recModel->getNi(); i++)
 					    for (zuint j=0; j<(zuint)recModel->getNj(); j++)
 					    {
-					        double x = recModel->getX(i);
-						double y = recModel->getY(j);
+					        double x, y;
+					        recModel->getXY(i, j, &x, &y);
 						double dp = computeDewPoint(x, y, date);
 						recDewpoint->setValue(i, j, dp);
                                             }
@@ -568,35 +570,6 @@ double 	GribReader::get2GribsInterpolatedValueByDate (
 	return val;
 }
 
-//---------------------------------------------------
-// Rectangle de la zone couverte par les données
-bool GribReader::getZoneExtension(double *x0,double *y0, double *x1,double *y1)
-{
-    std::vector<GribRecord *> *ls = getFirstNonEmptyList();
-    if (ls != NULL) {
-        GribRecord *rec = ls->at(0);
-        if (rec != NULL) {
-            *x0 = rec->getX(0);
-            *y0 = rec->getY(0);
-            *x1 = rec->getX( rec->getNi()-1 );
-            *y1 = rec->getY( rec->getNj()-1 );
-            if (*x0 > *x1) {
-				double tmp = *x0;
-				*x0 = *x1;
-				*x1 = tmp;
-            }
-            if (*y0 > *y1) {
-				double tmp = *y0;
-				*y0 = *y1;
-				*y1 = tmp;
-            }
-        }
-        return true;
-    }
-    else {
-        return false;
-    }
-}
 //---------------------------------------------------
 // Premier GribRecord trouvé (pour récupérer la grille)
 GribRecord * GribReader::getFirstGribRecord()
