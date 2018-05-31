@@ -1231,11 +1231,6 @@ void  GribV2Record::translateDataType()
         if (levelType == LV_ATMOS_ENT) {
             levelType = LV_ATMOS_ALL;
         }
-        // XXX HRRR is either
-		if ( getDataType()==GRB_PRESSURE && getLevelType()==LV_GND_SURF && getLevelValue()==0)
-		{
-			levelType  = LV_MSL;
-		}
     }
     //------------------------
 	//DNMI-NEurope.grb
@@ -1294,11 +1289,6 @@ void  GribV2Record::translateDataType()
 	}
     else if (idCenter==84 && idModel <= 5 && idGrid==0)
     {
-        // XXX Météo France AROME-01 is 
-		if ( getDataType()==GRB_PRESSURE && getLevelType()==LV_GND_SURF && getLevelValue()==0)
-		{
-			levelType  = LV_MSL;
-		} // missing enum for dataCenterModel
     }
 	
 	//------------------------
