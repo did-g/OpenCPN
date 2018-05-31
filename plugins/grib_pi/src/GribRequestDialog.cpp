@@ -1020,27 +1020,29 @@ wxString GribRequestSetting::WriteMail()
 
     static const wxString s[] = { _T(","), _T(" "), _T("&"), _T("") };        //separators
 
-    static const wxString p[][14] = {
+    static const wxString p[][15] = {
         //parameters Saildocs
         {_T("APCP"), _T("TCDC"), _T("AIRTMP"), _T("HTSGW,WVPER,WVDIR"),
         _T("SEATMP"), _T("GUST"), _T("CAPE"), wxEmptyString, wxEmptyString, _T("WIND500,HGT500"), wxEmptyString,
-        _T("WIND"), _T("PRESS"), wxEmptyString},
+        _T("WIND"), _T("PRESS"), wxEmptyString, wxEmptyString},
         //parameters zigrib
         {_T("PRECIP"), _T("CLOUD"), _T("TEMP"), _T("WVSIG WVWIND"), wxEmptyString, _T("GUST"),
-            _T("CAPE"), _T("A850"), _T("A700"), _T("A500"), _T("A300"),_T("WIND"), _T("PRESS"), wxEmptyString} ,
+            _T("CAPE"), _T("A850"), _T("A700"), _T("A500"), _T("A300"),_T("WIND"), _T("PRESS")
+            , wxEmptyString, wxEmptyString
+        } ,
         //parameters NOAA
         {_T("var_PRATE=on"), _T("lev_entire_atmosphere=on&var_TCDC=on"), _T("lev_2_m_above_ground=on&var_TMP=on"), 
             wxEmptyString, wxEmptyString, _T("var_GUST=on"),
             _T("var_CAPE=on"),wxEmptyString, wxEmptyString, _T("lev_500_mb=on&var_HGT=on&"), wxEmptyString,
             _T("lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&lev_surface=on"),
             _T("lev_mean_sea_level=on&var_PRMSL=on"),
-            _T("var_PRES=on"),
+            _T("var_PRES=on"), _T("lev_entire_atmosphere=on&var_PRESC=on"),
         },
         // Meteo France
         {_T("r"), _T("n"), _T("t"),
         wxEmptyString, wxEmptyString, _T("g"),
         _T("a"), wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString,
-        _T("w"), _T("p"), wxEmptyString, 
+        _T("w"), _T("p"), wxEmptyString, wxEmptyString, 
         }
     };
 
