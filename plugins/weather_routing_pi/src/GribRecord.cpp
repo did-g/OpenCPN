@@ -69,6 +69,18 @@ GribRecord::GribRecord(const GribRecord &rec)
         for (int i=0; i<size; i++)
             this->BMSbits[i] = rec.BMSbits[i];
     }
+    if (rec.lat) {
+        int size = rec.Ni*rec.Nj;
+        this->lat = new double[size];
+        for (int i=0; i<size; i++)
+            this->lat[i] = rec.lat[i];
+    }
+    if (rec.lon) {
+        int size = rec.Ni*rec.Nj;
+        this->lon = new double[size];
+        for (int i=0; i<size; i++)
+            this->lon[i] = rec.lon[i];
+    }
 }
 
 bool GribRecord::GetInterpolatedParameters
@@ -421,6 +433,8 @@ GribRecord::~GribRecord()
 {
     if (data) {
         delete [] data;
+        delete [] lat;
+        delete [] lon;
         data = NULL;
     }
     if (BMSbits) {
@@ -721,7 +735,7 @@ bool GribRecord::getInterpolatedValues(double &M, double &A,
 //         nbval ++;
 
      int nbval = 0;     // how many values in grid ?
-     if (GRX->getValue(i0, j0) != GRIB_NOTDEF)
+     if (GRY->getValue(i0, j0) != GRIB_NOTDEF)
          nbval ++;
      if (GRY->getValue(i1, j0) != GRIB_NOTDEF)
          nbval ++;
@@ -730,7 +744,20 @@ bool GribRecord::getInterpolatedValues(double &M, double &A,
      if (GRY->getValue(i1, j1) != GRIB_NOTDEF)
          nbval ++;
 
-    if (nbval < 3)
+    if (nbval <= 3)
+        return false;
+
+     nbval = 0;     // how many values in grid ?
+     if (GRX->getValue(i0, j0) != GRIB_NOTDEF)
+         nbval ++;
+     if (GRX->getValue(i1, j0) != GRIB_NOTDEF)
+         nbval ++;
+     if (GRX->getValue(i0, j1) != GRIB_NOTDEF)
+         nbval ++;
+     if (GRX->getValue(i1, j1) != GRIB_NOTDEF)
+         nbval ++;
+
+    if (nbval <= 3)
         return false;
 
     dx = (3.0 - 2.0*dx)*dx*dx;   // pseudo hermite interpolation
