@@ -625,7 +625,9 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     // create the texture to the size of the grib data plus a transparent border
     int tw, th, samples = 1;
     double delta = 0;;
-    if (pGR->getNi() > 1024 || pGR->getNj() > 1024 ) {
+
+    int type = pGR->getGridType();
+    if (type == 30 || pGR->getNi() > 1024 || pGR->getNj() > 1024 ) {
         // downsample
         samples = 0;
         tw = pGR->getNi();
@@ -692,14 +694,26 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     th = height_pot;
 #endif    
     
-    unsigned char *data = new unsigned char[tw*th*4];
+    double dx = pGR->getNi()/(pGR->getLonMax() -pGR->getLonMin());
+    double dy = pGR->getNj()/(pGR->getLatMax() -pGR->getLatMin());
+
+    unsigned char *data = new unsigned char[tw*th*4]();
     if (samples == 0) {
         for( int j = 0; j < pGR->getNj(); j++ ) {
             for( int i = 0; i < pGR->getNi(); i++ ) {
-                double v = pGR->getValue(i,   j);
+                double v = pGR->getValue(i, j);
                 int y = (j + 1)*delta;
                 int x = (i + !repeat)*delta;
+                if (type == 30) {
+                    // not a regular grid
+                    // convert Lat/Lon  
+                    double lon, lat;
+                    pGR->getXY(i, j, &lon, &lat);
+                    x = (lon -pGR->getLonMin())*dx;
+                    y = (lat -pGR->getLatMin())*dy;
+                } 
                 int doff = 4*(y*tw + x);
+                assert(doff < tw*th*4);
                 GetCalibratedGraphicColor(settings, v, data + doff);
             }
         }
@@ -707,7 +721,7 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     else if(samples == 1 ) { // optimized case when there is only 1 sample
         for( int j = 0; j < pGR->getNj(); j++ ) {
             for( int i = 0; i < pGR->getNi(); i++ ) {
-                double v = pGR->getValue(i,   j);
+                double v = pGR->getValue(i, j);
                 int y = j + 1;
                 int x = i + !repeat;
                 int doff = 4*(y*tw + x);
@@ -829,8 +843,6 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     delete [] data;
 
     pGO->m_iTexture = texture;
-    pGO->m_iTextureDim[0] = tw;
-    pGO->m_iTextureDim[1] = th;
 
     return true;
 }
@@ -1250,9 +1262,10 @@ void GRIBOverlayFactory::RenderGribBarbedArrows( int settings, GribRecord **pGR,
             if (i == 0)
                 firstpx = pl;
 
-            double lon = lonl;
             for( int j = 0; j < jmax; j++ ) {
-                double lat = pGRX->getY( j );
+                double lon;
+                double lat;
+                pGRX->getXY( i, j, &lon, &lat);
 
                 if( !PointInLLBox( vp, lon, lat ) )
                     continue;
