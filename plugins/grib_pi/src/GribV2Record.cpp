@@ -272,6 +272,407 @@ static int dec_jpeg2000(char *injpc,int bufsize,int *outfld)
 }
 #endif
 
+static double Int_Power(double x, int y)
+{
+    double value;
+
+    if (y < 0) {
+        y = -y;
+        x = 1.0 / x;
+    }
+    value = 1.0;
+
+    while (y) {
+        if (y & 1) {
+            value *= x;
+        }
+        x = x * x;
+        y >>= 1;
+    }
+    return value;
+}
+
+static double scaled2dbl(int scale_factor, int scale_value)
+{
+   if (scale_factor == 0) 
+       return (double) scale_value;
+   if (scale_factor < 0)
+       return scale_value * Int_Power(10.0, -scale_factor);
+   return scale_value / Int_Power(10.0, scale_factor);
+}
+
+#ifndef INT1
+#define INT1(a)   (((a) & 0x80) ? - (int) ((a) & 127) : (int) ((a) & 127))
+#endif
+
+static double radius_earth(GRIBMessage *grib_msg)
+{
+    double radius;
+    unsigned char *p;
+    int factor;
+    int table_3_2 = grib_msg->md.earth_shape;
+
+    /* set a default value .. not sure what to do with most values */
+    radius = 6367.47 *1000.0;
+    if (table_3_2 == 0) radius = 6367.47 * 1000.0;
+    else if (table_3_2 == 1)  {
+        factor = INT1(grib_msg->md.earth_sphere_scale_factor);
+        radius = scaled2dbl(factor, grib_msg->md.earth_sphere_scale_value );
+        if (radius < 6300000.0 || radius > 6400000.0)
+            return radius;
+    }
+    else if (table_3_2 == 2)  radius = (6378.160 + 6356.775)*0.5 * 1000.0;
+    else if (table_3_2 == 3 || table_3_2 == 7) {
+        /* get major axis */
+        factor = INT1(grib_msg->md.earth_major_scale_factor);
+        radius = scaled2dbl(factor, grib_msg->md.earth_major_scale_value );
+        /* get minor axis */
+        factor = INT1(grib_msg->md.earth_minor_scale_factor);
+        radius = (radius + scaled2dbl(factor, grib_msg->md.earth_major_scale_value)) * 0.5;
+
+        /* radius in km, convert to m */
+        if (table_3_2 == 3) radius *=  1000.0;
+
+        if (radius < 6300000.0 || radius > 6400000.0)
+            return radius;
+    }
+    else if (table_3_2 == 4)  radius = (6378.137 + 6356.752)*0.5 * 1000.0;
+    else if (table_3_2 == 5)  radius = (6378.137 + 6356.752)*0.5 * 1000.0;
+    else if (table_3_2 == 6)  radius = 6371.2290 * 1000.0;
+    else if (table_3_2 == 8)  radius = 6371.200 * 1000.0;
+    else if (table_3_2 == 9)  radius = (6377563.396 + 6356256.909)*0.5;
+
+    return radius;
+}
+
+/* GDS_Scan_x -> +ve x scanning */
+#define GDS_Scan_x(scan)                ((scan & 128) == 0)
+/* GDS_Scan_y -> +ve y scanning */
+#define GDS_Scan_y(scan)                ((scan & 64) == 64)
+
+static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
+{
+    double dx, dy, lat1, lat2, lon1, lon2;
+    double *llat, *llon;
+    unsigned int i, j;  
+    double dlon, circum;
+
+    double n,s,e,w,tmp,error;
+    unsigned char *gds;
+
+    unsigned int nnx, nny;
+    int nres, nscan;
+    unsigned int nnpnts;
+
+    nnx =  grib_msg->md.nx;
+    nny =  grib_msg->md.ny;
+    nres = grib_msg->md.rescomp; 
+    nscan = grib_msg->md.scan_mode;
+    nnpnts = nnx * nny;
+    //get_nxny_(sec, &nnx, &nny, &nnpnts, &nres, &nscan);
+
+    dy     = grib_msg->md.yinc.lainc; //GDS_Mercator_dy(gds);
+    dx     = grib_msg->md.xinc.loinc; //GDS_Mercator_dx(gds);
+
+    lat1 = grib_msg->md.slat; //GDS_Mercator_lat1(gds);
+    lat2 = grib_msg->md.lats.elat; //GDS_Mercator_lat2(gds);
+    lon1 = grib_msg->md.slon; // GDS_Mercator_lon1(gds);
+    lon2 = grib_msg->md.lons.elon; //GDS_Mercator_lon2(gds);
+
+    if (lon1 < 0.0 || lon2 < 0.0 || lon1 > 360.0 || lon2 > 360.0) {
+        printf("BAD GDS lon\n");
+        return false;
+    }
+    if (lat1 < -90.0 || lat2 < -90.0 || lat1 > 90.0 || lat2 > 90.0) {
+        printf("BAD GDS lat\n");
+        return false;
+    }
+#if 0
+    if (GDS_Mercator_ori_angle(gds) != 0.0) {
+        fprintf(stderr,"cannot handle non-zero mercator orientation angle %f\n",
+                GDS_Mercator_ori_angle(gds));
+        return 0;
+    }
+#endif
+
+    if (nnx < 1 || nny < 1) {
+        fprintf(stderr,"Sorry geo/mercator code does not handle variable nx/ny yet\n");
+        return false;
+    }
+
+    *lat = new double [nnpnts];
+
+    /* now figure out the grid coordinates mucho silly grib specification */
+
+    /* find S and N latitude */
+    if (GDS_Scan_y(nscan)) {
+        s = lat1;
+        n = lat2;
+    }
+    else {
+        s = lat2;
+        n = lat1;
+    }
+    if (s > n) {
+        printf("Mercator grid: lat1 and lat2\n");
+        return false;
+    }
+
+    /* find W and E longitude */
+
+    if ( ((nscan & 16) == 16) && (nny % 2 == 0) && ((nres & 32) == 0) ) {
+         printf("grib GDS ambiguity");
+         return false;
+    }
+    if ( ((nscan & 16) == 16) && (nny % 2 == 0) ) {
+         printf("more code needed to decode GDS");
+         return false;
+    }
+
+    if (GDS_Scan_x(nscan)) {
+        w = lon1;
+        e = lon2;
+    } else {
+        w = lon2;
+        e = lon1;
+    }
+    if (e <= w) e += 360.0;
+
+    llat = *lat;
+    llon = *lon;
+
+    dlon = (e-w) / (nnx-1);
+
+    double radius = radius_earth(grib_msg);
+    if (radius < 6300000.0 || radius > 6400000.0) {
+        printf("bad earth radius %f m", radius);
+        return false;
+    }
+
+    circum = 2.0 * M_PI * radius * cos(grib_msg->md.latD * (M_PI/180.0));
+    dx = dx * 360.0 / circum;
+
+    // dlon should be almost == to dx
+    // replace dx by dlon to get end points to match
+
+    if (dx != 0.0) {
+        error = fabs(dx-dlon) / fabs(dx);
+        if (error >= 0.001) { fprintf(stderr,
+           "\n*** Mercator grid error: inconsistent d-longitude, radius and grid domain\n"
+           "*** d-longitude from grid domain %lf (used), d-longitude from dx %lf (not used)\n",
+           dlon, dx);
+        }
+        dx = dlon;
+    }
+
+    s = log(tan((45.+s/2.)*M_PI/180.));
+    n = log(tan((45.+n/2.)*M_PI/180.));
+    dy = (n - s) / (nny - 1);
+
+    for (j = 0; j < nny; j++) {
+        tmp = (atan(exp(s+j*dy))*180./M_PI-45.)*2.;
+        for (i = 0; i < nnx; i++) {
+            *llat++ = tmp;
+        }
+    }
+    return true;
+} 
+
+// ---------------
+static double todegrees(double x) { return x * (180.0/M_PI); }
+
+static bool stagger(GRIBMessage *grib_msg, unsigned int assumed_npnts, double *x, double *y) 
+{
+    int nx, ny, res, scan;
+    unsigned int npnts;
+    int nnx, nx_even, nx_odd, nx2;
+    double x0, y0, dx_offset, dx_offset_even, dx_offset_odd, dy_offset;
+    unsigned int i, n;
+    int ix, iy;
+
+    int reduced_grid, dx_off_odd, dx_off_even, dy_off;
+    int dx, dy, even;
+
+    nx =  grib_msg->md.nx;
+    ny =  grib_msg->md.ny;
+    res = grib_msg->md.rescomp; 
+    scan = grib_msg->md.scan_mode;
+    npnts = nx * ny;
+
+    // get_nxny(sec, &nx, &ny, &npnts, &res, &scan);
+    if (scan == -1) return false;
+    // if (output_order != wesn) return false;
+    if (nx < 1 || ny < 1) return false;
+
+    /* get stagger bits */
+    dx_off_odd = ((unsigned int) scan >> 3) & 1;
+    dx_off_even = ((unsigned int) scan >> 2) & 1;
+    dy_off = ((unsigned int) scan >> 1) & 1;
+    reduced_grid = (unsigned int) scan & 1;
+
+    dx =  (scan & 128) ? -1 : 1;
+    dy =  (scan & 64) ? 1 : -1;
+
+    if (reduced_grid && dy_off) ny--;
+ 
+    if (dy < 0 && ((ny % 2) == 0)) { // swap even and odd rows if ns to sn and even number of rows
+        i = dx_off_odd;
+        dx_off_odd = dx_off_even;
+        dx_off_even = i;
+    }
+    dx_offset_odd  = reduced_grid ? 0.5 * dx_off_odd  : 0.5 * dx_off_odd  * dx;
+    dx_offset_even = reduced_grid ? 0.5 * dx_off_even : 0.5 * dx_off_even * dx;
+    dy_offset = reduced_grid ? 0.5 * dy_off : 0.5 * dy_off * dy;
+
+    nx_odd  = nx - (dx_off_odd  & reduced_grid);
+    nx_even = nx - (dx_off_even & reduced_grid);
+    nx2 = nx_odd + nx_even;
+
+    // number of grid points
+    n = (ny/2)*nx_even + ((ny+1)/2)*nx_odd;
+#if 0
+    // check to number of points
+    if (assumed_npnts != n) 
+        fatal_error_ii("stagger: program error think npnts=%d assumed npnts=%d",n, (int) assumed_npnts);
+    if (n != GB2_Sec3_npts(sec)) 
+        fatal_error_ii("stagger: program error think npnts=%d, Sec3 gives %d",n, GB2_Sec3_npts(sec));
+#endif
+    if (x == NULL || y == NULL) return false;
+
+    /* return X[] and Y[] relative to the first grid point but on a we:sn grid */
+
+    x0 = (dx > 0) ? 0.0 : 1.0 - (double) nx;
+    y0 = (dy > 0) ? 0.0 : 1.0 - (double) ny;
+
+    for (iy = 0; iy < ny; iy++) {
+        // even = iy % 2;               // first row is odd .. iy % 2 == 0
+        even = (iy & 1);                // first row is odd
+        i = even ?  nx2*(iy >> 1) + nx_odd : nx2*(iy >> 1);
+        nnx = even ? nx_even : nx_odd;
+        dx_offset = even ? dx_offset_even : dx_offset_odd;
+        for (ix = 0; ix < nnx; ix++) {
+            x[i + ix] = x0 + dx_offset + ix;
+            y[i + ix] = y0 + dy_offset + iy;
+        }
+    }
+    return true;
+}
+
+//xc = -sine(lon)*U - cosine(lon)*sine(lat)*V
+//yc = cosine(lon)*U - sine(lon)*sine(lat)*V
+
+static bool lambert2ll(GRIBMessage *grib_msg, double **llat, double **llon) 
+{
+    double n;
+    double *lat, *lon;
+
+    double dx, dy, lat1r, lon1r, lon2d, lon2r, latin1r, latin2r;
+    double lond, latd, d_lon;
+    double f, rho, rhoref, theta, startx, starty;
+    unsigned int nnx, nny;
+    int nres, nscan;
+    double x, y, tmp;
+    unsigned char *gds;
+    double latDr;
+    double earth_radius;
+    unsigned int j, nnpnts;
+
+    nnx =  grib_msg->md.nx;
+    nny =  grib_msg->md.ny;
+    nres = grib_msg->md.rescomp; 
+    nscan = grib_msg->md.scan_mode;
+    nnpnts = nnx * nny;
+
+    if (nnx < 1 || nny < 1) {
+        fprintf(stderr,"Sorry code does not handle variable nx/ny yet\n");
+        return false;
+    }
+
+    earth_radius = radius_earth(grib_msg);
+    if (earth_radius < 6300000.0 || earth_radius > 6400000.0) {
+        printf("bad earth radius %f m", earth_radius);
+        return false;
+    }
+
+    dy      = grib_msg->md.yinc.dyinc; // GDS_Lambert_dy(gds);
+    dx      = grib_msg->md.xinc.dxinc; // GDS_Lambert_dx(gds);
+    lat1r   = grib_msg->md.slat /* GDS_Lambert_La1(gds)*/ * (M_PI / 180.0);
+    lon1r   = grib_msg->md.slon /* GDS_Lambert_Lo1(gds)*/ * (M_PI / 180.0);
+    lon2d   = grib_msg->md.lons.lov /* GDS_Lambert_Lov(gds)*/;
+    lon2r   = lon2d * (M_PI / 180.0);
+    latin1r = grib_msg->md.latin1 /* GDS_Lambert_Latin1(gds)*/ * (M_PI/180.0);
+    latin2r = grib_msg->md.latin2 /* GDS_Lambert_Latin2(gds)*/ * (M_PI/180.0);
+
+//
+// Latitude of "false origin" where scales are defined.
+// It is used to estimate "reference_R", rhoref.
+// Often latDr == latin1r == latin2r and non-modified code is true and works fine.
+// But could be different if intersection latitudes latin1r and latin2r are different.
+// Usually latDr must be latin1r <=  latDr <= latin2r, other could be strange.
+//
+    latDr = grib_msg->md.lats.lad  /*GDS_Lambert_LatD(gds)*/ * (M_PI/180.0);
+
+    if (lon1r < 0) { 
+        printf("bad GDS, lon1r < 0.0");
+        return false;
+    }
+
+    if ( fabs(latin1r - latin2r) < 1E-09 ) {
+        n = sin(latin1r);
+    }
+    else {
+        n = log(cos(latin1r)/cos(latin2r)) / 
+        log(tan(M_PI_4 + latin2r/2.0) / tan(M_PI_4 + latin1r/2.0));
+    }
+  
+    f = (cos(latin1r) * pow(tan(M_PI_4 + latin1r/2.0), n)) / n;
+  
+    rho = earth_radius * f * pow(tan(M_PI_4 + lat1r/2.0),-n);
+    // old rhoref = earth_radius * f * pow(tan(M_PI_4 + latin1r/2.0),-n);
+    rhoref = earth_radius * f * pow(tan(M_PI_4 + latDr/2.0),-n);
+
+    // 2/2009 .. new code
+    d_lon = lon1r - lon2r;
+    if (d_lon > M_PI) d_lon -= 2*M_PI;
+    if (d_lon < -M_PI) d_lon += 2*M_PI;
+    theta = n * d_lon; 
+    // 2/2009 theta = n * (lon1r - lon2r); 
+
+    startx = rho * sin(theta);
+    starty = rhoref - rho * cos(theta);
+    
+    *llat = new double[nnpnts];
+    *llon = new double[nnpnts];
+
+    lat = *llat;
+    lon = *llon;
+
+    /* put x[] and y[] values in lon[] and lat[] */
+    if (!stagger(grib_msg , nnpnts, lon, lat)) {
+        printf("geo: stagger problem\n");
+        return false;
+    }
+
+    dx = fabs(dx);
+    dy = fabs(dy);
+
+    for (j = 0; j < nnpnts; j++) {
+        y = starty + lat[j]*dy;
+        x = startx + lon[j]*dx;
+        tmp = rhoref - y;
+        theta = atan(x / tmp);
+        rho = sqrt(x * x + tmp*tmp);
+        rho = n > 0 ? rho : -rho;
+        lond = lon2d + todegrees(theta/n);
+        latd = todegrees(2.0 * atan(pow(earth_radius * f/rho,1.0/n)) - M_PI_2);
+        lond = lond >= 360.0 ? lond - 360.0 : lond;
+        lond = lond < 0.0 ? lond + 360.0 : lond;
+        lon[j] = lond;
+        lat[j] = latd;
+    }
+    return true;
+}
+
 static unsigned int uint2(unsigned char const *p) {
     return (p[0] << 8) + p[1];
 }
@@ -441,7 +842,6 @@ static bool unpackGDS(GRIBMessage *grib_msg)
 	grib_msg->md.rescomp = b[46]; /* resolution and component flags */
 	grib_msg->md.latD    = int4(b +47)/1000000.; /* latitude at which the Mercator projection intersects the Earth 
                                                         (Latitude where Di and Dj are specified)   */
-
 	grib_msg->md.lats.elat = int4(b +51)/1000000.; /* latitude of last gridpoint */
 	grib_msg->md.lons.elon = int4(b +55)/1000000.; /* longitude of last gridpoint */
 
@@ -1216,6 +1616,11 @@ static bool mapTimeRange(GRIBMessage *grid, zuint *p1, zuint *p2, zuchar *t_rang
 //-------------------------------------------------------------------------------
 void  GribV2Record::translateDataType()
 {
+#if 0
+    printf("translate idCenter=%d && idModel=%d && idGrid=%d Data=%d levelType=%d levelValue=%d\n", idCenter, idModel, idGrid, 
+    getDataType(), levelType, levelValue);
+#endif
+
     this->knownData = true;
     dataCenterModel = OTHER_DATA_CENTER;
     //------------------------
@@ -1368,6 +1773,31 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	         Lo2 = grib_msg->md.lons.elon;
 	         Di = grib_msg->md.xinc.loinc;
 	         Dj = grib_msg->md.yinc.lainc;
+	         gridType = grib_msg->md.gds_templ_num;
+	         if (grib_msg->md.gds_templ_num == 10) {
+	             ok = mercator2ll(grib_msg, &lat, &lon);
+                 }
+                 else if (grib_msg->md.gds_templ_num == 30) {
+	             ok = lambert2ll(grib_msg, &lat, &lon);
+	             // XXX
+	             La1 = 10000.;
+	             La2 = -10000.;
+	             for (unsigned int i = 0; i < Ni*Nj; i++) {
+	                 if (lat[i] > La2)
+	                     La2 = lat[i];
+	                 if (lat[i] < La1)
+	                     La1 = lat[i];
+	             }
+	             Lo1 = 10000.;
+	             Lo2 = -10000.;
+	             for (unsigned int i = 0; i < Ni*Nj; i++) {
+	                 if (lon[i] > Lo2)
+	                     Lo2 = lon[i];
+	                 if (lon[i] < Lo1)
+	                     Lo1 = lon[i];
+	             }
+                 }
+
                  scanFlags = grib_msg->md.scan_mode;
                  isScanIpositive = (scanFlags&0x80) ==0;
                  isScanJpositive = (scanFlags&0x40) !=0;
