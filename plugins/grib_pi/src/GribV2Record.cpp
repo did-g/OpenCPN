@@ -1416,11 +1416,6 @@ void  GribV2Record::translateDataType()
         if (dataType == GRB_TEMP          //gfs Water surface Temperature
             && levelType == LV_GND_SURF
             && levelValue == 0) dataType = GRB_WTMP;
-        // XXX HRRR is either
-		if ( getDataType()==GRB_PRESSURE && getLevelType()==LV_GND_SURF && getLevelValue()==0)
-		{
-			levelType  = LV_MSL;
-		}
     }
     //------------------------
 	//DNMI-NEurope.grb
