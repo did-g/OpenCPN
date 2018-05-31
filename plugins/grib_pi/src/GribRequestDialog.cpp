@@ -996,7 +996,11 @@ http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?
     lev_10_m_above_ground=on&lev_2_m_above_ground=on&var_TMP=on&var_UGRD=on&var_VGRD=on&
     subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.20180527
 
-
+http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_sub.pl?
+    file=hrrr.t22z.wrfsubhf06.grib2&
+    lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&
+    var_GUST=on&var_PRATE=on&var_PRES=on&var_TMP=on&var_UGRD=on&var_VGRD=on&
+    subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.20180530
 */
 wxString GribRequestSetting::WriteMail()
 {
@@ -1062,8 +1066,10 @@ wxString GribRequestSetting::WriteMail()
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%02d&"));
         }
         else {
-            r_topmess.Append( "2d.pl" );
-            r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.wrfsfcf%02d.grib2"));
+            bool hourly = m_pInterval->GetStringSelection().Length() != 1;
+            r_topmess.Append(hourly?_T("2d.pl") : _T("sub.pl"));
+            r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.wrf") + (hourly?_T("sfc"):_T("subh")));
+            r_topmess.Append(_T("f%02d.grib2"));
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d&"));
         }
         r_topmess.Append( r_zone  + _T("&"));
