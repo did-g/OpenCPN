@@ -1231,6 +1231,11 @@ void  GribV2Record::translateDataType()
         if (levelType == LV_ATMOS_ENT) {
             levelType = LV_ATMOS_ALL;
         }
+        // XXX HRRR is either
+		if ( getDataType()==GRB_PRESSURE && getLevelType()==LV_GND_SURF && getLevelValue()==0)
+		{
+			levelType  = LV_MSL;
+		}
     }
     //------------------------
 	//DNMI-NEurope.grb
