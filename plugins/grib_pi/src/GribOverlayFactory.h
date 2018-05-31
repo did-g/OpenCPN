@@ -209,6 +209,7 @@ private:
     void DrawGLTexture( GLuint texture, int width, int height,
                         int xd, int yd, double dwidth, double dheight,
                         PlugIn_ViewPort *vp );
+    void GetCalibratedGraphicColor(int settings, double val_in, unsigned char *data);
     bool CreateGribGLTexture( GribOverlay *pGO, int config, GribRecord *pGR,
                               PlugIn_ViewPort *vp, int grib_pixel_size );
 #endif

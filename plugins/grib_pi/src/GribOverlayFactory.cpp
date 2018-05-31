@@ -518,6 +518,36 @@ static inline bool isClearSky(int settings, double v) {
 }
 
 #ifdef ocpnUSE_GL
+void GRIBOverlayFactory::GetCalibratedGraphicColor(int settings, double v, unsigned char *data)
+{
+    unsigned char r, g, b, a;
+    if( v != GRIB_NOTDEF ) {
+        v = m_Settings.CalibrateValue(settings, v);
+        //set full transparency if no rain or no clouds at all
+        // TODO: make map support this
+        if (( settings == GribOverlaySettings::PRECIPITATION ||
+              settings == GribOverlaySettings::CLOUD ) && v < 0.01) 
+        {
+            r = g = b = 255;
+            a = 0;
+        } else {
+            a = m_Settings.m_iOverlayTransparency;
+            wxColour c = GetGraphicColor(settings, v);
+            r = c.Red();
+            g = c.Green();
+            b = c.Blue();
+        }
+    } else
+        r = 255, g = 255, b = 255, a = 0;
+
+    /* for some reason r g b values are inverted, but not alpha,
+       this fixes it, but I would like to find the actual cause */
+    data[0] = 255-r;
+    data[1] = 255-g;
+    data[2] = 255-b;
+    data[3] = a;
+}
+
 bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, GribRecord *pGR,
                                               PlugIn_ViewPort *vp, int grib_pixel_size )
 {
@@ -531,7 +561,21 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     wxPoint pmax;
     int width;
     int height;
-
+#if 0
+printf("Overlay %d %d %f %f\n", pGR->getNi(), pGR->getNj(), pGR->getDi(), pGR->getDj());
+printf("LatMin %f, %f Max %f %f\n", pGR->getLatMin(), pGR->getLonMin() , pGR->getLatMax(), pGR->getLonMax() );
+//printf("LatMin %f, %f Max %f %f\n", pGR->getLatMin(), pGR->getLonMin() , pGR->getLatMax(), pGR->getLonMax());
+for (int h = 0; h < pGR->getNj(); h++) {
+    for (int w = 0; w < pGR->getNi(); w++) {
+        double lon, lat;
+        pGR->getXY(w, h, &lon, &lat);
+        if (lon > 180)
+            lon -= 360;
+        printf("%f %f   %f\n", lat, lon, pGR->getValue(w,h));        
+    }
+}
+printf("=============\n");
+#endif
     int maxx = wxMin(1024, pGR->getNi() );
     int maxy = wxMin(1024, pGR->getNj() );
     int maxt = wxMax(maxx, maxy);
@@ -572,44 +616,42 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
         return false;
 
     unsigned char *data = new unsigned char[width*height*4];
-    for( int ipix = 0; ipix < width; ipix++ ) {
-        for( int jpix = 0; jpix < height; jpix++ ) {
-            wxPoint p;
-            p.x = grib_pixel_size*ipix + porg.x;
-            p.y = grib_pixel_size*jpix + porg.y;
-            double lat, lon;
-            GetCanvasLLPix( &uvp, p, &lat, &lon );
-            double v = pGR->getInterpolatedValue(lon, lat);
-            unsigned char r, g, b, a;
-            if( v != GRIB_NOTDEF ) {
-                v = m_Settings.CalibrateValue(settings, v);
-                //set full transparency if no rain or no clouds at all
-                if (( settings == GribOverlaySettings::PRECIPITATION || settings == GribOverlaySettings::CLOUD ) && v < 0.01) 
-                {
-                    r = g = b = 255;
-                    a = 0;
-                }
-                else {
-                    a = m_Settings.m_iOverlayTransparency;
-                    wxColour c = GetGraphicColor(settings, v);
-                    r = c.Red();
-                    g = c.Green();
-                    b = c.Blue();
-                }
-            } else {
-                r = 255;
-                g = 255;
-                b = 255;
-                a = 0;
-            }
+    // lambert , XXX mercator missing?
+    if (pGR->getGridType() == 30) {
+        double dx = width/(double)pGR->getNi();
+        double dy = height/(double)pGR->getNi();
+        for (int w = 0, ipix = 0; w < pGR->getNi(); w++, ipix = (double)w *dx) {
+            for (int h = 0, jpix = 0; h < pGR->getNj(); h++, jpix = (double)h *dy) {
+            #if 0
+                // XXX FIXME
+                double lon;
+                double lat;
+                pGR->getXY( w, h, &lon, &lat);
 
-            int doff = 4*(jpix*width + ipix);
-            /* for some reason r g b values are inverted, but not alpha,
-               this fixes it, but I would like to find the actual cause */
-            data[doff + 0] = 255-r;
-            data[doff + 1] = 255-g;
-            data[doff + 2] = 255-b;
-            data[doff + 3] = a;
+                wxPoint p;
+                GetCanvasPixLL( vp, &p, lat, lon );
+            #endif
+                wxPoint p;
+                p.x = grib_pixel_size*ipix + porg.x;
+                p.y = grib_pixel_size*jpix + porg.y;
+                double v =  pGR->getValue( w, h );
+                int doff = 4*(jpix*width + ipix);
+                GetCalibratedGraphicColor(settings, v, &data[doff]);
+            }
+        }
+    }
+    else {
+        for( int ipix = 0; ipix < width; ipix++ ) {
+            for( int jpix = 0; jpix < height; jpix++ ) {
+                wxPoint p;
+                p.x = grib_pixel_size*ipix + porg.x;
+                p.y = grib_pixel_size*jpix + porg.y;
+                double lat, lon;
+                GetCanvasLLPix( &uvp, p, &lat, &lon );
+                double v = pGR->getInterpolatedValue(lon, lat);
+                int doff = 4*(jpix*width + ipix);
+                GetCalibratedGraphicColor(settings, v, &data[doff]);
+            }
         }
     }
 
@@ -1032,9 +1074,10 @@ void GRIBOverlayFactory::RenderGribBarbedArrows( int settings, GribRecord **pGR,
             if (i == 0)
                 firstpx = pl;
 
-            double lon = lonl;
             for( int j = 0; j < jmax; j++ ) {
-                double lat = pGRX->getY( j );
+                double lon;
+                double lat;
+                pGRX->getXY( i, j, &lon, &lat);
 
                 if( !PointInLLBox( vp, lon, lat ) )
                     continue;
