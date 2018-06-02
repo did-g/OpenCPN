@@ -774,7 +774,7 @@ glTextureManager::glTextureManager()
     m_skip = false;
     m_bcompact = false;
     m_skipout = false;
-    
+    m_bForeground = false;
     m_timer.Connect(wxEVT_TIMER, wxTimerEventHandler( glTextureManager::OnTimer ), NULL, this);
     m_timer.Start(500);
 }
@@ -789,6 +789,9 @@ glTextureManager::~glTextureManager()
 
 void glTextureManager::OnEvtThread( OCPN_CompressionThreadEvent & event )
 {
+    // if m_bForeground true then b_inCompressAllCharts must be true too
+    assert(m_bForeground == true && b_inCompressAllCharts == true || m_bForeground == false );
+
     JobTicket *ticket = event.GetTicket();
 
     if(event.type ==1){
@@ -1408,6 +1411,9 @@ void glTextureManager::BuildCompressedCache()
 
     wxLogMessage(wxString::Format(_T("BuildCompressedCache() count = %d"), count ));
 
+    // block all new background jobs and cleaning
+    b_inCompressAllCharts = true;
+
     m_timer.Stop();
     PurgeJobList();
     if (GetRunningJobCount()) {
@@ -1438,7 +1444,10 @@ void glTextureManager::BuildCompressedCache()
         wxLogMessage(fmsg);
     }
     ClearAllRasterTextures();
-    b_inCompressAllCharts = true;
+    // hopefully all queues are empty and can't be refill by rendering code
+    // called in wxYield
+    // now switch to delete chart's factory on completion mode
+    m_bForeground = true;
 
     //  Build another array of sorted compression targets.
     //  We need to do this, as the chart table will not be invariant
@@ -1611,6 +1620,7 @@ void glTextureManager::BuildCompressedCache()
     }
     
     b_inCompressAllCharts = false;
+    m_bForeground = false;
     m_timer.Start(500);
     
     delete m_progDialog;
