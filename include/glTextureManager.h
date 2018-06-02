@@ -162,6 +162,7 @@ private:
     bool        m_skip;
     bool        m_skipout;
     bool        m_bcompact;
+    bool	m_bForeground;
 };
 
 class glTextureDescriptor;
