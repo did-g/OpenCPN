@@ -1068,7 +1068,7 @@ wxString GribRequestSetting::WriteMail()
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%02d&"));
         }
         else {
-            bool hourly = m_pInterval->GetStringSelection().Length() != 1;
+            bool hourly = m_pInterval->GetStringSelection().Length() == 1;
             r_topmess.Append(hourly?_T("2d.pl") : _T("sub.pl"));
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.wrf") + (hourly?_T("sfc"):_T("subh")));
             r_topmess.Append(_T("f%02d.grib2"));
@@ -1203,10 +1203,9 @@ int GribRequestSetting::EstimateFileSize( double *size )
     *size = 0.;
 
     //too small zone ? ( mini 2 * resolutions )
-    double reso,time,inter;
+    double reso,time;
     m_pResolution->GetStringSelection().ToDouble(&reso);
     m_pTimeRange->GetStringSelection().ToDouble(&time);
-    m_pInterval->GetStringSelection().ToDouble(&inter);
 
     double maxlon = m_spMaxLon->GetValue(), minlon = m_spMinLon->GetValue();
     double maxlat = m_spMaxLat->GetValue(), minlat = m_spMinLat->GetValue();
@@ -1228,6 +1227,12 @@ int GribRequestSetting::EstimateFileSize( double *size )
         npts = wxMin(npts, (int) (  ceil(40.0/reso) * ceil(40.0/reso) ) );
 
     // Nombre de GribRecords
+    double inter;
+    m_pInterval->GetStringSelection().ToDouble(&inter);
+    // XXX Hack for 1/4
+    if( model == HRRR && m_pInterval->GetStringSelection().Length() != 1)
+        inter /= 4.;
+
     int nbrec = (int) (time*24/inter)+1;
     int nbPress = (m_pPress->IsChecked()) ?  nbrec   : 0;
     int nbWind  = (m_pWind->IsChecked()) ?  2*nbrec : 0;
@@ -1412,6 +1417,7 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         }
         if (m_pModel->GetCurrentSelection() == HRRR) {
             cnt = 18;
+            to_download = 1;
         }
         if (output->IsOk()) while (it > 0 && cnt > 0) {
             m_bTransferComplete  = false;
