@@ -102,7 +102,6 @@ private:
       // map selection back to interval enum
       std::vector<int> m_RevertMapIntervals;
       bool IsZYGRIB;
-      bool IsNOAA;
       bool IsGFS;
       int  m_MailError_Nb;
       int  m_SendMethod;
