@@ -40,7 +40,7 @@
 
 enum Provider { SAILDOCS, ZYGRIB, NOAA, METEO_F};  //grib providers
 
-enum Model { GFS=0, HRRR, COAMPS, RTOFS, OSCAR, ARxxx };      //forecast models
+enum Model : int { GFS=0, HRRR, COAMPS, RTOFS, OSCAR, ARxxx };      //forecast models
 const static wxString s1[] = {_T("GFS"),_T("HRRR"), _T("COAMPS"),_T("RTOFS"), _T("OSCAR"), _T("Meteo France")};
 
 enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
@@ -263,16 +263,24 @@ void GribRequestSetting::InitRequestConfig()
         m_RequestConfigBase = _T( "000220XX..............." );
     }
     //populate model
-    for( unsigned int i= 0;  i< (sizeof(s1) / sizeof(wxString) );i++)
+    m_pModel->Clear();
+    m_RevertMapModel.clear();
+    for( unsigned int i= 0;  i< (sizeof(s1) / sizeof(wxString) );i++) {
         m_pModel->Append( s1[i] );
+        m_RevertMapModel.push_back( (Model)i);
+    }
 
     //populate mail to, waves model choices
     wxString s2[] = {_T("Saildocs"),_T("zyGrib"),_T("NOAA (web)"),_T("Meteo France(OCPN)")};
+    m_pMailTo->Clear();
     for( unsigned int i= 0;  i<(sizeof(s2) / sizeof(wxString));i++)
         m_pMailTo->Append( s2[i] );
+
     wxString s3[] = {_T("WW3-GLOBAL"),_T("WW3-MEDIT")};
+    m_pWModel->Clear();
     for( unsigned int i= 0;  i<(sizeof(s3) / sizeof(wxString));i++)
         m_pWModel->Append( s3[i] );
+
     m_rButtonYes->SetLabel(_("Send"));
     m_rButtonApply->SetLabel(_("Save"));
     m_tResUnit->SetLabel(wxString::Format( _T("\u00B0")));
@@ -488,7 +496,7 @@ const ModelDef &GribRequestSetting::getModelDef() const
 {
     // XXX or is wxNOT_FOUND possible?
     Model model = GFS;
-    if (m_pModel->GetCurrentSelection() > 0) model = (Model)m_pModel->GetCurrentSelection();
+    if (m_pModel->GetCurrentSelection() > 0) model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
 
     Provider provider = SAILDOCS;
     if ( m_pMailTo->GetCurrentSelection() > 0) provider = (Provider)m_pMailTo->GetCurrentSelection();
@@ -510,41 +518,45 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     // cf http://saildocs.com/gribmodels
 
     Model model = GFS;
-    if (m_pModel->GetCurrentSelection() >  0) model = (Model)m_pModel->GetCurrentSelection();
+    if (m_pModel->GetCurrentSelection() >  0) model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
 
     Provider provider = SAILDOCS;
     if ( m_pMailTo->GetCurrentSelection() > 0) provider = (Provider)m_pMailTo->GetCurrentSelection();
 
     IsZYGRIB =  provider == ZYGRIB;
-    bool IsNOAA = provider == NOAA;
     bool IsSAILDOCS = provider == SAILDOCS;
-    bool IsFR = provider == METEO_F;
-
-    //populate model
-    m_pModel->Clear();
-    unsigned int imax = sizeof(s1) / sizeof(wxString);
-    if (!IsFR) imax--;
-    if (IsNOAA) imax = 2;
-    for( unsigned int i= 0;  i< imax; i++)
-        m_pModel->Append( s1[i] );
-    m_pModel->SetSelection(wxMin((unsigned int)model, m_pModel->GetCount()-1));
 
     const auto itP = P.find(provider);
     assert (itP != P.end());
-
     auto m = itP->second; // map of model definitions
+
+    //populate model list
+    m_pModel->Clear();
+    m_RevertMapModel.clear();
+    unsigned int imax = sizeof(s1) / sizeof(wxString);
+    int midx = imax;
+    for( unsigned int i= 0;  i< imax; i++) {
+        if (m.find((Model)i) != m.end()) {
+            m_pModel->Append( s1[i] );
+            m_RevertMapModel.push_back((Model)i);
+            if ((Model)i == model)
+                midx = i;
+        }
+    }
+    m_pModel->SetSelection(wxMin(midx, m_pModel->GetCount()-1));
+
     auto itM = m.find(model);
     // selected model is not in this provider's list, get another one
     if (itM == m.end()) itM = m.find(m.begin()->first);
     assert (itM != m.end());
     if (m.size() == 1) {
-        m_pModel->SetSelection(itM->first);
+        m_pModel->SetSelection(0);
         m_pModel->Enable(false);
     } 
     else {
         m_pModel->Enable(true);
     }
-    model = (Model)m_pModel->GetCurrentSelection();
+    model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
     itM = m.find(model);
     IsGFS = model == GFS;
 
@@ -566,7 +578,6 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     rs =  m_pResolution->GetCurrentSelection();
     //populate time interval choice
     m_pInterval->Clear();
-    m_RevertMapIntervals.clear();
     for( auto r: d.Intervals ) {
         if (rs == 0) {
             for ( auto i : r.second) {
@@ -574,7 +585,6 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
                     m_pInterval->Append( _T("1/4"));
                 else 
                     m_pInterval->Append( wxString::Format(_T("%d"), i));
-                m_RevertMapIntervals.push_back(i);
             }
             break;
         }
@@ -651,10 +661,6 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
 void GribRequestSetting::OnTopChange(wxCommandEvent &event)
 {
     int it = m_pInterval->GetCurrentSelection();
-#if 0
-    if (it != wxNOT_FOUND)
-        it = m_RevertMapIntervals[it];
-#endif
 
     ApplyRequestConfig( m_pResolution->GetCurrentSelection(), it, m_pTimeRange->GetCurrentSelection() );
 
@@ -883,7 +889,6 @@ void GribRequestSetting::OnAnyChange(wxCommandEvent &event)
 
 void GribRequestSetting::OnTimeRangeChange(wxCommandEvent &event)
 {
-    int model = m_pModel->GetCurrentSelection();
     auto d = getModelDef();
 
     if( d.Has(WAVES)) {               //gfs
@@ -912,15 +917,12 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
     m_cMovingGribEnabled->IsChecked() ? m_RequestConfigBase.SetChar( 16, 'X' )                      //moving grib
         : m_RequestConfigBase.SetChar( 16, '.' );
 
-    m_RequestConfigBase.SetChar( 1, (char) ( m_pModel->GetCurrentSelection() + '0' ) );         //model
+    m_RequestConfigBase.SetChar( 1, (char) ( m_pModel->GetCurrentSelection() + '0' ) );         //model idx
 
     m_RequestConfigBase.SetChar( 2, (char) ( m_pResolution->GetCurrentSelection() + '0' ) );    //resolution
 
     int it = m_pInterval->GetCurrentSelection();
-#if 0    
-    if (it != wxNOT_FOUND)
-        it = m_RevertMapIntervals[it];
-#endif        
+
     m_RequestConfigBase.SetChar( 3, (char) ( it + '0' ) );
     auto d = getModelDef();
 
@@ -1043,7 +1045,7 @@ http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_sub.pl?
 wxString GribRequestSetting::WriteMail()
 {
     //define size limits for zyGrib
-    int model = m_pModel->GetCurrentSelection();
+    int model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
     int resolution = m_pResolution->GetCurrentSelection();
     int provider = m_pMailTo->GetCurrentSelection();
     int limit = IsZYGRIB ? 2 :( provider == METEO_F) ?30:0; //new limit  2 mb
@@ -1272,7 +1274,7 @@ int GribRequestSetting::EstimateFileSize( double *size )
     int npts = (int) (  ceil(((double)(maxlat - minlat )/reso))
                       * ceil(((double)(wlon )/reso)) );
 
-    int model = m_pModel->GetCurrentSelection();
+    int model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
     int provider = m_pMailTo->GetCurrentSelection();
     if( model == COAMPS )                                           //limited area for COAMPS
         npts = wxMin(npts, (int) (  ceil(40.0/reso) * ceil(40.0/reso) ) );
@@ -1430,7 +1432,7 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         wxString q(WriteMail());
         wxDateTime start = wxDateTime::Now().ToGMT();
         int req;
-        if (m_pModel->GetCurrentSelection() == HRRR) {
+        if (m_RevertMapModel[m_pModel->GetCurrentSelection()] == HRRR) {
             req = start.Subtract(wxTimeSpan( 3, 0 )).GetHour();
         }
         else {
@@ -1466,7 +1468,7 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
             cnt = 1;
             to_download = 1;
         }
-        if (m_pModel->GetCurrentSelection() == HRRR) {
+        if (m_RevertMapModel[m_pModel->GetCurrentSelection()] == HRRR) {
             cnt = 18;
             to_download = 18;
         }
