@@ -40,6 +40,8 @@
 //----------------------------------------------------------------------------------------------------------
 //    Request setting Specification
 //----------------------------------------------------------------------------------------------------------
+class ModelDef;
+
 class GribRequestSetting : public GribRequestSettingBase
 {
 public:
@@ -68,6 +70,7 @@ public:
       double          m_Lon;
 
 private:
+      const ModelDef &getModelDef() const;
 
       void ApplyRequestConfig( unsigned rs, unsigned it, unsigned tr );
       wxString WriteMail();
