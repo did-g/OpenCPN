@@ -1417,7 +1417,7 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         }
         if (m_pModel->GetCurrentSelection() == HRRR) {
             cnt = 18;
-            to_download = 1;
+            to_download = 18;
         }
         if (output->IsOk()) while (it > 0 && cnt > 0) {
             m_bTransferComplete  = false;
