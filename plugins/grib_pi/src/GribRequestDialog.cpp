@@ -72,17 +72,6 @@ enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
               CURRENT= (1 << 26), //  (current)
 };
 
-static const int f[] = {
-           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|
-               HGT300|TMP300|WIND300|HGT700|TMP700|WIND700|HGT850|TMP850|WIND850|CLOUDS|WAVES,// GFS
-           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,// HRRR
-           PRMSL|WIND,// COAMPS
-           SEATMP|CURRENT,// RTOFS
-           CURRENT,// OSCAR
-           PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|CLOUDS|WAVES|CURRENT,// Meteo France
-           
-};
-#define Have(a) ((f[model] & (a)) != 0)
 #include <set>
 
 enum Resolution {r0_01, r0_025, r0_08, r0_10, r0_15, r0_25, r0_33, r0_5, r1_0, r2_0};
@@ -527,7 +516,7 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     if ( m_pMailTo->GetCurrentSelection() > 0) provider = (Provider)m_pMailTo->GetCurrentSelection();
 
     IsZYGRIB =  provider == ZYGRIB;
-    IsNOAA = provider == NOAA;
+    bool IsNOAA = provider == NOAA;
     bool IsSAILDOCS = provider == SAILDOCS;
     bool IsFR = provider == METEO_F;
 
@@ -558,8 +547,6 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     model = (Model)m_pModel->GetCurrentSelection();
     itM = m.find(model);
     IsGFS = model == GFS;
-    bool IsRTOFS = model == RTOFS;
-    bool IsHRRR = model == HRRR;
 
     //populate resolution choice
     m_pResolution->Clear();
@@ -610,8 +597,8 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_pPress->SetValue( (d.Default & PRMSL) || (m_RequestConfigBase.GetChar(7) == 'X' && d.Has(PRMSL)) );
     m_pPress->Enable( d.Has(PRMSL) && !(d.Default & PRMSL));
 
-    m_pWaves->SetValue( m_RequestConfigBase.GetChar(8) == 'X' && d.Has(WAVES) && !IsNOAA);
-    m_pWaves->Enable( d.Has(WAVES) && !IsNOAA && m_pTimeRange->GetCurrentSelection() < 7 );      //gfs & time range less than 8 days
+    m_pWaves->SetValue( m_RequestConfigBase.GetChar(8) == 'X' && d.Has(WAVES));
+    m_pWaves->Enable( d.Has(WAVES) && m_pTimeRange->GetCurrentSelection() < 7 );      //gfs & time range less than 8 days
 
     m_pRainfall->SetValue( m_RequestConfigBase.GetChar(9) == 'X' && d.Has(RAIN) );
     m_pRainfall->Enable(  d.Has(RAIN) );
@@ -896,19 +883,23 @@ void GribRequestSetting::OnAnyChange(wxCommandEvent &event)
 
 void GribRequestSetting::OnTimeRangeChange(wxCommandEvent &event)
 {
-    m_pWModel->Show( IsZYGRIB && m_pWaves->IsChecked());
     int model = m_pModel->GetCurrentSelection();
-    if( Have(WAVES) && !IsNOAA ) {               //gfs
+    auto d = getModelDef();
+
+    if( d.Has(WAVES)) {               //gfs
         if( m_pTimeRange->GetCurrentSelection() > 6 ) {         //time range more than 8 days
-            m_pWaves->SetValue(0);
             m_pWaves->Enable(false);
-            OCPNMessageBox_PlugIn(this, _("You request a forecast for more than 8 days horizon.\nThis is conflicting with Wave data which will be removed from your request.\nDon't forget that beyond the first 8 days, the resolution will be only 2.5\u00B0x2.5\u00B0\nand the time intervall 12 hours."),
-                _("Warning!") );
+            if (m_pWaves->IsChecked()) {
+                OCPNMessageBox_PlugIn(this, _("You request a forecast for more than 8 days horizon.\nThis is conflicting with Wave data which will be removed from your request.\nDon't forget that beyond the first 8 days, the resolution will be only 2.5\u00B0x2.5\u00B0\nand the time intervall 12 hours."),
+                    _("Warning!") );
+            }
+            m_pWaves->SetValue(0);
         } else
             m_pWaves->Enable(true);
     }
     else
         m_pWaves->Enable(false);
+    m_pWModel->Show( IsZYGRIB && m_pWaves->IsChecked());
 
     if(m_AllowSend) m_MailImage->SetValue( WriteMail() );
 
@@ -921,11 +912,9 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
     m_cMovingGribEnabled->IsChecked() ? m_RequestConfigBase.SetChar( 16, 'X' )                      //moving grib
         : m_RequestConfigBase.SetChar( 16, '.' );
 
-    if( !IsZYGRIB )
-        m_RequestConfigBase.SetChar( 1, (char) ( m_pModel->GetCurrentSelection() + '0' ) );         //model
+    m_RequestConfigBase.SetChar( 1, (char) ( m_pModel->GetCurrentSelection() + '0' ) );         //model
 
-    if(m_pModel->GetCurrentSelection() != RTOFS)
-        m_RequestConfigBase.SetChar( 2, (char) ( m_pResolution->GetCurrentSelection() + '0' ) );    //resolution
+    m_RequestConfigBase.SetChar( 2, (char) ( m_pResolution->GetCurrentSelection() + '0' ) );    //resolution
 
     int it = m_pInterval->GetCurrentSelection();
 #if 0    
@@ -983,13 +972,13 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
         m_RequestConfigBase.SetChar( 15, c );
     }
 
-    if( IsGFS ) {
+    if (d.Has(HGT500)) {
         m_pAltitudeData->IsChecked() ?  m_RequestConfigBase.SetChar( 17, 'X' )                      //altitude data
         : m_RequestConfigBase.SetChar( 17, '.' );
         m_p500hpa->IsChecked() ?  m_RequestConfigBase.SetChar( 20, 'X' )
         : m_RequestConfigBase.SetChar( 20, '.' );
     }
-    if( IsZYGRIB ) {
+    if (d.Has(HGT850)) {
         m_p850hpa->IsChecked() ?  m_RequestConfigBase.SetChar( 18, 'X' )
             : m_RequestConfigBase.SetChar( 18, '.' );
         m_p700hpa->IsChecked() ?  m_RequestConfigBase.SetChar( 19, 'X' )
@@ -1073,7 +1062,7 @@ wxString GribRequestSetting::WriteMail()
         //parameters Saildocs
         {_T("APCP"), _T("TCDC"), _T("AIRTMP"), _T("HTSGW,WVPER,WVDIR"),
         _T("SEATMP"), _T("GUST"), _T("CAPE"), wxEmptyString, wxEmptyString, _T("WIND500,HGT500"), wxEmptyString,
-        _T("WIND"), _T("PRESS"), wxEmptyString, wxEmptyString, _T("CUR")}, 
+        _T("WIND"), _T("PRESS"), _T("PRESS"), wxEmptyString, _T("CUR")}, 
         //parameters zigrib
         {_T("PRECIP"), _T("CLOUD"), _T("TEMP"), _T("WVSIG WVWIND"), wxEmptyString, _T("GUST"),
             _T("CAPE"), _T("A850"), _T("A700"), _T("A500"), _T("A300"),_T("WIND"), _T("PRESS")
@@ -1166,69 +1155,66 @@ wxString GribRequestSetting::WriteMail()
         break;
     }
     //write the parameters part of the mail
-    auto d = getModelDef();
     bool notfirst = false;
-
-    if (d.Has(WIND) && m_pWind->IsChecked()) {
+    if ( m_pWind->IsChecked()) {
         r_parameters = p[provider][11];
         notfirst = true;
     }
-    if (d.Has(PRMSL) && m_pPress->IsChecked()) {
+    if ( m_pPress->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         // HRRR is PRES surface not sealevel
         r_parameters.Append( p[provider][(model == HRRR)?13:12] );
         notfirst = true;
     }
-    if (d.Has(RAIN) && m_pRainfall->IsChecked()) {
+    if ( m_pRainfall->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][0]);
         notfirst = true;
     }
-    if (d.Has(CLOUDS) && m_pCloudCover->IsChecked()) {
+    if ( m_pCloudCover->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][1]);
         notfirst = true;
     }
-    if (d.Has(AIRTMP) && m_pAirTemp->IsChecked()) {
+    if ( m_pAirTemp->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][2]);
         notfirst = true;
     }
-    if (d.Has(WAVES) && m_pWaves->IsChecked() ) {
+    if ( m_pWaves->IsChecked() ) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][3]);
         notfirst = true;
     }
-    if (d.Has(SEATMP)&& m_pSeaTemp->IsChecked()) {
+    if ( m_pSeaTemp->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][4]);
         notfirst = true;
     }
-    if (d.Has(CURRENT) && m_pCurrent->IsChecked()) {
+    if ( m_pCurrent->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][15]);
         notfirst = true;
     }
-    if (d.Has(GUST) && m_pWindGust->IsChecked()) {
+    if ( m_pWindGust->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][5]);
         notfirst = true;
     }
-    if (d.Has(CAPE) && m_pCAPE->IsChecked()) {
+    if ( m_pCAPE->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][6]);
         notfirst = true;
     }
-    bool HaveAlt = d.Has(HGT300) || d.Has(HGT500) || d.Has(HGT700)|| d.Has(HGT850);
 
     if( m_pAltitudeData->IsChecked() ){
-        if( d.Has(HGT850) && m_p850hpa->IsChecked() )
+        if( m_p850hpa->IsChecked() )
             r_parameters.Append( s[provider] + p[provider][7] );
-        if( d.Has(HGT700) && m_p700hpa->IsChecked() )
+        if( m_p700hpa->IsChecked() )
             r_parameters.Append( s[provider] + p[provider][8] );
-        if( d.Has(HGT500) && m_p500hpa->IsChecked() )
+        if( m_p500hpa->IsChecked() )
             r_parameters.Append( s[provider] + p[provider][9] );
-        if( d.Has(HGT300) && m_p300hpa->IsChecked() )
+        if( m_p300hpa->IsChecked() )
             r_parameters.Append( s[provider] + p[provider][10] );
     }
 
