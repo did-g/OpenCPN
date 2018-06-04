@@ -91,6 +91,7 @@ public:
 
     void OpenFile( bool newestFile = false );
     void OpenFile( const wxString &f);
+    bool IsFile( const wxString &f);
 
     void ContextMenuItemCallback(int id);
     void SetFactoryOptions();
