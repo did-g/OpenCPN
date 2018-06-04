@@ -503,11 +503,21 @@ void GribRequestSetting::OnVpChange(PlugIn_ViewPort *vp)
     SetVpSize(vp);
 }
 
-const ModelDef &GribRequestSetting::getModelDef() const
+Model GribRequestSetting::getModel() const
 {
     // XXX or is wxNOT_FOUND possible?
     Model model = GFS;
-    if (m_pModel->GetCurrentSelection() > 0) model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
+    if (m_pModel->GetCurrentSelection() >= 0) {
+        assert(m_pModel->GetCurrentSelection() < (int)m_RevertMapModel.size());
+        model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
+    }
+    return model;
+}
+
+const ModelDef &GribRequestSetting::getModelDef() const
+{
+    // XXX or is wxNOT_FOUND possible?
+    Model model = getModel();
 
     Provider provider = SAILDOCS;
     if ( m_pMailTo->GetCurrentSelection() > 0) provider = (Provider)m_pMailTo->GetCurrentSelection();
@@ -525,11 +535,7 @@ const ModelDef &GribRequestSetting::getModelDef() const
 
 void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned tr )
 {
-    //some useful  strings
-    // cf http://saildocs.com/gribmodels
-
-    Model model = GFS;
-    if (m_pModel->GetCurrentSelection() >  0) model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
+    Model model = getModel();
 
     Provider provider = SAILDOCS;
     if ( m_pMailTo->GetCurrentSelection() > 0) provider = (Provider)m_pMailTo->GetCurrentSelection();
@@ -1063,10 +1069,16 @@ http://nomads.ncep.noaa.gov/cgi-bin/filter_nam_crb.pl?
 */
 wxString GribRequestSetting::WriteMail()
 {
-    //define size limits for zyGrib
+    if  (m_pModel->GetCurrentSelection() < 0)
+        return wxEmptyString;
+    if  (m_pModel->GetCurrentSelection() >= (int)m_RevertMapModel.size())
+        return wxEmptyString;
+
     int model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
     int resolution = m_pResolution->GetCurrentSelection();
     int provider = m_pMailTo->GetCurrentSelection();
+
+    //define size limits for zyGrib
     int limit = IsZYGRIB ? 2 :( provider == METEO_F) ?30:0; //new limit  2 mb
     auto d = getModelDef();
 
