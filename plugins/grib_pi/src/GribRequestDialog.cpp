@@ -633,6 +633,9 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_pSeaTemp->SetValue( m_RequestConfigBase.GetChar(12) == 'X' && d.Has(SEATMP) );
     m_pSeaTemp->Enable(  d.Has(SEATMP) );
 
+    m_pCurrent->SetValue( (d.Default & CURRENT) || ( m_RequestConfigBase.GetChar(13) == 'X' && d.Has(CURRENT)) );
+    m_pCurrent->Enable( d.Has(CURRENT) && !(d.Default & CURRENT));
+
     m_pWindGust->SetValue( m_RequestConfigBase.GetChar(14) == 'X' && d.Has(GUST) );
     m_pWindGust->Enable(  d.Has(GUST) );
 
@@ -655,8 +658,6 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_p300hpa->SetValue( d.Has(HGT300) ? m_RequestConfigBase.GetChar(21) == 'X' : false  );
     m_p300hpa->Enable( d.Has(HGT300) );
 
-    m_pCurrent->SetValue( (d.Default & CURRENT) || ( m_RequestConfigBase.GetChar(22) == 'X' && d.Has(CURRENT)) );
-    m_pCurrent->Enable( d.Has(CURRENT) && !(d.Default & CURRENT));
 
     //show parameters only if necessary
     m_cMovingGribEnabled->Show(IsSAILDOCS);                             //show/hide Moving settings
@@ -981,7 +982,7 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
         m_RequestConfigBase.SetChar( 14, c );
     }
     if (d.Has(CAPE)) {
-        char c = m_pSeaTemp->IsChecked() ? 'X':'.'; 	// CAPE
+        char c = m_pCAPE->IsChecked() ? 'X':'.'; 	// CAPE
         m_RequestConfigBase.SetChar( 15, c );
     }
 
