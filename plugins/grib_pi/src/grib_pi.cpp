@@ -43,6 +43,8 @@
 //#include "qdebug.h"
 #endif
 
+static wxImage ICursorPencil;
+
 // the class factories, used to create and destroy instances of the PlugIn
 
 extern "C" DECL_EXP opencpn_plugin* create_pi(void *ppimgr)
@@ -141,6 +143,14 @@ int grib_pi::Init(void)
           m_CtrlBarxy = wxPoint( 20, 60 );   //reset to the default position
           m_CursorDataxy = wxPoint( 20, 170 );
       }
+      wxImage ICursorPencil = GetIcon_PlugIn(_T("pencil")).ConvertToImage();
+      if ( ICursorPencil.Ok() ) {
+          ICursorPencil.SetOption ( wxIMAGE_OPTION_CUR_HOTSPOT_X, 0 );
+          ICursorPencil.SetOption ( wxIMAGE_OPTION_CUR_HOTSPOT_Y, 16);
+          m_pCursorPencil = new wxCursor ( ICursorPencil );
+      }
+      else
+          m_pCursorPencil = new wxCursor ( wxCURSOR_ARROW );
 
       return (WANTS_OVERLAY_CALLBACK |
               WANTS_OPENGL_OVERLAY_CALLBACK |
