@@ -38,10 +38,14 @@
 
 #define RESOLUTIONS 4
 
+/* ref
+    http://www.nco.ncep.noaa.gov/pmb/products/nam/
+*/
 enum Provider { SAILDOCS, ZYGRIB, NOAA, METEO_F};  //grib providers
 
-enum Model : int { GFS=0, HRRR, COAMPS, RTOFS, OSCAR, ARxxx };      //forecast models
-const static wxString s1[] = {_T("GFS"),_T("HRRR"), _T("COAMPS"),_T("RTOFS"), _T("OSCAR"), _T("Meteo France")};
+enum Model : int { GFS=0, HRRR, NAM, COAMPS, RTOFS, OSCAR, ARxxx };      //forecast models
+const static wxString s1[] = {_T("GFS"),_T("HRRR"), _T("NAM Car/CA"), _T("COAMPS"), _T("RTOFS"), 
+        _T("OSCAR"), _T("Meteo France")};
 
 enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
               WIND   = (1 <<  1), // (10 meters above surface)
@@ -110,7 +114,7 @@ static const Providers P = {
                        /* .TimeRanges = */ T16
                        }
                 },
-                {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,
+                {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN,
                         /* .Default = */  WIND,
                         /* .Intervals = */ {{r0_025, I1 }, {r0_25, I1 }, {r0_5, I1} },
                         /* .TimeRanges = */ T1,
@@ -150,7 +154,7 @@ static const Providers P = {
     },
     // ===================
     {NOAA, {{GFS, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS,
-                   /* .Default = */  PRMSL | WIND,
+                   /* .Default = */  WIND,
                    /* .Intervals = */ {{r0_25, I1 },
                                  {r0_5,  I3 },
                                  {r1_0,  I3 },
@@ -158,10 +162,17 @@ static const Providers P = {
                    /* .TimeRanges = */ T16
                   },
             },
-            {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP,
+            {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN,
                      /* .Default = */  WIND,
                     /* .Intervals =  */ {{r0_025, { 0, 1 } } },
                     /* .TimeRanges = */ T1,
+                   },
+            },
+            {NAM, {/* .Parameters = */ PRMSL|WIND|AIRTMP|CAPE|APCP|SEATMP/*|CLOUDS*/, 
+                    // no Gust in inventory ! and CLOUD is entire .. single layer
+                    /* .Default = */  WIND, 
+                    /* .Intervals =  */ {{r0_10, I3 }},
+                    /* .TimeRanges = */ { 1, 2, 3 , 4 }
                    },
             },
         },
@@ -610,8 +621,8 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_pWaves->SetValue( m_RequestConfigBase.GetChar(8) == 'X' && d.Has(WAVES));
     m_pWaves->Enable( d.Has(WAVES) && m_pTimeRange->GetCurrentSelection() < 7 );      //gfs & time range less than 8 days
 
-    m_pRainfall->SetValue( m_RequestConfigBase.GetChar(9) == 'X' && d.Has(RAIN) );
-    m_pRainfall->Enable(  d.Has(RAIN) );
+    m_pRainfall->SetValue( m_RequestConfigBase.GetChar(9) == 'X' && (d.Has(RAIN) || d.Has(APCP)) );
+    m_pRainfall->Enable( d.Has(RAIN) || d.Has(APCP) );
 
     m_pCloudCover->SetValue( m_RequestConfigBase.GetChar(10) == 'X' && d.Has(CLOUDS) );
     m_pCloudCover->Enable(  d.Has(CLOUDS) );
@@ -945,7 +956,7 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
         char c = m_pWaves->IsChecked() ? 'X':'.';     	// Waves
         m_RequestConfigBase.SetChar( 8, c );
     }
-    if (d.Has(RAIN)) {
+    if (d.Has(RAIN) || d.Has(APCP)) {
         char c = m_pRainfall->IsChecked() ? 'X':'.'; 	 // rainfall
         m_RequestConfigBase.SetChar( 9, c );
     }
@@ -1041,6 +1052,13 @@ http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_sub.pl?
     lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&
     var_GUST=on&var_PRATE=on&var_PRES=on&var_TMP=on&var_UGRD=on&var_VGRD=on&
     subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.20180530
+
+http://nomads.ncep.noaa.gov/cgi-bin/filter_nam_crb.pl?
+    file=nam.t00z.afwaca03.tm00.grib2&
+    lev_10_m_above_ground=on&lev_500_mb=on&lev_mean_sea_level=on&var_HGT=on&
+    var_PRMSL=on&var_UGRD=on&var_VGRD=on&var_WTMP=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&
+    dir=%2Fnam.20180603
+
 */
 wxString GribRequestSetting::WriteMail()
 {
@@ -1049,40 +1067,43 @@ wxString GribRequestSetting::WriteMail()
     int resolution = m_pResolution->GetCurrentSelection();
     int provider = m_pMailTo->GetCurrentSelection();
     int limit = IsZYGRIB ? 2 :( provider == METEO_F) ?30:0; //new limit  2 mb
+    auto d = getModelDef();
 
     m_MailError_Nb = 0;
     //some useful strings
     // {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},
     static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T("full.1p00"), wxEmptyString };
 
-    static const wxString m[] = { _T("gfs"), _T("hrrr")};
+    static const wxString m[] = { _T("gfs"), _T("hrrr"), _T("nam")};
     static const wxString M[] = {  _T("arome01?"), _T("arome?"), _T("arpege?")};
 
     static const wxString s[] = { _T(","), _T(" "), _T("&"), _T("") };        //separators
 
-    static const wxString p[][16] = {
+    static const wxString p[][17] = {
         //parameters Saildocs
         {_T("APCP"), _T("TCDC"), _T("AIRTMP"), _T("HTSGW,WVPER,WVDIR"),
         _T("SEATMP"), _T("GUST"), _T("CAPE"), wxEmptyString, wxEmptyString, _T("WIND500,HGT500"), wxEmptyString,
-        _T("WIND"), _T("PRESS"), _T("PRESS"), wxEmptyString, _T("CUR")}, 
+        _T("WIND"), _T("PRESS"), _T("PRESS"), wxEmptyString, _T("CUR"), wxEmptyString}, 
         //parameters zigrib
         {_T("PRECIP"), _T("CLOUD"), _T("TEMP"), _T("WVSIG WVWIND"), wxEmptyString, _T("GUST"),
             _T("CAPE"), _T("A850"), _T("A700"), _T("A500"), _T("A300"),_T("WIND"), _T("PRESS")
-            , wxEmptyString, wxEmptyString, wxEmptyString
+            , wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString
         } ,
         //parameters NOAA
-        {_T("var_PRATE=on"), _T("lev_entire_atmosphere=on&var_TCDC=on"), _T("lev_2_m_above_ground=on&var_TMP=on"),
-            wxEmptyString, wxEmptyString, _T("var_GUST=on"),
+        // lev_entire_atmosphere_%5C%28considered_as_a_single_layer%5C%29
+        {   _T("var_PRATE=on"), _T("lev_entire_atmosphere=on&var_TCDC=on"), 
+            _T("lev_2_m_above_ground=on&var_TMP=on"),
+            wxEmptyString, _T("var_WTMP"), _T("var_GUST=on"),
             _T("var_CAPE=on"),wxEmptyString, wxEmptyString, _T("lev_500_mb=on&var_HGT=on&"), wxEmptyString,
             _T("lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&lev_surface=on"),
             _T("lev_mean_sea_level=on&var_PRMSL=on"),
-            _T("var_PRES=on"), _T("lev_entire_atmosphere=on&var_PRESC=on"), wxEmptyString
+            _T("var_PRES=on"), _T("lev_entire_atmosphere=on&var_PRESC=on"), wxEmptyString, _T("var_APCP=on")
         },
         // Meteo France
         {_T("r"), _T("n"), _T("t"),
         _T("v"), wxEmptyString, _T("g"),
         _T("a"), wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString,
-        _T("w"), _T("p"), wxEmptyString, wxEmptyString, _T("m")
+        _T("w"), _T("p"), wxEmptyString, wxEmptyString, _T("m"), wxEmptyString
         }
     };
 
@@ -1106,6 +1127,11 @@ wxString GribRequestSetting::WriteMail()
             r_topmess.Append( f[resolution] );
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.pgrb2") + r[resolution] + _T(".f%03d"));
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%02d&"));
+        }
+        else if (model == NAM) {
+            r_topmess.Append( _T("crb.pl") );
+            r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.afwaca%02d.tm00.grib2"));
+            r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d&"));
         }
         else {
             bool hourly = m_pInterval->GetStringSelection().Length() == 1;
@@ -1170,7 +1196,7 @@ wxString GribRequestSetting::WriteMail()
     }
     if ( m_pRainfall->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
-        r_parameters.Append( p[provider][0]);
+        r_parameters.Append( p[provider][d.Has(RAIN)?0:16]);
         notfirst = true;
     }
     if ( m_pCloudCover->IsChecked()) {
