@@ -1927,7 +1927,7 @@ printf("hasBMS=%d\n", hasBMS);
 }
 
 // -----------------
-GribV2Record::GribV2Record(ZUFILE* file, int id_)
+GribV2Record::GribV2Record(ZUFILE* file, int id_ , bool test_only)
 {
     id = id_;
     seekStart = zu_tell(file);           // moved to section 0 read
