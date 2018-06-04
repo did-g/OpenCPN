@@ -1304,7 +1304,8 @@ bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz, int &wpt_duplicat
 {
     wpt_duplicates = 0;
     pugi::xml_node objects = this->child("gpx");
-    
+    if (objects.first_child() == nullptr)
+        return false;
     for (pugi::xml_node object = objects.first_child(); object; object = object.next_sibling())
     {
         if( !strcmp(object.name(), "wpt") ) {
@@ -1325,23 +1326,19 @@ bool NavObjectCollection1::LoadAllGPXObjects( bool b_full_viz, int &wpt_duplicat
                 wpt_duplicates++;
             }
         }
-        else
-            if( !strcmp(object.name(), "trk") ) {
-                Track *pTrack = GPXLoadTrack1( object, b_full_viz, false, false, 0);
-                if (InsertTrack( pTrack ) && b_compute_bbox && pTrack->IsVisible()) {
+        else if( !strcmp(object.name(), "trk") ) {
+            Track *pTrack = GPXLoadTrack1( object, b_full_viz, false, false, 0);
+            if (InsertTrack( pTrack ) && b_compute_bbox && pTrack->IsVisible()) {
                         //BBox.Expand(pTrack->GetBBox());
-                }
-                //delete pTrack
             }
-            else
-                if( !strcmp(object.name(), "rte") ) {
-                    Route *pRoute = GPXLoadRoute1( object, b_full_viz, false, false, 0, false );
-                    if (InsertRouteA( pRoute ) && b_compute_bbox && pRoute->IsVisible()) {
-                        BBox.Expand(pRoute->GetBBox());
-                    }
-                }
-                
-                
+                //delete pTrack
+        }
+        else if( !strcmp(object.name(), "rte") ) {
+            Route *pRoute = GPXLoadRoute1( object, b_full_viz, false, false, 0, false );
+            if (InsertRouteA( pRoute ) && b_compute_bbox && pRoute->IsVisible()) {
+                BBox.Expand(pRoute->GetBBox());
+            }
+        }
     }
     
     return true;
