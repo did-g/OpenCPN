@@ -36,7 +36,7 @@ class  GRIBMessage;
 class GribV2Record : public GribRecord
 {
     public:
-        GribV2Record(ZUFILE* file, int id_);
+        GribV2Record(ZUFILE* file, int id_, bool test_only = false);
         GribV2Record(const GribRecord &rec);
         GribV2Record() { grib_msg = 0;}
 

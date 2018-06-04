@@ -48,6 +48,7 @@ class GribReader
         GribReader();
         GribReader(const wxString fname);
         ~GribReader();
+        bool  isGrib(const wxString fname);
 
         void  openFile(const wxString fname);
         bool  isOk()                 {return ok;}
