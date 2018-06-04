@@ -773,6 +773,42 @@ static void SetSystemColors( ColorScheme cs );
 
 extern "C" bool CheckSerialAccess( void );
 
+static bool load_gpx_from_cmdline(wxString& path)
+{
+    int wpt_dups;
+    LLBBox box;
+    bool ret = false;
+    NavObjectCollection1 *pSet = new NavObjectCollection1;
+
+    if (!pSet->load_file(path.fn_str()))
+        goto end;
+
+    if (!pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), wpt_dups, true )) // Import with full vizibility of names and objects
+        goto end;
+
+    ret = true;
+    if( pRouteManagerDialog && pRouteManagerDialog->IsShown() )
+        pRouteManagerDialog->UpdateLists();
+
+    box = pSet->GetBBox();
+    if (gFrame && box.GetValid()) {
+        gFrame->CenterView(box);
+    }
+
+end:
+    delete pSet;
+    return ret;
+}
+
+static bool load_all_types(wxString& path)
+{
+    /* gpx file ? */
+    if (load_gpx_from_cmdline(path))
+        return true;
+    /* opencpn */
+    return true;
+}
+
 // Connection class, for use by both communicating instances
 class stConnection : public wxConnection
 {
@@ -796,18 +832,7 @@ bool stConnection::OnExec(const wxString& topic, const wxString& data)
         gFrame->Raise();
     }
     else {
-        int wpt_dups;
-        NavObjectCollection1 *pSet = new NavObjectCollection1;
-        pSet->load_file(path.fn_str());
-        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), wpt_dups, true ); // Import with full vizibility of names and objects
-        if( pRouteManagerDialog && pRouteManagerDialog->IsShown() )
-            pRouteManagerDialog->UpdateLists();
-        
-        LLBBox box = pSet->GetBBox();
-        if (box.GetValid()) {
-            gFrame->CenterView(box);
-        }
-        delete pSet;
+        load_all_types(path);
         return true;
     }
     return true;
@@ -6877,18 +6902,8 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
                 for ( size_t n = 0; n < g_params.size(); n++ )
                 {
                     wxString path = g_params[n];
-                    if( ::wxFileExists( path ) ) 
-                    {
-                        int wpt_dups;
-                        NavObjectCollection1 *pSet = new NavObjectCollection1;
-                        pSet->load_file(path.fn_str());
-
-                        pSet->LoadAllGPXObjects( !pSet->IsOpenCPN(), wpt_dups, true ); // Import with full vizibility of names and objects
-                        LLBBox box = pSet->GetBBox();
-                        if (box.GetValid()) {
-                            CenterView(box);
-                        }
-                        delete pSet;
+                    if( ::wxFileExists( path ) ) {
+                        load_gpx_from_cmdline(path);
                     }
                 }
             }
