@@ -779,6 +779,19 @@ static void SetSystemColors( ColorScheme cs );
 
 extern "C" bool CheckSerialAccess( void );
 
+static bool load_grib_from_cmdline(wxString& path)
+{
+    if (!g_pi_manager)
+        return false;
+
+    wxJSONValue v;
+    v[_T("grib_file")] = path;
+    wxString msg_id( _T("GRIB_OPEN_FILE") );
+    g_pi_manager->SendJSONMessageToAllPlugins( msg_id, v );
+    // XXX
+    return true;
+}
+
 static bool load_gpx_from_cmdline(wxString& path)
 {
     int wpt_dups;
@@ -811,7 +824,10 @@ static bool load_all_types(wxString& path)
     /* gpx file ? */
     if (load_gpx_from_cmdline(path))
         return true;
-    /* opencpn */
+    /* opencpn draw */
+
+    /* opencpn grib */
+    load_grib_from_cmdline(path);
     return true;
 }
 
