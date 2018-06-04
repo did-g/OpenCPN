@@ -161,6 +161,8 @@ private:
 
       bool        m_bShowGrib;
       PlugIn_ViewPort  m_current_vp;
+
+      wxCursor    *m_pCursorPencil;
 };
 
 //----------------------------------------------------------------------------------------
