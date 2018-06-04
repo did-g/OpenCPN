@@ -48,6 +48,39 @@ GribReader::GribReader(const wxString fname)
     }
 }
 //-------------------------------------------------------------------------------
+bool GribReader::isGrib(const wxString fname)
+{
+    ok = false;
+    for (auto i : {ZU_COMPRESS_AUTO, ZU_COMPRESS_BZIP, ZU_COMPRESS_GZIP, ZU_COMPRESS_NONE })
+    {
+        file = zu_open((const char *)fname.mb_str(), "rb", i);
+        if (file == nullptr) {
+            if (i == ZU_COMPRESS_AUTO) {
+                return ok;
+            }
+            continue;
+        }
+        // try to read first record XXX add safeguard
+        GribRecord *rec;
+        int id = 1;
+        rec = new GribV1Record(file, id);
+        if (rec->isOk()  == false) {
+            delete rec;
+            rec = new GribV2Record(file, id);
+        }
+        ok = rec->isOk();
+        delete rec;
+        if (ok) break;
+    }
+    if (file != NULL) 
+    {
+        zu_close(file);
+        file = nullptr;
+    }
+    return ok;
+}
+
+//-------------------------------------------------------------------------------
 GribReader::~GribReader()
 {
     clean_all_vectors();
@@ -696,40 +729,25 @@ void GribReader::openFile(const wxString fname)
     // clean_all_vectors();
     //--------------------------------------------------------
     // Open the file
-    //--------------------------------------------------------
-    file = zu_open((const char *)fname.mb_str(), "rb", ZU_COMPRESS_AUTO);
-    if (file == NULL) {
-        erreur("Can't open file: %s", (const char *)fname.mb_str());
-        return;
-    }
-    readGribFileContent();
-
     // Look for compressed files with alternate extensions
- 	if (! ok) {
-    	if (file != NULL)
-			zu_close(file);
-    	file = zu_open((const char *)fname.mb_str(), "rb", ZU_COMPRESS_BZIP);
-    	if (file != NULL)
-    		readGribFileContent();
-    }
- 	if (! ok) {
-    	if (file != NULL)
-			zu_close(file);
-      file = zu_open((const char *)fname.mb_str(), "rb", ZU_COMPRESS_GZIP);
-    	if (file != NULL)
-    		readGribFileContent();
-    }
- 	if (! ok) {
-    	if (file != NULL)
-			zu_close(file);
-      file = zu_open((const char *)fname.mb_str(), "rb", ZU_COMPRESS_NONE);
-    	if (file != NULL)
-    		readGribFileContent();
+    //--------------------------------------------------------
+    for (auto i : {ZU_COMPRESS_AUTO, ZU_COMPRESS_BZIP, ZU_COMPRESS_GZIP, ZU_COMPRESS_NONE })
+    {
+        file = zu_open((const char *)fname.mb_str(), "rb", i);
+        if (file == nullptr) {
+            if (i == ZU_COMPRESS_AUTO) {
+                erreur("Can't open file: %s", (const char *)fname.mb_str());
+                return;
+            }
+            continue;
+        }
+        readGribFileContent();
+        if (ok) break;
     }
     if (file != NULL) 
     {
         zu_close(file);
-        file = NULL;
+        file = nullptr;
     }
 }
 
