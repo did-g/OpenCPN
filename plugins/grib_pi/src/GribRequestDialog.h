@@ -71,6 +71,8 @@ public:
       double          m_Lon;
 
 private:
+      Model getModel() const;
+
       const ModelDef &getModelDef() const;
 
       void ApplyRequestConfig( unsigned rs, unsigned it, unsigned tr );
