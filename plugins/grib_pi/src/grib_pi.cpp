@@ -43,6 +43,8 @@
 //#include "qdebug.h"
 #endif
 
+static wxImage ICursorPencil;
+
 // the class factories, used to create and destroy instances of the PlugIn
 
 extern "C" DECL_EXP opencpn_plugin* create_pi(void *ppimgr)
@@ -141,6 +143,14 @@ int grib_pi::Init(void)
           m_CtrlBarxy = wxPoint( 20, 60 );   //reset to the default position
           m_CursorDataxy = wxPoint( 20, 170 );
       }
+      wxImage ICursorPencil = GetIcon_PlugIn(_T("pencil")).ConvertToImage();
+      if ( ICursorPencil.Ok() ) {
+          ICursorPencil.SetOption ( wxIMAGE_OPTION_CUR_HOTSPOT_X, 0 );
+          ICursorPencil.SetOption ( wxIMAGE_OPTION_CUR_HOTSPOT_Y, 16);
+          m_pCursorPencil = new wxCursor ( ICursorPencil );
+      }
+      else
+          m_pCursorPencil = new wxCursor ( wxCURSOR_ARROW );
 
       return (WANTS_OVERLAY_CALLBACK |
               WANTS_OPENGL_OVERLAY_CALLBACK |
@@ -398,7 +408,7 @@ void grib_pi::OnToolbarToolCallback(int id)
         m_pGRIBOverlayFactory->SetParentSize( m_display_width, m_display_height);
         m_pGRIBOverlayFactory->SetSettings( m_bGRIBUseHiDef, m_bGRIBUseGradualColors, m_bDrawBarbedArrowHead );
 
-        m_pGribCtrlBar->OpenFile( m_bLoadLastOpenFile == 0 );
+        if (id != -1) m_pGribCtrlBar->OpenFile( m_bLoadLastOpenFile == 0 );
 
     }
 
@@ -664,11 +674,10 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         delete m_pLastTimelineSet;
         m_pLastTimelineSet = set;
     }
-    
     else if(message_id == _T("GRIB_APPLY_JSON_CONFIG"))
     {
         wxLogMessage(_T("Got GRIB_APPLY_JSON_CONFIG"));
-        
+
         if(m_pGribCtrlBar){
             m_pGribCtrlBar->OpenFileFromJSON(message_body);
             
@@ -677,6 +686,30 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             m_pGribCtrlBar->SetDialogsStyleSizePosition( true );
             
         }
+    }
+    else if(message_id == _T("GRIB_OPEN_FILE"))
+    {
+        wxLogMessage(_T("Got GRIB_OPEN_FILE"));
+        // construct the JSON root object
+        wxJSONValue  root;
+        // construct a JSON parser
+        wxJSONReader reader;
+
+        int numErrors = reader.Parse( message_body, &root );
+        if ( numErrors > 0 )
+            return;
+
+        wxString file = root[( _T("grib_file") )].AsString();
+
+        if (file.Length() && wxFileExists( file )){
+            GribReader r;
+            if (!r.isGrib(file))
+                return;
+        }
+        if(!m_pGribCtrlBar) {
+            OnToolbarToolCallback(-1);
+        }
+        m_pGribCtrlBar->OpenFile(file);
     }
 }
 

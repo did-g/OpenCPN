@@ -35,7 +35,7 @@ Elément de base d'un fichier GRIB V1
 class GribV1Record : public GribRecord
 {
     public:
-        GribV1Record(ZUFILE* file, int id_);
+        GribV1Record(ZUFILE* file, int id_, bool test_only = false);
         GribV1Record(const GribRecord &rec);
         GribV1Record() {}
 

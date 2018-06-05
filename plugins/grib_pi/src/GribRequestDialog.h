@@ -40,6 +40,9 @@
 //----------------------------------------------------------------------------------------------------------
 //    Request setting Specification
 //----------------------------------------------------------------------------------------------------------
+class ModelDef;
+enum Model: int;
+
 class GribRequestSetting : public GribRequestSettingBase
 {
 public:
@@ -68,6 +71,9 @@ public:
       double          m_Lon;
 
 private:
+      Model getModel() const;
+
+      const ModelDef &getModelDef() const;
 
       void ApplyRequestConfig( unsigned rs, unsigned it, unsigned tr );
       wxString WriteMail();
@@ -96,10 +102,9 @@ private:
       wxTimer        m_tMouseClickTimer;
       wxMouseEvent   m_SingleClickEvent;
 
-      // map selection back to interval enum
-      std::vector<int> m_RevertMapIntervals;
+      // map selection back to Model
+      std::vector<Model> m_RevertMapModel;
       bool IsZYGRIB;
-      bool IsNOAA;
       bool IsGFS;
       int  m_MailError_Nb;
       int  m_SendMethod;
