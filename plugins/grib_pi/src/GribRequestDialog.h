@@ -73,7 +73,7 @@ public:
 private:
       Model getModel() const;
 
-      const ModelDef &getModelDef() const;
+      const ModelDef getModelDef() const;
 
       void ApplyRequestConfig( unsigned rs, unsigned it, unsigned tr );
       wxString WriteMail();
