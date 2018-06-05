@@ -74,6 +74,7 @@ enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
               WAVES  = (1 << 24), //  can be added to include sign wave height from the WW3 model.
               SEATMP = (1 << 25), //  (sea temp at surface)
               CURRENT= (1 << 26), //  (current)
+              REFC   = (1 << 27), //  (Composite reflectivity)
 };
 
 #include <set>
@@ -162,14 +163,14 @@ static const Providers P = {
                    /* .TimeRanges = */ T16
                   },
             },
-            {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN,
+            {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|REFC|CLOUDS,
                      /* .Default = */  WIND,
                     /* .Intervals =  */ {{r0_025, { 0, 1 } } },
                     /* .TimeRanges = */ T1,
                    },
             },
-            {NAM, {/* .Parameters = */ PRMSL|WIND|AIRTMP|CAPE|APCP|SEATMP/*|CLOUDS*/, 
-                    // no Gust in inventory ! and CLOUD is entire .. single layer
+            {NAM, {/* .Parameters = */ PRMSL|WIND|AIRTMP|CAPE|APCP|SEATMP|REFC|CLOUDS,
+                    // no Gust in inventory ! 
                     /* .Default = */  WIND, 
                     /* .Intervals =  */ {{r0_10, I3 }},
                     /* .TimeRanges = */ { 1, 2, 3 , 4 }
@@ -648,6 +649,9 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_pCAPE->SetValue( m_RequestConfigBase.GetChar(15) == 'X' && d.Has(CAPE) );
     m_pCAPE->Enable(  d.Has(CAPE) );
 
+    m_pReflectivity->SetValue( m_RequestConfigBase.GetChar(22) == 'X' && d.Has(REFC) );
+    m_pReflectivity->Enable(  d.Has(REFC) );
+
     bool HaveAlt = d.Has(HGT300) || d.Has(HGT500) || d.Has(HGT700)|| d.Has(HGT850);
     m_pAltitudeData->SetValue( HaveAlt ? m_RequestConfigBase.GetChar(17) == 'X' : false );       //altitude 
     m_pAltitudeData->Enable( HaveAlt );
@@ -987,9 +991,9 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
         char c = m_pWindGust->IsChecked() ? 'X':'.';  	// Gust
         m_RequestConfigBase.SetChar( 14, c );
     }
-    if (d.Has(CAPE)) {
-        char c = m_pCAPE->IsChecked() ? 'X':'.'; 	// CAPE
-        m_RequestConfigBase.SetChar( 15, c );
+    if (d.Has(REFC)) {
+        char c = m_pReflectivity->IsChecked() ? 'X':'.';// Reflectivity
+        m_RequestConfigBase.SetChar( 11, c );
     }
 
     if (d.Has(HGT500)) {
@@ -1092,31 +1096,36 @@ wxString GribRequestSetting::WriteMail()
 
     static const wxString s[] = { _T(","), _T(" "), _T("&"), _T("") };        //separators
 
-    static const wxString p[][17] = {
+    static const wxString p[][18] = {
         //parameters Saildocs
         {_T("APCP"), _T("TCDC"), _T("AIRTMP"), _T("HTSGW,WVPER,WVDIR"),
-        _T("SEATMP"), _T("GUST"), _T("CAPE"), wxEmptyString, wxEmptyString, _T("WIND500,HGT500"), wxEmptyString,
-        _T("WIND"), _T("PRESS"), _T("PRESS"), wxEmptyString, _T("CUR"), wxEmptyString}, 
+            _T("SEATMP"), _T("GUST"), _T("CAPE"), wxEmptyString, wxEmptyString, _T("WIND500,HGT500"), wxEmptyString,
+            _T("WIND"), _T("PRESS"), _T("PRESS"), wxEmptyString, _T("CUR")
+        }, 
         //parameters zigrib
         {_T("PRECIP"), _T("CLOUD"), _T("TEMP"), _T("WVSIG WVWIND"), wxEmptyString, _T("GUST"),
             _T("CAPE"), _T("A850"), _T("A700"), _T("A500"), _T("A300"),_T("WIND"), _T("PRESS")
-            , wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString
+            , wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString,
         } ,
         //parameters NOAA
-        // lev_entire_atmosphere_%5C%28considered_as_a_single_layer%5C%29
-        {   _T("var_PRATE=on"), _T("lev_entire_atmosphere=on&var_TCDC=on"), 
+        // lev_entire_atmosphere_%5C%28considered_as_a_single_layer%5C%29=on
+        // lev_entire_atmosphere=on
+        {   _T("var_PRATE=on"), _T("var_TCDC=on"), 
             _T("lev_2_m_above_ground=on&var_TMP=on"),
             wxEmptyString, _T("var_WTMP"), _T("var_GUST=on"),
-            _T("var_CAPE=on"),wxEmptyString, wxEmptyString, _T("lev_500_mb=on&var_HGT=on&"), wxEmptyString,
+            _T("var_CAPE=on"),wxEmptyString, wxEmptyString, 
+            /* 9 */ _T("lev_500_mb=on&var_HGT=on&"), wxEmptyString,
             _T("lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&lev_surface=on"),
             _T("lev_mean_sea_level=on&var_PRMSL=on"),
-            _T("var_PRES=on"), _T("lev_entire_atmosphere=on&var_PRESC=on"), wxEmptyString, _T("var_APCP=on")
+            _T("var_PRES=on"), _T("var_REFC=on"), wxEmptyString, 
+            _T("var_APCP=on"),
         },
         // Meteo France
         {_T("r"), _T("n"), _T("t"),
         _T("v"), wxEmptyString, _T("g"),
-        _T("a"), wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString,
-        _T("w"), _T("p"), wxEmptyString, wxEmptyString, _T("m"), wxEmptyString
+        _T("a"), wxEmptyString, wxEmptyString, 
+        /* 9 */ wxEmptyString, wxEmptyString,
+        _T("w"), _T("p"), wxEmptyString, wxEmptyString, _T("m"), wxEmptyString,
         }
     };
 
@@ -1197,6 +1206,7 @@ wxString GribRequestSetting::WriteMail()
     }
     //write the parameters part of the mail
     bool notfirst = false;
+    bool ea = false;
     if ( m_pWind->IsChecked()) {
         r_parameters = p[provider][11];
         notfirst = true;
@@ -1214,6 +1224,12 @@ wxString GribRequestSetting::WriteMail()
     }
     if ( m_pCloudCover->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
+        if (provider == NOAA) {
+            ea = true;
+            r_parameters.Append((model != NAM)?_T("lev_entire_atmosphere=on&")
+                :_T("lev_entire_atmosphere_%%5C%%28considered_as_a_single_layer%%5C%%29=on&")
+            );
+        }
         r_parameters.Append( p[provider][1]);
         notfirst = true;
     }
@@ -1232,11 +1248,6 @@ wxString GribRequestSetting::WriteMail()
         r_parameters.Append( p[provider][4]);
         notfirst = true;
     }
-    if ( m_pCurrent->IsChecked()) {
-        if (notfirst) r_parameters.Append( s[provider]);
-        r_parameters.Append( p[provider][15]);
-        notfirst = true;
-    }
     if ( m_pWindGust->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][5]);
@@ -1245,6 +1256,21 @@ wxString GribRequestSetting::WriteMail()
     if ( m_pCAPE->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         r_parameters.Append( p[provider][6]);
+        notfirst = true;
+    }
+    if ( m_pReflectivity->IsChecked()) {
+        if (notfirst) r_parameters.Append( s[provider]);
+        if (provider == NOAA && !ea) {
+            r_parameters.Append((model != NAM)?_T("lev_entire_atmosphere=on&")
+                :_T("lev_entire_atmosphere_%%5C%%28considered_as_a_single_layer%%5C%%29=on&")
+            );
+        }
+        r_parameters.Append( p[provider][14]);
+        notfirst = true;
+    }
+    if ( m_pCurrent->IsChecked()) {
+        if (notfirst) r_parameters.Append( s[provider]);
+        r_parameters.Append( p[provider][15]);
         notfirst = true;
     }
 
@@ -1379,10 +1405,6 @@ int GribRequestSetting::EstimateFileSize( double *size )
         estime += nbAltitude*nbalt*(head+(nbits*npts)/8+2 );
     }
 
-    if (provider == NOAA || provider == METEO_F) {
-        // they use a compressed format
-        estime /= 1.5;
-    }
     *size = estime / (1024.*1024.);
 
     return 0;
