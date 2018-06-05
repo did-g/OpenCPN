@@ -515,7 +515,7 @@ Model GribRequestSetting::getModel() const
     return model;
 }
 
-const ModelDef &GribRequestSetting::getModelDef() const
+const ModelDef GribRequestSetting::getModelDef() const
 {
     // XXX or is wxNOT_FOUND possible?
     Model model = getModel();
@@ -991,9 +991,13 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
         char c = m_pWindGust->IsChecked() ? 'X':'.';  	// Gust
         m_RequestConfigBase.SetChar( 14, c );
     }
+    if (d.Has(CAPE)) {
+        char c = m_pCAPE->IsChecked() ? 'X':'.';  	// GAPE
+        m_RequestConfigBase.SetChar( 15, c );
+    }
     if (d.Has(REFC)) {
         char c = m_pReflectivity->IsChecked() ? 'X':'.';// Reflectivity
-        m_RequestConfigBase.SetChar( 11, c );
+        m_RequestConfigBase.SetChar( 22, c );
     }
 
     if (d.Has(HGT500)) {
