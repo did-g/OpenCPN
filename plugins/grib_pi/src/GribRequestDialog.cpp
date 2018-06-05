@@ -528,7 +528,7 @@ Model GribRequestSetting::getModel() const
     return model;
 }
 
-const ModelDef &GribRequestSetting::getModelDef() const
+const ModelDef GribRequestSetting::getModelDef() const
 {
     // XXX or is wxNOT_FOUND possible?
     Model model = getModel();
