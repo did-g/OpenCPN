@@ -1524,7 +1524,8 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         wxFileName downloaded_p;
         int idx = -1;
         m_downloading = 0;
-        wxString output_path = wxFileName::CreateTempFileName( _T("O") ) ;
+        wxString output_path = wxFileName::CreateTempFileName( _T("O-") +
+                m_pModel->GetStringSelection() + _T("-") ) ;
         unlink(output_path);
         output_path += _T(".grb");
         wxFFileOutputStream *output = new wxFFileOutputStream(output_path );
@@ -1541,9 +1542,9 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
             m_bTransferComplete  = false;
             m_bTransferSuccess = true;
             m_cancelled = false;
-            char buf[1024];
-            snprintf(buf, sizeof buf, (const char*)q.mb_str(), req, d, start.GetYear(), start.GetMonth() +1, start.GetDay() , req);
-            printf("%s\n\n",buf);
+            wxString  buf;
+            buf.Printf(q, req, d, start.GetYear(), start.GetMonth() +1, start.GetDay() , req);
+            printf("%s\n\n",(const char*)buf.mb_str());
 
             wxURI url(buf);
             long handle;
