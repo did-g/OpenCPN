@@ -1227,15 +1227,18 @@ wxString GribRequestSetting::WriteMail()
         notfirst = true;
     }
     if ( m_pCloudCover->IsChecked()) {
-        if (notfirst) r_parameters.Append( s[provider]);
-        if (provider == NOAA) {
-            ea = true;
-            r_parameters.Append((model != NAM)?_T("lev_entire_atmosphere=on&")
-                :_T("lev_entire_atmosphere_%%5C%%28considered_as_a_single_layer%%5C%%29=on&")
-            );
+        if (!(provider == NOAA && model == HRRR && m_pInterval->GetStringSelection().Length() != 1)) {
+            // not available in NOAA HRRR sub hourly
+            if (notfirst) r_parameters.Append( s[provider]);
+            if (provider == NOAA) {
+                ea = true;
+                r_parameters.Append((model != NAM)?_T("lev_entire_atmosphere=on&")
+                        :_T("lev_entire_atmosphere_%%5C%%28considered_as_a_single_layer%%5C%%29=on&")
+                    );
+            }
+            r_parameters.Append( p[provider][1]);
+            notfirst = true;
         }
-        r_parameters.Append( p[provider][1]);
-        notfirst = true;
     }
     if ( m_pAirTemp->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
@@ -1258,9 +1261,11 @@ wxString GribRequestSetting::WriteMail()
         notfirst = true;
     }
     if ( m_pCAPE->IsChecked()) {
-        if (notfirst) r_parameters.Append( s[provider]);
-        r_parameters.Append( p[provider][6]);
-        notfirst = true;
+        if (!(provider == NOAA && model == HRRR && m_pInterval->GetStringSelection().Length() != 1)) {
+            if (notfirst) r_parameters.Append( s[provider]);
+            r_parameters.Append( p[provider][6]);
+            notfirst = true;
+        }
     }
     if ( m_pReflectivity->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
@@ -1524,7 +1529,8 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         wxFileName downloaded_p;
         int idx = -1;
         m_downloading = 0;
-        wxString output_path = wxFileName::CreateTempFileName( _T("O") ) ;
+        wxString output_path = wxFileName::CreateTempFileName( _T("O-") +
+                m_pModel->GetStringSelection() + _T("-") ) ;
         unlink(output_path);
         output_path += _T(".grb");
         wxFFileOutputStream *output = new wxFFileOutputStream(output_path );
@@ -1541,9 +1547,9 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
             m_bTransferComplete  = false;
             m_bTransferSuccess = true;
             m_cancelled = false;
-            char buf[1024];
-            snprintf(buf, sizeof buf, (const char*)q.mb_str(), req, d, start.GetYear(), start.GetMonth() +1, start.GetDay() , req);
-            printf("%s\n\n",buf);
+            wxString  buf;
+            buf.Printf(q, req, d, start.GetYear(), start.GetMonth() +1, start.GetDay() , req);
+            printf("%s\n\n",(const char*)buf.mb_str());
 
             wxURI url(buf);
             long handle;
