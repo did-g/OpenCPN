@@ -744,7 +744,7 @@ void GribReader::openFile(const wxString fname)
         readGribFileContent();
         if (ok) break;
     }
-    if (file != NULL) 
+    if (file != nullptr)
     {
         zu_close(file);
         file = nullptr;
