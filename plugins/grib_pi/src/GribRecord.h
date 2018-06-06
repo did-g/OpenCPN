@@ -323,7 +323,7 @@ class GribRecord
 inline bool   GribRecord::hasValue(int i, int j) const
 {
     // is data present in BMS ?
-    if (!hasBMS) {
+    if (BMSbits == nullptr) {
         return true;
     }
     int bit;
