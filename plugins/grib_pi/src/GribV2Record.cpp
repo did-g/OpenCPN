@@ -350,10 +350,9 @@ static double radius_earth(GRIBMessage *grib_msg)
 /* GDS_Scan_y -> +ve y scanning */
 #define GDS_Scan_y(scan)                ((scan & 64) == 64)
 
-static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
+bool GribV2Record::mercator2ll()
 {
     double dx, dy, lat1, lat2, lon1, lon2;
-    double *llat, *llon;
     unsigned int i, j;  
     double dlon, circum;
 
@@ -378,6 +377,7 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
     lat2 = grib_msg->md.lats.elat; //GDS_Mercator_lat2(gds);
     lon1 = grib_msg->md.slon; // GDS_Mercator_lon1(gds);
     lon2 = grib_msg->md.lons.elon; //GDS_Mercator_lon2(gds);
+    // key is mercator nnx, nny , dx, dy, lat1, lat2, lon1, lon2
 
     if (lon1 < 0.0 || lon2 < 0.0 || lon1 > 360.0 || lon2 > 360.0) {
         printf("BAD GDS lon\n");
@@ -400,7 +400,8 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
         return false;
     }
 
-    *lat = new double [nnpnts];
+    auto lat = new double [nnpnts];
+    TableLat = std::shared_ptr<double>(lat, std::default_delete<double[]>());
 
     /* now figure out the grid coordinates mucho silly grib specification */
 
@@ -438,9 +439,6 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
     }
     if (e <= w) e += 360.0;
 
-    llat = *lat;
-    llon = *lon;
-
     dlon = (e-w) / (nnx-1);
 
     double radius = radius_earth(grib_msg);
@@ -472,7 +470,7 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
     for (j = 0; j < nny; j++) {
         tmp = (atan(exp(s+j*dy))*180./M_PI-45.)*2.;
         for (i = 0; i < nnx; i++) {
-            *llat++ = tmp;
+            *lat++ = tmp;
         }
     }
     return true;
@@ -561,10 +559,9 @@ static bool stagger(GRIBMessage *grib_msg, unsigned int assumed_npnts, double *x
 //xc = -sine(lon)*U - cosine(lon)*sine(lat)*V
 //yc = cosine(lon)*U - sine(lon)*sine(lat)*V
 
-static bool lambert2ll(GRIBMessage *grib_msg, double **llat, double **llon) 
+bool GribV2Record::lambert2ll() 
 {
     double n;
-    double *lat, *lon;
 
     double dx, dy, lat1r, lon1r, lon2d, lon2r, latin1r, latin2r;
     double lond, latd, d_lon;
@@ -602,6 +599,8 @@ static bool lambert2ll(GRIBMessage *grib_msg, double **llat, double **llon)
     lon2r   = lon2d * (M_PI / 180.0);
     latin1r = grib_msg->md.latin1 /* GDS_Lambert_Latin1(gds)*/ * (M_PI/180.0);
     latin2r = grib_msg->md.latin2 /* GDS_Lambert_Latin2(gds)*/ * (M_PI/180.0);
+    // key is mercator nnx, nny , dx, dy, lat1,  lat2,  lon1,  lon2
+    // key is lambert  nnx, nny , dx, dy, lat1r, lon1r, lon1d, latint1, latin2r,
 
 //
 // Latitude of "false origin" where scales are defined.
@@ -641,11 +640,10 @@ static bool lambert2ll(GRIBMessage *grib_msg, double **llat, double **llon)
     startx = rho * sin(theta);
     starty = rhoref - rho * cos(theta);
     
-    *llat = new double[nnpnts];
-    *llon = new double[nnpnts];
-
-    lat = *llat;
-    lon = *llon;
+    auto lat = new double[nnpnts];
+    auto lon = new double[nnpnts];
+    TableLat = std::shared_ptr<double>(lat, std::default_delete<double[]>());
+    TableLon = std::shared_ptr<double>(lon, std::default_delete<double[]>());
 
     /* put x[] and y[] values in lon[] and lat[] */
     if (!stagger(grib_msg , nnpnts, lon, lat)) {
@@ -1780,26 +1778,26 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	         Dj = grib_msg->md.yinc.lainc;
 	         gridType = grib_msg->md.gds_templ_num;
 	         if (grib_msg->md.gds_templ_num == 10) {
-	             ok = mercator2ll(grib_msg, &lat, &lon);
+	             ok = mercator2ll();
                  }
                  else if (grib_msg->md.gds_templ_num == 30) {
-	             ok = lambert2ll(grib_msg, &lat, &lon);
+	             ok = lambert2ll();
 	             // XXX
 	             La1 = 10000.;
 	             La2 = -10000.;
 	             for (unsigned int i = 0; i < Ni*Nj; i++) {
-	                 if (lat[i] > La2)
-	                     La2 = lat[i];
-	                 if (lat[i] < La1)
-	                     La1 = lat[i];
+	                 if ((TableLat.get())[i] > La2)
+	                     La2 = (TableLat.get())[i];
+	                 if ((TableLat.get())[i] < La1)
+	                     La1 = (TableLat.get())[i];
 	             }
 	             Lo1 = 10000.;
 	             Lo2 = -10000.;
 	             for (unsigned int i = 0; i < Ni*Nj; i++) {
-	                 if (lon[i] > Lo2)
-	                     Lo2 = lon[i];
-	                 if (lon[i] < Lo1)
-	                     Lo1 = lon[i];
+	                 if ((TableLon.get())[i] > Lo2)
+	                     Lo2 = (TableLon.get())[i];
+	                 if ((TableLon.get())[i] < Lo1)
+	                     Lo1 = (TableLon.get())[i];
 	             }
                  }
 
