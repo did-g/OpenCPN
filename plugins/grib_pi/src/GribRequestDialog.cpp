@@ -1503,7 +1503,7 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         wxDateTime start = wxDateTime::Now().ToGMT();
         int req;
         if (m_RevertMapModel[m_pModel->GetCurrentSelection()] == HRRR) {
-            req = start.Subtract(wxTimeSpan( 3, 0 )).GetHour();
+            req = start.Subtract(wxTimeSpan( 1, 30 )).GetHour();
         }
         else {
             // available 5 hours after at 00z 06z 12z and 18z
@@ -1533,16 +1533,19 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
                 m_pModel->GetStringSelection() + _T("-") ) ;
         unlink(output_path);
         output_path += _T(".grb");
+        Model model = m_RevertMapModel[m_pModel->GetCurrentSelection()];
+
         wxFFileOutputStream *output = new wxFFileOutputStream(output_path );
         if (m_pMailTo->GetCurrentSelection() == METEO_F) {
             it = 1;
             cnt = 1;
             to_download = 1;
         }
-        if (m_RevertMapModel[m_pModel->GetCurrentSelection()] == HRRR) {
-            cnt = 18;
-            to_download = 18;
+        if ( model == HRRR) {
+            cnt = 19;
+            to_download = 19;
         }
+        // =================== loop
         if (output->IsOk()) while (it > 0 && cnt > 0) {
             m_bTransferComplete  = false;
             m_bTransferSuccess = true;
@@ -1571,7 +1574,6 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
                 unlink(downloaded_p.GetFullPath());
                 idx = -1;
             }
-
             while( !m_bTransferComplete && m_bTransferSuccess  && !m_cancelled ) {
                 /*m_stCatalogInfo->SetLabel*/m_MailImage->SetValue( wxString::Format( _("Downloading grib %u of %u, (%s)"),
                                                          m_downloading, to_download, 
@@ -1589,12 +1591,20 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
                 m_MailImage->SetValue( wxString::Format( _("Error or cancel after %u downloads"), m_downloading));
                 OCPN_cancelDownloadFileBackground( handle );
                 if( wxFileExists( file_path ) ) wxRemoveFile( file_path );
+                if (!one && model == HRRR && req > 0) {
+                    printf("Maybe not uploaded yet, try %02d run\n", req);
+                    // too greedy? retry with previous run
+                    req--;
+                    model = GFS;
+                    continue;
+                }
                 break;
             }
             
             d += it;
             cnt -= it;
         }
+        // ==== done
         if (idx >= 0) {
             {
                 wxFFileInputStream i(downloaded_p.GetFullPath());
@@ -1605,14 +1615,13 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         }
         // close 
         delete output;
+        m_MailImage->SetForegroundColour(wxColor( 0, 0, 0 ));
         if (one) {
-            m_MailImage->SetForegroundColour(wxColor( 0, 0, 0 ));
             m_MailImage->SetValue( wxString::Format( _("Ok downloading %u gribs"), m_downloading));
             m_parent.OpenFile(output_path);
             m_parent.SetDialogsStyleSizePosition( true );
         }
 
-        m_MailImage->SetForegroundColour(wxColor( 0, 0, 0 ));
         m_AllowSend = true;
 
         ::wxEndBusyCursor();
