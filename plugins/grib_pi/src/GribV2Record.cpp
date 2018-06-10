@@ -45,6 +45,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <jasper/jasper.h>
 #endif
 
+//#include <unordered_map>
+#include <map>
+
 const double GRIB_MISSING_VALUE = GRIB_NOTDEF;
 
 class GRIBStatproc {
@@ -56,6 +59,73 @@ public:
     int incr_unit;
     int incr_length;
 };
+
+//
+// key is mercator nnx, nny, dx, dy, lat1,  lat2,  lon1,  lon2, radius, latDr
+// key is lambert  nnx, nny , dx, dy, lat1r, lon1r, lon1d, latint1, latin2r,
+#define LAMBERT 0
+#define MERCATOR 1
+
+class GRIBKey {
+public:
+    GRIBKey(int t, unsigned int nx, unsigned int ny, double x,double y,
+        double plat1, double plat2, double plon1, double plon2,
+        double platin2r = 0., double platDr = 0.)
+            : dx(x), dy(y), lat1(plat1), lat2(plat2),
+              lon1(plon1), lon2(plon2), latin2r(platin2r),
+              latDr(platDr), nnx(nx), nny(ny), type(t) {};
+
+    bool operator<(GRIBKey const& o) const {
+        if (type < o.type)
+            return true;
+        if (nnx < o.nnx)
+            return true;
+        if (nny < o.nny)
+            return true;
+        if (dx < o.dx)
+            return true;
+        if (dy < o.dy)
+            return true;
+
+        if (lat1 < o.lat1)
+            return true;
+        if (lat2 < o.lat2)
+            return true;
+
+        if (lon1 < o.lon1)
+            return true;
+        if (lon2 < o.lon2)
+            return true;
+
+        if (latin2r < o.latin2r)
+            return true;
+
+        if (latDr < o.latDr)
+            return true;
+
+        return false;
+    };
+private:
+    double dx;
+    double dy;
+    double lat1;
+    double lat2;
+    double lon1;
+    double lon2;
+    double latin2r;
+    double latDr;
+    unsigned int nnx;
+    unsigned int nny;
+    unsigned int type;
+
+};
+
+
+// XXX
+//static std::unordered_map<GRIBKey ,std::weak_ptr<double>> tablesLat_cache;
+//static std::unordered_map<GRIBKey ,std::weak_ptr<double>> tablesLon_cache;
+static std::map<GRIBKey ,std::weak_ptr<double>> tablesLat_cache;
+static std::map<GRIBKey ,std::weak_ptr<double>> tablesLon_cache;
 
 class GRIBMetadata {
 public:
@@ -400,8 +470,6 @@ bool GribV2Record::mercator2ll()
         return false;
     }
 
-    auto lat = new double [nnpnts];
-    TableLat = std::shared_ptr<double>(lat, std::default_delete<double[]>());
 
     /* now figure out the grid coordinates mucho silly grib specification */
 
@@ -446,6 +514,21 @@ bool GribV2Record::mercator2ll()
         printf("bad earth radius %f m", radius);
         return false;
     }
+
+    // key is mercator nnx, nny, dx, dy, lat1,  lat2,  lon1,  lon2, radius, latDr
+    // key is lambert  nnx, nny, dx, dy, lat1r, lon1r, lon2d, latin1r, latin2r, latDr
+    GRIBKey k(MERCATOR, nnx, nny, dx, dy, lat1,  lat2,  lon1, lon2, radius, grib_msg->md.latD);
+    auto it = tablesLat_cache.find(k);
+    if (it != tablesLat_cache.end()) {
+        if (auto cache = it->second.lock()) {
+            TableLat =  cache;
+            return true;
+        }
+    }
+
+    auto lat = new double [nnpnts];
+    TableLat = std::shared_ptr<double>(lat, std::default_delete<double[]>());
+
 
     circum = 2.0 * M_PI * radius * cos(grib_msg->md.latD * (M_PI/180.0));
     dx = dx * 360.0 / circum;
@@ -599,8 +682,6 @@ bool GribV2Record::lambert2ll()
     lon2r   = lon2d * (M_PI / 180.0);
     latin1r = grib_msg->md.latin1 /* GDS_Lambert_Latin1(gds)*/ * (M_PI/180.0);
     latin2r = grib_msg->md.latin2 /* GDS_Lambert_Latin2(gds)*/ * (M_PI/180.0);
-    // key is mercator nnx, nny , dx, dy, lat1,  lat2,  lon1,  lon2
-    // key is lambert  nnx, nny , dx, dy, lat1r, lon1r, lon1d, latint1, latin2r,
 
 //
 // Latitude of "false origin" where scales are defined.
@@ -615,7 +696,22 @@ bool GribV2Record::lambert2ll()
         printf("bad GDS, lon1r < 0.0");
         return false;
     }
+    // key is mercator nnx, nny , dx, dy, lat1,  lat2,  lon1,  lon2
+    // key is lambert  nnx, nny , dx, dy, lat1r, lon1r, lon2d, latin1r, latin2r, latDr
+    GRIBKey k(LAMBERT, nnx, nny, dx, dy, lat1r, lon1r, lon2d, latin1r, latin2r, latDr);
+    auto it = tablesLat_cache.find(k);
+    if (it != tablesLat_cache.end()) {
+        if (auto cache = it->second.lock()) {
+            TableLat =  cache;
 
+            it = tablesLon_cache.find(k);
+            assert(it != tablesLat_cache.end());
+            cache = it->second.lock();
+            assert(cache);
+            TableLon = cache;
+            return true;
+        }
+    }
     if ( fabs(latin1r - latin2r) < 1E-09 ) {
         n = sin(latin1r);
     }
@@ -644,7 +740,8 @@ bool GribV2Record::lambert2ll()
     auto lon = new double[nnpnts];
     TableLat = std::shared_ptr<double>(lat, std::default_delete<double[]>());
     TableLon = std::shared_ptr<double>(lon, std::default_delete<double[]>());
-
+    tablesLat_cache[k] = TableLat;
+    tablesLon_cache[k] = TableLon;
     /* put x[] and y[] values in lon[] and lat[] */
     if (!stagger(grib_msg , nnpnts, lon, lat)) {
         printf("geo: stagger problem\n");
