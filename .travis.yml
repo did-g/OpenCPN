@@ -2,12 +2,15 @@ language: cpp
 
 matrix:
   include:
+    - dist: precise
+      compiler: gcc
     - dist: trusty
       compiler: gcc
     - os: osx
       compiler: clang
 
 before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then grep -q precise /etc/lsb-release && sudo add-apt-repository -y ppa:wxformbuilder/wxwidgets || true; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi
 #  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade; fi
 # Homebrew upgrade disabled to save time
@@ -47,15 +50,9 @@ env:
    - secure: "pje0YVgQOgeQi9lNWN+S1rTVcStL4z09piLYJKYibxGm8kVgJNm8z0/5rbyBVo0gVwRB/sNJGKEcMw5LJk1TLQ1P+tNO4Psg+XTcDYKEi52GYjzEEBjX4cOp36owU4sJG8zBxzgthG8b/Hhf+GDWDWs262uP+dwfaR477/gaArerEkuDSlvcjpAiB4bT4b8992sEZabaZkfBpj8dIP9G74MgAMOJ4Y86Jw7XJWkoWHLmCjKgPfPi04EC4dYAKi0nBH6DKh/uObkZQsGRECoecSfeVHatolfVlF9gJ2xvcZIclVA3d2xdUqflsuGeXCru9TDd5ygDwD9TSpayJTQ4Awzdelq1Aezx7+GoCgc6K8KyMNpb+wiD0HQDUHz3Wj22qhu/AT1ojxUO4vaC0x8lGdGbNa5WOg0MUw+X1BUdSqYXxIBXTUn10ZFrZJb6b5zZpt5FB4FLsoSo9CAiQsZYMT/26EjoOjvol1ry6Or5Rula0CALF/KRfY/YZkse8ariAmTllxWFKbbT4Miwt43PcKXkgjNEwtWKHMv4stiJko23NDGuJ1yQnHcbzCRv0ChWmUSVn8HS/JFZMvCwGrUBlp4ZhDdFy5lrppv0g1ZTvyCo7S9l1ln5Jf+yOFjg6C73tqtROQWBGws9BdYW9ZZukiVy+f6a/Ytl14/1G7gM9ic="
 
 before_install:
-      - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX="g++-6" CC="gcc-6"; fi
-      - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
+      - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ;fi
+
 addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-6
-      - g++-6
   coverity_scan:
     project:
       name: "did-g/OpenCPN"
