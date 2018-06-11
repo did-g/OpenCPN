@@ -163,7 +163,7 @@ static const Providers P = {
                    /* .TimeRanges = */ T16
                   },
             },
-            {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|REFC|CLOUDS,
+            {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|/*RAIN|*/APCP|REFC|CLOUDS,
                      /* .Default = */  WIND,
                     /* .Intervals =  */ {{r0_025, { 0, 1 } } },
                     /* .TimeRanges = */ T1,
@@ -1222,9 +1222,12 @@ wxString GribRequestSetting::WriteMail()
         notfirst = true;
     }
     if ( m_pRainfall->IsChecked()) {
-        if (notfirst) r_parameters.Append( s[provider]);
-        r_parameters.Append( p[provider][d.Has(RAIN)?0:16]);
-        notfirst = true;
+        if (!(provider == NOAA && model == HRRR && m_pInterval->GetStringSelection().Length() != 1)) {
+            // NOAA HRRR sub hourly has TPRATE (aka RAIN) but I don't understand it
+            if (notfirst) r_parameters.Append( s[provider]);
+            r_parameters.Append( p[provider][d.Has(RAIN)?0:16]);
+            notfirst = true;
+        }
     }
     if ( m_pCloudCover->IsChecked()) {
         if (!(provider == NOAA && model == HRRR && m_pInterval->GetStringSelection().Length() != 1)) {
