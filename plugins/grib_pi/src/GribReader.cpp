@@ -378,7 +378,6 @@ void  GribReader::computeAccumulationRecords (int dataType, int levelType, int l
                 if (p2 > p1 && rec->getTimeRange() == 4 ) {
                     prev->multiplyAllData( 1.0/(p2 -p1) );
                 }
-                p2 = p1 = 0;
             }
 		    prev = rec;
             p1 = prev->getPeriodP1();
