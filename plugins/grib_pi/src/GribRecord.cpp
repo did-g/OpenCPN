@@ -433,8 +433,6 @@ GribRecord::~GribRecord()
 {
     if (data) {
         delete [] data;
-        delete [] lat;
-        delete [] lon;
     }
     delete [] BMSbits;
 //if (dataType==GRB_TEMP) printf("record destroyed %s   %d\n", dataKey.mb_str(), (int)curDate/3600);

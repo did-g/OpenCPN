@@ -27,6 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **             DRS Template 5.3 (complex packing and spatial differencing)
 
     copyright ?
+
+    NOAA tables definition
+    http://www.nco.ncep.noaa.gov/pmb/docs/grib2
 */
 
 #define __STDC_LIMIT_MACROS 
@@ -45,6 +48,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <jasper/jasper.h>
 #endif
 
+//#include <unordered_map>
+#include <map>
+
 const double GRIB_MISSING_VALUE = GRIB_NOTDEF;
 
 class GRIBStatproc {
@@ -56,6 +62,73 @@ public:
     int incr_unit;
     int incr_length;
 };
+
+//
+// key is mercator nnx, nny, dx, dy, lat1,  lat2,  lon1,  lon2, radius, latDr
+// key is lambert  nnx, nny , dx, dy, lat1r, lon1r, lon1d, latint1, latin2r,
+#define LAMBERT 0
+#define MERCATOR 1
+
+class GRIBKey {
+public:
+    GRIBKey(int t, unsigned int nx, unsigned int ny, double x,double y,
+        double plat1, double plat2, double plon1, double plon2,
+        double platin2r = 0., double platDr = 0.)
+            : dx(x), dy(y), lat1(plat1), lat2(plat2),
+              lon1(plon1), lon2(plon2), latin2r(platin2r),
+              latDr(platDr), nnx(nx), nny(ny), type(t) {};
+
+    bool operator<(GRIBKey const& o) const {
+        if (type < o.type)
+            return true;
+        if (nnx < o.nnx)
+            return true;
+        if (nny < o.nny)
+            return true;
+        if (dx < o.dx)
+            return true;
+        if (dy < o.dy)
+            return true;
+
+        if (lat1 < o.lat1)
+            return true;
+        if (lat2 < o.lat2)
+            return true;
+
+        if (lon1 < o.lon1)
+            return true;
+        if (lon2 < o.lon2)
+            return true;
+
+        if (latin2r < o.latin2r)
+            return true;
+
+        if (latDr < o.latDr)
+            return true;
+
+        return false;
+    };
+private:
+    double dx;
+    double dy;
+    double lat1;
+    double lat2;
+    double lon1;
+    double lon2;
+    double latin2r;
+    double latDr;
+    unsigned int nnx;
+    unsigned int nny;
+    unsigned int type;
+
+};
+
+
+// XXX
+//static std::unordered_map<GRIBKey ,std::weak_ptr<double>> tablesLat_cache;
+//static std::unordered_map<GRIBKey ,std::weak_ptr<double>> tablesLon_cache;
+static std::map<GRIBKey ,std::weak_ptr<double>> tablesLat_cache;
+static std::map<GRIBKey ,std::weak_ptr<double>> tablesLon_cache;
 
 class GRIBMetadata {
 public:
@@ -350,10 +423,9 @@ static double radius_earth(GRIBMessage *grib_msg)
 /* GDS_Scan_y -> +ve y scanning */
 #define GDS_Scan_y(scan)                ((scan & 64) == 64)
 
-static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
+bool GribV2Record::mercator2ll()
 {
     double dx, dy, lat1, lat2, lon1, lon2;
-    double *llat, *llon;
     unsigned int i, j;  
     double dlon, circum;
 
@@ -378,6 +450,7 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
     lat2 = grib_msg->md.lats.elat; //GDS_Mercator_lat2(gds);
     lon1 = grib_msg->md.slon; // GDS_Mercator_lon1(gds);
     lon2 = grib_msg->md.lons.elon; //GDS_Mercator_lon2(gds);
+    // key is mercator nnx, nny , dx, dy, lat1, lat2, lon1, lon2
 
     if (lon1 < 0.0 || lon2 < 0.0 || lon1 > 360.0 || lon2 > 360.0) {
         printf("BAD GDS lon\n");
@@ -400,7 +473,6 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
         return false;
     }
 
-    *lat = new double [nnpnts];
 
     /* now figure out the grid coordinates mucho silly grib specification */
 
@@ -438,9 +510,6 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
     }
     if (e <= w) e += 360.0;
 
-    llat = *lat;
-    llon = *lon;
-
     dlon = (e-w) / (nnx-1);
 
     double radius = radius_earth(grib_msg);
@@ -448,6 +517,21 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
         printf("bad earth radius %f m", radius);
         return false;
     }
+
+    // key is mercator nnx, nny, dx, dy, lat1,  lat2,  lon1,  lon2, radius, latDr
+    // key is lambert  nnx, nny, dx, dy, lat1r, lon1r, lon2d, latin1r, latin2r, latDr
+    GRIBKey k(MERCATOR, nnx, nny, dx, dy, lat1,  lat2,  lon1, lon2, radius, grib_msg->md.latD);
+    auto it = tablesLat_cache.find(k);
+    if (it != tablesLat_cache.end()) {
+        if (auto cache = it->second.lock()) {
+            TableLat =  cache;
+            return true;
+        }
+    }
+
+    auto lat = new double [nnpnts];
+    TableLat = std::shared_ptr<double>(lat, std::default_delete<double[]>());
+
 
     circum = 2.0 * M_PI * radius * cos(grib_msg->md.latD * (M_PI/180.0));
     dx = dx * 360.0 / circum;
@@ -472,7 +556,7 @@ static bool mercator2ll(GRIBMessage *grib_msg, double **lat, double **lon)
     for (j = 0; j < nny; j++) {
         tmp = (atan(exp(s+j*dy))*180./M_PI-45.)*2.;
         for (i = 0; i < nnx; i++) {
-            *llat++ = tmp;
+            *lat++ = tmp;
         }
     }
     return true;
@@ -561,10 +645,9 @@ static bool stagger(GRIBMessage *grib_msg, unsigned int assumed_npnts, double *x
 //xc = -sine(lon)*U - cosine(lon)*sine(lat)*V
 //yc = cosine(lon)*U - sine(lon)*sine(lat)*V
 
-static bool lambert2ll(GRIBMessage *grib_msg, double **llat, double **llon) 
+bool GribV2Record::lambert2ll() 
 {
     double n;
-    double *lat, *lon;
 
     double dx, dy, lat1r, lon1r, lon2d, lon2r, latin1r, latin2r;
     double lond, latd, d_lon;
@@ -616,7 +699,22 @@ static bool lambert2ll(GRIBMessage *grib_msg, double **llat, double **llon)
         printf("bad GDS, lon1r < 0.0");
         return false;
     }
+    // key is mercator nnx, nny , dx, dy, lat1,  lat2,  lon1,  lon2
+    // key is lambert  nnx, nny , dx, dy, lat1r, lon1r, lon2d, latin1r, latin2r, latDr
+    GRIBKey k(LAMBERT, nnx, nny, dx, dy, lat1r, lon1r, lon2d, latin1r, latin2r, latDr);
+    auto it = tablesLat_cache.find(k);
+    if (it != tablesLat_cache.end()) {
+        if (auto cache = it->second.lock()) {
+            TableLat =  cache;
 
+            it = tablesLon_cache.find(k);
+            assert(it != tablesLat_cache.end());
+            cache = it->second.lock();
+            assert(cache);
+            TableLon = cache;
+            return true;
+        }
+    }
     if ( fabs(latin1r - latin2r) < 1E-09 ) {
         n = sin(latin1r);
     }
@@ -641,12 +739,12 @@ static bool lambert2ll(GRIBMessage *grib_msg, double **llat, double **llon)
     startx = rho * sin(theta);
     starty = rhoref - rho * cos(theta);
     
-    *llat = new double[nnpnts];
-    *llon = new double[nnpnts];
-
-    lat = *llat;
-    lon = *llon;
-
+    auto lat = new double[nnpnts];
+    auto lon = new double[nnpnts];
+    TableLat = std::shared_ptr<double>(lat, std::default_delete<double[]>());
+    TableLon = std::shared_ptr<double>(lon, std::default_delete<double[]>());
+    tablesLat_cache[k] = TableLat;
+    tablesLon_cache[k] = TableLon;
     /* put x[] and y[] values in lon[] and lat[] */
     if (!stagger(grib_msg , nnpnts, lon, lat)) {
         printf("geo: stagger problem\n");
@@ -930,8 +1028,8 @@ static bool unpackPDS(GRIBMessage *grib_msg)
 
   grib_msg->md.pds_templ_num = uint2(b +7); /* product definition template number */
   grib_msg->md.stat_proc.num_ranges=0;
-  switch (grib_msg->md.pds_templ_num) {
-    case 0:
+  switch (grib_msg->md.pds_templ_num) { // table 4.pds_templ_num
+    case 0:   // Analysis or forecast at a horizontal level or in a horizontal layer at a point in time
     case 1:
     case 2:
     case 8:   // Average, accumulation, extreme values
@@ -1555,6 +1653,7 @@ static bool mapTimeRange(GRIBMessage *grid, zuint *p1, zuint *p2, zuchar *t_rang
 		    *t_range=5;
 		    break;
 		}
+		// printf("%d %d range %d\n", grid->md.pds_templ_num, grid->md.stat_proc.t[0].proc_code, *t_range );
 		*p1=grid->md.fcst_time;
 		*p2=mapStatisticalEndTime(grid);
 		if (grid->md.stat_proc.t[0].incr_length == 0)
@@ -1631,7 +1730,9 @@ void  GribV2Record::translateDataType()
     //------------------------
     // NOAA GFS
     //------------------------
-    if (dataType == GRB_PRECIP_RATE) {	// mm/s -> mm/h
+    if (dataType == GRB_PRECIP_RATE) {
+        // XXX FIXME
+        // mm/s -> mm/h if average  if (grib_msg->md.pds_templ_num == 8)
         multiplyAllData( 3600.0 );
     }
     if ( idCenter==7 && idModel==2 )		// NOAA
@@ -1780,26 +1881,26 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	         Dj = grib_msg->md.yinc.lainc;
 	         gridType = grib_msg->md.gds_templ_num;
 	         if (grib_msg->md.gds_templ_num == 10) {
-	             ok = mercator2ll(grib_msg, &lat, &lon);
+	             ok = mercator2ll();
                  }
                  else if (grib_msg->md.gds_templ_num == 30) {
-	             ok = lambert2ll(grib_msg, &lat, &lon);
+	             ok = lambert2ll();
 	             // XXX
 	             La1 = 10000.;
 	             La2 = -10000.;
 	             for (unsigned int i = 0; i < Ni*Nj; i++) {
-	                 if (lat[i] > La2)
-	                     La2 = lat[i];
-	                 if (lat[i] < La1)
-	                     La1 = lat[i];
+	                 if ((TableLat.get())[i] > La2)
+	                     La2 = (TableLat.get())[i];
+	                 if ((TableLat.get())[i] < La1)
+	                     La1 = (TableLat.get())[i];
 	             }
 	             Lo1 = 10000.;
 	             Lo2 = -10000.;
 	             for (unsigned int i = 0; i < Ni*Nj; i++) {
-	                 if (lon[i] > Lo2)
-	                     Lo2 = lon[i];
-	                 if (lon[i] < Lo1)
-	                     Lo1 = lon[i];
+	                 if ((TableLon.get())[i] > Lo2)
+	                     Lo2 = (TableLon.get())[i];
+	                 if ((TableLon.get())[i] < Lo1)
+	                     Lo1 = (TableLon.get())[i];
 	             }
                  }
 
@@ -1870,7 +1971,7 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	         periodsec = periodSeconds(grib_msg->md.time_unit, periodP1, periodP2, timeRange);
 	         setRecordCurrentDate(makeDate(refyear,refmonth,refday,refhour,refminute,periodsec));
 	         //printf("%d %d %d %d %d %d \n", refyear,refmonth,refday,refhour,refminute,periodsec);
-	         //printf("%d Periode %d P1=%d p2=%d %s\n", grib_msg->md.time_unit, periodsec, periodP1,periodP2, strCurDate);
+	         // printf("%d Periode %d P1=%d p2=%d %s  ---end\n", grib_msg->md.time_unit, periodsec, periodP1,periodP2, strCurDate);
 	         
 	     }
 	     break;

@@ -61,7 +61,6 @@ addons:
       name: "did-g/OpenCPN"
       description: "Build submitted via Travis CI"
     notification_email: didier@users.sourceforge.net
-    build_command_prepend: "cov-configure -co /usr/bin/g++-6 -- -fPIC -fexceptions -fexceptions && mkdir build_s && cd build_s && cmake -DCMAKE_BUILD_TYPE=Debug ../ && make clean"
-    build_command:   "../scripts/coverity.sh"
-# broken for us only debian etch (may by strech?) coverty gcc work
-    branch_pattern: coverty_scan
+    build_command_prepend: "mkdir build_s && cd build_s && cmake -DCMAKE_BUILD_TYPE=Debug ../"
+    build_command:   "make -s"
+    branch_pattern: integration
