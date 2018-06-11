@@ -27,6 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **             DRS Template 5.3 (complex packing and spatial differencing)
 
     copyright ?
+
+    NOAA tables definition
+    http://www.nco.ncep.noaa.gov/pmb/docs/grib2
 */
 
 #define __STDC_LIMIT_MACROS 
@@ -1025,8 +1028,8 @@ static bool unpackPDS(GRIBMessage *grib_msg)
 
   grib_msg->md.pds_templ_num = uint2(b +7); /* product definition template number */
   grib_msg->md.stat_proc.num_ranges=0;
-  switch (grib_msg->md.pds_templ_num) {
-    case 0:
+  switch (grib_msg->md.pds_templ_num) { // table 4.pds_templ_num
+    case 0:   // Analysis or forecast at a horizontal level or in a horizontal layer at a point in time
     case 1:
     case 2:
     case 8:   // Average, accumulation, extreme values
@@ -1650,6 +1653,7 @@ static bool mapTimeRange(GRIBMessage *grid, zuint *p1, zuint *p2, zuchar *t_rang
 		    *t_range=5;
 		    break;
 		}
+		// printf("%d %d range %d\n", grid->md.pds_templ_num, grid->md.stat_proc.t[0].proc_code, *t_range );
 		*p1=grid->md.fcst_time;
 		*p2=mapStatisticalEndTime(grid);
 		if (grid->md.stat_proc.t[0].incr_length == 0)
@@ -1726,7 +1730,9 @@ void  GribV2Record::translateDataType()
     //------------------------
     // NOAA GFS
     //------------------------
-    if (dataType == GRB_PRECIP_RATE) {	// mm/s -> mm/h
+    if (dataType == GRB_PRECIP_RATE) {
+        // XXX FIXME
+        // mm/s -> mm/h if average  if (grib_msg->md.pds_templ_num == 8)
         multiplyAllData( 3600.0 );
     }
     if ( idCenter==7 && idModel==2 )		// NOAA
@@ -1965,7 +1971,7 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	         periodsec = periodSeconds(grib_msg->md.time_unit, periodP1, periodP2, timeRange);
 	         setRecordCurrentDate(makeDate(refyear,refmonth,refday,refhour,refminute,periodsec));
 	         //printf("%d %d %d %d %d %d \n", refyear,refmonth,refday,refhour,refminute,periodsec);
-	         //printf("%d Periode %d P1=%d p2=%d %s\n", grib_msg->md.time_unit, periodsec, periodP1,periodP2, strCurDate);
+	         // printf("%d Periode %d P1=%d p2=%d %s  ---end\n", grib_msg->md.time_unit, periodsec, periodP1,periodP2, strCurDate);
 	         
 	     }
 	     break;
