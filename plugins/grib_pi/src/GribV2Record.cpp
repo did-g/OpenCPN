@@ -708,7 +708,7 @@ bool GribV2Record::lambert2ll()
             TableLat =  cache;
 
             it = tablesLon_cache.find(k);
-            assert(it != tablesLat_cache.end());
+            assert(it != tablesLon_cache.end());
             cache = it->second.lock();
             assert(cache);
             TableLon = cache;
