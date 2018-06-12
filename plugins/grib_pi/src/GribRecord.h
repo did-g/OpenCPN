@@ -36,14 +36,6 @@ Elément de base d'un fichier GRIB
 #endif
 
 
-#ifndef M_PI_2
-#define M_PI_2     1.57079632679489661923
-#endif
-#ifndef M_PI_4
-#define M_PI_4     0.785398163397448309616
-#endif
-
-
 #define DEBUG_INFO    false
 #define DEBUG_ERROR   true
 #define grib_debug(format, ...)  {if(DEBUG_INFO)  {fprintf(stderr,format,__VA_ARGS__);fprintf(stderr,"\n");}}

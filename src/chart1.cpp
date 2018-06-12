@@ -152,6 +152,10 @@
 #include "crashprint.h"
 #endif
 
+#ifdef __WXOSX__
+#include "DarkMode.h"
+#endif
+
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY( ArrayOfCDI );
 
@@ -685,6 +689,8 @@ double                    g_UserVar;
 bool                      g_bMagneticAPB;
 
 bool                      g_bInlandEcdis;
+
+bool                      g_bDarkDecorations;
 
 //                        OpenGL Globals
 int                       g_GPU_MemSize;
@@ -1352,6 +1358,8 @@ void LoadS57()
 }
 
 #if defined(__WXGTK__) && defined(OCPN_HAVE_X11)
+
+// Note: use XFree to free this pointer. Use unique_ptr in the future.
 static char *get_X11_property (Display *disp, Window win,
                             Atom xa_prop_type, const char *prop_name) {
     Atom xa_prop_name;
@@ -1361,31 +1369,64 @@ static char *get_X11_property (Display *disp, Window win,
     unsigned long ret_bytes_after;
     unsigned long tmp_size;
     unsigned char *ret_prop;
-    char *ret;
 
     xa_prop_name = XInternAtom(disp, prop_name, False);
 
+    // For XGetWindowProperty source see
+    // https://github.com/mirror/libX11/blob/master/src/GetProp.c#L107
+    // it is quite tricky. Some notes.
+    // + Results are already NULL terminated.
+    // + 32 as a ret_format means sizeof(long) in the API...
+    // + but as xlib does the null termination we can just ignore the sizes.
     if (XGetWindowProperty(disp, win, xa_prop_name, 0, 1024, False,
                            xa_prop_type, &xa_ret_type, &ret_format,
-                           &ret_nitems, &ret_bytes_after, &ret_prop) != Success) {
+                           &ret_nitems, &ret_bytes_after, &ret_prop) != Success)
         return NULL;
-    }
 
     if (xa_ret_type != xa_prop_type) {
-        XFree(ret_prop);
-        return NULL;
+       XFree(ret_prop);
+       return NULL;
     }
-
-    /* null terminate the result to make string handling easier */
-    tmp_size = (ret_format / 8) * ret_nitems;
-    ret = (char*)malloc(tmp_size + 1);
-    memcpy(ret, ret_prop, tmp_size);
-    ret[tmp_size] = '\0';
-
-    XFree(ret_prop);
-    return ret;
+    return (char*)ret_prop;
 }
 #endif
+
+// Determine if a transparent toolbar is possible under linux with opengl
+static bool isTransparentToolbarInOpenGLOK(void) {
+#ifdef __WXOSX__
+    return true;
+#else
+    bool status = false;
+#ifndef __WXQT__
+#ifdef OCPN_HAVE_X11
+    if(!g_bdisable_opengl) {
+        Display *disp = XOpenDisplay(NULL);
+        Window *sup_window;
+        if ((sup_window = (Window *)get_X11_property(disp, DefaultRootWindow(disp),
+                                                 XA_WINDOW, "_NET_SUPPORTING_WM_CHECK")) ||
+            (sup_window = (Window *)get_X11_property(disp, DefaultRootWindow(disp),
+                                                 XA_CARDINAL, "_WIN_SUPPORTING_WM_CHECK"))) {
+            /* WM_NAME */
+            char *wm_name;
+            if ((wm_name = get_X11_property(disp, *sup_window,
+                                        XInternAtom(disp, "UTF8_STRING", False), "_NET_WM_NAME")) ||
+                (wm_name = get_X11_property(disp, *sup_window,
+                                        XA_STRING, "_NET_WM_NAME"))) {
+                // we know it works in xfce4, add other checks as we can validate them
+                if(strstr(wm_name, "Xfwm4") || strstr(wm_name, "Compiz"))
+                    status = true;
+
+                XFree(wm_name);
+            }
+            XFree(sup_window);
+        }
+        XCloseDisplay(disp);
+    }
+#endif
+#endif
+    return status;
+#endif
+}
 
 static wxStopWatch init_sw;
 class ParseENCWorkerThread : public wxThread
@@ -2068,39 +2109,7 @@ bool MyApp::OnInit()
         setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
 #endif
 
-    // Determine if a transparent toolbar is possible under linux with opengl
-    g_bTransparentToolbarInOpenGLOK = false;
-#ifndef __WXQT__
-#ifdef OCPN_HAVE_X11
-    if(!g_bdisable_opengl) {
-        Display *disp = XOpenDisplay(NULL);
-        Window *sup_window;
-        if ((sup_window = (Window *)get_X11_property(disp, DefaultRootWindow(disp),
-                                                 XA_WINDOW, "_NET_SUPPORTING_WM_CHECK")) ||
-            (sup_window = (Window *)get_X11_property(disp, DefaultRootWindow(disp),
-                                                 XA_CARDINAL, "_WIN_SUPPORTING_WM_CHECK"))) {
-            /* WM_NAME */
-            char *wm_name;
-            if ((wm_name = get_X11_property(disp, *sup_window,
-                                        XInternAtom(disp, "UTF8_STRING", False), "_NET_WM_NAME")) ||
-                (wm_name = get_X11_property(disp, *sup_window,
-                                        XA_STRING, "_NET_WM_NAME"))) {
-                // we know it works in xfce4, add other checks as we can validate them
-                if(strstr(wm_name, "Xfwm4") || strstr(wm_name, "Compiz"))
-                    g_bTransparentToolbarInOpenGLOK = true;
-
-                free(wm_name);
-            }
-            free(sup_window);
-        }
-        XCloseDisplay(disp);
-    }
-#endif
-#ifdef __WXOSX__
-    g_bTransparentToolbarInOpenGLOK = true;
-#endif
-#endif
-
+    g_bTransparentToolbarInOpenGLOK = isTransparentToolbarInOpenGLOK();
 
     // On Windows platforms, establish a default cache managment policy
     // as allowing OpenCPN a percentage of available physical memory,
@@ -3098,15 +3107,25 @@ void MyFrame::SetAndApplyColorScheme( ColorScheme cs )
     g_Piano->ResetRollover();
     g_Piano->SetColorScheme( cs );
 
-    if( g_options ) g_options->SetColorScheme( cs );
+    if( g_options ) {
+        g_options->SetColorScheme( cs );
+    }
 
-    if( console ) console->SetColorScheme( cs );
+    if( console ) {
+        console->SetColorScheme( cs );
+    }
 
-    if( g_pRouteMan ) g_pRouteMan->SetColorScheme( cs );
+    if( g_pRouteMan ) {
+        g_pRouteMan->SetColorScheme( cs );
+    }
 
-    if( pMarkPropDialog ) pMarkPropDialog->SetColorScheme( cs );
+    if( pMarkPropDialog ) {
+        pMarkPropDialog->SetColorScheme( cs );
+    }
     
-    if( pRoutePropDialog ) pRoutePropDialog->SetColorScheme( cs );
+    if( pRoutePropDialog ) {
+        pRoutePropDialog->SetColorScheme( cs );
+    }
     
     //    For the AIS target query dialog, we must rebuild it to incorporate the style desired for the colorscheme selected
     if( g_pais_query_dialog_active ) {
@@ -3135,6 +3154,11 @@ void MyFrame::SetAndApplyColorScheme( ColorScheme cs )
     UpdateToolbar( cs );
 
     if( g_pi_manager ) g_pi_manager->SetColorSchemeForAllPlugIns( cs );
+#ifdef __WXOSX__
+    if( g_bDarkDecorations ) {
+        applyDarkAppearanceToWindow(MacGetTopLevelWindowRef(), true);
+    }
+#endif
 }
 
 void MyFrame::ApplyGlobalColorSchemetoStatusBar( void )
@@ -5894,7 +5918,9 @@ int MyFrame::DoOptionsDialog()
     if(NULL == g_options) {
         g_Platform->ShowBusySpinner();
         g_options = new options( this, -1, _("Options") );
-        g_options->SetColorScheme(global_color_scheme);
+        //g_options->SetColorScheme(global_color_scheme);
+        //applyDarkAppearanceToWindow(g_options->MacGetTopLevelWindowRef());
+
         g_Platform->HideBusySpinner();
     }
 
@@ -6902,7 +6928,8 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
         case 4:
         {
             g_options = new options( this, -1, _("Options") );
-            g_options->SetColorScheme(global_color_scheme);
+            //g_options->SetColorScheme(global_color_scheme);
+            //applyDarkAppearanceToWindow(g_options->MacGetTopLevelWindowRef());
             
             if( g_MainToolbar )
                 g_MainToolbar->EnableTool( ID_SETTINGS, true );
