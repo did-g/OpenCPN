@@ -172,10 +172,10 @@ ODPoint::ODPoint( ODPoint* orig )
     m_ODPointArrivalRadius = orig->GetODPointArrivalRadius();
     
     m_bShowODPointRangeRings = orig->m_bShowODPointRangeRings;
-    m_iODPointRangeRingsNumber = g_iODPointRangeRingsNumber;
-    m_fODPointRangeRingsStep = g_fODPointRangeRingsStep;
-    m_iODPointRangeRingsStepUnits = g_iODPointRangeRingsStepUnits;
-    m_wxcODPointRangeRingsColour = g_colourODPointRangeRingsColour;
+    m_iODPointRangeRingsNumber = orig->m_iODPointRangeRingsNumber;
+    m_fODPointRangeRingsStep = orig->m_fODPointRangeRingsStep;
+    m_iODPointRangeRingsStepUnits = orig->m_iODPointRangeRingsStepUnits;
+    m_wxcODPointRangeRingsColour = orig->m_wxcODPointRangeRingsColour;
     m_iRangeRingStyle = wxPENSTYLE_SOLID;
     m_iRangeRingWidth = 2;
     SetRangeRingBBox();
