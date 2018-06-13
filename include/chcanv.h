@@ -316,6 +316,7 @@ public:
       double      m_prev_rlon;
       RoutePoint  *m_prev_pMousePoint;
       Quilt       *m_pQuilt;
+      bool        m_bShowNavobjects;
       
       void RemovePointFromRoute( RoutePoint* point, Route* route );
 
@@ -453,7 +454,9 @@ private:
       void OnCursorTrackTimerEvent(wxTimerEvent& event);
 
       void DrawAllTracksInBBox( ocpnDC& dc, LLBBox& BltBBox );
+      void DrawActiveTrackInBBox( ocpnDC& dc, LLBBox& BltBBox );
       void DrawAllRoutesInBBox(ocpnDC& dc, LLBBox& BltBBox );
+      void DrawActiveRouteInBBox(ocpnDC& dc, LLBBox& BltBBox );
       void DrawAllWaypointsInBBox(ocpnDC& dc, LLBBox& BltBBox );
       void DrawAnchorWatchPoints( ocpnDC& dc );
       double GetAnchorWatchRadiusPixels(RoutePoint *pAnchorWatchPoint);

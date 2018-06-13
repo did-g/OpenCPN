@@ -1395,7 +1395,7 @@ void glTextureManager::BuildCompressedCache()
             if(chart_type != CHART_TYPE_KAP)
                 continue;
         }
-
+        
         wxString CompressedCacheFilePath = CompressedCachePath(ChartData->GetDBChartFileName(i));
         wxFileName fn(CompressedCacheFilePath);
         //        if(fn.FileExists()) /* skip if file exists */
