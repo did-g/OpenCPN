@@ -611,7 +611,6 @@ CursorDataBase::CursorDataBase( wxWindow* parent, wxWindowID id, const wxPoint& 
 	m_tcRelHumid->SetMinSize( wxSize( 70,-1 ) );
 
 	m_fgTrackingControls->Add( m_tcRelHumid, 0, 0, 5 );
-	
 
 
 	fgSizer43->Add( m_fgTrackingControls, 1, wxEXPAND, 1 );
