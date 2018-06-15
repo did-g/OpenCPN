@@ -5968,7 +5968,6 @@ void PI_DLEvtHandler::onDLEvent( OCPN_downloadEvent &event)
 {
 //    qDebug() << "Got Event " << (int)event.getDLEventStatus() << (int)event.getDLEventCondition();
 
-    std::cout << "Got Event " << (int)event.getDLEventStatus() << (int)event.getDLEventCondition();
     g_download_status = event.getDLEventStatus();
     g_download_condition = event.getDLEventCondition();
 

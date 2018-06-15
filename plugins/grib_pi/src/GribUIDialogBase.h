@@ -127,8 +127,8 @@ class GRIBUICtrlBarBase : public wxDialog
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnMouseEvent( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnPaint( wxPaintEvent& event) { event.Skip(); }
 		virtual void OnSize( wxSizeEvent& event ) { event.Skip(); }
-        virtual void OnPaint( wxPaintEvent& event) { event.Skip(); }
 		virtual void OnPrev( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRecordForecast( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnNext( wxCommandEvent& event ) { event.Skip(); }
@@ -253,6 +253,7 @@ class GribSettingsDialogBase : public wxDialog
 		wxSpinCtrl* m_sIsoBarSpacing;
 		wxFlexGridSizer* m_fIsoBarVisibility;
 		wxCheckBox* m_sIsoBarVisibility;
+		wxCheckBox* m_cbAbbrIsoBarsNumbers;
 		wxCheckBox* m_cbDirectionArrows;
 		wxFlexGridSizer* m_fgDirArrData1;
 		wxChoice* m_cDirectionArrowForm;
@@ -336,9 +337,9 @@ class GribPreferencesDialogBase : public wxDialog
 	public:
 		wxCheckBox* m_cbUseHiDef;
 		wxCheckBox* m_cbUseGradualColors;
-		wxCheckBox* m_cbDrawBarbedArrowHead;
 		wxCheckBox* m_cbCopyFirstCumulativeRecord;
 		wxCheckBox* m_cbCopyMissingWaveRecord;
+		wxCheckBox* m_cbDrawBarbedArrowHead;
 		wxRadioBox* m_rbLoadOptions;
 		wxRadioBox* m_rbStartOptions;
 		wxRadioBox* m_rbTimeFormat;
@@ -392,10 +393,10 @@ class GribRequestSettingBase : public wxDialog
 		wxCheckBox* m_pRainfall;
 		wxCheckBox* m_pCloudCover;
 		wxCheckBox* m_pAirTemp;
+		wxCheckBox* m_pCAPE;
+		wxCheckBox* m_pReflectivity;
 		wxCheckBox* m_pSeaTemp;
 		wxCheckBox* m_pCurrent;
-		wxCheckBox* m_pReflectivity;
-		wxCheckBox* m_pCAPE;
 		wxCheckBox* m_pWaves;
 		wxChoice* m_pWModel;
 		wxCheckBox* m_pAltitudeData;
@@ -420,6 +421,7 @@ class GribRequestSettingBase : public wxDialog
 		virtual void OnMovingClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAnySpinChange( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnAnyChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnResolutionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTimeRangeChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnZoneSelectionModeChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCoordinatesChange( wxSpinEvent& event ) { event.Skip(); }
