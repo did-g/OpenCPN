@@ -88,7 +88,8 @@ const wxString WeatherRouting::column_names[NUM_COLS] = {"Visible", "Boat", "Sta
                                                          "Avg Current", "Max Current",
                                                          "Avg Swell", "Max Swell",
                                                          "Upwind Percentage",
-                                                         "Port Starboard", "Tacks", "State"};
+                                                         "Port Starboard", "Tacks", "Comfort",
+                                                         "State"};
 
 static int sortcol, sortorder = 1;
 // sort callback. Sort by body.
@@ -360,20 +361,20 @@ void WeatherRouting::Render(wrDC &dc, PlugIn_ViewPort &vp)
 
     // polling is bad
     bool work = false;
-    for(auto it = RouteMap::Positions.begin();it != RouteMap::Positions.end(); it++) {
-        if((*it).GUID.IsEmpty())
+    for(auto it :RouteMap::Positions) {
+        if (it.GUID.IsEmpty())
             continue;
 
         PlugIn_Waypoint waypoint;
-        double lat = (*it).lat;
-        double lon = (*it).lon;
+        double lat = it.lat;
+        double lon = it.lon;
 
-        if (!GetSingleWaypoint( (*it).GUID, &waypoint ))
+        if (!GetSingleWaypoint( it.GUID, &waypoint ))
             continue;
-        if (lat == waypoint.m_lat && lon == waypoint.m_lon && waypoint.m_MarkName.IsSameAs((*it).Name))
+        if (lat == waypoint.m_lat && lon == waypoint.m_lon && waypoint.m_MarkName.IsSameAs(it.Name))
             continue;
 
-        long index = m_panel->m_lPositions->FindItem(0, (*it).ID);
+        long index = m_panel->m_lPositions->FindItem(0, it.ID);
         if (index < 0) {
             // corrupted data
             continue;
@@ -382,15 +383,12 @@ void WeatherRouting::Render(wrDC &dc, PlugIn_ViewPort &vp)
         wxString name = waypoint.m_MarkName;
         lat = waypoint.m_lat;
         lon = waypoint.m_lon;
-        (*it).lat = lat;
-        (*it).lon = lon;
+        it.lat = lat;
+        it.lon = lon;
 
         // XXX FIXME there's already this name, update m_ConfigurationDialog source
-        long exist = m_panel->m_lPositions->FindItem(0, name);
-        if (exist == -1 || exist == index) {
-            m_panel->m_lPositions->SetItem(index, POSITION_NAME, name);
-            m_panel->m_lPositions->SetColumnWidth(POSITION_NAME, wxLIST_AUTOSIZE);
-        }
+        m_panel->m_lPositions->SetItem(index, POSITION_NAME, name);
+        m_panel->m_lPositions->SetColumnWidth(POSITION_NAME, wxLIST_AUTOSIZE);
         m_panel->m_lPositions->SetItem(index, POSITION_LAT, wxString::Format(_T("%.5f"), lat));
         m_panel->m_lPositions->SetColumnWidth(POSITION_LAT, wxLIST_AUTOSIZE);
         m_panel->m_lPositions->SetItem(index, POSITION_LON, wxString::Format(_T("%.5f"), lon));
@@ -417,24 +415,26 @@ void WeatherRouting::Render(wrDC &dc, PlugIn_ViewPort &vp)
     for(int i=0; i<m_panel->m_lWeatherRoutes->GetItemCount(); i++) {
         WeatherRoute *weatherroute =
             reinterpret_cast<WeatherRoute*>(wxUIntToPtr(m_panel->m_lWeatherRoutes->GetItemData(i)));
-        if(weatherroute->routemapoverlay->m_bEndRouteVisible)
-            weatherroute->routemapoverlay->Render(time, m_SettingsDialog, dc, vp, true);
-        
-        // Start WindBarbsOnRoute customization
-        if (m_SettingsDialog.m_cbDisplayWindBarbsOnRoute->GetValue())
-            weatherroute->routemapoverlay->RenderWindBarbsOnRoute(dc, vp);
+
+        if(!weatherroute->routemapoverlay->m_bEndRouteVisible)
+            continue;
+
+        weatherroute->routemapoverlay->Render(time, m_SettingsDialog, dc, vp, true);
     }
 
     std::list<RouteMapOverlay *>currentroutemaps = CurrentRouteMaps();
     for(std::list<RouteMapOverlay*>::iterator it = currentroutemaps.begin();
-        it != currentroutemaps.end(); it++) {
+            it != currentroutemaps.end(); it++) {
+
         (*it)->Render(time, m_SettingsDialog, dc, vp, false);
         
-        if(it == currentroutemaps.begin() &&
-           m_SettingsDialog.m_cbDisplayWindBarbs->GetValue())
+        if (it != currentroutemaps.begin())
+            continue;
+
+        if (m_SettingsDialog.m_cbDisplayWindBarbs->GetValue())
             (*it)->RenderWindBarbs(dc, vp);
-        if(it == currentroutemaps.begin() &&
-           m_SettingsDialog.m_cbDisplayCurrent->GetValue())
+
+        if (m_SettingsDialog.m_cbDisplayCurrent->GetValue())
             (*it)->RenderCurrent(dc, vp);
     }
 
@@ -464,17 +464,16 @@ void WeatherRouting::AddPosition(double lat, double lon)
 
 void WeatherRouting::AddPosition(double lat, double lon, wxString name)
 {
-    for(auto it = RouteMap::Positions.begin(); it != RouteMap::Positions.end(); it++) {
-        if((*it).GUID.IsEmpty() && (*it).Name == name) {
+    for(auto it: RouteMap::Positions) {
+        if(it.GUID.IsEmpty() && it.Name == name) {
             wxMessageDialog mdlg(this, _("This name already exists, replace?\n"),
                                  _("Weather Routing"), wxYES | wxNO | wxICON_WARNING);
             if(mdlg.ShowModal() == wxID_YES) {
-                long index = m_panel->m_lPositions->FindItem(0, (*it).ID);
+                long index = m_panel->m_lPositions->FindItem(0, it.ID);
                 assert(index >=0);
 
-                (*it).lat = lat;
-                (*it).lon = lon;
-                (*it).GUID = wxEmptyString;  // no more an O waypoint
+                it.lat = lat;
+                it.lon = lon;
                 m_panel->m_lPositions->SetItem(index, POSITION_LAT, wxString::Format(_T("%.5f"), lat));
                 m_panel->m_lPositions->SetColumnWidth(POSITION_LAT, wxLIST_AUTOSIZE);
                 m_panel->m_lPositions->SetItem(index, POSITION_LON, wxString::Format(_T("%.5f"), lon));
@@ -509,15 +508,17 @@ void WeatherRouting::AddPosition(double lat, double lon, wxString name, wxString
     if (GUID.IsEmpty())
         return AddPosition(lat, lon, name);
 
-    for(auto it = RouteMap::Positions.begin();it != RouteMap::Positions.end(); it++) {
-        if((*it).GUID.IsEmpty() /*&& !(*it).NameIsSameAs(name)*/)
+    for(auto it : RouteMap::Positions) {
+        if(it.GUID.IsEmpty())
             continue;
 
-        if((*it).GUID.IsSameAs(GUID)) {
+        if(it.GUID.IsSameAs(GUID)) {
             // wxMessageDialog mdlg(this, _("This name already exists, replace?\n"),_("Weather Routing"), wxYES | wxNO | wxICON_WARNING);
-            long index = m_panel->m_lPositions->FindItem(0, (*it).ID);
-            (*it).lat = lat;
-            (*it).lon = lon;
+            long index = m_panel->m_lPositions->FindItem(0, it.ID);
+            assert(index >=0);
+
+            it.lat = lat;
+            it.lon = lon;
             m_panel->m_lPositions->SetItem(index, POSITION_NAME, name);
             m_panel->m_lPositions->SetColumnWidth(POSITION_NAME, wxLIST_AUTOSIZE);
             m_panel->m_lPositions->SetItem(index, POSITION_LAT, wxString::Format(_T("%.5f"), lat));
@@ -1868,6 +1869,11 @@ void WeatherRoute::Update(WeatherRouting *wr, bool stateonly)
         PortStarboard = wxString::Format(_T("%.0f/%.0f"), ps, 100-ps);
 
         Tacks = wxString::Format(_T("%.0f"), routemapoverlay->RouteInfo(RouteMapOverlay::TACKS));
+        
+        // CUSTOMIZATION
+        // Display sailing comfort
+        int comfort_level = routemapoverlay->RouteInfo(RouteMapOverlay::COMFORT);
+        Comfort = RouteMapOverlay::sailingConditionText(comfort_level);
     }
 
     if(!routemapoverlay->Valid())
@@ -2028,10 +2034,15 @@ void WeatherRouting::UpdateItem(long index, bool stateonly)
             m_panel->m_lWeatherRoutes->SetItem(index, columns[PORT_STARBOARD], weatherroute->PortStarboard);
             m_panel->m_lWeatherRoutes->SetColumnWidth(columns[PORT_STARBOARD], wxLIST_AUTOSIZE);
         }
-
+        
         if(columns[TACKS] >= 0) {
             m_panel->m_lWeatherRoutes->SetItem(index, columns[TACKS], weatherroute->Tacks);
             m_panel->m_lWeatherRoutes->SetColumnWidth(columns[TACKS], wxLIST_AUTOSIZE);
+        }
+        
+        if(columns[COMFORT] >= 0) {
+            m_panel->m_lWeatherRoutes->SetItem(index, columns[COMFORT], weatherroute->Comfort);
+            m_panel->m_lWeatherRoutes->SetColumnWidth(columns[COMFORT], wxLIST_AUTOSIZE);
         }
     }
 
@@ -2244,9 +2255,11 @@ void WeatherRouting::Start(RouteMapOverlay *routemapoverlay)
 
     // already waiting?
     for(std::list<RouteMapOverlay*>::iterator it = m_WaitingRouteMaps.begin();
-        it != m_WaitingRouteMaps.end(); it++)
+                it != m_WaitingRouteMaps.end(); it++) {
         if(*it == routemapoverlay)
             return;
+    }
+
     if (m_WaitingRouteMaps.size() == 0 && m_RunningRouteMaps.size() == 0) {
         SendPluginMessage(wxString(_T("OCPN_DRAW_PI_SET_CACHE")), _T(""));
     }
@@ -2269,9 +2282,8 @@ void WeatherRouting::Stop()
 {
     /* stop all the threads at once, rather than waiting for each one before
        telling the next to stop */
-    for(std::list<RouteMapOverlay*>::iterator it = m_RunningRouteMaps.begin();
-        it != m_RunningRouteMaps.end(); it++)
-        (*it)->Stop();
+    for (auto it : m_RunningRouteMaps) 
+        it->Stop();
 
     wxProgressDialog *progressdialog = NULL;
 

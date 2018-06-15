@@ -532,7 +532,11 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
         SetColor(dc, Darken(DestinationColor), true);
         SetWidth(dc, RouteThickness/2, true);
         RenderBoatOnCourse(false, time, dc, vp);
-        
+
+        if (settingsdialog.m_cbDisplayWindBarbsOnRoute->GetValue()) {
+            RenderWindBarbsOnRoute(dc, vp);
+        }
+
         if(MarkAtPolarChange) {
             SetColor(dc, Darken(DestinationColor), true);
             SetWidth(dc, (RouteThickness+1)/2, true);
@@ -652,7 +656,7 @@ int RouteMapOverlay::sailingConditionLevel(const PlotData &plot) const
     if (level_calc <= 0.5)
         // Light conditions, enjoy ;-)
         return 1;
-    if (level_calc > 0.5 && level_calc < 1)
+    if (level_calc > 0.5 &&  level_calc < 1)
         // Can be tough
         return 2;
     if (level_calc >= 1)
@@ -661,7 +665,7 @@ int RouteMapOverlay::sailingConditionLevel(const PlotData &plot) const
     return 0;
 }
 
-static wxColour sailingConditionColor(int level)
+wxColour RouteMapOverlay::sailingConditionColor(int level)
 {
     switch (level) {
     case 1:
@@ -672,6 +676,17 @@ static wxColour sailingConditionColor(int level)
         return *wxRED;
     }
     return *wxBLACK;
+}
+
+wxString RouteMapOverlay::sailingConditionText(int level)
+{
+    if (level == 1)
+        return _T("Good");
+    if (level == 2)
+        return _T("Bumpy");
+    if (level == 3)
+        return _T("Difficult");
+    return _T("N/A");
 }
 
 // -----------------------------------------------------
@@ -1381,6 +1396,7 @@ double RouteMapOverlay::RouteInfo(enum RouteInfoType type, bool cursor_route)
     std::list<PlotData> &plotdata = GetPlotData(cursor_route);
 
     double total = 0, count = 0, lat0 = 0, lon0 = 0;
+    int comfort = 0, current_comfort = 0;
     for(std::list<PlotData>::iterator it=plotdata.begin(); it!=plotdata.end(); it++)
     {
         switch(type) {
@@ -1439,6 +1455,13 @@ double RouteMapOverlay::RouteInfo(enum RouteInfoType type, bool cursor_route)
             if(heading_resolve(it->B - it->W) > 0)
                 total++;
             break;
+        // CUSTOMIZATION
+        // Comfort on route
+        case COMFORT:
+            current_comfort = sailingConditionLevel(*it);
+            if (current_comfort > comfort)
+                comfort = current_comfort;
+            break;
         default:
             break;
         }
@@ -1457,6 +1480,8 @@ double RouteMapOverlay::RouteInfo(enum RouteInfoType type, bool cursor_route)
             total += DistGreatCircle_Plugin(lat0, lon0, configuration.EndLat, configuration.EndLon);
         }
         return total;
+    case COMFORT:
+        return comfort;
     case PERCENTAGE_UPWIND:
     case PORT_STARBOARD:
         total *= 100.0;
