@@ -417,7 +417,6 @@ class GribRequestSettingBase : public wxDialog
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnTopChange( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnResolutionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMovingClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAnySpinChange( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnAnyChange( wxCommandEvent& event ) { event.Skip(); }

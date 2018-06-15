@@ -551,12 +551,6 @@ CursorDataBase::CursorDataBase( wxWindow* parent, wxWindowID id, const wxPoint& 
 
 
 	m_fgTrackingControls->Add( 0, 0, 1, wxEXPAND, 5 );
-	// -----------------
-
-	m_fgTrackingControls->Add( 0, 0, 1, wxEXPAND, 5 );
-
-	m_cbReflC = new wxCheckBox( this, ID_CB_COMP_REFL, _("Comp. Refl."), wxDefaultPosition, wxDefaultSize, 0 );
-	m_fgTrackingControls->Add( m_cbReflC, 0, wxALL|wxEXPAND, 5 );
 
 	m_fgTrackingControls->Add( 0, 0, 1, wxEXPAND, 5 );
 
@@ -617,7 +611,6 @@ CursorDataBase::CursorDataBase( wxWindow* parent, wxWindowID id, const wxPoint& 
 	m_tcRelHumid->SetMinSize( wxSize( 70,-1 ) );
 
 	m_fgTrackingControls->Add( m_tcRelHumid, 0, 0, 5 );
-	
 
 
 	fgSizer43->Add( m_fgTrackingControls, 1, wxEXPAND, 1 );
