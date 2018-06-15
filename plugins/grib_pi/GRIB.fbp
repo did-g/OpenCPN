@@ -9379,7 +9379,7 @@
                                                             <property name="gripper">0</property>
                                                             <property name="hidden">0</property>
                                                             <property name="id">wxID_ANY</property>
-                                                            <property name="label">Only one Dialog with a title/drag bar</property>
+                                                            <property name="label">Data at cursor dialog is attached to icons bar - with a title/drag bar</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>
                                                             <property name="maximum_size"></property>
@@ -9467,7 +9467,7 @@
                                                             <property name="gripper">0</property>
                                                             <property name="hidden">0</property>
                                                             <property name="id">wxID_ANY</property>
-                                                            <property name="label">Only one Dialog without title/drag bar</property>
+                                                            <property name="label">Data at cursor dialog is attached to icons bar - without a title/drag bar</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>
                                                             <property name="maximum_size"></property>
@@ -9555,7 +9555,7 @@
                                                             <property name="gripper">0</property>
                                                             <property name="hidden">0</property>
                                                             <property name="id">wxID_ANY</property>
-                                                            <property name="label">Two separated Dialogs - horizontal Cursor Data display</property>
+                                                            <property name="label">Data at cursor dialog is isolated and displayed horizontally</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>
                                                             <property name="maximum_size"></property>
@@ -9643,7 +9643,7 @@
                                                             <property name="gripper">0</property>
                                                             <property name="hidden">0</property>
                                                             <property name="id">wxID_ANY</property>
-                                                            <property name="label">Two separated Dialogs - vertical Cursor Data display</property>
+                                                            <property name="label">Data at cursor dialog is isolated and displayed vertically</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>
                                                             <property name="maximum_size"></property>
@@ -9719,7 +9719,7 @@
                                         <property name="proportion">1</property>
                                         <object class="wxStaticBoxSizer" expanded="0">
                                             <property name="id">wxID_ANY</property>
-                                            <property name="label">Buttons/Ctrl Visibility</property>
+                                            <property name="label">Buttons Visibility</property>
                                             <property name="minimum_size"></property>
                                             <property name="name">sbSizer10</property>
                                             <property name="orient">wxVERTICAL</property>
@@ -9794,7 +9794,7 @@
                                                             <property name="gripper">0</property>
                                                             <property name="hidden">0</property>
                                                             <property name="id">wxID_ANY</property>
-                                                            <property name="label">Attached Dialog</property>
+                                                            <property name="label">Attached icon bar</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>
                                                             <property name="maximum_size"></property>
@@ -9877,7 +9877,7 @@
                                                             <property name="gripper">0</property>
                                                             <property name="hidden">0</property>
                                                             <property name="id">wxID_ANY</property>
-                                                            <property name="label">Isolated Dialog</property>
+                                                            <property name="label">Isolated icon bar</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>
                                                             <property name="maximum_size"></property>
@@ -10041,7 +10041,7 @@
                                                             <property name="gripper">0</property>
                                                             <property name="hidden">0</property>
                                                             <property name="id">wxID_ANY</property>
-                                                            <property name="label">Altitude Choice</property>
+                                                            <property name="label">Geopot. Height Choice</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>
                                                             <property name="maximum_size"></property>
