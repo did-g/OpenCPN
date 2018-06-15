@@ -63,7 +63,8 @@ static const wxString altitude_from_index[3][5] = {
     {_T("Std"), _T("25.2"), _T("20.7"), _T("14.8"), _T("8.9")}
     };
 
-enum SettingsDisplay {B_ARROWS, ISO_LINE, ISO_LINE_VISI, ISO_LINE_SHORT, D_ARROWS, OVERLAY, NUMBERS, PARTICLES};
+enum SettingsDisplay {B_ARROWS, ISO_LINE, ISO_ABBR, ISO_LINE_VISI, ISO_LINE_SHORT, D_ARROWS, OVERLAY,
+                        NUMBERS, PARTICLES};
 
 #ifdef __OCPN__ANDROID__
 
@@ -192,6 +193,8 @@ void GribOverlaySettings::Read()
         pConf->Read ( Name + _T ( "BarbedArrowSpacing" ), &Settings[i].m_iBarbArrSpacing, 50);
 
         pConf->Read ( Name + _T ( "Display Isobars" ), &Settings[i].m_bIsoBars, i==PRESSURE);
+        pConf->Read ( Name + _T ( "Abbreviated Isobars Numbers" ), &Settings[i].m_bAbbrIsoBarsNumbers, i==PRESSURE);
+
         double defspacing[SETTINGS_COUNT] = {4, 4, 4, 0, 0, 0, 0, 2, 2, 100};
         pConf->Read ( Name + _T ( "IsoBarSpacing" ), &Settings[i].m_iIsoBarSpacing, defspacing[i]);
         pConf->Read ( Name + _T ( "IsoBarVisibility" ), &Settings[i].m_iIsoBarVisibility, i==PRESSURE);
@@ -288,6 +291,7 @@ void GribOverlaySettings::SaveSettingGroups(wxFileConfig *pConf, int settings, i
         break;
     case ISO_LINE_SHORT:
         pConf->Write ( Name + _T ( "Display Isobars" ), Settings[settings].m_bIsoBars);
+        pConf->Write ( Name + _T ( "Abbreviated Isobars Numbers" ), Settings[settings].m_bAbbrIsoBarsNumbers);
         pConf->Write ( Name + _T ( "IsoBarSpacing" ), Settings[settings].m_iIsoBarSpacing);
         break;
     case ISO_LINE_VISI:
@@ -682,6 +686,7 @@ void GribSettingsDialog::SetDataTypeSettings(int settings)
     odc.m_bBarbArrFixSpac = m_cBarbArrFixSpac->GetValue();
     odc.m_iBarbArrSpacing = m_sBarbArrSpacing->GetValue();
     odc.m_bIsoBars = m_cbIsoBars->GetValue();
+    odc.m_bAbbrIsoBarsNumbers = m_cbAbbrIsoBarsNumbers->GetValue();
     odc.m_iIsoBarVisibility = m_sIsoBarVisibility->GetValue();
     odc.m_iIsoBarSpacing = m_sIsoBarSpacing->GetValue();
     odc.m_bDirectionArrows = m_cbDirectionArrows->GetValue();
@@ -710,6 +715,7 @@ void GribSettingsDialog::ReadDataTypeSettings(int settings)
     m_cBarbArrMinSpac->SetValue(!odc.m_bBarbArrFixSpac);
     m_sBarbArrSpacing->SetValue(odc.m_iBarbArrSpacing);
     m_cbIsoBars->SetValue(odc.m_bIsoBars);
+    m_cbAbbrIsoBarsNumbers->SetValue(odc.m_bAbbrIsoBarsNumbers);
     m_sIsoBarVisibility->SetValue(odc.m_iIsoBarVisibility);
     m_sIsoBarSpacing->SetValue(odc.m_iIsoBarSpacing);
     m_cbDirectionArrows->SetValue(odc.m_bDirectionArrows);
@@ -738,6 +744,7 @@ void GribSettingsDialog::ShowFittingSettings( int settings )
     if(m_fIsoBarSpacing->GetItem(m_sIsoBarSpacing) != NULL)  m_fIsoBarSpacing->Detach(m_sIsoBarSpacing);
     if(m_fIsoBarVisibility->GetItem(m_sIsoBarSpacing) != NULL)  m_fIsoBarVisibility->Detach(m_sIsoBarSpacing);
     if(m_fIsoBarVisibility->GetItem(m_sIsoBarVisibility) != NULL)  m_fIsoBarVisibility->Detach(m_sIsoBarVisibility);
+    ShowSettings( ISO_ABBR, false );
     ShowSettings( D_ARROWS, false  );
     ShowSettings( OVERLAY, false  );
     ShowSettings( NUMBERS, false );
@@ -765,6 +772,7 @@ void GribSettingsDialog::ShowFittingSettings( int settings )
         ShowSettings( ISO_LINE_VISI );
         ShowSettings( ISO_LINE );
         m_cbIsoBars->SetLabel(_("Display Isobars"));
+        ShowSettings( ISO_ABBR );
         ShowSettings( NUMBERS );
         break;
     case GribOverlaySettings::CURRENT:
@@ -819,6 +827,9 @@ void GribSettingsDialog::ShowSettings( int params, bool show)
         m_cbIsoBars->Show(show);
         m_fIsoBarSpacing->ShowItems(show);
         m_fIsoBarVisibility->ShowItems(show);
+        break;
+    case ISO_ABBR:
+        m_cbAbbrIsoBarsNumbers->Show(show);
         break;
     case ISO_LINE_VISI:
         m_fIsoBarSpacing->Add(m_sIsoBarSpacing, 0, 5,wxALL|wxEXPAND);
@@ -1024,6 +1035,9 @@ bool GribOverlaySettings::UpdateJSONval( wxJSONValue &v, int settings, int group
         v[ Name + _T ( "DisplayIsobars" )] = Settings[settings].m_bIsoBars;
         v[ Name + _T ( "IsoBarSpacing" )] = Settings[settings].m_iIsoBarSpacing;
         break;
+    case ISO_ABBR:
+        v[ Name + _T ( "AbbrIsobarsNumbers" )] = Settings[settings].m_bAbbrIsoBarsNumbers;
+        break;
     case ISO_LINE_VISI:
         v[ Name + _T ( "IsoBarVisibility" )] = Settings[settings].m_iIsoBarVisibility;
         break;
@@ -1112,6 +1126,9 @@ bool GribOverlaySettings::JSONToSettings(wxString json)
             Settings[i].m_iIsoBarSpacing = val;
         }
         
+        if(root[Name + _T ( "AbbrIsobarsNumbers" )].IsBool())
+            Settings[i].m_bAbbrIsoBarsNumbers = root[Name + _T ( "AbbrIsobarsNumbers" )].AsBool();
+
         if(root[Name + _T ( "IsoBarVisibility" )].IsBool())
             Settings[i].m_iIsoBarVisibility = root[Name + _T ( "IsoBarVisibility" )].AsBool();
         
