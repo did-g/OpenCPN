@@ -565,17 +565,11 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         double lon = v[_T("lon")].AsDouble();
 
         if(m_pGribCtrlBar) {
-            //int idx = m_pGribCtrlBar->GetNearestIndex(time, 0);
-            ArrayOfGribRecordSets *rsa = m_pGribCtrlBar->m_bGRIBActiveFile->GetRecordSetArrayPtr();
-            GribTimelineRecordSet *pTimeset = m_pGribCtrlBar->GetTimeLineRecordSet(time);
-            if (pTimeset == 0)
-                return;
-            GribRecord **recordarray = pTimeset->m_GribRecordPtrArray;
             if (v.HasMember(_T("WIND SPEED"))) {
                 double vkn, ang;
-                if ( GribRecord::getInterpolatedValues(vkn, ang,
-                                         recordarray[Idx_WIND_VX], recordarray[Idx_WIND_VY],
-                                         lon, lat))
+                if ( m_pGribCtrlBar->getTimeInterpolatedValues(vkn, ang,
+                                         Idx_WIND_VX, Idx_WIND_VY,
+                                         lon, lat, time))
                 {
                     v[_T("Type")] = wxT("Reply");
                     v[_T("WIND SPEED")] = vkn;
@@ -588,9 +582,9 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             }
             if (v.HasMember(_T("CURRENT SPEED"))) {
                 double vkn, ang;
-                if ( GribRecord::getInterpolatedValues(vkn, ang,
-                                         recordarray[Idx_SEACURRENT_VX], recordarray[Idx_SEACURRENT_VY],
-                                         lon, lat))
+                if ( m_pGribCtrlBar->getTimeInterpolatedValues(vkn, ang,
+                                         Idx_SEACURRENT_VX, Idx_SEACURRENT_VY,
+                                         lon, lat, time))
                 {
                     v[_T("Type")] = wxT("Reply");
                     v[_T("CURRENT SPEED")] = vkn;
@@ -601,8 +595,8 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                     v.Remove(_T("CURRENT DIR"));
                 }
             }
-            if (v.HasMember(_T("GUST")) && recordarray[Idx_WIND_GUST] ) {
-                double vkn = recordarray[Idx_WIND_GUST]->getInterpolatedValue(lon, lat, true );
+            if (v.HasMember(_T("GUST")) ) {
+                double vkn = m_pGribCtrlBar->getTimeInterpolatedValue(Idx_WIND_GUST, lon, lat, time );
                 if ( vkn != GRIB_NOTDEF ) {
                     v[_T("Type")] = wxT("Reply");
                     v[_T("GUST")] = vkn;
@@ -610,8 +604,8 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                 else
                     v.Remove(_T("GUST"));
             }
-            if (v.HasMember(_T("SWELL")) && recordarray[Idx_HTSIGW] ) {
-                double vkn = recordarray[Idx_HTSIGW]->getInterpolatedValue(lon, lat, true );
+            if (v.HasMember(_T("SWELL")) ) {
+                double vkn = m_pGribCtrlBar->getTimeInterpolatedValue(Idx_HTSIGW, lon, lat, time );
                 if ( vkn != GRIB_NOTDEF ) {
                     v[_T("Type")] = wxT("Reply");
                     v[_T("SWELL")] = vkn;
@@ -624,7 +618,6 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             wxString out;
             w.Write(v, out);
             SendPluginMessage(wxString(_T("GRIB_VALUES")), out);
-            delete pTimeset;
         }
     }
     else if(message_id == _T("GRIB_VERSION_REQUEST"))
