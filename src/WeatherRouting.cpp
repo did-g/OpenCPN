@@ -361,7 +361,7 @@ void WeatherRouting::Render(wrDC &dc, PlugIn_ViewPort &vp)
 
     // polling is bad
     bool work = false;
-    for(auto it :RouteMap::Positions) {
+    for(auto &it :RouteMap::Positions) {
         if (it.GUID.IsEmpty())
             continue;
 
@@ -464,7 +464,7 @@ void WeatherRouting::AddPosition(double lat, double lon)
 
 void WeatherRouting::AddPosition(double lat, double lon, wxString name)
 {
-    for(auto it: RouteMap::Positions) {
+    for(auto &it: RouteMap::Positions) {
         if(it.GUID.IsEmpty() && it.Name == name) {
             wxMessageDialog mdlg(this, _("This name already exists, replace?\n"),
                                  _("Weather Routing"), wxYES | wxNO | wxICON_WARNING);
@@ -508,7 +508,7 @@ void WeatherRouting::AddPosition(double lat, double lon, wxString name, wxString
     if (GUID.IsEmpty())
         return AddPosition(lat, lon, name);
 
-    for(auto it : RouteMap::Positions) {
+    for(auto &it : RouteMap::Positions) {
         if(it.GUID.IsEmpty())
             continue;
 
