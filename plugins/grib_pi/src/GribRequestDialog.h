@@ -82,7 +82,7 @@ private:
       void InitRequestConfig();
       void OnExit(wxCommandEvent &event) { wxCloseEvent evt; OnClose ( evt ); }
       void OnTopChange(wxCommandEvent &event);
-      void OnResolutionChange( wxCommandEvent& event ) override;
+      void OnResolutionChange( wxCommandEvent& event ) ; // override; // break gcc 4.6
       void OnMovingClick( wxCommandEvent& event );
       void OnAnyChange( wxCommandEvent& event );
       void OnAnySpinChange( wxSpinEvent& event ) { wxCommandEvent evt; OnAnyChange( evt); }
