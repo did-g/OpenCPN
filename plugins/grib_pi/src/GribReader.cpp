@@ -504,8 +504,8 @@ void GribReader::readGribFileContent()
 				double dp = computeDewPoint(x, y, date);
 				recDewpoint->setValue(i, j, dp);
             }
-            storeRecordInMap(recDewpoint);
 		}
+        storeRecordInMap(recDewpoint);
 	}
 }
 
