@@ -461,6 +461,27 @@ void GribReader::readGribFileContent()
 			storeRecordInMap(rec);
 		}
     }
+#if 0
+	for (auto iter :setAllDates ) {
+		time_t date = iter;
+		GribRecord *rec = getGribRecord(GRB_WIND_VX, LV_ABOV_GND, 10, date);
+		if (rec != nullptr) for (zuint i=0; i<(zuint)rec->getNi(); i++)
+		{
+		    for (zuint j=0; j<(zuint)rec->getNj(); j++) {
+				rec->setValue(i, j, 0);
+            }
+        }
+
+		rec = getGribRecord(GRB_WIND_VY, LV_ABOV_GND, 10, date);
+		if (rec == nullptr)
+		    continue;
+        for (zuint i=0; i<(zuint)rec->getNi(); i++) {
+		    for (zuint j=0; j<(zuint)rec->getNj(); j++) {
+				rec->setValue(i, j, 5);
+            }
+        }
+    }
+#endif
 	//-----------------------------------------------------
 	// Are dewpoint data in file ?
 	// If no, compute it with Magnus-Tetens formula, if possible.
