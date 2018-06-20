@@ -303,7 +303,7 @@ void jpc_mqdec_dump(jpc_mqdec_t *mqdec, FILE *out)
 	fprintf(out, "MQDEC A = %08lx, C = %08lx, CT=%08lx, ",
 	  (unsigned long) mqdec->areg, (unsigned long) mqdec->creg,
 	  (unsigned long) mqdec->ctreg);
-	fprintf(out, "CTX = %d, ", (int)(mqdec->curctx - mqdec->ctxs));
-	fprintf(out, "IND %" PRIdFAST32 ", MPS %d, QEVAL %x\n", *mqdec->curctx -
-	  jpc_mqstates, (*mqdec->curctx)->mps, (unsigned int)(*mqdec->curctx)->qeval);
+	fprintf(out, "CTX = %" PRIdPTR ", ", mqdec->curctx - mqdec->ctxs);
+	fprintf(out, "IND %" PRIdPTR ", MPS %d, QEVAL %"PRIxFAST16"\n", *mqdec->curctx -
+	  jpc_mqstates, (*mqdec->curctx)->mps, (*mqdec->curctx)->qeval);
 }

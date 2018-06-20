@@ -65,16 +65,17 @@
  * $Id$
  */
 
-#include <jasper/jas_config.h>
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <jasper/jas_cm.h>
-#include <jasper/jas_icc.h>
-#include <jasper/jas_init.h>
-#include <jasper/jas_stream.h>
-#include <jasper/jas_malloc.h>
-#include <jasper/jas_math.h>
+#include "jasper/jas_config.h"
+#include "jasper/jas_cm.h"
+#include "jasper/jas_icc.h"
+#include "jasper/jas_init.h"
+#include "jasper/jas_stream.h"
+#include "jasper/jas_malloc.h"
+#include "jasper/jas_math.h"
+#include "jasper/jas_debug.h"
 
 static jas_cmprof_t *jas_cmprof_create(void);
 static void jas_cmshapmatlut_cleanup(jas_cmshapmatlut_t *);
@@ -355,6 +356,8 @@ jas_cmprof_t *jas_cmprof_copy(jas_cmprof_t *prof)
 	}
 	return newprof;
 error:
+	if (newprof)
+		jas_cmprof_destroy(newprof);
 	return 0;
 }
 
@@ -458,6 +461,8 @@ jas_cmxform_t *jas_cmxform_create(jas_cmprof_t *inprof, jas_cmprof_t *outprof,
 	}
 	return xform;
 error:
+	if (xform)
+		jas_cmxform_destroy(xform);
 	return 0;
 }
 
@@ -614,6 +619,8 @@ static jas_cmpxformseq_t *jas_cmpxformseq_copy(jas_cmpxformseq_t *pxformseq)
 		goto error;
 	return newpxformseq;
 error:
+	if (newpxformseq)
+		jas_cmpxformseq_destroy(newpxformseq);
 	return 0;
 }
 
@@ -704,7 +711,8 @@ static int jas_cmpxformseq_resize(jas_cmpxformseq_t *pxformseq, int n)
 {
 	jas_cmpxform_t **p;
 	assert(n >= pxformseq->numpxforms);
-	p = jas_realloc2(pxformseq->pxforms, n, sizeof(jas_cmpxform_t *));
+	p = (!pxformseq->pxforms) ? jas_alloc2(n, sizeof(jas_cmpxform_t *)) :
+	  jas_realloc2(pxformseq->pxforms, n, sizeof(jas_cmpxform_t *));
 	if (!p) {
 		return -1;
 	}
@@ -1064,7 +1072,6 @@ static int icctoclrspc(int iccclrspc, int refflag)
 			break;
 		}
 	}
-	return JAS_CLRSPC_UNKNOWN;
 }
 
 static int mono(jas_iccprof_t *iccprof, int op, jas_cmpxformseq_t **retpxformseq)
@@ -1274,7 +1281,6 @@ int jas_clrspc_numchans(int clrspc)
 		abort();
 		break;
 	}
-	return 0;
 }
 
 jas_iccprof_t *jas_iccprof_createfromcmprof(jas_cmprof_t *prof)

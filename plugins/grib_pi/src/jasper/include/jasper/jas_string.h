@@ -74,7 +74,9 @@
 * Includes.
 \******************************************************************************/
 
+/* The configuration header file should be included first. */
 #include <jasper/jas_config.h>
+
 #include <string.h>
 
 #ifdef __cplusplus
@@ -86,7 +88,7 @@ extern "C" {
 \******************************************************************************/
 
 /* Copy a string (a la strdup). */
-char *jas_strdup(const char *);
+JAS_DLLEXPORT char *jas_strdup(const char *);
 
 #ifdef __cplusplus
 }

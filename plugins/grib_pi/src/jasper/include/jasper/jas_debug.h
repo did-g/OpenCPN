@@ -72,11 +72,13 @@
 * Includes.
 \******************************************************************************/
 
+/* The configuration header file should be included first. */
+#include <jasper/jas_config.h>
+
 #include <stdio.h>
 
-#include <jasper/jas_config.h>
-#include "jasper/jas_types.h"
-#include "jasper/jas_debug.h"
+#include <jasper/jas_types.h>
+#include <jasper/jas_debug.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,7 +90,7 @@ extern "C" {
 
 /* Output debugging information to standard error provided that the debug
   level is set sufficiently high. */
-#if defined(DEBUG)
+#if !defined(NDEBUG)
 #define	JAS_DBGLOG(n, x) \
 	((jas_getdbglevel() >= (n)) ? (jas_eprintf x) : 0)
 #else
@@ -96,16 +98,25 @@ extern "C" {
 #endif
 
 /* Get the library debug level. */
-int jas_getdbglevel(void);
+JAS_DLLEXPORT int jas_getdbglevel(void);
 
 /* Set the library debug level. */
-int jas_setdbglevel(int dbglevel);
+JAS_DLLEXPORT int jas_setdbglevel(int dbglevel);
 
 /* Perform formatted output to standard error. */
-int jas_eprintf(const char *fmt, ...);
+JAS_DLLEXPORT int jas_eprintf(const char *fmt, ...);
 
 /* Dump memory to a stream. */
 int jas_memdump(FILE *out, void *data, size_t len);
+
+/* Warn about use of deprecated functionality. */
+void jas_deprecated(const char *s);
+
+/* Convert to a string literal */
+#define JAS_STRINGIFY(x) #x
+
+/* Convert to a string literal after macro expansion */
+#define JAS_STRINGIFYX(x) JAS_STRINGIFY(x)
 
 #ifdef __cplusplus
 }

@@ -75,6 +75,7 @@
 \******************************************************************************/
 
 #include "jasper/jas_seq.h"
+#include "jpc_fix.h"
 
 /******************************************************************************\
 * Constants.
@@ -101,8 +102,8 @@ any particular platform.  Hopefully, it is not too unreasonable, however. */
 #endif
 
 typedef struct {
-	int (*analyze)(jas_seqent_t *, int, int, int, int, int);
-	int (*synthesize)(jas_seqent_t *, int, int, int, int, int);
+	int (*analyze)(jpc_fix_t *, int, int, int, int, int);
+	int (*synthesize)(jpc_fix_t *, int, int, int, int, int);
 	double *lpenergywts;
 	double *hpenergywts;
 } jpc_qmfb2d_t;

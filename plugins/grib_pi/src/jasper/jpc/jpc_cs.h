@@ -387,10 +387,8 @@ typedef struct {
 
 #define	JPC_QCX_GETEXPN(x)	((x) >> 11)
 #define	JPC_QCX_GETMANT(x)	((x) & 0x07ff)
-#define JPC_QCX_ASSERT_EXPN(x) assert(!((x) & (~0x1f)))
-#define	JPC_QCX_EXPN(x)		(((x) & 0x1f) << 11)
-#define JPC_QCX_ASSERT_MANT(x) assert(!((x) & (~0x7ff)))
-#define	JPC_QCX_MANT(x)		((x) & 0x7ff)
+#define	JPC_QCX_EXPN(x)		(assert(!((x) & (~0x1f))), (((x) & 0x1f) << 11))
+#define	JPC_QCX_MANT(x)		(assert(!((x) & (~0x7ff))), ((x) & 0x7ff))
 
 /* Per component information. */
 
@@ -492,7 +490,7 @@ typedef struct {
 	uint_fast16_t len;
 
 	/* The data. */
-	uchar *data;
+	jas_uchar *data;
 
 } jpc_ppm_t;
 
@@ -531,7 +529,7 @@ typedef struct {
 	uint_fast16_t len;
 
 	/* The data. */
-	uchar *data;
+	jas_uchar *data;
 
 } jpc_com_t;
 
@@ -579,7 +577,7 @@ typedef struct {
 typedef struct {
 
 	/* The data. */
-	uchar *data;
+	jas_uchar *data;
 
 	/* The length. */
 	uint_fast16_t len;

@@ -386,10 +386,10 @@ static void jpc_mqenc_setbits(jpc_mqenc_t *mqenc)
 
 int jpc_mqenc_dump(jpc_mqenc_t *mqenc, FILE *out)
 {
-	fprintf(out, "AREG = %08x, CREG = %08x, CTREG = %" PRIuFAST32 "\n",
-	  (unsigned int)mqenc->areg, (unsigned int)mqenc->creg, mqenc->ctreg);
-	fprintf(out, "IND = %02u, MPS = %d, QEVAL = %04x\n",
-	  (unsigned int)(*mqenc->curctx - jpc_mqstates), (*mqenc->curctx)->mps,
-	  (unsigned int)(*mqenc->curctx)->qeval);
+	fprintf(out, "AREG = %08"PRIxFAST32", CREG = %08"PRIxFAST32", CTREG = %"PRIuFAST32"\n",
+	  mqenc->areg, mqenc->creg, mqenc->ctreg);
+	fprintf(out, "IND = %02"PRIdPTR", MPS = %d, QEVAL = %04"PRIxFAST16"\n",
+	  *mqenc->curctx - jpc_mqstates, (*mqenc->curctx)->mps,
+	  (*mqenc->curctx)->qeval);
 	return 0;
 }
