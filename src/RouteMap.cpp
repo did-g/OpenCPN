@@ -531,7 +531,7 @@ static inline bool ReadWindAndCurrents(RouteMapConfiguration &configuration, Rou
                 for(int i=0; i<windatlas_count; i++) {
                     double WG = i*360/windatlas_count;
                     double VWG = speeds[i]*configuration.WindStrength;
-                    OverWater(WG, VWG, -C, VC, atlas.W[i], atlas.VW[i]);
+                    OverWater(WG, VWG, C, -VC, atlas.W[i], atlas.VW[i]);
                 }
 
                 /* find most likely wind direction */
@@ -583,7 +583,7 @@ static inline bool ReadWindAndCurrents(RouteMapConfiguration &configuration, Rou
     }
     VWG *= configuration.WindStrength;
 
-    OverWater(WG, VWG, -C, VC, W, VW);
+    OverWater(WG, VWG, C, -VC, W, VW);
     return true;
 }
 
@@ -842,6 +842,8 @@ bool Position::Propagate(IsoRouteList &routelist, RouteMapConfiguration &configu
             configuration.polar_failed = true;
             continue;
         }
+        if (polar == -1)
+            polar = newpolar;
         
         if(!ComputeBoatSpeed(configuration, timeseconds, WG, VWG, W, VW, C, VC, H, atlas, data_mask,
                              B, VB, BG, VBG, dist, newpolar))
