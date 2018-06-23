@@ -1608,6 +1608,11 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
                 }
                 break;
             }
+            // actually GFS but nothing else is going that far
+            if (d == 120)
+                it = wxMax(it, 3);
+            else if (d == 240)
+                it = wxMax(it, 12);
             
             d += it;
             cnt -= it;
