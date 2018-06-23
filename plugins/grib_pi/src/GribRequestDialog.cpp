@@ -1057,6 +1057,11 @@ http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p50.pl?
    file=gfs.t00z.pgrb2full.0p50.f003&
    lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018052300
 
+http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl?
+   file=gfs.t06z.pgrb2.1p00.f003&
+   lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018062306
+
+
 http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?
     file=hrrr.t00z.wrfsfcf01.grib2&
     lev_10_m_above_ground=on&lev_2_m_above_ground=on&var_TMP=on&var_UGRD=on&var_VGRD=on&
@@ -1093,7 +1098,7 @@ wxString GribRequestSetting::WriteMail()
     m_MailError_Nb = 0;
     //some useful strings
     // {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},
-    static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T("full.1p00"), wxEmptyString };
+    static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T(".1p00"), wxEmptyString };
 
     static const wxString m[] = { _T("gfs"), _T("hrrr"), _T("nam")};
     static const wxString M[] = {  _T("arome01?"), _T("arome?"), _T("arpege?")};
