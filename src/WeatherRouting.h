@@ -113,7 +113,7 @@ public:
     void AddPosition(double lat, double lon);
     void AddPosition(double lat, double lon, wxString name);
     void AddPosition(double lat, double lon, wxString name, wxString GUID);
-    void AddRoute(std::unique_ptr<PlugIn_Route> &rte);
+    void AddRoute(wxString& GUID);
 
     void CursorRouteChanged();
     void UpdateColumns();
@@ -178,7 +178,7 @@ private:
     void UpdateConfigurations();
     void UpdateDialogs();
 
-    void AddConfiguration(const RouteMapConfiguration &configuration);
+    bool AddConfiguration(RouteMapConfiguration &configuration);
     void UpdateRouteMap(RouteMapOverlay *routemapoverlay);
     void UpdateItem(long index, bool stateonly=false);
 
