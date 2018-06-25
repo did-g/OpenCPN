@@ -43,8 +43,8 @@
 */
 enum Provider { SAILDOCS, ZYGRIB, NOAA, METEO_F};  //grib providers
 
-enum Model : int { GFS=0, HRRR, NAM, COAMPS, RTOFS, OSCAR, ARxxx };      //forecast models
-const static wxString s1[] = {_T("GFS"),_T("HRRR"), _T("NAM Car/CA"), _T("COAMPS"), _T("RTOFS"), 
+enum Model : int { GFS=0, GFS_ENS, HRRR, NAM, COAMPS, RTOFS, OSCAR, ARxxx };      //forecast models
+const static wxString s1[] = {_T("GFS"), _T("GFS Ensemble"), _T("HRRR"), _T("NAM Car/CA"), _T("COAMPS"), _T("RTOFS"), 
         _T("OSCAR"), _T("Meteo France")};
 
 enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
@@ -162,6 +162,14 @@ static const Providers P = {
                                 },
                    /* .TimeRanges = */ T16
                   },
+            },
+            {GFS_ENS, {/* .Parameters = */ PRMSL|WIND|AIRTMP|APCP|HGT500|TMP500|WIND500|CLOUDS,
+                       /* .Default = */  PRMSL | WIND ,
+                       /* .Intervals  = */ {{r0_5, I3_12 },
+                                       {r1_0, { 6 } } 
+                                       },
+                       /* .TimeRanges = */ T16
+                       }
             },
             {HRRR, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|/*RAIN|*/APCP|REFC|CLOUDS,
                      /* .Default = */  WIND,
@@ -553,13 +561,14 @@ void GribRequestSetting::ApplyRequestConfig( unsigned rs, unsigned it, unsigned 
     m_RevertMapModel.clear();
     unsigned int imax = sizeof(s1) / sizeof(wxString);
     int midx = imax;
-    for( unsigned int i= 0;  i< imax; i++) {
-        if (m.find((Model)i) != m.end()) {
-            m_pModel->Append( s1[i] );
-            m_RevertMapModel.push_back((Model)i);
-            if ((Model)i == model)
-                midx = i;
-        }
+    for( unsigned int i= 0, j = 0;  i< imax; i++) {
+        if (m.find((Model)i) == m.end())
+            continue;
+        m_pModel->Append( s1[i] );
+        m_RevertMapModel.push_back((Model)i);
+        if ((Model)i == model)
+            midx = j;
+        j++;
     }
     m_pModel->SetSelection(wxMin(midx, m_pModel->GetCount()-1));
 
@@ -1043,6 +1052,21 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
 }
 
 /*
+ensemble
+
+http://nomads.ncep.noaa.gov/cgi-bin/filter_gens_0p50.pl?
+   file=geavg.t06z.pgrb2a.0p50.f000&
+   lev_10_m_above_ground=on&
+   lev_2_m_above_ground=on&
+   lev_500_mb=on&
+   lev_entire_atmosphere=on&
+   lev_entire_atmosphere_%5C%28considered_as_a_single_layer%5C%29=on&
+   lev_mean_sea_level=on&
+   lev_surface=on&var_APCP=on&var_CAPE=on&var_HGT=on&var_PRMSL=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VGRD=on&
+   subregion=&leftlon=0&rightlon=-90&toplat=60&bottomlat=0&
+   dir=%2Fgefs.20180623%2F06%2Fpgrb2ap5
+
+GFS
 "http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?
    file=gfs.t18z.pgrb2.0p25.f000&
    lev_500_mb=on&var_HGT=on&
@@ -1056,6 +1080,11 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
 http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p50.pl?
    file=gfs.t00z.pgrb2full.0p50.f003&
    lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018052300
+
+http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl?
+   file=gfs.t06z.pgrb2.1p00.f003&
+   lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018062306
+
 
 http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?
     file=hrrr.t00z.wrfsfcf01.grib2&
@@ -1093,9 +1122,8 @@ wxString GribRequestSetting::WriteMail()
     m_MailError_Nb = 0;
     //some useful strings
     // {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},
-    static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T("full.1p00"), wxEmptyString };
 
-    static const wxString m[] = { _T("gfs"), _T("hrrr"), _T("nam")};
+    static const wxString m[] = { _T("gfs"), _T("gens"), _T("hrrr"), _T("nam")};
     static const wxString M[] = {  _T("arome01?"), _T("arome?"), _T("arpege?")};
 
     static const wxString s[] = { _T(","), _T(" "), _T("&"), _T("") };        //separators
@@ -1148,11 +1176,20 @@ wxString GribRequestSetting::WriteMail()
             );
         r_topmess = _T("http://nomads.ncep.noaa.gov/cgi-bin/filter_") + m[model] + _T("_") ;
         if (model == GFS) {
-            static const wxString f[] = { _T("0p25_1hr.pl"), _T("0p50.pl"), _T("1p00.pl"), wxEmptyString };
+            static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T(".1p00") };
+            static const wxString f[] = { _T("0p25_1hr.pl"), _T("0p50.pl"), _T("1p00.pl") };
 
             r_topmess.Append( f[resolution] );
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.pgrb2") + r[resolution] + _T(".f%03d"));
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%02d&"));
+        }
+        else if (model == GFS_ENS) {
+            static const wxString r[] = { _T(".0p50"), _T(".1p00") };
+            static const wxString f[] = { _T("0p50.pl"), _T("1p00.pl") };
+
+            r_topmess.Append( f[resolution] );
+            r_topmess.Append(_T("?file=")  _T("geavg.t%02dz.pgrb2a") + r[resolution] + _T(".f%03d"));
+            r_topmess.Append(_T("&dir=%%2Fgefs.%d%02d%02d%%2F%02d%%2Fpgrb2ap5&"));
         }
         else if (model == NAM) {
             r_topmess.Append( _T("crb.pl") );
@@ -1603,7 +1640,17 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
                 }
                 break;
             }
-            
+            switch (model) {
+            case GFS_ENS:
+                if (d == 192) it = wxMax(it, 6);
+                break;
+            case GFS:
+                if (d == 120) it = wxMax(it, 3);
+                else if (d == 240) it = wxMax(it, 12);
+                break;
+            default:
+                break;
+            }
             d += it;
             cnt -= it;
         }
