@@ -569,7 +569,7 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                 double vkn, ang;
                 if ( m_pGribCtrlBar->getTimeInterpolatedValues(vkn, ang,
                                          Idx_WIND_VX, Idx_WIND_VY,
-                                         lon, lat, time))
+                                         lon, lat, time) && vkn != GRIB_NOTDEF)
                 {
                     v[_T("Type")] = wxT("Reply");
                     v[_T("WIND SPEED")] = vkn;
@@ -584,7 +584,7 @@ void grib_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                 double vkn, ang;
                 if ( m_pGribCtrlBar->getTimeInterpolatedValues(vkn, ang,
                                          Idx_SEACURRENT_VX, Idx_SEACURRENT_VY,
-                                         lon, lat, time))
+                                         lon, lat, time) && vkn != GRIB_NOTDEF)
                 {
                     v[_T("Type")] = wxT("Reply");
                     v[_T("CURRENT SPEED")] = vkn;
