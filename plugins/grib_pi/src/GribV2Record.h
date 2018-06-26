@@ -28,16 +28,16 @@ Elément de base d'un fichier GRIB V2
 #include <cmath>
 
 #include "zuFile.h"
-#include "GribRecord.h"
+#include "GribDecoder.h"
 
 class  GRIBMessage;
 
 //----------------------------------------------
-class GribV2Record : public GribRecord
+class GribV2Record : public GribDecoder
 {
     public:
         GribV2Record(ZUFILE* file, int id_, bool test_only = false);
-        GribV2Record(const GribRecord &rec);
+        GribV2Record(const GribV2Record &rec);
         GribV2Record() { grib_msg = 0;}
 
         ~GribV2Record();
