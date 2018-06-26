@@ -2166,11 +2166,9 @@ GribV2Record *GribV2Record::GribV2NextDataSet(ZUFILE* file, int id_)
 //-------------------------------------------------------------------------------
 // Constructeur de recopie
 //-------------------------------------------------------------------------------
-#pragma warning(disable: 4717)
-GribV2Record::GribV2Record(const GribRecord &rec) : GribRecord(rec)
+GribV2Record::GribV2Record(const GribV2Record &rec)
 {
     *this = rec;
-    #pragma warning(default: 4717)
 }
 
 GribV2Record::~GribV2Record()

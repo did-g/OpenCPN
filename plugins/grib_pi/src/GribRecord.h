@@ -125,24 +125,6 @@ enum DataCenterModel {
 };
 
 //----------------------------------------------
-class GribCode
-{
-	public:
-		static zuint makeCode (zuchar dataType, zuchar levelType, zuint levelValue) {
-			return ((levelValue&0xFFFF)<<16)+((levelType&0xFF)<<8)+dataType;
-		}
-		static zuchar getDataType (zuint code) {
-			return code&0xFF;
-		}
-		static zuchar getLevelType (zuint code) {
-			return (code>>8)&0xFF;
-		}
-		static zuint getLevelValue (zuint code) {
-			return (code>>16)&0xFFFF;
-		}
-};
-
-//----------------------------------------------
 class GribRecord
 {
     public:
@@ -150,7 +132,6 @@ class GribRecord
         GribRecord() { m_bfilled = false; }
         
         virtual ~GribRecord();
-  
   
         static GribRecord *InterpolatedRecord(const GribRecord &rec1, const GribRecord &rec2, double d, bool dir=false);
         static GribRecord *Interpolated2DRecord(GribRecord *&rety,
