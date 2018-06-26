@@ -2301,8 +2301,8 @@ GribV2Record *GribV2Record::GribV2NextDataSet(ZUFILE* file, int id_)
 {
     GribV2Record *rec1 = new GribV2Record(*this);
     // XXX should have a shallow copy constructor 
-    delete [] rec1->data;
-    delete [] rec1->BMSbits;
+    rec1->data = 0;
+    rec1->BMSbits = 0;
     // new records take ownership
     this->grib_msg = 0;
     rec1->id = id_;
@@ -2313,11 +2313,9 @@ GribV2Record *GribV2Record::GribV2NextDataSet(ZUFILE* file, int id_)
 //-------------------------------------------------------------------------------
 // Constructeur de recopie
 //-------------------------------------------------------------------------------
-#pragma warning(disable: 4717)
-GribV2Record::GribV2Record(const GribRecord &rec) : GribRecord(rec)
+GribV2Record::GribV2Record(const GribV2Record &rec)
 {
     *this = rec;
-    #pragma warning(default: 4717)
 }
 
 GribV2Record::~GribV2Record()

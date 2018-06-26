@@ -439,11 +439,9 @@ GribV1Record::GribV1Record(ZUFILE* file, int id_)
 //-------------------------------------------------------------------------------
 // Constructeur de recopie
 //-------------------------------------------------------------------------------
-#pragma warning(disable: 4717)
-GribV1Record::GribV1Record(const GribRecord &rec) : GribRecord(rec)
+GribV1Record::GribV1Record(const GribV1Record &rec) 
 {
     *this = rec;
-    #pragma warning(default: 4717)
 }
 
 GribV1Record::~GribV1Record()
