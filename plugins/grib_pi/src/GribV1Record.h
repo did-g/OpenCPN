@@ -28,15 +28,15 @@ Elément de base d'un fichier GRIB V1
 #include <cmath>
 
 #include "zuFile.h"
-#include "GribRecord.h"
+#include "GribDecoder.h"
 
 
 //----------------------------------------------
-class GribV1Record : public GribRecord
+class GribV1Record : public GribDecoder
 {
     public:
         GribV1Record(ZUFILE* file, int id_, bool test_only = false);
-        GribV1Record(const GribRecord &rec);
+        GribV1Record(const GribV1Record &rec);
         GribV1Record() {}
 
         ~GribV1Record();

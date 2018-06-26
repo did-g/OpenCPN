@@ -1954,6 +1954,10 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
             }
         }
     }
+    /*
+        X_Uearth = U*cosalpha - V*sinalpha
+        Y_Vearth = V*cosalpha + U*sinalpha
+    */
     if(isOK) m_pRefDateTime = pRec->getRecordRefDate();     //to ovoid crash with some bad files
 }
 

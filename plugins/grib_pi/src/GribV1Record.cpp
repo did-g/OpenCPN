@@ -283,7 +283,7 @@ GribV1Record::GribV1Record(ZUFILE* file, int id_, bool test_only)
 //-------------------------------------------------------------------------------
 // Constructeur de recopie
 //-------------------------------------------------------------------------------
-GribV1Record::GribV1Record(const GribRecord &rec) : GribRecord(rec)
+GribV1Record::GribV1Record(const GribV1Record &rec) 
 {
     *this = rec;
 }
