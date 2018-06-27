@@ -502,7 +502,7 @@ bool GRIBUICtrlBar::GetGribZoneLimits(GribTimelineRecordSet *timelineSet, double
     //calculate the largest overlay size
     GribRecord **pGR = timelineSet->m_GribRecordPtrArray;
     double ltmi = -GRIB_NOTDEF, ltma = GRIB_NOTDEF, lnmi = -GRIB_NOTDEF, lnma = GRIB_NOTDEF;
-    for( int i = 0; i<36; i++){
+    for( unsigned int i = 0; i < Idx_COUNT; i++){
         GribRecord *pGRA = pGR[i];
         if(!pGRA) continue;
         if(pGRA->getLatMin() < ltmi) ltmi = pGRA->getLatMin();
@@ -1954,6 +1954,10 @@ GRIBFile::GRIBFile( const wxArrayString & file_names, bool CumRec, bool WaveRec,
             }
         }
     }
+    /*
+        X_Uearth = U*cosalpha - V*sinalpha
+        Y_Vearth = V*cosalpha + U*sinalpha
+    */
     if(isOK) m_pRefDateTime = pRec->getRecordRefDate();     //to ovoid crash with some bad files
 }
 
