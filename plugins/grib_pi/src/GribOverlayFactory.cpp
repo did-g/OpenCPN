@@ -550,25 +550,80 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     bool repeat = pGR->getLonMin() == 0 && pGR->getLonMax() + pGR->getDi() >= 360.;
 
     // create the texture to the size of the grib data plus a transparent border
-    int tw = pGR->getNi()+2*!repeat, th = pGR->getNj()+2;
-    
+    int tw, th, samples = 1;
+    double delta;
+
+    int type = pGR->getGridType();
+    if (type == 30 || pGR->getNi() > 1024 || pGR->getNj() > 1024 ) {
+        // downsample
+        samples = 0;
+        tw = pGR->getNi();
+        th = pGR->getNj();
+        double dw, dh;
+        dw = (tw >  1022)?1022./tw:1.;
+        dh = (th >  1022)?1022./th:1.;
+        delta = wxMin(dw, dh);
+        th *= delta;
+        tw *= delta;
+        tw += 2*!repeat;
+        th += 2;
+    }
+    else for(;;) {
+        // oversample up to 16x
+        tw = samples*(pGR->getNi()-1)+1 + 2*!repeat;
+        th = samples*(pGR->getNj()-1)+1 + 2;
+        if(tw >= 512 || th >= 512 || samples == 16)
+            break;
+        samples *= 2;
+    }
+
     //    Dont try to create enormous GRIB textures
     if( tw > 1024 || th > 1024 )
         return false;
 
-    unsigned char *data = new unsigned char[tw*th*4];
-    memset(data, 0, tw*th*4); // ensure transparent
-    for( int y = 0; y < pGR->getNj(); y++ ) {
-        for( int x = 0; x < pGR->getNi(); x++ ) {
-            double v = pGR->getValue(x, y);
-            unsigned char r, g, b, a;
-            if( v != GRIB_NOTDEF ) {
-                v = m_Settings.CalibrateValue(settings, v);
-                //set full transparency if no rain or no clouds at all
-                if (( settings == GribOverlaySettings::PRECIPITATION || settings == GribOverlaySettings::CLOUD ) && v < 0.01) 
-                {
-                    r = g = b = 255;
-                    a = 0;
+    double dx = pGR->getNi()/(pGR->getLonMax() -pGR->getLonMin());
+    double dy = pGR->getNj()/(pGR->getLatMax() -pGR->getLatMin());
+
+    unsigned char *data = new unsigned char[tw*th*4]();
+    if (samples == 0) {
+        for( int j = 0; j < pGR->getNj(); j++ ) {
+            for( int i = 0; i < pGR->getNi(); i++ ) {
+                double v = pGR->getValue(i, j);
+                int y = (j + 1)*delta;
+                int x = (i + !repeat)*delta;
+                if (type == 30) {
+                    // not a regular grid
+                    // convert Lat/Lon  
+                    double lon, lat;
+                    pGR->getXY(i, j, &lon, &lat);
+                    x = (lon -pGR->getLonMin())*dx;
+                    y = (lat -pGR->getLatMin())*dy;
+                } 
+                int doff = 4*(y*tw + x);
+                assert(doff < tw*th*4);
+                GetCalibratedGraphicColor(settings, v, data + doff);
+            }
+        }
+    }
+    else if(samples == 1 ) { // optimized case when there is only 1 sample
+        for( int j = 0; j < pGR->getNj(); j++ ) {
+            for( int i = 0; i < pGR->getNi(); i++ ) {
+                double v = pGR->getValue(i, j);
+                int y = j + 1;
+                int x = i + !repeat;
+                int doff = 4*(y*tw + x);
+                GetCalibratedGraphicColor(settings, v, data + doff);
+            }
+        }
+    } else {
+        for( int j = 0; j < pGR->getNj(); j++ ) {
+            for( int i = 0; i < pGR->getNi(); i++ ) {
+                double v00 = pGR->getValue(i,   j), v01 = GRIB_NOTDEF;
+                double v10 = GRIB_NOTDEF, v11 = GRIB_NOTDEF;
+                if(i < pGR->getNi()-1) {
+                    v01 = pGR->getValue(i+1, j);
+                    if(j < pGR->getNj()-1)
+                        v11 = pGR->getValue(i+1, j+1);
                 }
                 if(j < pGR->getNj()-1)
                     v10 = pGR->getValue(i,   j+1);
