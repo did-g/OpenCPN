@@ -432,7 +432,7 @@ int64_t rar_expand_v2(ar_archive_rar *rar, int64_t end)
             int idx = symbol - 256;
             int lensymbol = rar_read_next_symbol(rar, &uncomp_v2->lengthcode);
             offs = uncomp_v2->oldoffset[(uncomp_v2->oldoffsetindex - idx) & 0x03];
-            if (lensymbol < 0 || lensymbol > (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || lensymbol > (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
+            if (lensymbol < 0 || lensymbol >= (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || lensymbol >= (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
                 warn("Invalid data in bitstream");
                 return -1;
             }
@@ -466,7 +466,7 @@ int64_t rar_expand_v2(ar_archive_rar *rar, int64_t end)
         else {
             int idx = symbol - 270;
             int offssymbol;
-            if (idx > (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || idx > (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
+            if (idx >= (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || idx >= (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
                 warn("Invalid data in bitstream");
                 return -1;
             }
@@ -477,7 +477,7 @@ int64_t rar_expand_v2(ar_archive_rar *rar, int64_t end)
                 len += (uint8_t)br_bits(rar, lengthbits[idx]);
             }
             offssymbol = rar_read_next_symbol(rar, &uncomp_v2->offsetcode);
-            if (offssymbol < 0 || offssymbol > (int)(sizeof(offsetbases) / sizeof(offsetbases[0])) || offssymbol > (int)(sizeof(offsetbits) / sizeof(offsetbits[0]))) {
+            if (offssymbol < 0 || offssymbol >= (int)(sizeof(offsetbases) / sizeof(offsetbases[0])) || offssymbol >= (int)(sizeof(offsetbits) / sizeof(offsetbits[0]))) {
                 warn("Invalid data in bitstream");
                 return -1;
             }
@@ -880,7 +880,7 @@ int64_t rar_expand(ar_archive_rar *rar, int64_t end)
             int idx = symbol - 259;
             int lensymbol = rar_read_next_symbol(rar, &uncomp_v3->lengthcode);
             offs = uncomp_v3->oldoffset[idx];
-            if (lensymbol < 0 || lensymbol > (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || lensymbol > (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
+            if (lensymbol < 0 || lensymbol >= (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || lensymbol >= (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
                 warn("Invalid data in bitstream");
                 return -1;
             }
@@ -910,7 +910,7 @@ int64_t rar_expand(ar_archive_rar *rar, int64_t end)
         else {
             int idx = symbol - 271;
             int offssymbol;
-            if (idx > (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || idx > (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
+            if (idx >= (int)(sizeof(lengthbases) / sizeof(lengthbases[0])) || idx >= (int)(sizeof(lengthbits) / sizeof(lengthbits[0]))) {
                 warn("Invalid data in bitstream");
                 return -1;
             }
@@ -921,7 +921,7 @@ int64_t rar_expand(ar_archive_rar *rar, int64_t end)
                 len += (uint8_t)br_bits(rar, lengthbits[idx]);
             }
             offssymbol = rar_read_next_symbol(rar, &uncomp_v3->offsetcode);
-            if (offssymbol < 0 || offssymbol > (int)(sizeof(offsetbases) / sizeof(offsetbases[0])) || offssymbol > (int)(sizeof(offsetbits) / sizeof(offsetbits[0]))) {
+            if (offssymbol < 0 || offssymbol >= (int)(sizeof(offsetbases) / sizeof(offsetbases[0])) || offssymbol >= (int)(sizeof(offsetbits) / sizeof(offsetbits[0]))) {
                 warn("Invalid data in bitstream");
                 return -1;
             }
