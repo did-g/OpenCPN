@@ -1066,6 +1066,12 @@ http://nomads.ncep.noaa.gov/cgi-bin/filter_gens_0p50.pl?
    subregion=&leftlon=0&rightlon=-90&toplat=60&bottomlat=0&
    dir=%2Fgefs.20180623%2F06%2Fpgrb2ap5
 
+http://nomads.ncep.noaa.gov/cgi-bin/filter_gens.pl?
+   file=gec00.t12z.pgrb2f00&
+   lev_2_m_above_ground=on&lev_entire_atmosphere=on&lev_mean_sea_level=on&lev_surface=on&var_APCP=on&var_CAPE=on&var_PRATE=on&var_PRMSL=on&var_UGRD=on&var_VGRD=on&
+   subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&
+   dir=%2Fgefs.20180630%2F12%2Fpgrb2
+   
 GFS
 "http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?
    file=gfs.t18z.pgrb2.0p25.f000&
@@ -1174,22 +1180,24 @@ wxString GribRequestSetting::WriteMail()
        r_zone.Printf ( _T ( "subregion=&leftlon=%d&rightlon=%d&toplat=%d&bottomlat=%d" ), 
             m_spMinLon->GetValue(), m_spMaxLon->GetValue(), m_spMaxLat->GetValue(), m_spMinLat->GetValue()
             );
-        r_topmess = _T("http://nomads.ncep.noaa.gov/cgi-bin/filter_") + m[model] + _T("_") ;
+        r_topmess = _T("http://nomads.ncep.noaa.gov/cgi-bin/filter_") + m[model] ;
         if (model == GFS) {
             static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T(".1p00") };
             static const wxString f[] = { _T("0p25_1hr.pl"), _T("0p50.pl"), _T("1p00.pl") };
 
-            r_topmess.Append( f[resolution] );
+            r_topmess.Append( _T("_") + f[resolution] );
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.pgrb2") + r[resolution] + _T(".f%03d"));
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%02d&"));
         }
         else if (model == GFS_ENS) {
-            static const wxString r[] = { _T(".0p50"), _T(".1p00") };
-            static const wxString f[] = { _T("0p50.pl"), _T("1p00.pl") };
+            static const wxString f[] = { _T("_0p50.pl"), _T(".pl") };
+            static const wxString h[] = { _T("geavg"), _T("gec00") };
+            static const wxString r[] = { _T("a.0p50.f%03d"), _T("f%02d") };
+            static const wxString t[] = { _T("ap5"), _T("") };
 
             r_topmess.Append( f[resolution] );
-            r_topmess.Append(_T("?file=")  _T("geavg.t%02dz.pgrb2a") + r[resolution] + _T(".f%03d"));
-            r_topmess.Append(_T("&dir=%%2Fgefs.%d%02d%02d%%2F%02d%%2Fpgrb2ap5&"));
+            r_topmess.Append(_T("?file=")  + h[resolution] + _T(".t%02dz.pgrb2") + r[resolution]);
+            r_topmess.Append(_T("&dir=%%2Fgefs.%d%02d%02d%%2F%02d%%2Fpgrb2") + t[resolution] + _T("&"));
         }
         else if (model == NAM) {
             r_topmess.Append( _T("crb.pl") );
