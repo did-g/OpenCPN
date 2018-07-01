@@ -1076,8 +1076,10 @@ int Osenc::ingestCell( OGRS57DataSource *poS57DS, const wxString &FullPath000, c
     
     s0_file.Append( f000.GetFullName() );
 
-    if(poS57DS->Open( s0_file.mb_str(), TRUE, NULL))
+    if(poS57DS->Open( s0_file.mb_str(), TRUE, NULL)) {
+        CSLDestroy( papszReaderOptions );
         return 1;
+    }
 
     //      Get a pointer to the reader
     S57Reader *poReader = poS57DS->GetModule( 0 );
@@ -2175,20 +2177,23 @@ bool Osenc::CreateLineFeatureGeometryRecord200( S57Reader *poReader, OGRFeature 
     
     //  Write the base record
     size_t targetCount = sizeof(record);
+    bool ret = false;
     if(!stream->Write(&record, targetCount).IsOk())
-        return false;
+        goto exit;
     
     //  Write the table index array
     targetCount = nEdgeVectorRecords * 3 * sizeof(int);
     if(!stream->Write(pvec_buffer, targetCount).IsOk())
-        return false;
+        goto exit;
 
+    ret = true;
+exit:
     //  Free the buffers
     free(pvec_buffer);
     free( psb_buffer );
     free( pwkb_buffer );
     
-    return true;
+    return ret;
 }
 
     
@@ -2366,15 +2371,16 @@ bool Osenc::CreateLineFeatureGeometryRecord200( S57Reader *poReader, OGRFeature 
     recordLength += nEdgeVectorRecords * 3 * sizeof(int);
     baseRecord.record_length = recordLength;
 
+    bool ret = false;
     //  Write the base record
     size_t targetCount = sizeof(baseRecord);
     if(!stream->Write(&baseRecord, targetCount).IsOk())
-        return false;
+        goto exit;
     
     //  Write the contour point count array
     targetCount = contourPointCountArraySize;
     if(!stream->Write(contourPointCountArray, targetCount).IsOk())
-        return false;
+        goto exit;
     
     //  Walk and transcribe the TriPrim chain
     pTP = ppg->Get_PolyTriGroup_head()->tri_prim_head;         // head of linked list of TriPrims
@@ -2382,9 +2388,9 @@ bool Osenc::CreateLineFeatureGeometryRecord200( S57Reader *poReader, OGRFeature 
     {
 
         if(!stream->Write(&pTP->type, sizeof(uint8_t)).IsOk())
-            return false;
+            goto exit;
         if(!stream->Write(&pTP->nVert, sizeof(uint32_t)).IsOk())
-            return false;
+            goto exit;
         
 //         fwrite (&pTP->minxt , sizeof(double), 1, fpOut);
 //         fwrite (&pTP->maxxt , sizeof(double), 1, fpOut);
@@ -2399,13 +2405,13 @@ bool Osenc::CreateLineFeatureGeometryRecord200( S57Reader *poReader, OGRFeature 
         
 
         if(!stream->Write(&minlon, sizeof(double)).IsOk())
-            return false;
+            goto exit;
         if(!stream->Write(&maxlon, sizeof(double)).IsOk())
-            return false;
+            goto exit;
         if(!stream->Write(&minlat, sizeof(double)).IsOk())
-            return false;
+            goto exit;
         if(!stream->Write(&maxlat, sizeof(double)).IsOk())
-            return false;
+            goto exit;
         
         // Testing TODO
 //         float *pf = (float *)pTP->p_vertex;
@@ -2413,8 +2419,8 @@ bool Osenc::CreateLineFeatureGeometryRecord200( S57Reader *poReader, OGRFeature 
 //         float b = *pf;
         
 
-            if(!stream->Write(pTP->p_vertex, pTP->nVert * 2 * sizeof(float)).IsOk())
-            return false;
+        if(!stream->Write(pTP->p_vertex, pTP->nVert * 2 * sizeof(float)).IsOk())
+            goto exit;
             
             
         pTP = pTP->p_next;
@@ -2423,14 +2429,15 @@ bool Osenc::CreateLineFeatureGeometryRecord200( S57Reader *poReader, OGRFeature 
     //  Write the Edge Vector index table
     targetCount = nEdgeVectorRecords * 3 * sizeof(int);
     if(!stream->Write(pvec_buffer, targetCount).IsOk())
-        return false;
-    
-    
+        goto exit;
+
+    ret = true;
+exit:
     delete ppg;
     free(contourPointCountArray);
     free( pvec_buffer );
     
-    return true;
+    return ret;
 }
 
 unsigned char *Osenc::getObjectVectorIndexTable( S57Reader *poReader, OGRFeature *pFeature, int &nEntries )
