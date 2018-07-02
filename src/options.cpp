@@ -6800,6 +6800,9 @@ They can be decompressed again using unxz or 7 zip programs."),
                      (long) wxYES | wxCANCEL | wxCANCEL_DEFAULT | wxICON_WARNING) != wxID_YES)
       return;
 
+  wxArrayString charts;
+  wxSize sz;
+  {
     wxArrayString filespecs;
     filespecs.Add("*.kap");
     filespecs.Add("*.KAP");
@@ -6814,13 +6817,12 @@ They can be decompressed again using unxz or 7 zip programs."),
                           wxPD_SMOOTH | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME |
                           wxPD_REMAINING_TIME | wxPD_CAN_SKIP);
 
-  //    Make sure the dialog is big enough to be readable
-  wxSize sz = prog1.GetSize();
-  sz.x = cc1->GetClientSize().x * 8 / 10;
-  prog1.SetSize( sz );
+    //    Make sure the dialog is big enough to be readable
+    sz = prog1.GetSize();
+    sz.x = cc1->GetClientSize().x * 8 / 10;
+    prog1.SetSize( sz );
 
-  wxArrayString charts;
-  for(unsigned int i=0; i<pListBoxSelections.GetCount(); i++) {
+    for(unsigned int i=0; i<pListBoxSelections.GetCount(); i++) {
       dirname = pActiveChartsList->GetString(pListBoxSelections[i]);
       if (dirname.IsEmpty())
           continue;
@@ -6835,6 +6837,7 @@ They can be decompressed again using unxz or 7 zip programs."),
 
       wxDir dir(dirname);
       wxArrayString FileList;
+      ::wxYield();
       for(unsigned int j = 0; j<filespecs.GetCount(); j++) {
           dir.GetAllFiles(dirname, &FileList, filespecs[j]);
           bool skip = false;
@@ -6846,8 +6849,8 @@ They can be decompressed again using unxz or 7 zip programs."),
 
       for(unsigned int j=0; j<FileList.GetCount(); j++)
           charts.Add(FileList[j]);
+    }
   }
-  prog1.Hide();
 
   if(charts.GetCount() == 0) {
       OCPNMessageBox(
@@ -6859,7 +6862,8 @@ They can be decompressed again using unxz or 7 zip programs."),
 
     
   // TODO: make this use threads
-  unsigned long total_size = 0, total_compressed_size = 0, count = 0;
+  double total_size = 0., total_compressed_size = 0.;
+  unsigned long count = 0;
   wxProgressDialog prog(_("OpenCPN Compress Charts"), wxEmptyString, charts.GetCount()+1, this,
                         wxPD_SMOOTH | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME |
                         wxPD_REMAINING_TIME | wxPD_CAN_SKIP);
@@ -6879,6 +6883,7 @@ They can be decompressed again using unxz or 7 zip programs."),
           wxRemoveFile(charts[i]);
           count++;
       }
+      ::wxYield();
   }
 
   // report statistics
