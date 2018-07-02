@@ -3486,6 +3486,10 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                         break;
             }     // switch
 
+            if ( sattr.Len() == 0) {
+                delete pattValTmp;
+                continue;
+            }
 
             if ( sattr.IsSameAs ( _T ( "COLMAR" ) ) )
             {
@@ -3494,7 +3498,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             }
             // XXX should be done from s57 list ans cm93 list for any mismatch
             // ie cm93 QUASOU is an enum s57 is a list
-            if ( pattValTmp->valType == OGR_INT && 
+            else if ( pattValTmp->valType == OGR_INT &&
                   (sattr.IsSameAs ( _T ( "QUASOU" ) ) || sattr.IsSameAs ( _T ( "CATLIT" ) ))
                ) 
             {
@@ -3508,7 +3512,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
             }
 
             //    Do CM93 $SCODE attribute substitutions
-            if ( sclass.IsSameAs ( _T ( "$AREAS" ) ) && ( vtype == 'S' ) && sattr.IsSameAs ( _T ( "$SCODE" ) ) )
+            else if ( sclass.IsSameAs ( _T ( "$AREAS" ) ) && ( vtype == 'S' ) && sattr.IsSameAs ( _T ( "$SCODE" ) ) )
             {
                   if ( !strcmp ( ( char * ) pattValTmp->value.ptr, "II25" ) )
                   {
@@ -3521,7 +3525,7 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
 
 
             //    Capture some attributes on the fly as needed
-            if ( sattr.IsSameAs ( _T ( "RECDAT" ) ) || sattr.IsSameAs ( _T ( "_dgdat" ) ) )
+            else if ( sattr.IsSameAs ( _T ( "RECDAT" ) ) || sattr.IsSameAs ( _T ( "_dgdat" ) ) )
             {
                   if ( sclass_sub.IsSameAs ( _T ( "M_COVR" ) ) && ( vtype == 'S' ) )
                   {
@@ -3541,10 +3545,8 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
 
                   }
             }
-
-
             //    Capture the potential WGS84 transform offset for later use
-            if ( sclass_sub.IsSameAs ( _T ( "M_COVR" ) ) && ( vtype == 'R' ) )
+            else if ( sclass_sub.IsSameAs ( _T ( "M_COVR" ) ) && ( vtype == 'R' ) )
             {
                   if ( sattr.IsSameAs ( _T ( "_wgsox" ) ) )
                   {
@@ -3560,25 +3562,19 @@ S57Obj *cm93chart::CreateS57Obj ( int cell_index, int iobject, int subcell, Obje
                   }
             }
 
-
-            if ( sattr.Len() ) {
-                wxASSERT( sattr.Len() == 6);
-                wxCharBuffer dbuffer=sattr.ToUTF8();
-                if(dbuffer.data()) {                
-                    pobj->att_array = (char *)realloc(pobj->att_array, 6*(pobj->n_attr + 1));
+            wxASSERT( sattr.Len() == 6);
+            wxCharBuffer dbuffer=sattr.ToUTF8();
+            if(dbuffer.data()) {
+                  pobj->att_array = (char *)realloc(pobj->att_array, 6*(pobj->n_attr + 1));
                 
-                    strncpy(pobj->att_array + (6 * sizeof(char) * pobj->n_attr), dbuffer.data(), 6);
-                    pobj->n_attr++;
+                  strncpy(pobj->att_array + (6 * sizeof(char) * pobj->n_attr), dbuffer.data(), 6);
+                  pobj->n_attr++;
                 
-                    pobj->attVal->Add ( pattValTmp );
-                }
-                else
-                    delete pattValTmp;
+                  pobj->attVal->Add ( pattValTmp );
             }
-            else
+            else {
                   delete pattValTmp;
-
-
+            }
       }     //for
 
 
