@@ -990,13 +990,13 @@ void S57Reader::GenerateLNAMAndRefs( DDFRecord * poRecord,
 /* -------------------------------------------------------------------- */
     int         nRefCount = poFFPT->GetRepeatCount();
     DDFSubfieldDefn *poLNAM;
-    char        **papszRefs = NULL;
-    int         *panRIND = (int *) CPLMalloc(sizeof(int) * nRefCount);
 
     poLNAM = poFFPT->GetFieldDefn()->FindSubfieldDefn( "LNAM" );
     if( poLNAM == NULL )
         return;
 
+    char        **papszRefs = NULL;
+    int         *panRIND = (int *) CPLMalloc(sizeof(int) * nRefCount);
     for( int iRef = 0; iRef < nRefCount; iRef++ )
     {
         unsigned char *pabyData;
@@ -1467,7 +1467,6 @@ void S57Reader::AssembleSoundingGeometry( DDFRecord * poFRecord,
 /* -------------------------------------------------------------------- */
 /*      Extract vertices.                                               */
 /* -------------------------------------------------------------------- */
-    OGRMultiPoint       *poMP = new OGRMultiPoint();
     DDFField            *poField;
     int                 nPointCount, i, nBytesLeft;
     DDFSubfieldDefn    *poXCOO, *poYCOO, *poVE3D;
@@ -1479,6 +1478,7 @@ void S57Reader::AssembleSoundingGeometry( DDFRecord * poFRecord,
     if( poField == NULL )
         return;
 
+    OGRMultiPoint       *poMP = new OGRMultiPoint();
     poXCOO = poField->GetFieldDefn()->FindSubfieldDefn( "XCOO" );
     poYCOO = poField->GetFieldDefn()->FindSubfieldDefn( "YCOO" );
     poVE3D = poField->GetFieldDefn()->FindSubfieldDefn( "VE3D" );
@@ -1527,7 +1527,6 @@ void S57Reader::AssembleLineGeometry( DDFRecord * poFRecord,
 {
     DDFField    *poFSPT;
     int         nEdgeCount;
-    OGRLineString *poLine = new OGRLineString();
 
 /* -------------------------------------------------------------------- */
 /*      Find the FSPT field.                                            */
@@ -1537,6 +1536,7 @@ void S57Reader::AssembleLineGeometry( DDFRecord * poFRecord,
         return;
 
     nEdgeCount = poFSPT->GetRepeatCount();
+    OGRLineString *poLine = new OGRLineString();
 
 /* ==================================================================== */
 /*      Loop collecting edges.                                          */
