@@ -1736,9 +1736,17 @@ void  GribV2Record::translateDataType()
     // NOAA GFS
     //------------------------
     if (dataType == GRB_PRECIP_RATE) {
-        // XXX FIXME
-        // mm/s -> mm/h if average  if (grib_msg->md.pds_templ_num == 8)
-        multiplyAllData( 3600.0 );
+        // mm/s -> mm/h
+        if (timeRange == 3 && periodP2 > periodP1 && idCenter==7 && idModel==2) {
+            // NOAA average 0-1 0-2 0-3 issue
+            // convert to accumulation, assume P2, P1 delta in hours
+            multiplyAllData( 3600.0 * (periodP2 -  periodP1));
+            timeRange = 4;
+            dataType = GRB_PRECIP_TOT;
+        }
+        else {
+            multiplyAllData( 3600.0 );
+        }
     }
     if ( idCenter==7 && idModel==2 )		// NOAA
     {
