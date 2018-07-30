@@ -1,0 +1,5 @@
+Better handling of some incoming NMEA strings.
+
+Log WIMDA and ERRPM nmea0183.  (May be in another version of the plugin).
+
+Any others?
