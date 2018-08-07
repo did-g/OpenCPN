@@ -41,7 +41,7 @@ private:
 
   int GetExtendedStackCount( ) 
   {
-        return m_extended_stack_array.GetCount();
+        return m_extended_stack_array.size();
   }
 
   void EmptyCandidateArray( );
@@ -52,7 +52,7 @@ private:
 
   PatchList m_PatchList;
   ArrayOfSortedQuiltCandidates *m_pcandidate_array;
-  ArrayOfInts m_extended_stack_array;
+  std::vector<int> m_extended_stack_array;
   LLRegion m_covered_region;
   
 };
