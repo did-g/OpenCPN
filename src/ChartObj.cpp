@@ -28,17 +28,19 @@
 #include "ocpn_plugin.h"
 #include "chartimg.h"
 
+#include <algorithm>
+
 extern ChartDB *ChartData;
 extern int g_GroupIndex;
-extern ArrayOfInts g_quilt_noshow_index_array;
+extern std::vector<int> g_quilt_noshow_index_array;
 extern ChartCanvas *cc1;
 
-static int ExactCompareScales( int *i1, int *i2 )
+static int ExactCompareScales( int i1, int i2 )
 {
     if( !ChartData ) return 0;
 
-    const ChartTableEntry &cte1 = ChartData->GetChartTableEntry( *i1 );
-    const ChartTableEntry &cte2 = ChartData->GetChartTableEntry( *i2 );
+    const ChartTableEntry &cte1 = ChartData->GetChartTableEntry( i1 );
+    const ChartTableEntry &cte2 = ChartData->GetChartTableEntry( i2 );
 
     if(  cte1.GetScale() == cte2.GetScale() ) {  // same scales, so sort on dbIndex
         float lat1, lat2;
@@ -49,7 +51,7 @@ static int ExactCompareScales( int *i1, int *i2 )
             lon1 = cte1.GetLonMin();
             lon2 = cte2.GetLonMin();
             if (lon1 == lon2) {
-                return *i1 -*i2;
+                return i1 -i2;
             }
             else 
                 return (lon1 < lon2)?-1:1;
@@ -61,11 +63,14 @@ static int ExactCompareScales( int *i1, int *i2 )
         return cte1.GetScale() - cte2.GetScale();
 }
 
+static bool ExactCompareScalesStd(int i1, int i2) {
+	return ExactCompareScales(i1, i2)<0;
+}
 
 static int CompareCandidateScales( QuiltCandidate *qc1, QuiltCandidate *qc2 )
 {
     if( !ChartData ) return 0;
-    return ExactCompareScales(&qc1->dbIndex, &qc2->dbIndex);
+    return ExactCompareScales(qc1->dbIndex, qc2->dbIndex);
 }
 
 ChartObj::ChartObj() : m_stack(0) 
@@ -83,7 +88,7 @@ ChartObj::~ChartObj()
   EmptyCandidateArray();
   delete m_pcandidate_array;
 
-  m_extended_stack_array.Clear();
+  m_extended_stack_array.clear();
 }
 
 void ChartObj::EmptyCandidateArray( )
@@ -99,7 +104,7 @@ void ChartObj::EmptyCandidateArray( )
 bool ChartObj::BuildExtendedChartStackAndCandidateArray()
 {
     EmptyCandidateArray();
-    m_extended_stack_array.Clear();
+    m_extended_stack_array.clear();
 
     int reference_scale = 1;
     const int reference_type = CHART_TYPE_S57;
@@ -123,7 +128,7 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
         int i = m_stack->GetDBIndex( ics );
         if (i < 0)
             continue;
-        m_extended_stack_array.Add( i );
+        m_extended_stack_array.push_back( i );
 
         //  If the reference chart is cm93, we need not add any charts to the candidate array from the vp center.
         //  All required charts will be added (by family) as we consider the entire database (group) and full screen later
@@ -199,8 +204,8 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
         // Check to see if this chart is already in the stack array
         // by virtue of being under the Viewport center point....
         bool b_exists = false;
-        for( unsigned int ir = 0; ir < m_extended_stack_array.GetCount(); ir++ ) {
-          if( i == m_extended_stack_array.Item( ir ) ) {
+        for( unsigned int ir = 0; ir < m_extended_stack_array.size(); ir++ ) {
+          if( i == m_extended_stack_array[ir] ) {
             b_exists = true;
             break;
           }
@@ -213,10 +218,10 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
            //    as may be desired for some grouping schemes
            bool b_noadd = false;
            ChartTableEntry *pn = ChartData->GetpChartTableEntry( i );
-           for ( unsigned int id = 0; id < m_extended_stack_array.GetCount() ; id++ ) 
+           for ( unsigned int id = 0; id < m_extended_stack_array.size() ; id++ ) 
            {
-              if ( m_extended_stack_array.Item( id ) != -1 ) {
-                 ChartTableEntry *pm = ChartData->GetpChartTableEntry( m_extended_stack_array.Item( id ) );
+              if ( m_extended_stack_array[ id ] != -1 ) {
+                 ChartTableEntry *pm = ChartData->GetpChartTableEntry( m_extended_stack_array[ id ] );
                  if ( pm->GetFileTime() && pn->GetFileTime()) {
                     if ( labs(pm->GetFileTime() - pn->GetFileTime()) < 60 ) {           // simple test
                       if( pn->GetpFileName()->IsSameAs( *( pm->GetpFileName() ) ) )
@@ -228,7 +233,7 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
 
            if (!b_noadd) 
            {
-              m_extended_stack_array.Add( i );
+              m_extended_stack_array.push_back( i );
 
               QuiltCandidate *qcnew = new QuiltCandidate;
               qcnew->dbIndex = i;
@@ -243,8 +248,8 @@ bool ChartObj::BuildExtendedChartStackAndCandidateArray()
     }               // for all charts
 
     // Re sort the extended stack array on scale
-    if( b_need_resort && m_extended_stack_array.GetCount() > 1 ) {
-        m_extended_stack_array.Sort(ExactCompareScales);
+    if( b_need_resort && m_extended_stack_array.size() > 1 ) {
+	std::sort(m_extended_stack_array.begin(), m_extended_stack_array.end(), ExactCompareScalesStd);
     }
     return true;
 }
@@ -328,8 +333,8 @@ ListOfS57ObjRegion *ChartObj::BuildHazardsList(const LLRegion &cvp_region)
             //  If this chart appears in the no-show array, then simply include it, but
             //  don't subtract its region when determining the smaller scale charts to include.....
             bool b_in_noshow = false;
-            for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.GetCount(); ins++ ) {
-                    if( g_quilt_noshow_index_array.Item( ins ) == pqc->dbIndex ) // chart is in the noshow list
+            for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.size(); ins++ ) {
+                    if( g_quilt_noshow_index_array[ins] == pqc->dbIndex ) // chart is in the noshow list
                     {
                         b_in_noshow = true;
                         break;
@@ -371,8 +376,8 @@ ListOfS57ObjRegion *ChartObj::BuildHazardsList(const LLRegion &cvp_region)
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( pqc->dbIndex );
             
             bool b_in_noshow = false;
-            for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.GetCount(); ins++ ) {
-                    if( g_quilt_noshow_index_array.Item( ins ) == pqc->dbIndex ) // chart is in the noshow list
+            for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.size(); ins++ ) {
+                    if( g_quilt_noshow_index_array[ins] == pqc->dbIndex ) // chart is in the noshow list
                     {
                         b_in_noshow = true;
                         break;
@@ -443,8 +448,8 @@ ListOfS57ObjRegion *ChartObj::BuildHazardsList(const LLRegion &cvp_region)
     for( unsigned int i = 0; i < m_PatchList.GetCount(); i++ ) {
         wxPatchListNode *pcinode = m_PatchList.Item( i );
         QuiltPatch *piqp = pcinode->GetData();
-        for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.GetCount(); ins++ ) {
-            if( g_quilt_noshow_index_array.Item( ins ) == piqp->dbIndex ) // chart is in the noshow list
+        for( unsigned int ins = 0; ins < g_quilt_noshow_index_array.size(); ins++ ) {
+            if( g_quilt_noshow_index_array[ins] == piqp->dbIndex ) // chart is in the noshow list
             {
                 piqp->b_Valid = false;
                 break;
