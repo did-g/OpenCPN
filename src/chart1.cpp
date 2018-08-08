@@ -50,6 +50,7 @@
 #include "dychart.h"
 
 #include <limits.h>
+#include <algorithm>
 
 #ifdef __WXMSW__
 #include <stdlib.h>
@@ -647,7 +648,7 @@ int                       g_click_stop;
 int                       g_MemFootSec;
 int                       g_MemFootMB;
 
-ArrayOfInts               g_quilt_noshow_index_array;
+std::vector<int>               g_quilt_noshow_index_array;
 
 wxStaticBitmap            *g_pStatBoxTool;
 bool                      g_bShowStatusBar;
@@ -903,8 +904,8 @@ static void refresh_Piano()
     if (idx < 0)
         return;
 
-    ArrayOfInts piano_active_chart_index_array;
-    piano_active_chart_index_array.Add( pCurrentStack->GetCurrentEntrydbIndex() );
+    std::vector<int> piano_active_chart_index_array;
+    piano_active_chart_index_array.push_back( pCurrentStack->GetCurrentEntrydbIndex() );
     g_Piano->SetActiveKeyArray( piano_active_chart_index_array );
 }
 
@@ -1542,7 +1543,7 @@ void ParseAllENC()
     ArrayOfCompressTargets ct_array;
     for(unsigned int j = 0; j<idx_sorted_by_distance.GetCount(); j++) {
         
-        int i = idx_sorted_by_distance.Item(j);
+        int i = idx_sorted_by_distance[j];
         
         const ChartTableEntry &cte = ChartData->GetChartTableEntry(i);
         double distance = chart_dist(i);
@@ -1553,7 +1554,7 @@ void ParseAllENC()
         pct->distance = distance;
         pct->chart_path = filename;
         
-        ct_array.Add(pct);
+        ct_array.push_back(pct);
     }
     
     int thread_count = 0;
@@ -1608,9 +1609,9 @@ void ParseAllENC()
         // parse targets
         bool skip = false;
         count = 0;
-        for(unsigned int j = 0; j<ct_array.GetCount(); j++) {
-            wxString filename = ct_array.Item(j).chart_path;
-            double distance = ct_array.Item(j).distance;
+        for(unsigned int j = 0; j<ct_array.size(); j++) {
+            wxString filename = ct_array[j].chart_path;
+            double distance = ct_array[j].distance;
             int index = ChartData->FinddbIndex(filename);
             if (index < 0) 
                 continue;
@@ -2167,7 +2168,7 @@ bool MyApp::OnInit()
         TideCurrentDataSet.Add(g_Platform->NormalizePath(default_tcdata) );
     }
     else {
-        wxString first_tide = TideCurrentDataSet.Item(0);
+        wxString first_tide = TideCurrentDataSet[0];
         wxFileName ft(first_tide);
         if(!ft.FileExists()){
             TideCurrentDataSet.RemoveAt(0);
@@ -3369,8 +3370,8 @@ ocpnToolBarSimple *MyFrame::CreateAToolbar()
 
     //  Set PlugIn tool toggle states
     ArrayOfPlugInToolbarTools tool_array = g_pi_manager->GetPluginToolbarToolArray();
-    for( unsigned int i = 0; i < tool_array.GetCount(); i++ ) {
-        PlugInToolbarToolContainer *pttc = tool_array.Item( i );
+    for( unsigned int i = 0; i < tool_array.size(); i++ ) {
+        PlugInToolbarToolContainer *pttc = tool_array[i];
         if( !pttc->b_viz )
             continue;
 
@@ -3395,8 +3396,8 @@ bool MyFrame::CheckAndAddPlugInTool( ocpnToolBarSimple *tb )
     //    If a tool has been requested by a plugin at this position, add it
     ArrayOfPlugInToolbarTools tool_array = g_pi_manager->GetPluginToolbarToolArray();
 
-    for( unsigned int i = 0; i < tool_array.GetCount(); i++ ) {
-        PlugInToolbarToolContainer *pttc = tool_array.Item( i );
+    for( unsigned int i = 0; i < tool_array.size(); i++ ) {
+        PlugInToolbarToolContainer *pttc = tool_array[i];
         if( pttc->position == n_tools ) {
             wxBitmap *ptool_bmp;
 
@@ -3445,8 +3446,8 @@ bool MyFrame::AddDefaultPositionPlugInTools( ocpnToolBarSimple *tb )
     //    If a tool has been requested by a plugin at this position, add it
     ArrayOfPlugInToolbarTools tool_array = g_pi_manager->GetPluginToolbarToolArray();
 
-    for( unsigned int i = 0; i < tool_array.GetCount(); i++ ) {
-        PlugInToolbarToolContainer *pttc = tool_array.Item( i );
+    for( unsigned int i = 0; i < tool_array.size(); i++ ) {
+        PlugInToolbarToolContainer *pttc = tool_array[i];
 
         //      Tool is currently tagged as invisible
         if( !pttc->b_viz )
@@ -4710,8 +4711,8 @@ void MyFrame::OnToolLeftClick( wxCommandEvent& event )
             //        TODO Modify this to allow multiple tools per plugin
             if( g_pi_manager ) {
                 ArrayOfPlugInToolbarTools tool_array = g_pi_manager->GetPluginToolbarToolArray();
-                for( unsigned int i = 0; i < tool_array.GetCount(); i++ ) {
-                    PlugInToolbarToolContainer *pttc = tool_array.Item( i );
+                for( unsigned int i = 0; i < tool_array.size(); i++ ) {
+                    PlugInToolbarToolContainer *pttc = tool_array[i];
                     if( event.GetId() == pttc->id ) {
                         if( pttc->m_pplugin ) pttc->m_pplugin->OnToolbarToolCallback( pttc->id );
                         return; // required to prevent event.Skip() being called
@@ -6255,13 +6256,13 @@ bool MyFrame::CheckGroup( int igroup )
 
     ChartGroup *pGroup = g_pGroupArray->Item( igroup - 1 );
 
-    if( !pGroup->m_element_array.GetCount() )   //  truly empty group is OK
+    if( !pGroup->m_element_array.size() )   //  truly empty group is OK
         return true;
 
     bool b_chart_in_group = false;
 
-    for( unsigned int j = 0; j < pGroup->m_element_array.GetCount(); j++ ) {
-        wxString element_root = pGroup->m_element_array.Item( j )->m_element_name;
+    for( unsigned int j = 0; j < pGroup->m_element_array.size(); j++ ) {
+        wxString element_root = pGroup->m_element_array[j]->m_element_name;
 
         for( unsigned int ic = 0; ic < (unsigned int) ChartData->GetChartTableEntries(); ic++ ) {
             ChartTableEntry *pcte = ChartData->GetpChartTableEntry( ic );
@@ -6292,8 +6293,8 @@ bool MyFrame::ScrubGroupArray()
         bool b_chart_in_element = false;
         ChartGroup *pGroup = g_pGroupArray->Item( igroup );
 
-        for( unsigned int j = 0; j < pGroup->m_element_array.GetCount(); j++ ) {
-            wxString element_root = pGroup->m_element_array.Item( j )->m_element_name;
+        for( unsigned int j = 0; j < pGroup->m_element_array.size(); j++ ) {
+            wxString element_root = pGroup->m_element_array[j]->m_element_name;
 
             for( unsigned int ic = 0; ic < (unsigned int) ChartData->GetChartTableEntries();
                     ic++ ) {
@@ -6308,7 +6309,7 @@ bool MyFrame::ScrubGroupArray()
 
             if( !b_chart_in_element )             // delete the element
             {
-                ChartGroupElement *pelement = pGroup->m_element_array.Item( j );
+                ChartGroupElement *pelement = pGroup->m_element_array[j];
                 pGroup->m_element_array.RemoveAt( j );
                 j--;
                 delete pelement;
@@ -6580,7 +6581,7 @@ void MyFrame::SetupQuiltMode( void )
 
     } else                                                  // going to SC Mode
     {
-        ArrayOfInts empty_array;
+        std::vector<int> empty_array;
         g_Piano->SetActiveKeyArray( empty_array );
         g_Piano->SetNoshowIndexArray( empty_array );
         g_Piano->SetEclipsedIndexArray( empty_array );
@@ -6652,8 +6653,8 @@ void MyFrame::SetupQuiltMode( void )
 
             if( Current_Ch ) {
                 int dbi = ChartData->FinddbIndex( Current_Ch->GetFullPath() );
-                ArrayOfInts one_array;
-                one_array.Add( dbi );
+                std::vector<int> one_array;
+                one_array.push_back( dbi );
                 g_Piano->SetActiveKeyArray( one_array );
             }
             
@@ -6710,13 +6711,13 @@ void MyFrame::DoStackDelta( int direction )
             SelectChartFromStack( current_stack_index + direction );
         }
     } else {
-        ArrayOfInts piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
+        std::vector<int> piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
         int refdb = cc1->GetQuiltRefChartdbIndex();
 
         //      Find the ref chart in the stack
         int current_index = -1;
-        for(unsigned int i=0 ; i < piano_chart_index_array.Count() ; i++){
-            if(refdb == piano_chart_index_array.Item( i )){
+        for(unsigned int i=0 ; i < piano_chart_index_array.size() ; i++){
+            if(refdb == piano_chart_index_array[i]){
                 current_index = i;
                 break;
             }
@@ -6734,8 +6735,8 @@ void MyFrame::DoStackDelta( int direction )
         int new_dbIndex = -1;
 
         //      When quilted. switch within the same chart family
-        while(!found && (unsigned int)check_index < piano_chart_index_array.Count() && (check_index >= 0)){
-            check_dbIndex = piano_chart_index_array.Item( check_index );
+        while(!found && (unsigned int)check_index < piano_chart_index_array.size() && (check_index >= 0)){
+            check_dbIndex = piano_chart_index_array[check_index];
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( check_dbIndex );
             if(target_family == cte.GetChartFamily()){
                 found = true;
@@ -6899,11 +6900,25 @@ void MyFrame::OnInitTimer(wxTimerEvent& event)
             // If any are not found, then use the default layout
 
             bool bno_load = false;
-            wxAuiPaneInfoArray pane_array_val = g_pauimgr->GetAllPanes();
 
+            wxArrayString name_array;
+            wxStringTokenizer st(perspective, _T("|;"));
+            while( st.HasMoreTokens() )
+            {
+                wxString s1 = st.GetNextToken();
+                if(s1.StartsWith(_T("name="))){
+                    wxString sc = s1.AfterFirst('=');
+                    name_array.Add(sc);
+                }
+            }
+                    
+            wxAuiPaneInfoArray pane_array_val = g_pauimgr->GetAllPanes();
             for( unsigned int i = 0; i < pane_array_val.GetCount(); i++ ) {
                 wxAuiPaneInfo pane = pane_array_val.Item( i );
-                if( perspective.Find( pane.name ) == wxNOT_FOUND ) {
+                
+                // If we find a pane that is not in the perspective,
+                //  then we should not load the perspective at all
+                if(name_array.Index(pane.name) == wxNOT_FOUND) {
                     bno_load = true;
                     break;
                 }
@@ -7830,7 +7845,7 @@ int MyFrame::GetApplicationMemoryUse( void )
 
     if(outputArray.GetCount())
     {
-        wxString s = outputArray.Item(0);
+        wxString s = outputArray[0];
         long vtmp;
         if(s.ToLong(&vtmp))
         memsize = vtmp;
@@ -7989,9 +8004,9 @@ void MyFrame::HandlePianoRollover( int selected_index, int selected_dbIndex )
         SetChartThumbnail( selected_index );
         cc1->ShowChartInfoWindow( key_location.x, selected_dbIndex );
     } else {
-        ArrayOfInts piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
+        std::vector<int> piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
 
-        if( ( pCurrentStack->nEntry > 1 ) || ( piano_chart_index_array.GetCount() >= 1 ) ) {
+        if( ( pCurrentStack->nEntry > 1 ) || ( piano_chart_index_array.size() >= 1 ) ) {
             cc1->ShowChartInfoWindow( key_location.x, selected_dbIndex );
             cc1->SetQuiltChartHiLiteIndex( selected_dbIndex );
 
@@ -8051,8 +8066,8 @@ double MyFrame::GetBestVPScale( ChartBase *pchart )
 
 void MyFrame::SelectQuiltRefChart( int selected_index )
 {
-    ArrayOfInts piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
-    int current_db_index = piano_chart_index_array.Item( selected_index );
+    std::vector<int> piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
+    int current_db_index = piano_chart_index_array[selected_index];
 
     SelectQuiltRefdbChart( current_db_index );
 }
@@ -8320,8 +8335,8 @@ void MyFrame::UpdateControlBar( void )
     int sel_type = -1;
     int sel_family = -1;
 
-    ArrayOfInts piano_chart_index_array;
-    ArrayOfInts empty_piano_chart_index_array;
+    std::vector<int> piano_chart_index_array;
+    std::vector<int> empty_piano_chart_index_array;
 
     wxString old_hash = g_Piano->GetStoredHash();
 
@@ -8329,10 +8344,10 @@ void MyFrame::UpdateControlBar( void )
         piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
         g_Piano->SetKeyArray( piano_chart_index_array );
 
-        ArrayOfInts piano_active_chart_index_array = cc1->GetQuiltCandidatedbIndexArray();
+        std::vector<int> piano_active_chart_index_array = cc1->GetQuiltCandidatedbIndexArray();
         g_Piano->SetActiveKeyArray( piano_active_chart_index_array );
 
-        ArrayOfInts piano_eclipsed_chart_index_array = cc1->GetQuiltEclipsedStackdbIndexArray();
+        std::vector<int> piano_eclipsed_chart_index_array = cc1->GetQuiltEclipsedStackdbIndexArray();
         g_Piano->SetEclipsedIndexArray( piano_eclipsed_chart_index_array );
 
         g_Piano->SetNoshowIndexArray( g_quilt_noshow_index_array );
@@ -8352,29 +8367,29 @@ void MyFrame::UpdateControlBar( void )
     }
 
     //    Set up the TMerc and Skew arrays
-    ArrayOfInts piano_skew_chart_index_array;
-    ArrayOfInts piano_tmerc_chart_index_array;
-    ArrayOfInts piano_poly_chart_index_array;
+    std::vector<int> piano_skew_chart_index_array;
+    std::vector<int> piano_tmerc_chart_index_array;
+    std::vector<int> piano_poly_chart_index_array;
 
-    for( unsigned int ino = 0; ino < piano_chart_index_array.GetCount(); ino++ ) {
+    for( unsigned int ino = 0; ino < piano_chart_index_array.size(); ino++ ) {
         const ChartTableEntry &ctei = ChartData->GetChartTableEntry(
-                piano_chart_index_array.Item( ino ) );
+                piano_chart_index_array[ino] );
         double skew_norm = ctei.GetChartSkew();
         if( skew_norm > 180. ) skew_norm -= 360.;
 
         if( ctei.GetChartProjectionType() == PROJECTION_TRANSVERSE_MERCATOR )
-            piano_tmerc_chart_index_array.Add( piano_chart_index_array.Item( ino ) );
+            piano_tmerc_chart_index_array.push_back( piano_chart_index_array[ino] );
 
         //    Polyconic skewed charts should show as skewed
         else
             if( ctei.GetChartProjectionType() == PROJECTION_POLYCONIC ) {
                 if( fabs( skew_norm ) > 1. )
-                    piano_skew_chart_index_array.Add(piano_chart_index_array.Item( ino ) );
+                    piano_skew_chart_index_array.push_back(piano_chart_index_array[ino] );
                 else
-                    piano_poly_chart_index_array.Add( piano_chart_index_array.Item( ino ) );
+                    piano_poly_chart_index_array.push_back( piano_chart_index_array[ino] );
             } else
                 if( fabs( skew_norm ) > 1. )
-                    piano_skew_chart_index_array.Add(piano_chart_index_array.Item( ino ) );
+                    piano_skew_chart_index_array.push_back(piano_chart_index_array[ino] );
 
     }
     g_Piano->SetSkewIndexArray( piano_skew_chart_index_array );
@@ -8394,8 +8409,8 @@ void MyFrame::UpdateControlBar( void )
     // Create a bitmask int that describes what Family/Type of charts are shown in the bar,
     // and notify the platform.
     int mask = 0;
-    for( unsigned int ino = 0; ino < piano_chart_index_array.GetCount(); ino++ ) {
-        const ChartTableEntry &ctei = ChartData->GetChartTableEntry( piano_chart_index_array.Item( ino ) );
+    for( unsigned int ino = 0; ino < piano_chart_index_array.size(); ino++ ) {
+        const ChartTableEntry &ctei = ChartData->GetChartTableEntry( piano_chart_index_array[ino] );
         ChartFamilyEnum e = (ChartFamilyEnum)ctei.GetChartFamily();
         ChartTypeEnum t = (ChartTypeEnum)ctei.GetChartType();
         if(e == CHART_FAMILY_RASTER)
@@ -8450,9 +8465,9 @@ void MyFrame::selectChartDisplay( int type, int family)
         }
     } else {
         int sel_dbIndex = -1;
-        ArrayOfInts piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
-        for(unsigned int i = 0; i < piano_chart_index_array.Count() ; i++){
-            int check_dbIndex = piano_chart_index_array.Item( i );
+        std::vector<int> piano_chart_index_array = cc1->GetQuiltExtendedStackdbIndexArray();
+        for(unsigned int i = 0; i < piano_chart_index_array.size() ; i++){
+            int check_dbIndex = piano_chart_index_array[i];
             const ChartTableEntry &cte = ChartData->GetChartTableEntry( check_dbIndex );
             if(type == cte.GetChartType()){
                 if( cc1->IsChartQuiltableRef( check_dbIndex ) ) {
@@ -8895,17 +8910,11 @@ void MyFrame::MouseEvent( wxMouseEvent& event )
 
 void MyFrame::RemoveChartFromQuilt( int dbIndex )
 {
-    //    Remove the item from the list (if it appears) to avoid multiple addition
-    for( unsigned int i = 0; i < g_quilt_noshow_index_array.GetCount(); i++ ) {
-        if( g_quilt_noshow_index_array.Item( i ) == dbIndex ) // chart is already in the noshow list
-                {
-            g_quilt_noshow_index_array.RemoveAt( i );
-            break;
-        }
-    }
-
-    g_quilt_noshow_index_array.Add( dbIndex );
-
+    auto it = std::find(g_quilt_noshow_index_array.begin(), g_quilt_noshow_index_array.end(), dbIndex);
+    if(it != g_quilt_noshow_index_array.end())
+	    g_quilt_noshow_index_array.erase(it);
+    
+    g_quilt_noshow_index_array.push_back( dbIndex );
 }
 
 //          Piano window Popup Menu Handlers and friends
@@ -8928,8 +8937,8 @@ void MyFrame::PianoPopupMenu( int x, int y, int selected_index, int selected_dbI
 
     //    Search the no-show array
     bool b_is_in_noshow = false;
-    for( unsigned int i = 0; i < g_quilt_noshow_index_array.GetCount(); i++ ) {
-        if( g_quilt_noshow_index_array.Item( i ) == selected_dbIndex ) // chart is in the noshow list
+    for( unsigned int i = 0; i < g_quilt_noshow_index_array.size(); i++ ) {
+        if( g_quilt_noshow_index_array[i] == selected_dbIndex ) // chart is in the noshow list
                 {
             b_is_in_noshow = true;
             break;
@@ -8966,13 +8975,9 @@ void MyFrame::PianoPopupMenu( int x, int y, int selected_index, int selected_dbI
 
 void MyFrame::OnPianoMenuEnableChart( wxCommandEvent& event )
 {
-    for( unsigned int i = 0; i < g_quilt_noshow_index_array.GetCount(); i++ ) {
-        if( g_quilt_noshow_index_array.Item( i ) == menu_selected_dbIndex ) // chart is in the noshow list
-                {
-            g_quilt_noshow_index_array.RemoveAt( i );
-            break;
-        }
-    }
+    auto it = std::find(g_quilt_noshow_index_array.begin(), g_quilt_noshow_index_array.end(), menu_selected_dbIndex);
+    if(it != g_quilt_noshow_index_array.end())
+        g_quilt_noshow_index_array.erase(it);
 }
 
 void MyFrame::OnPianoMenuDisableChart( wxCommandEvent& event )
@@ -10193,7 +10198,7 @@ void MyFrame::LoadHarmonics()
         for(unsigned int i=0 ; i < test.GetCount() ; i++) {
             bool b_foundi = false;
             for(unsigned int j=0 ; j < TideCurrentDataSet.GetCount() ; j++) {
-                if(TideCurrentDataSet.Item(j) == test.Item(i)) {
+                if(TideCurrentDataSet[j] == test[i]) {
                     b_foundi = true;
                     break;              // j loop
                 }
@@ -10208,7 +10213,7 @@ void MyFrame::LoadHarmonics()
         for(unsigned int i=0 ; i < test.GetCount() ; i++) {
             bool b_foundi = false;
             for(unsigned int j=0 ; j < ptcmgr->GetDataSet().GetCount() ; j++) {
-                if(ptcmgr->GetDataSet().Item(j) == test.Item(i)) {
+                if(ptcmgr->GetDataSet()[j] == test[i]) {
                     b_foundi = true;
                     break;              // j loop
                 }
@@ -11020,7 +11025,7 @@ int paternAdd (const char* patern) {
 // -----------------------------------------------------------------------------------
 int paternFilter (const struct dirent * dir) {
  char* res = NULL;
- char  devname [255];
+ char  devname [272];
  int   fd, ind;
 
   // search if devname fits with searched paterns
@@ -13006,7 +13011,7 @@ void ApplyLocale()
     wxAuiPaneInfoArray pane_array_val = g_pauimgr->GetAllPanes();
     
     for( unsigned int i = 0; i < pane_array_val.GetCount(); i++ ) {
-        wxAuiPaneInfo pane = pane_array_val.Item( i );
+        wxAuiPaneInfo pane = pane_array_val[i];
         if( perspective.Find( pane.name ) == wxNOT_FOUND ) {
             bno_load = true;
             break;

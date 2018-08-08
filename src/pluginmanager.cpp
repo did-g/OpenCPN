@@ -24,6 +24,9 @@
  **************************************************************************/
 
 #include <typeinfo>
+#ifdef __linux__
+#include <wordexp.h>
+#endif
 #include <wx/wx.h>
 #include <wx/dir.h>
 #include <wx/filename.h>
@@ -137,6 +140,12 @@ extern bool             g_bopengl;
 
 extern ChartGroupArray  *g_pGroupArray;
 
+static const char* const DEFAULT_DATA_DIRS =
+    "~/.local/share:/usr/local/share:/usr/share";
+
+static const char* const DEFAULT_PLUGIN_DIRS =
+    "~/.local/lib/opencpn:/usr/local/lib/opencpn:/usr/lib/opencpn";
+
 unsigned int      gs_plib_flags;
 
 enum
@@ -147,6 +156,58 @@ enum
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(Plugin_WaypointList);
 WX_DEFINE_LIST(Plugin_HyperlinkList);
+
+
+static wxString ExpandWord(wxString word)
+{
+#ifdef __linux__
+    wordexp_t we;
+    wordexp(word.mb_str(), &we, 0);
+    wxString tmp = wxString(we.we_wordv[0]);
+    wordfree(&we);
+    return tmp;
+#else
+    wxString tmp = wxExpandEnvVars(word);
+    return tmp;
+#endif
+}
+
+wxString GetPluginDataDir(const char* plugin_name)
+{
+    const char* const sharedDataLoc = *GetpSharedDataLocation();
+#ifdef __linux__
+    const char* const envdirs = getenv("XDG_DATA_DIRS");
+    wxString datadirs(envdirs ? envdirs : DEFAULT_DATA_DIRS);
+    if (envdirs == 0 && datadirs.Find(sharedDataLoc) == wxNOT_FOUND)
+        datadirs.Append(wxString(":") + sharedDataLoc);
+    wxLogMessage(_T("PlugInManager: Using data dirs from: ") + datadirs);
+#else
+    wxString datadirs(sharedDataLoc);
+#endif
+    static const wxString sep = wxFileName::GetPathSeparator();
+    wxStringTokenizer dirs(datadirs, ":");
+    while (dirs.HasMoreTokens()) {
+        wxString dir = ExpandWord(dirs.GetNextToken()) + sep;
+	dir +=
+            dir.EndsWith("opencpn") ? "plugins" : "opencpn" + sep + "plugins";
+        wxFileName tryDirName(dir);
+        wxDir tryDir;
+        if (!tryDir.Open(tryDirName.GetFullPath()))
+            continue;
+        wxString next;
+        bool more = tryDir.GetFirst(&next);
+        while (more) {
+            if (next == plugin_name) {
+		next = next.Prepend(tryDirName.GetFullPath() + sep);
+                wxLogMessage(_T("PlugInManager: using data dir: %s"), next);
+                return next;
+            }
+            more = tryDir.GetNext(&next);
+        }
+    }
+    wxLogMessage(_T("Warnińg: no data directory found, using \"\""));
+    return "";
+}
 
 
 //    Some static helper funtions
@@ -313,6 +374,30 @@ PlugInManager::~PlugInManager()
 
 bool PlugInManager::LoadAllPlugIns(const wxString &plugin_dir, bool load_enabled, bool b_enable_blackdialog)
 {
+#ifdef __linux__
+    const char* const envdirs = getenv("OPENCPN_PLUGIN_DIRS");
+    wxString dirs(envdirs ? envdirs : DEFAULT_PLUGIN_DIRS);
+    if (envdirs == 0  && dirs.Find(plugin_dir) == wxNOT_FOUND)
+        dirs = dirs.Append(_T(":") + plugin_dir);
+#else
+    wxString dirs = plugin_dir;
+#endif
+    wxLogMessage( _T("PlugInManager: plugins loading from ") + dirs);
+    bool any_dir_loaded = false;
+    wxStringTokenizer tokens(dirs, ":");
+    while (tokens.HasMoreTokens()) {
+        wxString dir = tokens.GetNextToken();
+        dir = ExpandWord(dir);
+        if (LoadPlugInDirectory(dir, load_enabled, b_enable_blackdialog))
+            any_dir_loaded = true;
+    }
+    return any_dir_loaded;
+}
+
+
+// Static helper function: loads all plugins from a single directory
+bool PlugInManager::LoadPlugInDirectory(const wxString &plugin_dir, bool load_enabled, bool b_enable_blackdialog)
+{
     pConfig->SetPath( _T("/PlugIns/") );
     SetPluginOrder( pConfig->Read( _T("PluginOrder"), wxEmptyString ) );
     
@@ -373,7 +458,7 @@ bool PlugInManager::LoadAllPlugIns(const wxString &plugin_dir, bool load_enabled
         bool loaded = false;
         for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
         {
-            PlugInContainer *pic = plugin_array.Item(i);
+            PlugInContainer *pic = plugin_array[i];
             if(pic->m_plugin_filename == plugin_file) {
                 if(pic->m_plugin_modification != plugin_modification) {
                     // modification times don't match, reload plugin
@@ -469,13 +554,13 @@ bool PlugInManager::LoadAllPlugIns(const wxString &plugin_dir, bool load_enabled
     std::map<int, PlugInContainer*> ap;
     for( unsigned int i = 0; i < plugin_array.GetCount(); i++ )
     {
-        int index = m_plugin_order.Index( plugin_array.Item(i)->m_common_name );
+        int index = m_plugin_order.Index( plugin_array[i]->m_common_name );
         if( index != wxNOT_FOUND )
         {
-            ap[index] = plugin_array.Item(i);
+            ap[index] = plugin_array[i];
         }
         else
-            ap[10000 + i] = plugin_array.Item(i);
+            ap[10000 + i] = plugin_array[i];
     }
     plugin_array.Empty();
     for (std::map<int, PlugInContainer*>::reverse_iterator iter = ap.rbegin(); iter != ap.rend(); ++iter)
@@ -514,7 +599,7 @@ bool PlugInManager::CallLateInit(void)
 
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
 
         switch(pic->m_api_version)
         {
@@ -548,7 +633,7 @@ void PlugInManager::SendVectorChartObjectInfo(const wxString &chart, const wxStr
     wxString decouple_objname(objname);
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_VECTOR_CHART_OBJECT_INFO)
@@ -580,7 +665,7 @@ bool PlugInManager::IsAnyPlugInChartEnabled()
     //  Is there a PlugIn installed and active that implements PlugIn Chart type(s)?
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if( (pic->m_cap_flag & INSTALLS_PLUGIN_CHART) || (pic->m_cap_flag & INSTALLS_PLUGIN_CHART_GL) )
@@ -598,7 +683,7 @@ bool PlugInManager::UpdatePlugIns()
 
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
 
         if(pic->m_bEnabled && !pic->m_bInitState)
         {
@@ -637,7 +722,7 @@ bool PlugInManager::UpDateChartDataTypes(void)
 
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
 
         if(pic->m_bInitState) {
           if((pic->m_cap_flag & INSTALLS_PLUGIN_CHART) || (pic->m_cap_flag & INSTALLS_PLUGIN_CHART_GL))
@@ -668,7 +753,7 @@ bool PlugInManager::DeactivatePlugIn(PlugInContainer *pic)
         //    Deactivate (Remove) any ToolbarTools added by this PlugIn
         for(unsigned int i=0; i < m_PlugInToolbarTools.GetCount(); i++)
         {
-            PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools.Item(i);
+            PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools[i];
 
             if(pttc->m_pplugin == pic->m_pplugin)
             {
@@ -680,7 +765,7 @@ bool PlugInManager::DeactivatePlugIn(PlugInContainer *pic)
         //    Deactivate (Remove) any ContextMenu items addded by this PlugIn
         for(unsigned int i=0; i < m_PlugInMenuItems.GetCount(); i++)
         {
-            PlugInMenuItemContainer *pimis = m_PlugInMenuItems.Item(i);
+            PlugInMenuItemContainer *pimis = m_PlugInMenuItems[i];
             if(pimis->m_pplugin == pic->m_pplugin)
             {
                 m_PlugInMenuItems.Remove(pimis);
@@ -710,7 +795,7 @@ wxString PlugInManager::GetPluginOrder()
     wxString plugins = wxEmptyString;
     for( unsigned int i = 0; i < plugin_array.GetCount(); i++ )
     {
-        plugins.Append( plugin_array.Item(i)->m_common_name );
+        plugins.Append( plugin_array[i]->m_common_name );
         if( i < plugin_array.GetCount() - 1 )
             plugins.Append(';');
     }
@@ -724,7 +809,7 @@ bool PlugInManager::UpdateConfig()
 
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
 
         wxString config_section = ( _T ( "/PlugIns/" ) );
         config_section += pic->m_plugin_filename;
@@ -739,7 +824,7 @@ bool PlugInManager::UnLoadAllPlugIns()
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
 
         DeactivatePlugIn( pic );
         
@@ -762,7 +847,7 @@ bool PlugInManager::DeactivateAllPlugIns()
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic && pic->m_bEnabled && pic->m_bInitState)
             DeactivatePlugIn(pic);
     }
@@ -1120,7 +1205,7 @@ bool PlugInManager::CheckPluginCompatibility(wxString plugin_file)
 void PlugInManager::ShowDeferredBlacklistMessages()
 {
     for( unsigned int i=0 ; i < m_deferred_blacklist_messages.GetCount() ; i++){
-        OCPNMessageBox ( NULL, m_deferred_blacklist_messages.Item(i), wxString( _("OpenCPN Info") ), wxICON_INFORMATION | wxOK, 5 );  // 5 second timeout
+        OCPNMessageBox ( NULL, m_deferred_blacklist_messages[i], wxString( _("OpenCPN Info") ), wxICON_INFORMATION | wxOK, 5 );  // 5 second timeout
     }
         
 }
@@ -1335,7 +1420,7 @@ PlugInContainer *PlugInManager::LoadPlugIn(wxString plugin_file)
 
     if(pic->m_pplugin)
     {
-        msg = _T("  ");
+        msg = _T("PlugInManager:  ");
         msg += plugin_file;
         wxString msg1;
         msg1.Printf(_T("\n              API Version detected: %d"), api_ver);
@@ -1360,7 +1445,7 @@ bool PlugInManager::RenderAllCanvasOverlayPlugIns( ocpnDC &dc, const ViewPort &v
 {
     for(unsigned int i = 0; i < plugin_array.GetCount(); i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_OVERLAY_CALLBACK)
@@ -1487,7 +1572,7 @@ bool PlugInManager::RenderAllGLCanvasOverlayPlugIns( wxGLContext *pcontext, cons
 {
     for(unsigned int i = 0; i < plugin_array.GetCount(); i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_OPENGL_OVERLAY_CALLBACK)
@@ -1534,7 +1619,7 @@ bool PlugInManager::SendMouseEventToPlugins( wxMouseEvent &event)
     bool bret = false;
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_MOUSE_EVENTS)
@@ -1568,7 +1653,7 @@ bool PlugInManager::SendKeyEventToPlugins( wxKeyEvent &event)
     bool bret = false;
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_KEYBOARD_EVENTS){
@@ -1601,7 +1686,7 @@ void PlugInManager::SendViewPortToRequestingPlugIns( ViewPort &vp )
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_ONPAINT_VIEWPORT)
@@ -1617,7 +1702,7 @@ void PlugInManager::SendCursorLatLonToAllPlugIns( double lat, double lon)
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_CURSOR_LATLON)
@@ -1661,7 +1746,7 @@ void PlugInManager::NotifySetupOptions()
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         NotifySetupOptionsPlugin( pic );
     }
 }
@@ -1670,7 +1755,7 @@ void PlugInManager::CloseAllPlugInPanels( int ok_apply_cancel)
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if((pic->m_cap_flag & INSTALLS_TOOLBOX_PAGE)/* && ( pic->m_bToolboxPanel)*/)
@@ -1707,7 +1792,7 @@ void PlugInManager::RemoveCanvasContextMenuItem(int item, const char *name )
 {
     for(unsigned int i=0; i < m_PlugInMenuItems.GetCount(); i++)
     {
-        PlugInMenuItemContainer *pimis = m_PlugInMenuItems.Item(i);
+        PlugInMenuItemContainer *pimis = m_PlugInMenuItems[i];
         {
             if(pimis->id == item && !strcmp(name, pimis->m_in_menu))
             {
@@ -1723,7 +1808,7 @@ void PlugInManager::SetCanvasContextMenuItemViz(int item, bool viz, const char *
 {
     for(unsigned int i=0; i < m_PlugInMenuItems.GetCount(); i++)
     {
-        PlugInMenuItemContainer *pimis = m_PlugInMenuItems.Item(i);
+        PlugInMenuItemContainer *pimis = m_PlugInMenuItems[i];
         {
             if(pimis->id == item && !strcmp(name, pimis->m_in_menu))
             {
@@ -1738,7 +1823,7 @@ void PlugInManager::SetCanvasContextMenuItemGrey(int item, bool grey, const char
 {
     for(unsigned int i=0; i < m_PlugInMenuItems.GetCount(); i++)
     {
-        PlugInMenuItemContainer *pimis = m_PlugInMenuItems.Item(i);
+        PlugInMenuItemContainer *pimis = m_PlugInMenuItems[i];
         {
             if(pimis->id == item && !strcmp(name, pimis->m_in_menu))
             {
@@ -1754,7 +1839,7 @@ void PlugInManager::SendNMEASentenceToAllPlugIns(const wxString &sentence)
     wxString decouple_sentence(sentence); // decouples 'const wxString &' and 'wxString &' to keep bin compat for plugins
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_NMEA_SENTENCES)
@@ -1768,7 +1853,7 @@ int PlugInManager::GetJSONMessageTargetCount()
     int rv = 0;
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState && (pic->m_cap_flag & WANTS_PLUGIN_MESSAGING) )
                 rv++;
     }
@@ -1791,7 +1876,7 @@ void PlugInManager::SendMessageToAllPlugins(const wxString &message_id, const wx
     wxString decouple_message_body(message_body); // decouples 'const wxString &' and 'wxString &' to keep bin compat for plugins
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_PLUGIN_MESSAGING)
@@ -1841,7 +1926,7 @@ void PlugInManager::SendAISSentenceToAllPlugIns(const wxString &sentence)
     wxString decouple_sentence(sentence); // decouples 'const wxString &' and 'wxString &' to keep bin compat for plugins
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_AIS_SENTENCES)
@@ -1864,7 +1949,7 @@ void PlugInManager::SendPositionFixToAllPlugIns(GenericPosDatEx *ppos)
 
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_NMEA_EVENTS)
@@ -1886,7 +1971,7 @@ void PlugInManager::SendPositionFixToAllPlugIns(GenericPosDatEx *ppos)
 
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
         {
             if(pic->m_cap_flag & WANTS_NMEA_EVENTS)
@@ -1920,7 +2005,7 @@ void PlugInManager::SendResizeEventToAllPlugIns(int x, int y)
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
             pic->m_pplugin->ProcessParentResize(x, y);
     }
@@ -1930,7 +2015,7 @@ void PlugInManager::SetColorSchemeForAllPlugIns(ColorScheme cs)
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState)
             pic->m_pplugin->SetColorScheme((PI_ColorScheme)cs);
     }
@@ -1978,7 +2063,7 @@ void PlugInManager::NotifyAuiPlugIns(void)
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState && (pic->m_cap_flag & USES_AUI_MANAGER))
             pic->m_pplugin->UpdateAuiStatus();
     }
@@ -2081,7 +2166,7 @@ void PlugInManager::RemoveToolbarTool(int tool_id)
 {
     for(unsigned int i=0; i < m_PlugInToolbarTools.GetCount(); i++)
     {
-        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools.Item(i);
+        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools[i];
         {
             if(pttc->id == tool_id)
             {
@@ -2099,7 +2184,7 @@ void PlugInManager::SetToolbarToolViz(int item, bool viz)
 {
     for(unsigned int i=0; i < m_PlugInToolbarTools.GetCount(); i++)
     {
-        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools.Item(i);
+        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools[i];
         {
             if(pttc->id == item)
             {
@@ -2118,7 +2203,7 @@ void PlugInManager::SetToolbarItemState(int item, bool toggle)
 {
     for(unsigned int i=0; i < m_PlugInToolbarTools.GetCount(); i++)
     {
-        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools.Item(i);
+        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools[i];
         {
             if(pttc->id == item)
             {
@@ -2134,7 +2219,7 @@ void PlugInManager::SetToolbarItemBitmaps(int item, wxBitmap *bitmap, wxBitmap *
 {
     for(unsigned int i=0; i < m_PlugInToolbarTools.GetCount(); i++)
     {
-        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools.Item(i);
+        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools[i];
         {
             if(pttc->id == item)
             {
@@ -2176,7 +2261,7 @@ void PlugInManager::SetToolbarItemBitmaps(int item, wxString SVGfile, wxString S
 {
     for(unsigned int i=0; i < m_PlugInToolbarTools.GetCount(); i++)
     {
-        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools.Item(i);
+        PlugInToolbarToolContainer *pttc = m_PlugInToolbarTools[i];
         {
             if(pttc->id == item)
             {
@@ -2197,7 +2282,7 @@ void PlugInManager::SetToolbarItemBitmaps(int item, wxString SVGfile, wxString S
 opencpn_plugin *PlugInManager::FindToolOwner(const int id)
 {
     for(unsigned int i = 0 ; i < m_PlugInToolbarTools.GetCount() ; i++) {
-        PlugInToolbarToolContainer *pc = m_PlugInToolbarTools.Item(i);
+        PlugInToolbarToolContainer *pc = m_PlugInToolbarTools[i];
         if(id == pc->id)
             return pc->m_pplugin;
     }
@@ -2210,7 +2295,7 @@ wxString PlugInManager::GetToolOwnerCommonName(const int id)
     opencpn_plugin *ppi = FindToolOwner(id);
     if(ppi) {
         for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++) {
-            PlugInContainer *pic = plugin_array.Item(i);
+            PlugInContainer *pic = plugin_array[i];
             if(pic && (pic->m_pplugin == ppi)) return pic->m_common_name;
         }
     }
@@ -2279,14 +2364,14 @@ wxArrayString PlugInManager::GetPlugInChartClassNameArray(void)
     wxArrayString array;
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++)
     {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic->m_bEnabled && pic->m_bInitState &&
             ((pic->m_cap_flag & INSTALLS_PLUGIN_CHART) || (pic->m_cap_flag & INSTALLS_PLUGIN_CHART_GL)) )
         {
             wxArrayString carray = pic->m_pplugin->GetDynamicChartClassNameArray();
 
             for(unsigned int j = 0 ; j < carray.GetCount() ; j++)
-                array.Add(carray.Item(j));
+                array.Add(carray[j]);
 
         }
     }
@@ -2296,11 +2381,11 @@ wxArrayString PlugInManager::GetPlugInChartClassNameArray(void)
     unsigned int j=0;
     while(j < array.GetCount())
     {
-        wxString test = array.Item(j);
+        wxString test = array[j];
         unsigned int k = j+1;
         while(k < array.GetCount())
         {
-            if(test == array.Item(k))
+            if(test == array[k])
             {
                 array.RemoveAt(k);
                 j = -1;
@@ -2320,7 +2405,7 @@ wxArrayString PlugInManager::GetPlugInChartClassNameArray(void)
 bool PlugInManager::IsPlugInAvailable(wxString commonName)
 {
     for(unsigned int i = 0 ; i < plugin_array.GetCount() ; i++) {
-        PlugInContainer *pic = plugin_array.Item(i);
+        PlugInContainer *pic = plugin_array[i];
         if(pic && pic->m_bEnabled && (pic->m_common_name == commonName) )
             return true;
     }
@@ -2684,7 +2769,7 @@ bool UpdateChartDBInplace(wxArrayString dir_array,
     ArrayOfCDI ChartDirArray;
     for(unsigned int i=0 ; i < dir_array.GetCount(); i++)
     {
-        wxString dirname = dir_array.Item(i);
+        wxString dirname = dir_array[i];
         ChartDirInfo cdi;
         cdi.fullpath = dirname;
         cdi.magic_number = _T("");
@@ -3921,7 +4006,7 @@ void PluginListPanel::UpdatePluginsOrder()
     m_pPluginArray->Clear();
     for( unsigned int i = 0 ; i < m_PluginItems.GetCount() ; i++ )
     {
-        m_pPluginArray->Insert(m_PluginItems.Item(i)->GetPluginPtr(), 0);
+        m_pPluginArray->Insert(m_PluginItems[i]->GetPluginPtr(), 0);
     }
 }
 
@@ -3932,7 +4017,7 @@ PluginListPanel::~PluginListPanel()
 void PluginListPanel::UpdateSelections()
 {
     for(unsigned int i=0 ; i < m_PluginItems.GetCount() ; i++) {
-        PluginPanel *pPluginPanel = m_PluginItems.Item(i);
+        PluginPanel *pPluginPanel = m_PluginItems[i];
         if( pPluginPanel ){
             pPluginPanel->SetSelected( pPluginPanel->GetSelected() );
         }

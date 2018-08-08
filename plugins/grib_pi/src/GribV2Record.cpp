@@ -1736,6 +1736,7 @@ void  GribV2Record::translateDataType()
     // NOAA GFS
     //------------------------
     if (dataType == GRB_PRECIP_RATE) {
+        // XXX FIXME
         // mm/s -> mm/h if average  if (grib_msg->md.pds_templ_num == 8)
         multiplyAllData( 3600.0 );
     }

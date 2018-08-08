@@ -1246,6 +1246,27 @@ extern DECL_EXP int PlugInGetMaxAvailableGshhgQuality();
 // API 1.16 Extra objects handling. 
 extern DECL_EXP void PlugInHandleAutopilotRoute(bool enable);
 
+// API 1.16?
+//
+/**
+ * Return the plugin data directory for a given directory name.
+ *
+ * On Linux, the returned data path is an existing directory ending in
+ * "opencpn/plugins/<plugin_name>" where the last part is the plugin_name
+ * argument. The prefix part is one of the directories listed in the
+ * environment variable XDG_DATA_DIRS, by default
+ * ~/.local/share:/usr/local/share:/usr/share.
+ *
+ * On other platforms, the returned value is GetSharedDataDir() +
+ * "/opencpn/plugins/" + plugin_name (with native path separators)
+ * if that path exists.
+ *
+ * Return "" if no existing directory is found.
+ */
+extern DECL_EXP wxString GetPluginDataDir(const char* plugin_name);
+
+// chart file vfs plugin.
+
 extern "C"  DECL_EXP  int AddCanvasMenuItem(wxMenuItem *pitem, opencpn_plugin *pplugin, const char *name = "");
 extern "C"  DECL_EXP void RemoveCanvasMenuItem(int item, const char *name = "");      // Fully remove this item
 extern "C"  DECL_EXP void SetCanvasMenuItemViz(int item, bool viz, const char *name = ""); // Temporarily change context menu options
