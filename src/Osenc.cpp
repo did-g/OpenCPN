@@ -460,7 +460,7 @@ bool Osenc_instream::Open( unsigned char cmd, wxString senc_file_name, wxString 
         // Create a unique name for the private (i.e. data) pipe, valid for this session
         
         wxString tmp_file = wxFileName::CreateTempFileName( _T("") );
-        unlink(tmp_file);
+        //unlink(tmp_file);
         wxCharBuffer bufn = tmp_file.ToUTF8();
         if(bufn.data()) 
             strncpy(privatefifo_name, bufn.data(), sizeof(privatefifo_name));
