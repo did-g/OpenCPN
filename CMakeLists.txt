@@ -470,7 +470,8 @@ endif()
 IF(MSVC)
     # Exclude wxexpat.lib, since we use our own version.
     # Other things are excluded as well, but we don't need them
-    SET(wxWidgets_EXCLUDE_COMMON_LIBRARIES TRUE)
+    # FIXME remove zlib too and we need it
+    ## SET(wxWidgets_EXCLUDE_COMMON_LIBRARIES TRUE)
 ENDIF(MSVC)
 
 IF(WIN32 OR APPLE OR QT_ANDROID)
