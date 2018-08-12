@@ -1,0 +1,344 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: opencpn\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-08-14 12:05-0300\n"
+"PO-Revision-Date: 2016-08-14 11:10-0400\n"
+"Last-Translator: nohal <pavel@kalian.cz>\n"
+"Language-Team: Dutch\n"
+"Language: nl_NL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: crowdin.com\n"
+"X-Crowdin-Project: opencpn\n"
+"X-Crowdin-Language: nl\n"
+"X-Crowdin-File: /plugins/gxradar_pi/po/gxradar_pi.pot\n"
+
+#: src/gxradar_pi.cpp:787
+msgid "Radar Control Garmin"
+msgstr "Bediening Garmin-radar"
+
+#: src/gxradar_pi.cpp:935
+msgid "Garmin Radar PlugIn for OpenCPN"
+msgstr "Garmin-radar PlugIn voor OpenCPN"
+
+#: src/gxradar_pi.cpp:940
+msgid "Garmin Radar PlugIn for OpenCPN\n"
+msgstr "Garmin Radar PlugIn voor OpenCPN\n"
+
+#: src/gxradar_pi.cpp:1218
+msgid "No scanner activity, reverting to search\n"
+msgstr "Geen antenneactiviteit, terug naar zoeken\n"
+
+#: src/gxradar_pi.cpp:3006
+msgid "The Radar Overlay PlugIn requires OpenGL mode to be activated in Toolbox->Settings"
+msgstr "De Radar Overlay PlugIn vereist inschakeling van OpenGL-modus via OpenCPN Opties - Weergaveopties - Uitgebreid"
+
+#: src/gxradar_pi.cpp:3019
+msgid "The Radar Overlay PlugIn is unable to\n"
+"directly control the radar scanner.\n\n"
+msgstr "De Radar Overlay PlugIn kan de\n"
+"radarantenne niet bedienen.\n\n"
+
+#: src/gxradar_pi.cpp:3020
+msgid "Scanner is located at ip address: "
+msgstr "Het IP-adres van de antenne is: "
+
+#: src/gxradar_pi.cpp:3023
+msgid "Interfaces available on this computer are:\n"
+msgstr "Interfaces die beschikbaar zijn op deze computer zijn: \n"
+
+#: src/GxRadarUI.cpp:23
+msgid "Operational Control"
+msgstr "Operationele besturing"
+
+#: src/GxRadarUI.cpp:25
+msgid "Master Mode"
+msgstr "'Master'-modus"
+
+#: src/GxRadarUI.cpp:25
+msgid "Slave Mode"
+msgstr "'Slave'-modus"
+
+#: src/GxRadarUI.cpp:27
+msgid "Operating Mode"
+msgstr "Werkingsmodus"
+
+#: src/GxRadarUI.cpp:35
+msgid "Display Options"
+msgstr "Weergaveopties"
+
+#: src/GxRadarUI.cpp:37
+msgid "Swept Scan Update"
+msgstr "Sectorscan-update"
+
+#: src/GxRadarUI.cpp:37
+msgid "Full Scan Update"
+msgstr "Volledige scan-update"
+
+#: src/GxRadarUI.cpp:39
+msgid "Scan Update Method"
+msgstr "Scan-updatemethode"
+
+#: src/GxRadarUI.cpp:44
+msgid "Scan Color"
+msgstr "Scankleur"
+
+#: src/GxRadarUI.cpp:53
+msgid "Scan Transparency"
+msgstr "Scantransparantie"
+
+#: src/GxRadarUI.cpp:64
+msgid "Enable gradar Log"
+msgstr "Gradar-log inschakelen"
+
+#: src/GxRadarUI.cpp:67 src/GxRadarUI.h:102
+msgid "Range Control"
+msgstr "Bereikinstelling"
+
+#: src/GxRadarUI.cpp:70 src/GxRadarUI.h:137
+msgid "Noise Control"
+msgstr "Ruisonderdrukking"
+
+#: src/GxRadarUI.cpp:73 src/GxRadarUI.h:164
+msgid "Dome Control"
+msgstr "Antenneinstellingen"
+
+#: src/GxRadarUI.cpp:76 src/GxRadarUI.h:211
+msgid "Sentry Control"
+msgstr "Alarminstellingen"
+
+#: src/GxRadarUI.cpp:79 src/GxRadarUI.h:244
+msgid "No Xmit Zone"
+msgstr "Niet-zenden zone"
+
+#: src/GxRadarUI.cpp:82 src/GxRadarUI.cpp:175 src/GxRadarUI.cpp:274
+#: src/GxRadarUI.cpp:350 src/GxRadarUI.cpp:526 src/GxRadarUI.cpp:647
+#: src/GxRadarUI.cpp:709
+msgid "Close"
+msgstr "Sluiten"
+
+#: src/GxRadarUI.cpp:140
+msgid "Range Setting"
+msgstr "Bereik"
+
+#: src/GxRadarUI.cpp:142
+msgid "Auto"
+msgstr "Auto"
+
+#: src/GxRadarUI.cpp:142 src/GxRadarUI.cpp:160
+msgid "Manual"
+msgstr "Handmatig"
+
+#: src/GxRadarUI.cpp:148
+msgid ".125"
+msgstr ".125"
+
+#: src/GxRadarUI.cpp:148
+msgid ".25"
+msgstr ".25"
+
+#: src/GxRadarUI.cpp:148
+msgid ".50"
+msgstr ".50"
+
+#: src/GxRadarUI.cpp:148
+msgid ".75"
+msgstr ".75"
+
+#: src/GxRadarUI.cpp:148
+msgid "1.0"
+msgstr "1.0"
+
+#: src/GxRadarUI.cpp:148
+msgid "1.5"
+msgstr "1.5"
+
+#: src/GxRadarUI.cpp:148
+msgid "2"
+msgstr "2"
+
+#: src/GxRadarUI.cpp:148
+msgid "3"
+msgstr "3"
+
+#: src/GxRadarUI.cpp:148
+msgid "4"
+msgstr "4"
+
+#: src/GxRadarUI.cpp:148
+msgid "6"
+msgstr "6"
+
+#: src/GxRadarUI.cpp:148
+msgid "8"
+msgstr "8"
+
+#: src/GxRadarUI.cpp:148
+msgid "12"
+msgstr "12"
+
+#: src/GxRadarUI.cpp:148
+msgid "16"
+msgstr "16"
+
+#: src/GxRadarUI.cpp:148
+msgid "24"
+msgstr "24"
+
+#: src/GxRadarUI.cpp:148
+msgid "36"
+msgstr "36"
+
+#: src/GxRadarUI.cpp:148
+msgid "48"
+msgstr "48"
+
+#: src/GxRadarUI.cpp:150
+msgid "Range Miles"
+msgstr "Bereik NM"
+
+#: src/GxRadarUI.cpp:158
+msgid "Gain"
+msgstr "Versterking"
+
+#: src/GxRadarUI.cpp:160
+msgid "Auto High"
+msgstr "Auto Hoog"
+
+#: src/GxRadarUI.cpp:160
+msgid "Auto Low"
+msgstr "Auto Laag"
+
+#: src/GxRadarUI.cpp:224
+msgid "SeaClutter Sensitivity Time Control"
+msgstr "Zeegolfonderdrukking"
+
+#: src/GxRadarUI.cpp:226 src/GxRadarUI.cpp:247 src/GxRadarUI.cpp:262
+#: src/GxRadarUI.cpp:397 src/GxRadarUI.cpp:433 src/GxRadarUI.cpp:593
+msgid "Off"
+msgstr "Uit"
+
+#: src/GxRadarUI.cpp:226 src/GxRadarUI.cpp:247 src/GxRadarUI.cpp:262
+#: src/GxRadarUI.cpp:397 src/GxRadarUI.cpp:433 src/GxRadarUI.cpp:593
+msgid "On"
+msgstr "Aan"
+
+#: src/GxRadarUI.cpp:232
+msgid "Man"
+msgstr "Handmatig"
+
+#: src/GxRadarUI.cpp:232
+msgid "Calm"
+msgstr "Rustig"
+
+#: src/GxRadarUI.cpp:232
+msgid "Med"
+msgstr "Gemiddeld"
+
+#: src/GxRadarUI.cpp:232
+msgid "Rough"
+msgstr "Ruw"
+
+#: src/GxRadarUI.cpp:245
+msgid "RainClutter"
+msgstr "Regenonderdrukking"
+
+#: src/GxRadarUI.cpp:260
+msgid "Crosstalk"
+msgstr "Overspraak"
+
+#: src/GxRadarUI.cpp:327
+msgid "Dome Offset"
+msgstr "Antenne-offset"
+
+#: src/GxRadarUI.cpp:336
+msgid "Dome Speed"
+msgstr "Antennesnelheid"
+
+#: src/GxRadarUI.cpp:338
+msgid "Normal"
+msgstr "Normaal"
+
+#: src/GxRadarUI.cpp:338
+msgid "High"
+msgstr "Hoog"
+
+#: src/GxRadarUI.cpp:395
+msgid "Timed Transmit"
+msgstr "Zendinstellingen"
+
+#: src/GxRadarUI.cpp:407
+msgid "Standby Minutes"
+msgstr "Standby-tijd (minuten)"
+
+#: src/GxRadarUI.cpp:416
+msgid "Transmit Minutes"
+msgstr "Zendtijd (minuten)"
+
+#: src/GxRadarUI.cpp:431
+msgid "Guard Zone"
+msgstr "Bewakingszone"
+
+#: src/GxRadarUI.cpp:443
+msgid "Outer Range Meters"
+msgstr "Bereik vanaf"
+
+#: src/GxRadarUI.cpp:452
+msgid "Inner Range Meters"
+msgstr "Bereik tot"
+
+#: src/GxRadarUI.cpp:463
+msgid "No"
+msgstr "Nee"
+
+#: src/GxRadarUI.cpp:463
+msgid "Yes"
+msgstr "Ja"
+
+#: src/GxRadarUI.cpp:465
+msgid "Partial Arc"
+msgstr "Sector"
+
+#: src/GxRadarUI.cpp:473 src/GxRadarUI.cpp:603
+msgid "Start Angle"
+msgstr "Startrichting"
+
+#: src/GxRadarUI.cpp:482 src/GxRadarUI.cpp:612
+msgid "End Angle"
+msgstr "Eindrichting"
+
+#: src/GxRadarUI.cpp:494
+msgid "Guard Zone Color"
+msgstr "Kleur bewakingszone"
+
+#: src/GxRadarUI.cpp:503
+msgid "Guard Zone Transparency"
+msgstr "Transparantie bewakingszone"
+
+#: src/GxRadarUI.cpp:512
+msgid "Alarm Sensitivity"
+msgstr "Alarmgevoeligheid"
+
+#: src/GxRadarUI.cpp:624
+msgid "No Xmit Zone Color"
+msgstr "Kleur niet-zenden zone"
+
+#: src/GxRadarUI.cpp:633
+msgid "No Xmit Zone Transparency"
+msgstr "Transparantie niet-zenden zone"
+
+#: src/GxRadarUI.cpp:697
+msgid "Radar Sentry Alarm"
+msgstr "Radaralarm"
+
+#: src/GxRadarUI.h:71
+msgid "Radar Control"
+msgstr "Radarbediening"
+
+#: src/GxRadarUI.h:268
+msgid "RadarSentryAlarm"
+msgstr "RadarSentryAlarm"
+
