@@ -419,7 +419,7 @@ s52plib::s52plib( const wxString& PLib, bool b_forceLegacy )
     m_bExtendLightSectors = true;
 
     m_lightsOff = false;
-    m_anchorOn = false;
+    m_anchorOn = true;
 
     m_qualityOfDataOn = false;
 
@@ -1337,7 +1337,14 @@ void s52plib::FlushSymbolCaches( void )
     m_CARC_DL_hashmap.clear();
 #endif
 #endif
-
+    
+    for (int i = 0; i < TXF_CACHE; i++)
+    {
+        s_txf[i].key = NULL;
+        s_txf[i].cache.m_built = false;
+        
+    }
+    
 }
 
 void s52plib::DestroyPattRules( RuleHash *rh )
@@ -6651,7 +6658,7 @@ int s52plib::DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp )
 //      if(rzRules->obj->Index != 1103)
 //          return 0; //int yyp = 0;
 
-//        if(!strncmp(rzRules->obj->FeatureName, "berths", 6))
+//        if(!strncmp(rzRules->obj->FeatureName, "ACHARE", 6))
 //            int yyp = 0;
 
     if( !ObjectRenderCheckRules( rzRules, vp, true ) )
@@ -10606,48 +10613,57 @@ void PrepareS52ShaderUniforms(ViewPort *vp);
                 RemoveObjNoshow("LIGHTS");
             }
 
-            // Handle Anchor area toggle
-            bool bAnchor = m_anchorOn;
-
             const char * categories[] = { "ACHBRT", "ACHARE", "CBLSUB", "PIPARE", "PIPSOL", "TUNNEL", "SBDARE" };
             unsigned int num = sizeof(categories) / sizeof(categories[0]);
+            
+            // Handle Anchor area toggle
+            if( (m_nDisplayCategory == OTHER) || (m_nDisplayCategory == MARINERS_STANDARD) ){
+                
+                bool bAnchor = m_anchorOn;
 
-            if(!bAnchor){
-                for( unsigned int c = 0; c < num; c++ ) {
-                    AddObjNoshow(categories[c]);
-                }
-            }
-            else{
-                for( unsigned int c = 0; c < num; c++ ) {
-                    RemoveObjNoshow(categories[c]);
-                }
 
-                unsigned int cnt = 0;
-                for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
-                    OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
+                if(!bAnchor){
                     for( unsigned int c = 0; c < num; c++ ) {
-                        if( !strncmp( pOLE->OBJLName, categories[c], 6 ) ) {
+                        AddObjNoshow(categories[c]);
+                    }
+                }
+                else{
+                    for( unsigned int c = 0; c < num; c++ ) {
+                        RemoveObjNoshow(categories[c]);
+                    }
+
+                    unsigned int cnt = 0;
+                    for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
+                        OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
+                        for( unsigned int c = 0; c < num; c++ ) {
+                            if( !strncmp( pOLE->OBJLName, categories[c], 6 ) ) {
+                                pOLE->nViz = 1;         // force on
+                                cnt++;
+                                break;
+                            }
+                        }
+                        if( cnt == num ) break;
+                    }
+                }
+                // Handle Quality of data toggle
+                bool bQuality = m_qualityOfDataOn;
+                if(!bQuality){
+                    AddObjNoshow("M_QUAL");
+                }
+                else{
+                    RemoveObjNoshow("M_QUAL");
+                    for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
+                        OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
+                        if( !strncmp( pOLE->OBJLName, "M_QUAL", 6 ) ) {
                             pOLE->nViz = 1;         // force on
-                            cnt++;
                             break;
                         }
                     }
-                    if( cnt == num ) break;
                 }
             }
-            // Handle Quality of data toggle
-            bool bQuality = m_qualityOfDataOn;
-            if(!bQuality){
-                AddObjNoshow("M_QUAL");
-            }
-            else{
-                RemoveObjNoshow("M_QUAL");
-                for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
-                    OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
-                    if( !strncmp( pOLE->OBJLName, "M_QUAL", 6 ) ) {
-                        pOLE->nViz = 1;         // force on
-                        break;
-                    }
+            else{ // if not category OTHER or MarinerStandard, then anchor-related features are always shown.
+                for( unsigned int c = 0; c < num; c++ ) {
+                    RemoveObjNoshow(categories[c]);
                 }
             }
         }
