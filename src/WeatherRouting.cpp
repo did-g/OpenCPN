@@ -2171,7 +2171,7 @@ void WeatherRouting::Export(RouteMapOverlay &routemapoverlay)
 {
     std::list<PlotData> plotdata = routemapoverlay.GetPlotData(false);
 
-    if(plotdata.size() == 0) {
+    if(plotdata.empty()) {
         wxMessageDialog mdlg(this, _("Empty Route, nothing to export\n"),
                              _("Weather Routing"), wxOK | wxICON_WARNING);
         mdlg.ShowModal();
@@ -2179,7 +2179,11 @@ void WeatherRouting::Export(RouteMapOverlay &routemapoverlay)
     }
 
     PlugIn_Track* newTrack = new PlugIn_Track;
-    newTrack->m_NameString = _("Weather Route");
+    wxDateTime display_time = routemapoverlay.StartTime();
+    if(m_SettingsDialog.m_cbUseLocalTime->GetValue())
+        display_time = display_time.FromUTC();
+
+    newTrack->m_NameString = _("Weather Route ") + display_time.Format(_T("%x %H:%M"));
 
     // XXX double check time is really end time, not start time off by one.
     RouteMapConfiguration c = routemapoverlay.GetConfiguration();
