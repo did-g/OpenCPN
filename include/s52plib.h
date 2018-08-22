@@ -276,6 +276,8 @@ private:
     bool S52_flush_Plib();
     
     void PLIB_LoadS57Config();
+
+    void SetObjOnOff(const char *s, bool val);
     
     bool PreloadOBJLFromCSV(const wxString &csv_file);
 
