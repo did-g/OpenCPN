@@ -5777,10 +5777,17 @@ void MyFrame::UpdateGlobalMenuItems()
                 }
             }
         }
-        m_pMenuBar->FindItem( ID_MENU_ENC_LIGHTS )->Check( (!ps52plib->IsObjNoshow("LIGHTS")) && light_state );
+        DisCat nset = ps52plib->GetDisplayCategory();
+        if (nset == DISPLAYBASE) {
+            m_pMenuBar->FindItem( ID_MENU_ENC_LIGHTS )->Check( false );
+            m_pMenuBar->Enable( ID_MENU_ENC_LIGHTS, false);
+        }
+        else {
+            m_pMenuBar->FindItem( ID_MENU_ENC_LIGHTS )->Check( (!ps52plib->IsObjNoshow("LIGHTS")) && light_state );
+            m_pMenuBar->Enable( ID_MENU_ENC_LIGHTS, true);
+        }
 
         // Menu "Anchor Info" entry is only accessible in "All" or "MarinersStandard" categories
-        DisCat nset = ps52plib->GetDisplayCategory();
         if((nset == MARINERS_STANDARD) || (nset == OTHER) ){
             m_pMenuBar->FindItem( ID_MENU_ENC_ANCHOR )->Check( !ps52plib->IsObjNoshow("SBDARE") );
             m_pMenuBar->Enable( ID_MENU_ENC_ANCHOR, true);
