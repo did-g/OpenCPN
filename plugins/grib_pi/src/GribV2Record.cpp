@@ -1554,10 +1554,10 @@ static int mapStatisticalEndTime(GRIBMessage *grid)
    // not always the same.
   if (grid->md.time_unit == grid->md.stat_proc.t[0].time_unit) switch (grid->md.time_unit) { // table 4.4
     case 0:  // minute
-	// return (grid->md.stat_proc.etime/100 % 100)-(grid->time/100 % 100);
+	//return (grid->md.stat_proc.etime/100 % 100)-(grid->time/100 % 100);
     case 1:  // hour
          return grid->md.fcst_time +grid->md.stat_proc.t[0].time_length;
-	 // return (grid->md.stat_proc.etime/10000- grid->time/10000);
+	 //return (grid->md.stat_proc.etime/10000- grid->time/10000);
     case 2:  // Day
 	return (grid->md.stat_proc.edy -grid->dy);
     case 3:
