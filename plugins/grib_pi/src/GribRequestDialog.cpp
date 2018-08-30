@@ -1201,16 +1201,16 @@ wxString GribRequestSetting::WriteMail()
             r_topmess.Append(_T("&dir=%%2Fgefs.%d%02d%02d%%2F%02d%%2Fpgrb2") + t[resolution] + _T("&"));
         }
         else if (model == NAM) {
-            r_topmess.Append( _T("crb.pl") );
+            r_topmess.Append( _T("_crb.pl") );
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.afwaca%02d.tm00.grib2"));
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d&"));
         }
         else {
             bool hourly = m_pInterval->GetStringSelection().Length() == 1;
-            r_topmess.Append(hourly?_T("2d.pl") : _T("sub.pl"));
+            r_topmess.Append(hourly?_T("_2d.pl") : _T("_sub.pl"));
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.wrf") + (hourly?_T("sfc"):_T("subh")));
             r_topmess.Append(_T("f%02d.grib2"));
-            r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d&"));
+            r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%%2Fconus&"));
         }
         r_topmess.Append( r_zone  + _T("&"));
         break;
