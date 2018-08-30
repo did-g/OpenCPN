@@ -1069,7 +1069,7 @@ void GribRequestSetting::OnSaveMail( wxCommandEvent& event )
 /*
 ensemble
 
-http://nomads.ncep.noaa.gov/cgi-bin/filter_gens_0p50.pl?
+https://nomads.ncep.noaa.gov/cgi-bin/filter_gens_0p50.pl?
    file=geavg.t06z.pgrb2a.0p50.f000&
    lev_10_m_above_ground=on&
    lev_2_m_above_ground=on&
@@ -1081,14 +1081,14 @@ http://nomads.ncep.noaa.gov/cgi-bin/filter_gens_0p50.pl?
    subregion=&leftlon=0&rightlon=-90&toplat=60&bottomlat=0&
    dir=%2Fgefs.20180623%2F06%2Fpgrb2ap5
 
-http://nomads.ncep.noaa.gov/cgi-bin/filter_gens.pl?
+https://nomads.ncep.noaa.gov/cgi-bin/filter_gens.pl?
    file=gec00.t12z.pgrb2f00&
    lev_2_m_above_ground=on&lev_entire_atmosphere=on&lev_mean_sea_level=on&lev_surface=on&var_APCP=on&var_CAPE=on&var_PRATE=on&var_PRMSL=on&var_UGRD=on&var_VGRD=on&
    subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&
    dir=%2Fgefs.20180630%2F12%2Fpgrb2
    
 GFS
-"http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?
+"https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?
    file=gfs.t18z.pgrb2.0p25.f000&
    lev_500_mb=on&var_HGT=on&
    lev_entire_atmosphere=on&var_TCDC=on&
@@ -1098,16 +1098,16 @@ GFS
    lev_mean_sea_level=on&var_PRMSL=on&
    subregion=&leftlon=1&rightlon=-5&toplat=52&bottomlat=44&dir=%2Fgfs.2018052018
 
-http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p50.pl?
+https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p50.pl?
    file=gfs.t00z.pgrb2full.0p50.f003&
    lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018052300
 
-http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl?
+https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl?
    file=gfs.t06z.pgrb2.1p00.f003&
    lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018062306
 
 
-http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?
+https://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?
     file=hrrr.t00z.wrfsfcf01.grib2&
     lev_10_m_above_ground=on&lev_2_m_above_ground=on&var_TMP=on&var_UGRD=on&var_VGRD=on&
     subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.20180527
@@ -1195,7 +1195,7 @@ wxString GribRequestSetting::WriteMail()
        r_zone.Printf ( _T ( "subregion=&leftlon=%d&rightlon=%d&toplat=%d&bottomlat=%d" ), 
             m_spMinLon->GetValue(), m_spMaxLon->GetValue(), m_spMaxLat->GetValue(), m_spMinLat->GetValue()
             );
-        r_topmess = _T("http://nomads.ncep.noaa.gov/cgi-bin/filter_") + m[model] ;
+        r_topmess = _T("https://nomads.ncep.noaa.gov/cgi-bin/filter_") + m[model] ;
         if (model == GFS) {
             static const wxString r[] = { _T(".0p25"), _T("full.0p50"), _T(".1p00") };
             static const wxString f[] = { _T("0p25_1hr.pl"), _T("0p50.pl"), _T("1p00.pl") };
@@ -1215,16 +1215,16 @@ wxString GribRequestSetting::WriteMail()
             r_topmess.Append(_T("&dir=%%2Fgefs.%d%02d%02d%%2F%02d%%2Fpgrb2") + t[resolution] + _T("&"));
         }
         else if (model == NAM) {
-            r_topmess.Append( _T("crb.pl") );
+            r_topmess.Append( _T("_crb.pl") );
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.afwaca%02d.tm00.grib2"));
             r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d&"));
         }
         else {
             bool hourly = m_pInterval->GetStringSelection().Length() == 1;
-            r_topmess.Append(hourly?_T("2d.pl") : _T("sub.pl"));
+            r_topmess.Append(hourly?_T("_2d.pl") : _T("_sub.pl"));
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.wrf") + (hourly?_T("sfc"):_T("subh")));
             r_topmess.Append(_T("f%02d.grib2"));
-            r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d&"));
+            r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%%2Fconus&"));
         }
         r_topmess.Append( r_zone  + _T("&"));
         break;
