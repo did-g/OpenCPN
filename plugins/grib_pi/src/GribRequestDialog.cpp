@@ -75,6 +75,7 @@ enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
               SEATMP = (1 << 25), //  (sea temp at surface)
               CURRENT= (1 << 26), //  (current)
               REFC   = (1 << 27), //  (Composite reflectivity)
+              MSLET  = (1 << 28), //  (Mean Sea Level Pressure (ETA Model Reduction))
 };
 
 #include <set>
@@ -154,7 +155,7 @@ static const Providers P = {
               }},
     },
     // ===================
-    {NOAA, {{GFS, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS,
+    {NOAA, {{GFS, {/* .Parameters = */ PRMSL|MSLET|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS,
                    /* .Default = */  WIND,
                    /* .Intervals = */ {{r0_25, I1 },
                                  {r0_5,  I3 },
@@ -1156,7 +1157,7 @@ wxString GribRequestSetting::WriteMail()
             _T("lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&lev_surface=on"),
             _T("lev_mean_sea_level=on&var_PRMSL=on"),
             _T("var_PRES=on"), _T("var_REFC=on"), wxEmptyString, 
-            _T("var_APCP=on"),
+            _T("var_APCP=on"), _T("lev_mean_sea_level=on&var_MSLET=on")
         },
         // Meteo France
         {_T("r"), _T("n"), _T("t"),
@@ -1263,7 +1264,12 @@ wxString GribRequestSetting::WriteMail()
     if ( m_pPress->IsChecked()) {
         if (notfirst) r_parameters.Append( s[provider]);
         // HRRR is PRES surface not sealevel
-        r_parameters.Append( p[provider][(model == HRRR)?13:12] );
+        if (d.Has(MSLET)) {
+            r_parameters.Append( p[provider][17] );
+        }
+        else {
+            r_parameters.Append( p[provider][(model == HRRR)?13:12] );
+        }
         notfirst = true;
     }
     if ( m_pRainfall->IsChecked()) {
