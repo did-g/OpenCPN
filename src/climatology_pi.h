@@ -39,15 +39,23 @@
 
 #include "ocpn_plugin.h"
 
-#include "wxJSON/jsonreader.h"
-#include "wxJSON/jsonwriter.h"
+#include "json/json.h"
 
 #include "defs.h"
 
 wxString ClimatologyDataDirectory();
+wxString ClimatologyUserDataDirectory();
+
+#ifndef __OCPN__ANDROID__
+#define GetDateCtrlValue GetValue
+#endif
 
 #include "ClimatologyDialog.h"
 #include "ClimatologyUI.h"
+
+#ifdef __OCPN__ANDROID__
+extern QString qtStyleSheet;
+#endif
 
 //----------------------------------------------------------------------------------------------------------
 //    The PlugIn Class Definition

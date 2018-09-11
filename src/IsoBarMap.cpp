@@ -43,6 +43,7 @@
 #include "IsoBarMap.h"
 #include "defs.h"
 #include "gldefs.h"
+#include "plugingl/pidc.h"
 
 /* initialize cache to contain data */
 void ParamCache::Initialize(double step)
@@ -73,68 +74,6 @@ bool ParamCache::Read(double lat, double lon, double &value)
     value = values[(int)div];
     return true;
 }
-
-
-#if 0
-/* set the accuracy of the map */
-void MagneticPlotMap::ConfigureAccuracy(int step, int poleaccuracy)
-{
-    /* keeping m_Step powers of 2 */
-    switch(step) {
-    case 1: m_Step = .0625; break;
-    case 2: m_Step = .125; break;
-    case 3: m_Step = .25; break;
-    case 4: m_Step = .5; break;
-    case 5: m_Step = 1; break;
-    case 6: m_Step = 2; break;
-    case 7: m_Step = 4; break;
-    default: m_Step = 8; break;
-    }
-
-    /* keeping m_PoleAccuracy logarithmic */
-    switch(poleaccuracy) {
-    case 1: m_PoleAccuracy = 5e-1; break;
-    case 2: m_PoleAccuracy = 1e-1; break;
-    case 3: m_PoleAccuracy = 1e-2; break;
-    case 4: m_PoleAccuracy = 1e-3; break;
-    default: m_PoleAccuracy = 1e-4; break;
-    }
-}
-
-/* compute the graphed parameter for one lat/lon location */
-double MagneticPlotMap::CalcParameter(double lat, double lon)
-{
-      WMMtype_CoordSpherical CoordSpherical;
-      WMMtype_CoordGeodetic CoordGeodetic;
-      WMMtype_GeoMagneticElements GeoMagneticElements;
-
-      CoordGeodetic.lambda = lon;
-      CoordGeodetic.phi = lat;
-      CoordGeodetic.HeightAboveEllipsoid = 0;
-      CoordGeodetic.HeightAboveGeoid = 0;
-      CoordGeodetic.UseGeoid = 0;
-
-      /* Convert from geodeitic to Spherical Equations: 17-18, WMM Technical report */
-      WMM_GeodeticToSpherical(*Ellip, CoordGeodetic, &CoordSpherical);
-
-      /* Computes the geoMagnetic field elements and their time change */
-      WMM_Geomag(*Ellip, CoordSpherical, CoordGeodetic, TimedMagneticModel, &GeoMagneticElements);
-      WMM_CalculateGridVariation(CoordGeodetic, &GeoMagneticElements);
-
-      double ret = 0;
-      switch(m_type) {
-      case DECLINATION: ret = GeoMagneticElements.Decl >= 180 ?
-              GeoMagneticElements.Decl - 360 : GeoMagneticElements.Decl;
-          break;
-      case INCLINATION: ret = GeoMagneticElements.Incl;
-          break;
-      case FIELD_STRENGTH: ret = GeoMagneticElements.F;
-          break;
-      }
-
-      return ret;
-}
-#endif
 
 /* build up cache for all longitudes */
 void IsoBarMap::BuildParamCache(ParamCache &cache, double lat)
@@ -459,7 +398,7 @@ bool IsoBarMap::Recompute(wxWindow *parent)
   else
       m_contourcachesize = (m_MaxContour - m_MinContour) / m_Spacing + 1;
 
-  m_contourcache = new ContourBitmap[m_contourcachesize];
+  m_contourcache = new ContourText[m_contourcachesize];
   for(int i=0; i<m_contourcachesize; i++)
       m_contourcache[i] = ContourCacheData(m_MinContour + i*m_Spacing);
 
@@ -467,7 +406,7 @@ bool IsoBarMap::Recompute(wxWindow *parent)
 }
 
 /* draw a line segment in opengl from lat/lon and viewport */
-void DrawLineSeg(wxDC *dc, PlugIn_ViewPort &VP, double lat1, double lon1, double lat2, double lon2)
+void DrawLineSeg(piDC *dc, PlugIn_ViewPort &VP, double lat1, double lon1, double lat2, double lon2)
 {
     /* avoid lines which cross over the view port the long way */
     if(lon1+180 < VP.clon && lon2+180 > VP.clon)
@@ -485,11 +424,14 @@ void DrawLineSeg(wxDC *dc, PlugIn_ViewPort &VP, double lat1, double lon1, double
 
     if(dc)
         dc->DrawLine(r1.x, r1.y, r2.x, r2.y);
-    else {
+    else
+    {
+#if 0
         glBegin(GL_LINES);
         glVertex2i(r1.x, r1.y);
         glVertex2i(r2.x, r2.y);
         glEnd();
+#endif
     }
 }
 
@@ -500,9 +442,6 @@ void IsoBarMap::ClearMap()
         for(int lonind=0; lonind<LONGITUDE_ZONES; lonind++)
             m_map[latind][lonind].clear();
 
-    for(int i=0; i<m_contourcachesize; i++) {
-        delete [] m_contourcache[i].data;
-    }
     delete [] m_contourcache;
 
     m_MinContour = m_MaxContour = NAN;
@@ -511,75 +450,18 @@ void IsoBarMap::ClearMap()
 }
 
 /* generate a cache bitmap of a given number */
-ContourBitmap IsoBarMap::ContourCacheData(double value)
+ContourText IsoBarMap::ContourCacheData(double value)
 {
-    wxString msg;
-    msg.Printf(_T("%.0f"), value);
-
-    wxBitmap bm( 120, 25 );
-    wxMemoryDC mdc( bm );
-    mdc.Clear();
-
-    wxFont mfont( 15, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL );
-    mdc.SetFont( mfont );
-    mdc.SetPen( *wxBLACK_PEN);
-    mdc.SetBrush( *wxWHITE_BRUSH);
-
-    int w, h;
-    mdc.GetTextExtent( msg, &w, &h );
-
-    /* in the case that the font or something fails, and the dimensions are off,
-       we will still create a valid image. */
-    if(w <= 0)
-        w = 1;
-    else if(w > 120)
-        w = 120;
-    if(h <= 0)
-        h = 1;
-    else if(h > 25)
-        h = 25;
-
-    mdc.DrawText( msg, 0, 0 );
-
-    mdc.SelectObject( wxNullBitmap );
-
-    wxRect r(0, 0, w, h);
-    wxBitmap sbm = bm.GetSubBitmap(r);
-    wxImage image = sbm.ConvertToImage();
-    image.InitAlpha();
-
-    unsigned char *d = image.GetData();
-    unsigned char *a = image.GetAlpha();
-
-    w = image.GetWidth(), h = image.GetHeight();
-    unsigned char *e = new unsigned char[4 * w * h];
-    for( int y = 0; y < h; y++ )
-        for( int x = 0; x < w; x++ ) {
-            unsigned char r, g, b;
-            int ioff = (y * w + x);
-            r = d[ioff* 3 + 0];
-            g = d[ioff* 3 + 1];
-            b = d[ioff* 3 + 2];
-
-            a[ioff] = 255-r;
-            
-            int off = ( y * w + x );
-            e[off * 4 + 0] = r;
-            e[off * 4 + 1] = g;
-            e[off * 4 + 2] = b;
-            e[off * 4 + 3] = 255-r;
-        }
-
-    ContourBitmap t;
-    t.image = image;
-    t.data = e;
+    ContourText t;
+    t.text.Printf("%.0f", value);
+    t.w = t.h = 0;
     t.lastx = 0;
     t.lasty = 0;
     return t;
 }
 
 /* draw text of the value of a conptour at a given location */
-void IsoBarMap::DrawContour(wxDC *dc, PlugIn_ViewPort &VP, double contour, double lat, double lon)
+void IsoBarMap::DrawContour(piDC *dc, PlugIn_ViewPort &VP, double contour, double lat, double lon)
 {
     int index = (contour - m_MinContour) / m_Spacing;
     if(index < 0 || index >= m_contourcachesize)
@@ -588,48 +470,31 @@ void IsoBarMap::DrawContour(wxDC *dc, PlugIn_ViewPort &VP, double contour, doubl
     wxPoint r;
 
     GetCanvasPixLL(&VP, &r, lat, lon);
+    ContourText &ct = m_contourcache[index];
 
-    double dist_squared1 = square(r.x-m_contourcache[index].lastx)
-        + square(r.y-m_contourcache[index].lasty);
+    double dist_squared1 = square(r.x-ct.lastx)
+        + square(r.y-ct.lasty);
     double dist_squared2 = square(r.x-lastx) + square(r.y-lasty);
     /* avoid printing numbers on top of each other */
     if(dist_squared1 < 100000 || dist_squared2 < 40000)
         return;
 
-    m_contourcache[index].lastx = lastx = r.x;
-    m_contourcache[index].lasty = lasty = r.y;
+    ct.lastx = lastx = r.x;
+    ct.lasty = lasty = r.y;
 
-    int w = m_contourcache[index].image.GetWidth();
-    int h = m_contourcache[index].image.GetHeight();
-
-    if(dc) {
-        wxBitmap bmp(m_contourcache[index].image);
-        dc->DrawBitmap(bmp, r.x - w/2, r.y - h/2, true);
-    } else {
-        glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT);
-        glColor4f( 1, 1, 1, 1 );
-
-        glEnable( GL_BLEND );
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-        /* center */
-        glRasterPos2i( r.x - w/2, r.y - h/2);
-        glPixelZoom( 1, -1 ); /* draw data from top to bottom */
-        glDrawPixels( w, h, GL_RGBA, GL_UNSIGNED_BYTE, m_contourcache[index].data);
-        glPixelZoom( 1, 1 );
-
-        glPopAttrib();
-    }
+    if(ct.w == 0)
+        dc->GetTextExtent(ct.text, &ct.w, &ct.h);
+    dc->DrawText(ct.text, r.x - ct.w/2, r.y - ct.h/2);
 }
 
 /* plot to dc, or opengl is dc is NULL */
-void IsoBarMap::Plot(wxDC *dc, PlugIn_ViewPort &vp)
+void IsoBarMap::Plot(piDC *dc, PlugIn_ViewPort &vp)
 {
     if(dc) {
         dc->SetPen(wxPen(m_Color, 3));
     } else {
-        glLineWidth(3.0);
-        glColor4ub(m_Color.Red(), m_Color.Green(), m_Color.Blue(), m_Color.Alpha());
+//        glLineWidth(3.0);
+//        glColor4ub(m_Color.Red(), m_Color.Green(), m_Color.Blue(), m_Color.Alpha());
     }
 
     int startlatind = floor((vp.lat_min+MAX_LAT)/ZONE_SIZE);
