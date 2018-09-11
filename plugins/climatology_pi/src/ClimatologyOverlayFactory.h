@@ -30,9 +30,7 @@
 #include "zuFile.h"
 
 #include "IsoBarMap.h"
-#include "TexFont.h"
-
-void DrawGLLine( double x1, double y1, double x2, double y2 );
+#include "plugingl/pidc.h"
 
 class PlugIn_ViewPort;
 enum Coord {U, V, MAG, DIRECTION};
@@ -41,9 +39,9 @@ struct WindData
 {
     struct WindPolar
     {
-        WindPolar() : directions(NULL), speeds(NULL) {}
-        ~WindPolar() { delete [] directions; delete [] speeds; }
-        wxUint8 gale, calm, *directions, *speeds;
+        WindPolar()  {}
+        ~WindPolar() { /*delete [] directions; delete [] speeds;*/ }
+        wxUint8 gale, calm, directions[8], speeds[8];
         double Value(enum Coord coord, int dir_cnt);
     };
 
@@ -180,6 +178,7 @@ public:
     }
 
 private:
+    
     ClimatologyOverlayFactory &m_factory;
     int m_setting, m_units, m_month, m_day;
 };
@@ -206,21 +205,6 @@ public:
                               double *directions, double *speeds,
                               double &gale, double &calm);
 
-    void ReadWindData(int month, wxString filename);
-    void AverageWindData();
-
-    void ReadCurrentData(int month, wxString filename);
-    void AverageCurrentData();
-    bool ReadCycloneData(wxString filename, std::list<Cyclone*> &cyclones, bool south=false);
-    void BuildCycloneCache();
-    bool ReadElNinoYears(wxString filename);
-
-    void DrawLine( double x1, double y1, double x2, double y2,
-                   const wxColour &color, double width );
-    void DrawCircle( double x, double y, double r, const wxColour &color, double width );
-
-    wxImage &getLabel(double value);
-
     double GetMin(int setting);
     double GetMax(int setting);
 
@@ -238,17 +222,41 @@ public:
     wxSemaphore m_cyclone_cache_semaphore;
     std::map<int, std::list<CycloneState*> > m_cyclone_cache;
 
-    bool RenderOverlay( wxDC *dc, PlugIn_ViewPort &vp );
+    void BuildCycloneCache();
+    bool RenderOverlay( piDC &dc, PlugIn_ViewPort &vp );
 
     static wxColour GetGraphicColor(int setting, double val_in);
 
     wxDateTime m_CurrentTimeline;
     bool m_bAllTimes;
 
-    bool m_bFailedLoading; // maybe loaded some data, but some is corrupted or missing
+    std::list<wxString> m_FailedFiles; // maybe loaded some data, but some is corrupted or missing
     bool m_bCompletedLoading; // finished loading climatology data without abort
 
 private:
+    void Load();
+    void Free();
+
+    void ReadWindData(int month, wxString filename);
+    void AverageWindData();
+    void ReadCurrentData(int month, wxString filename);
+    void AverageCurrentData();
+    ZUFILE *OpenClimatologyDataFile(wxString filename);
+    void ReadSeaLevelPressureData(wxString filename);
+    void ReadSeaSurfaceTemperatureData(wxString filename);
+    void ReadAirTemperatureData(wxString filename);
+    void ReadCloudData(wxString filename);
+    void ReadPrecipitationData(wxString filename);
+    void ReadRelativeHumidityData(wxString filename);
+    void ReadLightningData(wxString filename);
+    void ReadSeaDepthData(wxString filename);
+    bool ReadCycloneData(wxString filename, std::list<Cyclone*> &cyclones, bool south=false);
+    bool ReadElNinoYears(wxString filename);
+
+    void DrawLine( double x1, double y1, double x2, double y2,
+                   const wxColour &color, double width );
+    void DrawCircle( double x, double y, double r, const wxColour &color, double width );
+
     ZUFILE *TryOpenFile(wxString filename);
 
     void RenderNumber(wxPoint p, double v, const wxColour &color);
@@ -272,10 +280,10 @@ private:
 
     ClimatologyOverlay m_pOverlay[13][ClimatologyOverlaySettings::SETTINGS_COUNT];
 
-    wxDC *m_pdc;
+
+    piDC *m_dc;
 
     std::map < double , wxImage > m_labelCache;
-    TexFont m_Numbers;
 
     WindData *m_WindData[13];
     CurrentData *m_CurrentData[13];

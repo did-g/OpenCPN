@@ -47,7 +47,9 @@ ClimatologyDialog::ClimatologyDialog(wxWindow *parent, climatology_pi *ppi)
 #endif
     pPlugIn(ppi), pParent(parent)
 {
-
+#ifdef __OCPN__ANDROID__
+    GetHandle()->setStyleSheet( qtStyleSheet);
+#endif
     m_cfgdlg = new ClimatologyConfigDialog(this);
 
     Now();
@@ -58,7 +60,6 @@ ClimatologyDialog::ClimatologyDialog(wxWindow *parent, climatology_pi *ppi)
 #include "now.xpm"
     m_bpNow->SetBitmapLabel(now);
     }
-
     DimeWindow( this );
     PopulateTrackingControls();
 
@@ -186,8 +187,8 @@ wxString ClimatologyDialog::GetValue(int index, Coord coord)
     double val = g_pOverlayFactory->getCurCalibratedValue
         (coord, index, m_cursorlat, m_cursorlon);
     if(wxIsNaN(val))
-        return _T("");
-    return wxString::Format(_T("%.2f"), val);
+        return "";
+    return wxString::Format("%.2f", val);
 }
 
 void ClimatologyDialog::DayMonthUpdate()

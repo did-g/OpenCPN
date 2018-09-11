@@ -15,18 +15,7 @@ SET(VERBOSE_NAME Climatology)
 SET(TITLE_NAME CLIMATOLOGY)
 SET(CPACK_PACKAGE_CONTACT "Sean D'Epagnier ")
 
-SET(BUNDLE_DATA TRUE)
-
-INCLUDE( VERSION.cmake )
-SET(PLUGIN_VERSION "${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}.${PLUGIN_VERSION_PATCH}" )
-
-OPTION(CLIMATOLOGY_USE_SVG "Use SVG graphics" ON)
-
 INCLUDE("cmake/PluginConfigure.cmake")
-
-IF(CLIMATOLOGY_USE_SVG)
-  ADD_DEFINITIONS(-DCLIMATOLOGY_USE_SVG)
-ENDIF(CLIMATOLOGY_USE_SVG)
 
 SET(SRC_CLIMATOLOGY
             src/ClimatologyOverlayFactory.cpp
@@ -36,20 +25,10 @@ SET(SRC_CLIMATOLOGY
             src/ClimatologyConfigDialog.cpp
             src/zuFile.cpp
             src/IsoBarMap.cpp
-            src/TexFont.cpp
             src/icons.cpp
 )
 
-IF(WIN32)
-SET(SRC_JSON
-            src/wxJSON/jsonval.cpp
-            src/wxJSON/jsonreader.cpp
-            src/wxJSON/jsonwriter.cpp)
-ENDIF(WIN32)
-
-ADD_DEFINITIONS(-DTIXML_USE_STL)
-
-ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC_CLIMATOLOGY} ${SRC_JSON})
+ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC_CLIMATOLOGY})
 
 IF(NOT UNIX)
     SET(SRC_BZIP
@@ -71,6 +50,10 @@ ENDIF(NOT UNIX)
 IF(MINGW)
     TARGET_LINK_LIBRARIES(${PACKAGE_NAME} "-lwxzlib-2.8")
 ENDIF(MINGW)
+
+INCLUDE("cmake/PluginJSON.cmake")
+INCLUDE("cmake/PluginXML.cmake")
+INCLUDE("cmake/PluginGL.cmake")
 
 INCLUDE("cmake/PluginInstall.cmake")
 INCLUDE("cmake/PluginLocalization.cmake")
