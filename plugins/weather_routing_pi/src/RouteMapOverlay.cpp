@@ -369,7 +369,8 @@ static wxColour Darken(wxColour c)
 }
 
 void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
-                             wrDC &dc, PlugIn_ViewPort &vp, bool justendroute)
+                             wrDC &dc, PlugIn_ViewPort &vp, bool justendroute,
+                             Position* positionOnRoute)
 {
     dc.SetPen(*wxBLACK); // reset pen
     dc.SetBrush( *wxTRANSPARENT_BRUSH); // reset brush
@@ -538,8 +539,23 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
         RenderBoatOnCourse(false, time, dc, vp);
 
         // Start WindBarbsOnRoute customization
-        if (settingsdialog.m_cbDisplayWindBarbsOnRoute->GetValue())
-            RenderWindBarbsOnRoute(dc, vp);
+        int lineWidth = settingsdialog.m_sWindBarbsOnRouteThickness->GetValue();
+        bool apparent = settingsdialog.m_cbDisplayApparentWindBarbs->GetValue();
+        if (lineWidth > 0)
+            RenderWindBarbsOnRoute(dc, vp, lineWidth, apparent);
+            
+        // CUSTOMIZATION
+        // Display the position of the cursor on route
+        // where the infos are read from Route Position window
+        if (positionOnRoute != NULL)
+        {
+            wxPoint r;
+            GetCanvasPixLL(&vp, &r, positionOnRoute->lat, positionOnRoute->lon);
+            wxColour ownBlue(20, 83, 186);
+            SetColor(dc, ownBlue, true);
+            dc.StrokeCircle( r.x, r.y, 7 );
+        }
+        
         
         if(MarkAtPolarChange) {
             SetColor(dc, Darken(DestinationColor), true);
@@ -804,7 +820,8 @@ void RouteMapOverlay::RenderBoatOnCourse(bool cursor_route, wxDateTime time, wrD
     }
 }
 
-void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
+void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp, int lineWidth,
+                                             bool apparentWind)
 {
     /* Method to render wind barbs on the route that has been generated
      * by WeatherRouting plugin. The idead is to visualize the wind
@@ -814,6 +831,7 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
      * OpenCPN's licence
      * March, 2018
      */
+    
     if (vp.bValid == false)
         return;
 
@@ -836,7 +854,7 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
     {
         wxPoint p;
         GetCanvasPixLL(&nvp, &p, it->lat, it->lon);
-
+        
         // available
         //   WG VWG : winds over ground
         //   W VW : winds over water
@@ -844,21 +862,48 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
         //
         //   BG VBG : boat speed over ground
         //   B  VB  : boat speed over water
-        double VW = it->VW;
-        double W = it->W;
+        float windSpeed = it->VW;
+        float windDirection = it->W; // heading_resolve(it->B - it->W);
+        
+        // By default, display true wind
+        float finalWindSpeed = windSpeed;
+        float finalWindDirection = windDirection;
+        
+        if (apparentWind)
+        {
+            finalWindSpeed = Polar::VelocityApparentWind(it->VB,
+                                                         heading_resolve(it->B - windDirection),
+                                                         windSpeed);
+            finalWindDirection = heading_resolve(
+                it->B -
+                Polar::DirectionApparentWind(finalWindSpeed, it->VB,
+                                             heading_resolve(it->B - windDirection),
+                                             it->VW));
+        }
         
         // Draw barbs
-        g_barbsOnRoute_LineBufferOverlay.pushWindArrowWithBarbs(
-            wind_barb_route_cache, p.x, p.y, VW,
-            deg2rad(W) + nvp.rotation, it->lat < 0, true
-        );
+        g_barbsOnRoute_LineBufferOverlay.setLineWidth(lineWidth);
+        g_barbsOnRoute_LineBufferOverlay.pushWindArrowWithBarbs(wind_barb_route_cache,
+                                                                p.x, p.y, finalWindSpeed,
+                                                                deg2rad(finalWindDirection)
+                                                                +nvp.rotation, it->lat < 0, true);
     }
     wind_barb_route_cache.Finalize();
     
     // Draw the wind barbs
     wxPoint point;
     GetCanvasPixLL(&vp, &point, configuration.StartLat, configuration.StartLon);
-    wxColour colour(170, 0, 170);
+    wxColour colour;
+    if (apparentWind)
+    {
+        wxColour blue(20, 83, 186);
+        colour = blue;
+    }
+    else
+    {
+        wxColour purple(170, 0, 170);
+        colour = purple;
+    }
     
     if(dc.GetDC())
     {
@@ -868,6 +913,10 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
 #ifdef ocpnUSE_GL
     else
     {
+        // Mandatory to avoid display issue when moving map
+        // (map disappear to show a gray background...)
+        glPushMatrix();
+        
         // Anti-aliasing options to render
         // wind barbs at best quality (copy from grip_pi)
         glEnable(GL_BLEND);
@@ -876,11 +925,11 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp)
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
         
         glColor3ub(colour.Red(), colour.Green(), colour.Blue());
-        glLineWidth(2);
+        glLineWidth(lineWidth);
         glEnableClientState(GL_VERTEX_ARRAY);
     }
 #endif
-    
+
     wind_barb_route_cache.draw(dc.GetDC());
 
 #ifdef ocpnUSE_GL
@@ -1609,4 +1658,46 @@ void RouteMapOverlay::UpdateDestination()
 
     m_bUpdated = true;
     m_UpdateOverlay = true;
+}
+
+
+// CUSTOMIZATION
+
+Position* RouteMapOverlay::getClosestRoutePositionFromCursor(double cursorLat, double cursorLon, PlotData &posData)
+{
+    /* Method to find the closest calculated position of the boat on
+     * the weather route based on the cursor position
+     */
+    
+    double dist = INFINITY;
+    PlotData tempData;
+    Position *pos = last_destination_position;
+    Position *newPos = NULL;
+    Position *p;
+    
+    // Get position first
+    for(p = pos; p && p->parent; p = p->parent)
+    {
+        // Calculate distance
+        // Almost like a plan (x,y) because of small distance -- is that correct?
+        double tempDist = sqrt( pow(cursorLat - p->lat, 2) + pow(cursorLon - p->lon, 2) );
+        if (tempDist < dist)
+        {
+            dist = tempDist;
+            newPos = p;
+        }
+    }
+    
+    // Get data if position was founded
+    if (newPos != NULL)
+    {
+        std::list<PlotData> plot = GetPlotData(false);
+        for ( std::list<PlotData>::iterator it = plot.begin(); it != plot.end(); it++)
+        {
+            if (it->lat == newPos->lat && it->lon == newPos->lon)
+                posData = *it;
+        }
+    }
+    
+    return newPos;
 }

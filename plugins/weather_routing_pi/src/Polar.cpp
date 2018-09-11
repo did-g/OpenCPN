@@ -838,7 +838,7 @@ bool Polar::InsideCrossOverContour(float H, float VW, bool optimize_tacking)
     // yeah motor boat...
     if (VW == 0.)
         VW = 0.01;
-    return CrossOverRegion.Contains(fabs(H), VW);
+    return CrossOverRegion.Contains(H, VW);
 }
 
 float SailboatTransformSpeed(double W, double VW, double eta)

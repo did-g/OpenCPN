@@ -56,7 +56,8 @@ public:
 
     bool SetCursorLatLon(double lat, double lon);
     void Render(wxDateTime time, SettingsDialog &settingsdialog,
-                wrDC &dc, PlugIn_ViewPort &vp, bool justendroute);
+                wrDC &dc, PlugIn_ViewPort &vp, bool justendroute,
+                Position* positionOnRoute=NULL);
 
     static wxColour sailingConditionColor(int level);
     static wxString sailingConditionText(int level);
@@ -89,6 +90,9 @@ public:
 
     Position *GetLastCursorPosition() { return last_cursor_position; }
     wxDateTime GetLastCursorTime() { return m_cursor_time; }
+    
+    // CUSTOMIZATION
+    Position *getClosestRoutePositionFromCursor(double cursorLat, double cursorLon, PlotData &posData);
 
     bool m_UpdateOverlay;
     bool m_bEndRouteVisible;
@@ -107,7 +111,7 @@ private:
     void RenderCourse(bool cursor_route, wrDC &dc, PlugIn_ViewPort &vp, bool comfortRoute = false);
 
     // Customization WindBarbsOnRoute
-    void RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp);
+    void RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp, int lineWidth, bool apparentWind);
     int sailingConditionLevel(const PlotData &plot) const;
 
     virtual bool TestAbort() { return Finished(); }
