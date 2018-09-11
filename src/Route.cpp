@@ -643,7 +643,6 @@ void Route::RenderSegmentArrowsGL( int xa, int ya, int xb, int yb, ViewPort &vp)
 {
 #ifdef ocpnUSE_GL
     //    Draw a direction arrow        
-    wxPoint icon[10];
     float icon_scale_factor = 100 * vp.view_scale_ppm;
     icon_scale_factor = fmin ( icon_scale_factor, 1.5 );              // Sets the max size
     icon_scale_factor = fmax ( icon_scale_factor, .10 );

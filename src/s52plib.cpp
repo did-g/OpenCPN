@@ -75,8 +75,6 @@ void DrawAALine( wxDC *pDC, int x0, int y0, int x1, int y1, wxColour clrLine, in
 extern bool GetDoubleAttr( S57Obj *obj, const char *AttrName, double &val );
 void PLIBDrawGLThickLine( float x1, float y1, float x2, float y2, wxPen pen, bool b_hiqual );
 
-void LoadS57Config();
-
 #ifdef ocpnUSE_GL
 typedef struct {
     TexFont cache;
@@ -8725,11 +8723,11 @@ void s52plib::ClearNoshow(void)
     m_noshow_array.Clear();
 }
 
-void s52plib::PLIB_LoadS57Config()
+void s52plib::LoadS57Config(wxFileConfig *pconfig)
 {
-    //    Get a pointer to the opencpn configuration object
-    wxFileConfig *pconfig = GetOCPNConfigObject();
-    
+    if (pconfig == nullptr)
+        return;
+
     int read_int;
     double dval;
     
@@ -8843,9 +8841,29 @@ void s52plib::PLIB_LoadS57Config()
     }
 }
 
+void s52plib::PLIB_LoadS57Config()
+{
+    //    Get a pointer to the opencpn configuration object
+    wxFileConfig *pconfig = GetOCPNConfigObject();
+    LoadS57Config(pconfig);
+}
 
-
-
+void s52plib::SetObjOnOff(const char *s, bool val)
+{
+    if(val) {                  // off
+        AddObjNoshow(s);
+    }
+    else{                      // on
+        RemoveObjNoshow(s);
+        for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
+            OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
+            if( !strncmp( pOLE->OBJLName, s, 6 ) ) {
+                pOLE->nViz = 1;
+                break;
+            }
+        }
+    }
+}
 
 //    Do all those things necessary to prepare for a new rendering
 void s52plib::PrepareForRender()
@@ -8881,12 +8899,7 @@ void s52plib::PrepareForRender()
             OBJLElement *pOLE = NULL;
             
             // Detect and manage "LIGHTS" toggle
-            bool bshow_lights = !m_lightsOff;
-            if(!bshow_lights)                     // On, going off
-                AddObjNoshow("LIGHTS");
-            else{                                   // Off, going on
-                RemoveObjNoshow("LIGHTS");
-            }
+            SetObjOnOff("LIGHTS", m_lightsOff);
 
             
             const char * categories[] = { "ACHBRT", "ACHARE", "CBLSUB", "PIPARE", "PIPSOL", "TUNNEL", "SBDARE" };
@@ -8915,20 +8928,7 @@ void s52plib::PrepareForRender()
             }
                 
             // Handle Quality of data toggle
-            bool bQuality = m_qualityOfDataOn;
-            if(!bQuality){
-                AddObjNoshow("M_QUAL");
-            }
-            else{
-                RemoveObjNoshow("M_QUAL");
-                for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
-                    OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
-                    if( !strncmp( pOLE->OBJLName, "M_QUAL", 6 ) ) {
-                        pOLE->nViz = 1;         // force on
-                        break;
-                    }
-                }
-            }
+            SetObjOnOff("M_QUAL", !m_qualityOfDataOn);
         }
         
         m_myConfig = PI_GetPLIBStateHash();

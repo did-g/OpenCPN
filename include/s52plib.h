@@ -100,11 +100,14 @@ private:
 //-----------------------------------------------------------------------------
 //    s52plib definition
 //-----------------------------------------------------------------------------
+class wxFileConfig;
 
 class s52plib {
 public:
      s52plib( const wxString& PLib, bool b_forceLegacy = false );
     ~s52plib();
+
+    void LoadS57Config(wxFileConfig *conf);
 
     void SetPPMM( float ppmm );
     float GetPPMM() { return canvas_pix_per_mm; }
@@ -276,6 +279,8 @@ private:
     bool S52_flush_Plib();
     
     void PLIB_LoadS57Config();
+
+    void SetObjOnOff(const char *s, bool val);
     
     bool PreloadOBJLFromCSV(const wxString &csv_file);
 
