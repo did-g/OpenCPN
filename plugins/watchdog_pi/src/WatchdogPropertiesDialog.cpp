@@ -29,6 +29,7 @@
 #include "wx/wx.h"
 #endif //precompiled headers
 
+#include "watchdog_pi.h"
 #include "WatchdogPropertiesDialog.h"
 #include "version.h"
 #include <wx/fontdlg.h>
@@ -54,3 +55,7 @@ void WatchdogPropertiesDialog::OnWatchdogPropertiesOKClick( wxCommandEvent& even
     event.Skip();
 }
 
+void WatchdogPropertiesDialog::OnAboutAuthor( wxCommandEvent& event )
+{
+    wxLaunchDefaultBrowser(_T(ABOUT_AUTHOR_URL));
+}

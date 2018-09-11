@@ -34,14 +34,12 @@
 
 class WatchdogPropertiesDialog : public WatchdogPropertiesDialogBase
 {
-protected:
-    void OnWatchdogPropertiesOKClick( wxCommandEvent& event );
-    
 public:
     WatchdogPropertiesDialog( wxWindow* parent );
-    
-private:
-    
+
+protected:
+    void OnWatchdogPropertiesOKClick( wxCommandEvent& event );
+    void OnAboutAuthor( wxCommandEvent& event );
 };
 
 #endif // __WatchdogPropertiesDialog__
