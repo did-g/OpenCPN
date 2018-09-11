@@ -1,11 +1,11 @@
 /******************************************************************************
  *
  * Project:  OpenCPN
- * Purpose:  watchdog Plugin
+ * Purpose:  pypilot Plugin
  * Author:   Sean D'Epagnier
  *
  ***************************************************************************
- *   Copyright (C) 2015 by Sean D'Epagnier                                 *
+ *   Copyright (C) 2018 by Sean D'Epagnier                                 *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,20 +24,54 @@
  ***************************************************************************
  */
 
-#include "WatchdogUI.h"
+#include <deque>
+#include <map>
 
-class watchdog_pi;
+#include <wx/wx.h>
+#include <wx/socket.h>
 
-class ConfigurationDialog : public ConfigurationDialogBase
+#include <json/json.h>
+
+class SignalKClient : public wxEvtHandler
 {
 public:
-    ConfigurationDialog( watchdog_pi &_watchdog_pi, wxWindow* parent);
+    SignalKClient(bool queue_mode = true, bool request_list = true);
 
-    void OnEnabled( wxCommandEvent& event );
-    void OnFont( wxFontPickerEvent& event );
+    void connect(wxString host, int port=0);
+    void disconnect();
+    bool connected() { return m_sock.IsConnected(); }
+    virtual bool receive(std::string &name, Json::Value &value);
+
+    void get(std::string name);
+    void set(std::string name, Json::Value &value);
+    void set(std::string name, double value);
+    void set(std::string name, std::string &value);
+    void set(std::string name, const char *value);
+    void watch(std::string name, bool on=true);
+
+    bool info(std::string name, Json::Value &info);
+    void update_watchlist(std::map<std::string, bool> &watchlist, bool refresh=false);
+
+protected:
+    virtual void OnConnected() = 0;
+    virtual void OnDisconnected() = 0;
+    Json::Value m_list;
 
 private:
-    void OnInformation( wxCommandEvent& event );
+    void request_list_values();
+    void send(Json::Value &request);
+    void OnSocketEvent(wxSocketEvent& event);
 
-    watchdog_pi &m_watchdog_pi;
+    wxSocketClient      m_sock;
+    std::string         m_sock_buffer;
+    std::deque<std::pair<std::string, Json::Value> > m_queue;
+    std::map<std::string, Json::Value> m_map;
+
+    bool m_bQueueMode;
+    
+    bool m_bRequestList, m_bRequestingList;
+
+    std::map<std::string, bool> m_watchlist;
+
+DECLARE_EVENT_TABLE()
 };
