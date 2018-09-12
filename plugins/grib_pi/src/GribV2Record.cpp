@@ -1466,11 +1466,13 @@ static zuchar GRBV2_TO_DATA(int productDiscipline, int dataCat, int dataNum)
             case 22: ret = GRB_WIND_GUST; break; // 
             }
             break;
-        case 3: // dataCat
+        case 3: // dataCat mass
             switch (dataNum) {
             case 0: ret = GRB_PRESSURE; break; //DATA_TO_GRBV2[DATA_PRESSURE] = grb2DataType(0,3,0);
             case 1: ret = GRB_PRESSURE; break; // PRSMSL //DATA_TO_GRBV2[DATA_PRESSURE] = grb2DataType(0,3,0);
             case 5: ret = GRB_GEOPOT_HGT; break; // DATA_TO_GRBV2[DATA_GEOPOT_HGT]= grb2DataType(0,3,5);
+
+            case 192: ret = GRB_PRESSURE; break; //DATA_TO_GRBV2[DATA_MSLET] = grb2DataType(0,3,192);
             }
             break;
         case 6: // dataCat
@@ -1547,12 +1549,14 @@ static zuchar GRBV2_TO_DATA(int productDiscipline, int dataCat, int dataNum)
 
 static int mapStatisticalEndTime(GRIBMessage *grid)
 {
-  switch (grid->md.time_unit) { // table 4.4
+   // lovely md.fcst_time is in grid->md.time_unit but md.stat_proc.t[0].time_length is in grid->md.stat_proc.t[0].time_unit
+   // not always the same.
+  if (grid->md.time_unit == grid->md.stat_proc.t[0].time_unit) switch (grid->md.time_unit) { // table 4.4
     case 0:  // minute
-	// return (grid->md.stat_proc.etime/100 % 100)-(grid->time/100 % 100);
+	//return (grid->md.stat_proc.etime/100 % 100)-(grid->time/100 % 100);
     case 1:  // hour
          return grid->md.fcst_time +grid->md.stat_proc.t[0].time_length;
-	 // return (grid->md.stat_proc.etime/10000- grid->time/10000);
+	 //return (grid->md.stat_proc.etime/10000- grid->time/10000);
     case 2:  // Day
 	return (grid->md.stat_proc.edy -grid->dy);
     case 3:
@@ -1562,9 +1566,26 @@ static int mapStatisticalEndTime(GRIBMessage *grid)
     default:
 	fprintf(stderr,"Unable to map end time with units %d to GRIB1\n",grid->md.time_unit);
 	exit(1);
+
   }
+
+  if (grid->md.time_unit == 0 && grid->md.stat_proc.t[0].time_unit == 1) {
+         // in minute + hourly increment
+         return grid->md.fcst_time +grid->md.stat_proc.t[0].time_length *60;
+  }
+
+  if (grid->md.time_unit == 1 && grid->md.stat_proc.t[0].time_unit == 0 && (grid->md.stat_proc.t[0].time_unit  % 60) != 0 ) {
+          // convert in hour
+         return grid->md.fcst_time +grid->md.stat_proc.t[0].time_length /60;
+  }
+
+  fprintf(stderr, "Unable to map end time %d %d %d %d \n", grid->md.time_unit, grid->md.stat_proc.t[0].time_unit, grid->md.fcst_time, 
+            grid->md.stat_proc.t[0].time_length);
+  exit(1);
+
 }
 
+// map GRIB2 msg time to GRIB1 P1 and P2 in sec
 static bool mapTimeRange(GRIBMessage *grid, zuint *p1, zuint *p2, zuchar *t_range,int *n_avg,int *n_missing, int center)
 {
   switch (grid->md.pds_templ_num) {
