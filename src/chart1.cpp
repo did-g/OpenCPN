@@ -3814,8 +3814,6 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
     pConfig->DeleteGroup( _T ( "/Marks" ) );
     pConfig->Flush();
 
-    delete pConfig;             // All done
-    pConfig = NULL;
 
     delete g_printData;
     delete g_pageSetupData;
@@ -3889,6 +3887,9 @@ void MyFrame::OnCloseWindow( wxCloseEvent& event )
         delete g_pi_manager;
         g_pi_manager = NULL;
     }
+
+    delete pConfig;             // All done
+    pConfig = NULL;
 
     if( g_pAIS ) {
         if(g_pMUX)
