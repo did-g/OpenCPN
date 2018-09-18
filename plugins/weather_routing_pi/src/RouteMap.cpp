@@ -2617,8 +2617,8 @@ bool RouteMapConfiguration::Update()
             havestart = true;
         }
         if (!EndGUID.IsEmpty() && GetSingleWaypoint( EndGUID, &waypoint )) {
-            StartLat = waypoint.m_lat;
-            StartLon = waypoint.m_lon;
+            EndLat = waypoint.m_lat;
+            EndLon = waypoint.m_lon;
             haveend = true;
         }
     }
