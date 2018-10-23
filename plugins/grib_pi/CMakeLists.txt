@@ -136,7 +136,7 @@ IF(NOT UNIX)
             src/bzip2/huffman.c
             src/bzip2/randtable.c
     )
-    ADD_LIBRARY(LIB_BZIP ${SRC_BZIP})
+    ADD_LIBRARY(LIB_BZIP STATIC ${SRC_BZIP})
 
     INCLUDE_DIRECTORIES(${PLUGIN_SOURCE_DIR}/src/zlib-1.2.3)
     INCLUDE_DIRECTORIES(${PLUGIN_SOURCE_DIR}/src/bzip2)
