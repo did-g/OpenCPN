@@ -674,8 +674,8 @@ int ocpn_draw_pi::Init(void)
         
         g_pODConfig->LoadLayers(*g_pLayerDir);
     }
-
-    m_position_menu_id = AddCanvasMenuItem (new wxMenuItem(&dummy_menu, -1, _("Validate this Route")), this, "Route" );
+    // FIXME
+    m_position_menu_id = -1; //AddCanvasMenuItem (new wxMenuItem(&dummy_menu, -1, _("Validate this Route")), this, "Route" );
 
     return (
     WANTS_OVERLAY_CALLBACK  |
