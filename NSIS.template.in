@@ -32,10 +32,12 @@ CMake variables
 
 ----------------------------------------------------------------------------------------------------------*/
 ;# Set compression
-	SetCompressor /FINAL lzma
+	SetCompressor @CPACK_NSIS_COMPRESSOR@
+
 !ifdef NSIS_PACKEDVERSION
     Unicode true
 !endif
+    Unicode true
 
 
 ;--------------------------------
@@ -188,9 +190,10 @@ CMake variables
   OutFile "@CPACK_TOPLEVEL_DIRECTORY@/${OUTPUT_FILE_NAME}"
 
   ;# Default installation folder
-  InstallDir "$PROGRAMFILES\OpenCPN"
+  InstallDir "$PROGRAMFILES64\OpenCPN"
 
-  BrandingText /TRIMLEFT "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
+  #BrandingText /TRIMLEFT "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
+  BrandingText  "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
 ;--------------------------------
 ;# Interface Settings
   !define MUI_CUSTOMFUNCTION_GUIINIT myGuiInit
@@ -356,6 +359,7 @@ CMake variables
 
 			# enumerate logged off users
 			System::Call "kernel32::GetVersion() i .R0"
+
 			IntOp $R0 $R0 & 0x80000000
 			${If} $R0 == 0
 				# nt
@@ -708,7 +712,7 @@ Section "-Topmost Section" SecTopmost ;# this needs to be always the first secti
 	SetShellVarContext all
 	SetOutPath $INSTDIR
 !ifndef NSIS_PACKEDVERSION
-    LogSet on
+    ; LogSet on
 !endif
 	${If} $INSTALL_TYPE == 1
 	${OrIf} $INSTALL_TYPE == 2
@@ -2144,7 +2148,7 @@ FunctionEnd
                 ${Endif}
 
 		${If} $INSTALL_TYPE == 4
-			StrCpy $INSTDIR "$PROGRAMFILES\OpenCPN @CPACK_PACKAGE_VERSION@"
+			StrCpy $INSTDIR "$PROGRAMFILES64\OpenCPN @CPACK_PACKAGE_VERSION@"
 		${EndIf}
 	FunctionEnd
 
@@ -3061,7 +3065,7 @@ Function Quick_Scan_Old_Versions
 	${EndIf}
 
 	end:
-	${Locate} "$PROGRAMFILES" "/L=F /M=opencpn.exe" "Found_OpenCPN_Installation"
+	${Locate} "$PROGRAMFILES64" "/L=F /M=opencpn.exe" "Found_OpenCPN_Installation"
 FunctionEnd
 
 
