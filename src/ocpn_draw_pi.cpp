@@ -88,14 +88,6 @@
 
 #include <wx/jsonreader.h>
 
-#ifndef DECL_EXP
-#ifdef __WXMSW__
-#define DECL_EXP     __declspec(dllexport)
-#else
-#define DECL_EXP
-#endif
-#endif
-
 #if !defined(NAN)
 static const long long lNaN = 0xfff8000000000000;
 #define NAN (*(double*)&lNaN)
