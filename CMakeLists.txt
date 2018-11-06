@@ -1417,14 +1417,19 @@ if (OCPN_USE_SVG)
     include(OcpnFindCairo)
     include(OcpnFindExpat)
     if (CMAKE_HOST_WIN32)
-      # On Windows, we have our own expat and cairo
-      file(GLOB gtkdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/gtk/*.dll")
-      install(FILES ${gtkdll_files} DESTINATION ".")
-      file(
-        GLOB
-          expatdll_files
-          "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/expat-2.2.5/*.dll"
-      )
+      IF(NOT MSVC)
+            FILE(GLOB mingwdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/mingw/*.dll")
+            INSTALL(FILES ${mingwdll_files} DESTINATION ".")
+      ELSE()
+          # On Windows, we have our own expat and cairo
+          file(GLOB gtkdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/gtk/*.dll")
+        install(FILES ${gtkdll_files} DESTINATION ".")
+        file(
+            GLOB
+                expatdll_files
+                "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/expat-2.2.5/*.dll"
+            )
+      ENDIF()
       install(FILES ${expatdll_files} DESTINATION ".")
       message(STATUS "GTK and Expat DLLs bundled into the installer package...")
     else (CMAKE_HOST_WIN32)
