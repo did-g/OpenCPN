@@ -675,7 +675,7 @@ IF(OCPN_NEW_SERIAL)
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/serial/include)
 
   ## Add serial library
-  add_library(SERIAL ${serial_SRCS})
+  add_library(SERIAL STATIC ${serial_SRCS})
   if(APPLE)
     target_link_libraries(SERIAL ${FOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
   elseif(UNIX)
