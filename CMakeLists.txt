@@ -807,6 +807,14 @@ IF(OCPN_USE_CURL)
       )
       INSTALL(FILES ${CURL_LIBRARY_DLL} DESTINATION ".")
     ENDIF(WIN32 AND OCPN_USE_EXTERN_CURL)
+
+    IF(WIN32)
+        IF(NOT MSVC)
+            FILE(GLOB mingwdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/mingw/*.dll")
+            INSTALL(FILES ${mingwdll_files} DESTINATION ".")
+        ENDIF()
+    ENDIF(WIN32)
+
   ENDIF(NOT QT_ANDROID)
 ENDIF(OCPN_USE_CURL)
 
