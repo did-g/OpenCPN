@@ -27,10 +27,8 @@
 #include <wx/glcanvas.h>
 
 #include "ocpn_plugin.h"
-#include "wrdc.h"
-#include "wx/jsonreader.h"
-#include "wx/jsonwriter.h"
-
+#include "plugingl/pidc.h"
+#include "json/json.h"
 #include "Utilities.h"
 #include "Boat.h"
 #include "RouteMapOverlay.h"
@@ -207,19 +205,21 @@ void RouteMapOverlay::DeleteThread()
     m_Thread = NULL;
 }
 
-static void SetColor(wrDC &dc, wxColour c, bool penifgl = false)
+static void SetColor(piDC &dc, wxColour c, bool penifgl = false)
 {
+#ifndef __OCPN__ANDROID__
     if(!dc.GetDC()) {
         glColor4ub(c.Red(), c.Green(), c.Blue(), c.Alpha());
         if(!penifgl)
             return;
     }
+#endif
     wxPen pen = dc.GetPen();
     pen.SetColour(c);
     dc.SetPen(pen);
 }
 
-static void SetWidth(wrDC &dc, int w, bool penifgl = false)
+static void SetWidth(piDC &dc, int w, bool penifgl = false)
 {
     if(!dc.GetDC()) {
         glLineWidth(w);
@@ -232,22 +232,23 @@ static void SetWidth(wrDC &dc, int w, bool penifgl = false)
 }
 
 void RouteMapOverlay::DrawLine(RoutePoint *p1, RoutePoint *p2,
-                               wrDC &dc, PlugIn_ViewPort &vp)
+                               piDC &dc, PlugIn_ViewPort &vp)
 {
     wxPoint p1p, p2p;
     GetCanvasPixLL(&vp, &p1p, p1->lat, p1->lon);
     GetCanvasPixLL(&vp, &p2p, p2->lat, p2->lon);
 
-    if(dc.GetDC())
-        dc.StrokeLine(p1p.x, p1p.y, p2p.x, p2p.y);
-    else {
+#ifndef __OCPN__ANDROID__
+    if(!dc.GetDC()) {
         glVertex2d(p1p.x, p1p.y);
         glVertex2d(p2p.x, p2p.y);
-    }
+    } else
+#endif
+        dc.StrokeLine(p1p.x, p1p.y, p2p.x, p2p.y);
 }
 
 void RouteMapOverlay::DrawLine(RoutePoint *p1, wxColour &color1, RoutePoint *p2, wxColour &color2,
-                               wrDC &dc, PlugIn_ViewPort &vp)
+                               piDC &dc, PlugIn_ViewPort &vp)
 {
 #if 0
     double p1plon, p2plon;
@@ -268,13 +269,14 @@ void RouteMapOverlay::DrawLine(RoutePoint *p1, wxColour &color1, RoutePoint *p2,
     GetCanvasPixLL(&vp, &p2p, p2->lat, p2->lon);
 
     SetColor(dc, color1);
-    if(dc.GetDC())
-        dc.DrawLine(p1p.x, p1p.y, p2p.x, p2p.y);
-    else {
+#ifndef __OCPN__ANDROID__
+    if(!dc.GetDC()) {
         glVertex2d(p1p.x, p1p.y);
         SetColor(dc, color2);
         glVertex2d(p2p.x, p2p.y);
-    }
+    } else
+#endif
+        dc.DrawLine(p1p.x, p1p.y, p2p.x, p2p.y);
 }
 
 static inline wxColour &PositionColor(Position *p, wxColour &grib_color, wxColour &climatology_color,
@@ -305,7 +307,7 @@ static wxColour TransparentColor(wxColor c)
 
 
 void RouteMapOverlay::RenderIsoRoute(IsoRoute *r, wxColour &grib_color, wxColour &climatology_color,
-                                     wrDC &dc, PlugIn_ViewPort &vp)
+                                     piDC &dc, PlugIn_ViewPort &vp)
 {
     SkipPosition *s = r->skippoints;
     if(!s)
@@ -317,8 +319,10 @@ void RouteMapOverlay::RenderIsoRoute(IsoRoute *r, wxColour &grib_color, wxColour
     Position *p = s->point;
     wxColour *pcolor = &PositionColor(p, grib_color, climatology_color,
                                       grib_deficient_color, climatology_deficient_color);
+#ifndef __OCPN__ANDROID__
     if(!dc.GetDC())
         glBegin(GL_LINES);
+#endif
     do {
         wxColour &ncolor = PositionColor(p->next, grib_color, climatology_color,
                                          grib_deficient_color, climatology_deficient_color);
@@ -327,9 +331,11 @@ void RouteMapOverlay::RenderIsoRoute(IsoRoute *r, wxColour &grib_color, wxColour
         pcolor = &ncolor;
         p = p->next;
     } while(p != s->point);
+
+#ifndef __OCPN__ANDROID__
     if(!dc.GetDC())
         glEnd();
-
+#endif
     /* now render any children */
     wxColour cyan(0, 255, 255), magenta(255, 0, 255);
     for(IsoRouteList::iterator it = r->children.begin(); it != r->children.end(); ++it)
@@ -337,7 +343,7 @@ void RouteMapOverlay::RenderIsoRoute(IsoRoute *r, wxColour &grib_color, wxColour
 }
 
 void RouteMapOverlay::RenderAlternateRoute(IsoRoute *r, bool each_parent,
-                                           wrDC &dc, PlugIn_ViewPort &vp)
+                                           piDC &dc, PlugIn_ViewPort &vp)
 {
     Position *pos = r->skippoints->point;
     wxColor black = wxColour(0, 0, 0, 192), tblack = TransparentColor(black);
@@ -369,7 +375,7 @@ static wxColour Darken(wxColour c)
 }
 
 void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
-                             wrDC &dc, PlugIn_ViewPort &vp, bool justendroute,
+                             piDC &dc, PlugIn_ViewPort &vp, bool justendroute,
                              Position* positionOnRoute)
 {
     dc.SetPen(*wxBLACK); // reset pen
@@ -398,6 +404,7 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
 
         static const double NORM_FACTOR = 16;
         bool use_dl = vp.m_projection_type == PI_PROJECTION_MERCATOR;
+#ifndef __OCPN__ANDROID__
         if(!dc.GetDC() && use_dl) {
             glPushMatrix();
 
@@ -415,9 +422,12 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
             glCallList(m_overlaylist);
             glPopMatrix();
 
-        } else {
+        } else
+#endif
+        {
             PlugIn_ViewPort nvp = vp;
 
+#ifndef __OCPN__ANDROID__
             if(!dc.GetDC() && use_dl) {
                 m_UpdateOverlay = false;
 
@@ -433,7 +443,7 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
 
                 m_overlaylist_projection = vp.m_projection_type;
             }
-
+#endif
             /* draw alternate routes first */
             int AlternateRouteThickness = settingsdialog.m_sAlternateRouteThickness->GetValue();
             if(AlternateRouteThickness) {
@@ -454,16 +464,20 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
                 }
 
                 SetWidth(dc, AlternateRouteThickness);
+#ifndef __OCPN__ANDROID__
                 if(!dc.GetDC())
                     glBegin(GL_LINES);
+#endif                
                 for(; it != origin.end(); ++it)
                     for(IsoRouteList::iterator rit = (*it)->routes.begin();
                         rit != (*it)->routes.end(); ++rit) {
                         RenderAlternateRoute(*rit, !AlternatesForAll, dc, nvp);
                     }
 
+#ifndef __OCPN__ANDROID__
                 if(!dc.GetDC())
                     glEnd();
+#endif
                 Unlock();
             }
 
@@ -505,11 +519,13 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
                 Unlock();
             }
         
+#ifndef __OCPN__ANDROID__
             if(!dc.GetDC() && use_dl) {
                 glEndList();
                 glCallList(m_overlaylist);
                 glPopMatrix();
             }
+#endif
         }
     }
     
@@ -566,7 +582,7 @@ void RouteMapOverlay::Render(wxDateTime time, SettingsDialog &settingsdialog,
 }
 
 
-void RouteMapOverlay::RenderPolarChangeMarks(bool cursor_route, wrDC &dc, PlugIn_ViewPort &vp)
+void RouteMapOverlay::RenderPolarChangeMarks(bool cursor_route, piDC &dc, PlugIn_ViewPort &vp)
 {
     Position *pos = cursor_route ? last_cursor_position : last_destination_position;
 
@@ -578,8 +594,10 @@ void RouteMapOverlay::RenderPolarChangeMarks(bool cursor_route, wrDC &dc, PlugIn
     if (itt == plot.end())
         return;
 
+#ifndef __OCPN__ANDROID__
     if(!dc.GetDC())
         glBegin(GL_LINES);
+#endif    
     
     std::list<PlotData>::iterator prev;
     int polar = itt->polar;
@@ -595,18 +613,21 @@ void RouteMapOverlay::RenderPolarChangeMarks(bool cursor_route, wrDC &dc, PlugIn
         r.x = (r.x +p.x)/2;
         r.y = (r.y +p.y)/2;
         int s = 6;
-        if(dc.GetDC())
-            dc.DrawRectangle(r.x-s, r.y-s, 2*s, 2*s);
-        else {
+#ifndef __OCPN__ANDROID__
+        if(!dc.GetDC()) {
             glVertex2i(r.x-s, r.y-s), glVertex2i(r.x+s, r.y-s);
             glVertex2i(r.x+s, r.y-s), glVertex2i(r.x+s, r.y+s);
             glVertex2i(r.x+s, r.y+s), glVertex2i(r.x-s, r.y+s);
             glVertex2i(r.x-s, r.y+s), glVertex2i(r.x-s, r.y-s);
-        }
+        } else
+#endif
+            dc.DrawRectangle(r.x-s, r.y-s, 2*s, 2*s);
         polar = itt->polar;
     }
+#ifndef __OCPN__ANDROID__
     if(!dc.GetDC())
         glEnd();
+#endif
 }
 
 /* Customization ComfortDisplay
@@ -706,7 +727,7 @@ wxString RouteMapOverlay::sailingConditionText(int level)
 // -----------------------------------------------------
 
 
-void RouteMapOverlay::RenderCourse(bool cursor_route, wrDC &dc, PlugIn_ViewPort &vp,
+void RouteMapOverlay::RenderCourse(bool cursor_route, piDC &dc, PlugIn_ViewPort &vp,
         bool comfortRoute)
 {
     Position *pos = cursor_route ? last_cursor_position : last_destination_position;
@@ -752,8 +773,10 @@ void RouteMapOverlay::RenderCourse(bool cursor_route, wrDC &dc, PlugIn_ViewPort 
     wxColor lc = sailingConditionColor(sailingConditionLevel(*itt));
 
     /* draw lines to this route */
+#ifndef __OCPN__ANDROID__
     if(!dc.GetDC())
         glBegin(GL_LINES);
+#endif
 
     /* end point if reached is not in GetPlotData */
     RoutePoint *to, from;
@@ -770,13 +793,14 @@ void RouteMapOverlay::RenderCourse(bool cursor_route, wrDC &dc, PlugIn_ViewPort 
             DrawLine(to, from, dc, vp);
     }
 
+#ifndef __OCPN__ANDROID__
     if(!dc.GetDC())
         glEnd();
-
+#endif
 }
 
 
-void RouteMapOverlay::RenderBoatOnCourse(bool cursor_route, wxDateTime time, wrDC &dc,
+void RouteMapOverlay::RenderBoatOnCourse(bool cursor_route, wxDateTime time, piDC &dc,
                                          PlugIn_ViewPort &vp)
 {
     /* Dedicated method to render the boat circle
@@ -820,7 +844,7 @@ void RouteMapOverlay::RenderBoatOnCourse(bool cursor_route, wxDateTime time, wrD
     }
 }
 
-void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp, int lineWidth,
+void RouteMapOverlay::RenderWindBarbsOnRoute(piDC &dc, PlugIn_ViewPort &vp, int lineWidth,
                                              bool apparentWind)
 {
     /* Method to render wind barbs on the route that has been generated
@@ -910,7 +934,7 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp, int 
         dc.SetPen(wxPen(colour, 2));
     }
     
-#ifdef ocpnUSE_GL
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
     else
     {
         // Mandatory to avoid display issue when moving map
@@ -932,7 +956,7 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp, int 
 
     wind_barb_route_cache.draw(dc.GetDC());
 
-#ifdef ocpnUSE_GL
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
     if(!dc.GetDC()) {
         glDisableClientState(GL_VERTEX_ARRAY);
         glPopMatrix();
@@ -940,7 +964,7 @@ void RouteMapOverlay::RenderWindBarbsOnRoute(wrDC &dc, PlugIn_ViewPort &vp, int 
 #endif
 }
 
-void RouteMapOverlay::RenderWindBarbs(wrDC &dc, PlugIn_ViewPort &vp)
+void RouteMapOverlay::RenderWindBarbs(piDC &dc, PlugIn_ViewPort &vp)
 {
     if(origin.size() < 2) // no map to work with
         return;
@@ -1092,7 +1116,7 @@ void RouteMapOverlay::RenderWindBarbs(wrDC &dc, PlugIn_ViewPort &vp)
 
     if(dc.GetDC())
         dc.SetPen( wxPen( colour, 2 ) );
-#ifdef ocpnUSE_GL
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
     else {
         if(!nocache) {
             glPushMatrix();
@@ -1120,7 +1144,7 @@ void RouteMapOverlay::RenderWindBarbs(wrDC &dc, PlugIn_ViewPort &vp)
     } else
         wind_barb_cache.draw(NULL);
 
-#ifdef ocpnUSE_GL
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
     if( !dc.GetDC() ) {
         glDisableClientState(GL_VERTEX_ARRAY);
 
@@ -1130,7 +1154,7 @@ void RouteMapOverlay::RenderWindBarbs(wrDC &dc, PlugIn_ViewPort &vp)
 #endif
 }
 
-void RouteMapOverlay::RenderCurrent(wrDC &dc, PlugIn_ViewPort &vp)
+void RouteMapOverlay::RenderCurrent(piDC &dc, PlugIn_ViewPort &vp)
 {
     if(origin.size() < 2) // no map to work with
         return;
@@ -1290,7 +1314,7 @@ void RouteMapOverlay::RenderCurrent(wrDC &dc, PlugIn_ViewPort &vp)
 
     if(dc.GetDC())
         dc.SetPen( wxPen( colour, 2 ) );
-#ifdef ocpnUSE_GL
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
     else {
         if(!nocache) {
             glPushMatrix();
@@ -1318,7 +1342,7 @@ void RouteMapOverlay::RenderCurrent(wrDC &dc, PlugIn_ViewPort &vp)
     } else
         current_cache.draw(NULL);
 
-#ifdef ocpnUSE_GL
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
     if( !dc.GetDC() ) {
         glDisableClientState(GL_VERTEX_ARRAY);
 
@@ -1348,20 +1372,18 @@ void RouteMapOverlay::GetLLBounds(double &latmin, double &latmax, double &lonmin
 
 void RouteMapOverlay::RequestGrib(wxDateTime time)
 {
-    wxJSONValue v;
+    Json::Value v;
     time = time.FromUTC();
-    v[_T("Day")] = time.GetDay();
-    v[_T("Month")] = time.GetMonth();
-    v[_T("Year")] = time.GetYear();
-    v[_T("Hour")] = time.GetHour();
-    v[_T("Minute")] = time.GetMinute();
-    v[_T("Second")] = time.GetSecond();
+    v["Day"] = time.GetDay();
+    v["Month"] = time.GetMonth();
+    v["Year"] = time.GetYear();
+    v["Hour"] = time.GetHour();
+    v["Minute"] = time.GetMinute();
+    v["Second"] = time.GetSecond();
     
-    wxJSONWriter w;
-    wxString out;
-    w.Write(v, out);
+    Json::FastWriter w;
 
-    SendPluginMessage(wxString(_T("GRIB_TIMELINE_RECORD_REQUEST")), out);
+    SendPluginMessage("GRIB_TIMELINE_RECORD_REQUEST", w.write(v));
 
     Lock();
     m_bNeedsGrib = false;
