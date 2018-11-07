@@ -172,20 +172,26 @@ static wxString ExpandWord(wxString word)
 #endif
 }
 
+#ifdef __WXMSW__
+#define SEP _T(";")
+#else
+#define SEP _T(":")
+#endif
+
 wxString GetPluginDataDir(const char* plugin_name)
 {
-    const char* const sharedDataLoc = *GetpSharedDataLocation();
+    const wxString  sharedDataLoc(*GetpSharedDataLocation());
 #ifdef __linux__
     const char* const envdirs = getenv("XDG_DATA_DIRS");
     wxString datadirs(envdirs ? envdirs : DEFAULT_DATA_DIRS);
     if (envdirs == 0 && datadirs.Find(sharedDataLoc) == wxNOT_FOUND)
-        datadirs.Append(wxString(":") + sharedDataLoc);
+        datadirs.Append(SEP + sharedDataLoc);
     wxLogMessage(_T("PlugInManager: Using data dirs from: ") + datadirs);
 #else
     wxString datadirs(sharedDataLoc);
 #endif
     static const wxString sep = wxFileName::GetPathSeparator();
-    wxStringTokenizer dirs(datadirs, ":");
+    wxStringTokenizer dirs(datadirs, SEP);
     while (dirs.HasMoreTokens()) {
         wxString dir = ExpandWord(dirs.GetNextToken()) + sep;
 	dir +=
@@ -378,13 +384,13 @@ bool PlugInManager::LoadAllPlugIns(const wxString &plugin_dir, bool load_enabled
     const char* const envdirs = getenv("OPENCPN_PLUGIN_DIRS");
     wxString dirs(envdirs ? envdirs : DEFAULT_PLUGIN_DIRS);
     if (envdirs == 0  && dirs.Find(plugin_dir) == wxNOT_FOUND)
-        dirs = dirs.Append(_T(":") + plugin_dir);
+        dirs = dirs.Append(SEP + plugin_dir);
 #else
     wxString dirs = plugin_dir;
 #endif
     wxLogMessage( _T("PlugInManager: plugins loading from ") + dirs);
     bool any_dir_loaded = false;
-    wxStringTokenizer tokens(dirs, ":");
+    wxStringTokenizer tokens(dirs, SEP);
     while (tokens.HasMoreTokens()) {
         wxString dir = tokens.GetNextToken();
         dir = ExpandWord(dir);
