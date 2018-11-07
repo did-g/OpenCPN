@@ -178,9 +178,15 @@ static wxString ExpandWord(wxString word)
 #endif
 }
 
+#ifdef __WXMSW__
+#define SEP _T(";")
+#else
+#define SEP _T(":")
+#endif
+
 wxString GetPluginDataDir(const char* plugin_name)
 {
-    const char* const sharedDataLoc = *GetpSharedDataLocation();
+    const wxString  sharedDataLoc(*GetpSharedDataLocation());
 #ifdef __linux__
     const char* const envdirs = getenv("XDG_DATA_DIRS");
     wxString datadirs(envdirs ? envdirs : DEFAULT_DATA_DIRS);
