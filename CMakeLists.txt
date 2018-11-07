@@ -1419,6 +1419,7 @@ if (OCPN_USE_SVG)
     if (CMAKE_HOST_WIN32)
       IF(NOT MSVC)
             FILE(GLOB mingwdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/mingw/*.dll")
+            INSTALL(FILES "buildwin/curl-ca-bundle.crt" DESTINATION ".")
             INSTALL(FILES ${mingwdll_files} DESTINATION ".")
       ELSE()
           # On Windows, we have our own expat and cairo
