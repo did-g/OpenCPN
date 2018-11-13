@@ -468,10 +468,10 @@ void weather_routing_pi::OnContextMenuItemCallback(int id)
     m_pWeather_Routing->Reset();
 }
 
-bool weather_routing_pi::RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp)
+bool weather_routing_pi::RenderOverlay(wxDC &wxdc, PlugIn_ViewPort *vp)
 {
     if(m_pWeather_Routing && m_pWeather_Routing->IsShown()) {
-        piDC dc(dc);
+        piDC dc(wxdc);
         m_pWeather_Routing->Render(dc, *vp);
         return true;
     }
@@ -551,10 +551,15 @@ wxString weather_routing_pi::StandardPath()
 #ifdef __WXOSX__
     // Compatibility with pre-OCPN-4.2; move config dir to
     // ~/Library/Preferences/opencpn if it exists
-    wxString oldPath = (std_path.GetUserConfigDir() + s + _T("plugins") + s + _T("weather_routing"));
-    if (wxDirExists(oldPath) && !wxDirExists(stdPath)) {
-		wxLogMessage("weather_routing_pi: moving config dir %s to %s", oldPath, stdPath);
-		wxRenameFile(oldPath, stdPath);
+    {
+        wxStandardPathsBase& std_path = wxStandardPathsBase::Get();
+        wxString s = wxFileName::GetPathSeparator();
+        // should be ~/Library/Preferences/opencpn
+        wxString oldPath = (std_path.GetUserConfigDir() +s + _T("plugins") +s + _T("weather_routing"));
+        if (wxDirExists(oldPath) && !wxDirExists(stdPath)) {
+		    wxLogMessage("weather_routing_pi: moving config dir %s to %s", oldPath, stdPath);
+		    wxRenameFile(oldPath, stdPath);
+        }
     }
 #endif
 
