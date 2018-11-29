@@ -2107,6 +2107,7 @@ void GRIBOverlayFactory::RenderGribParticles( int settings, GribRecord **pGR,
         }
     }
 
+#ifdef ocpnUSE_GL
     if( !m_pdc ) {
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
@@ -2118,6 +2119,7 @@ void GRIBOverlayFactory::RenderGribParticles( int settings, GribRecord **pGR,
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
     }
+#endif
 
     //  On some platforms, especially slow ones, the GPU will lag behind the CPU.
     //  This affects the UI in strange ways.
@@ -2208,10 +2210,13 @@ void GRIBOverlayFactory::drawDoubleArrow( int x, int y, double ang, wxColour arr
 		if (m_hiDefGraphics && m_gdc)
 			m_gdc->SetPen(pen);
 #endif
-    } else {
+    } 
+#ifdef ocpnUSE_GL
+    else {
         glColor3ub(arrowColor.Red(), arrowColor.Green(), arrowColor.Blue());
         glLineWidth(arrowWidth);
     }
+#endif
 
     drawLineBuffer(m_DoubleArrow[arrowSizeIdx], x, y, ang, scale);
 }
@@ -2226,11 +2231,13 @@ void GRIBOverlayFactory::drawSingleArrow( int x, int y, double ang, wxColour arr
 		if (m_hiDefGraphics && m_gdc)
 			m_gdc->SetPen(pen);
 #endif
-    } else {
+    } 
+#ifdef ocpnUSE_GL
+    else {
         glColor3ub(arrowColor.Red(), arrowColor.Green(), arrowColor.Blue());
         glLineWidth(arrowWidth);
     }
-
+#endif
     drawLineBuffer(m_SingleArrow[arrowSizeIdx], x, y, ang, scale);
 }
 
