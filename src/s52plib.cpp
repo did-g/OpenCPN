@@ -52,14 +52,15 @@
 #include <wx/tokenzr.h>
 #include <wx/fileconf.h>
 
-extern float g_GLMinCartographicLineWidth;
-extern float g_GLMinSymbolLineWidth;
 extern double  g_overzoom_emphasis_base;
 extern bool    g_oz_vector_scale;
 extern float g_ChartScaleFactorExp;
 extern int g_chart_zoom_modifier_vector;
 
 #ifdef ocpnUSE_GL
+extern float g_GLMinCartographicLineWidth;
+extern float g_GLMinSymbolLineWidth;
+
 #include "glChartCanvas.h"
 extern ocpnGLOptions g_GLOptions;
 #endif
@@ -109,9 +110,11 @@ S52_TextC::S52_TextC()
 
 S52_TextC::~S52_TextC()
 {
+#ifdef ocpnUSE_GL
     if(texobj){
         glDeleteTextures(1, (GLuint *)(&this->texobj) );
     }
+#endif
 }
 
 //      In GDAL-1.2.0, CSVGetField is not exported.......
@@ -7564,6 +7567,7 @@ if(!s_b_useStencil) {
 return;
 }
 #endif
+#ifdef ocpnUSE_GL
 // slower way if there is no scissor support
     if(!b_clear)
         glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );   // disable color buffer
@@ -7617,12 +7621,13 @@ return;
     
     if(!b_clear)
         glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );  // re-enable color buffer
+#endif
 }
 
 void RotateToViewPort(const ViewPort &vp)
 {
+#ifdef ocpnUSE_GL
     bool g_bskew_comp = true;
-    
     float angle = vp.rotation;
     if(g_bskew_comp)
         angle -= vp.skew;
@@ -7636,6 +7641,7 @@ void RotateToViewPort(const ViewPort &vp)
         glRotatef( angle * 180. / PI, 0, 0, 1 );
         glTranslatef( -xt, -yt, 0 );
     }
+#endif
 }
 
 

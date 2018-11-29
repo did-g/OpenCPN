@@ -565,8 +565,6 @@ void __CALL_CONVENTION combineCallback(GLdouble coords[3],
 //      Using OpenGL/GLU tesselator
 int PolyTessGeo::PolyTessGeoGL(OGRPolygon *poly, bool bSENC_SM, double ref_lat, double ref_lon)
 {
-#ifdef ocpnUSE_GL
-    
     int iir, ip;
     int *cntr;
     GLdouble *geoPt;
@@ -1053,15 +1051,11 @@ int PolyTessGeo::PolyTessGeoGL(OGRPolygon *poly, bool bSENC_SM, double ref_lat, 
 
     m_bOK = true;
 
-#endif          //    #ifdef ocpnUSE_GL
-    
     return 0;
 }
 
 int PolyTessGeo::BuildTessGL(void)
 {
-#ifdef ocpnUSE_GL
-    
       int iir, ip;
       int *cntr;
       GLdouble *geoPt;
@@ -1475,13 +1469,8 @@ int PolyTessGeo::BuildTessGL(void)
 
       m_bOK = true;
 
-#endif          //#ifdef ocpnUSE_GL
-      
       return 0;
 }
-
-
-
 
 
 // GLU tesselation support functions
