@@ -2032,6 +2032,7 @@ void GRIBOverlayFactory::RenderGribParticles( int settings, GribRecord **pGR,
         particles.push_back(np);
     }
 
+#ifdef ocpnUSE_GL
     // settings for opengl lines
     if( !m_pdc ) {
         //      Enable anti-aliased lines, at best quality
@@ -2041,6 +2042,7 @@ void GRIBOverlayFactory::RenderGribParticles( int settings, GribRecord **pGR,
         glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
         glLineWidth( 2.3f );
     }
+#endif
 
     int cnt=0;
     unsigned char *&ca = m_ParticleMap->color_array;

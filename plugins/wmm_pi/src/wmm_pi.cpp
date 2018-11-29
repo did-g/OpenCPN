@@ -426,6 +426,7 @@ bool wmm_pi::RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp)
 
 bool wmm_pi::RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp)
 {
+#ifdef ocpnUSE_GL
     glPushAttrib(GL_COLOR_BUFFER_BIT | GL_LINE_BIT | GL_ENABLE_BIT | GL_POLYGON_BIT | GL_HINT_BIT );
     
     glEnable( GL_LINE_SMOOTH );
@@ -436,7 +437,7 @@ bool wmm_pi::RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp)
     RenderOverlayBoth(0, vp);
 
     glPopAttrib();
-
+#endif
     return true;
 }
 
