@@ -1008,68 +1008,74 @@ IF(NOT WIN32 AND NOT APPLE AND NOT QT_ANDROID)
   SET(EXTRA_LIBS ${EXTRA_LIBS} ${GTK_LIBRARIES})
 ENDIF(NOT WIN32 AND NOT APPLE AND NOT QT_ANDROID)
 
+
 # SQLite3 support required for MBTiles.
+OPTION (USE_MBTILES "Enable MBTiles support" ON)
 
-set(SQLITECPP_SRC
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Backup.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Column.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Database.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Exception.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Statement.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Transaction.cpp
-)
-# list of header files of the library
-set(SQLITECPP_INC
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/SQLiteCpp.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Assertion.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Backup.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Column.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Database.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Exception.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Statement.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Transaction.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Utils.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/VariadicBind.h
-)
-include_directories( src/SQLiteCpp/include )
-ADD_LIBRARY(SQLiteCpp STATIC ${SQLITECPP_SRC} ${SQLITECPP_INC})
-set_property(TARGET SQLiteCpp PROPERTY COMPILE_FLAGS "${OBJ_VISIBILITY}")
+IF(USE_MBTILES)
+  ADD_DEFINITIONS(-DUSE_MBTILES)
 
-SET(EXTRA_LIBS ${EXTRA_LIBS} SQLiteCpp)
+  set(SQLITECPP_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Backup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Column.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Database.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Exception.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Statement.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/src/Transaction.cpp
+  )
+#  list of header files of the library
+  set(SQLITECPP_INC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/SQLiteCpp.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Assertion.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Backup.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Column.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Database.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Exception.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Statement.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Transaction.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/Utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/include/SQLiteCpp/VariadicBind.h
+  )
+  include_directories( src/SQLiteCpp/include )
+  ADD_LIBRARY(SQLiteCpp STATIC ${SQLITECPP_SRC} ${SQLITECPP_INC})
+  set_property(TARGET SQLiteCpp PROPERTY COMPILE_FLAGS "${OBJ_VISIBILITY}")
 
+  SET(EXTRA_LIBS ${EXTRA_LIBS} SQLiteCpp)
+  SET(SQL_LIBRARY SQLiteCpp sqlite3)
 
-IF(UNIX AND NOT APPLE)
-  SET(SQLITE3_INC_LOOK_PATHS /usr/local/include /usr/include )
-  FIND_PATH( SQLITE3_INCLUDE_DIR sqlite3.h
-            PATHS ${SQLITE3_INC_LOOK_PATHS})
+  IF(UNIX AND NOT APPLE)
+    SET(SQLITE3_INC_LOOK_PATHS /usr/local/include /usr/include )
+    FIND_PATH( SQLITE3_INCLUDE_DIR sqlite3.h
+              PATHS ${SQLITE3_INC_LOOK_PATHS})
 
-  message(STATUS " SQLite3 include directory found: ${SQLITE3_INCLUDE_DIR}")
+    message(STATUS " SQLite3 include directory found: ${SQLITE3_INCLUDE_DIR}")
 
-  SET(SQLITE3_LIB_LOOK_PATHS /usr/lib /usr/local/lib /usr/lib/i386-linux-gnu)
-  FIND_LIBRARY(SQLITE3_LIBRARY NAMES PATHS ${SQLITE3_LIB_LOOK_PATHS} NAMES sqlite3 libsqlite3)
-  message(STATUS " SQLite3 runtime library: ${SQLITE3_LIBRARY}")
+    SET(SQLITE3_LIB_LOOK_PATHS /usr/lib /usr/local/lib /usr/lib/i386-linux-gnu)
+    FIND_LIBRARY(SQLITE3_LIBRARY NAMES PATHS ${SQLITE3_LIB_LOOK_PATHS} NAMES sqlite3 libsqlite3)
+    message(STATUS " SQLite3 runtime library: ${SQLITE3_LIBRARY}")
 
-  IF( SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY )
-    MESSAGE(STATUS "Found SQLite3 dev environment.")
-    INCLUDE_DIRECTORIES(${SQLITE3_INCLUDE_DIR})
+    IF( SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY )
+      MESSAGE(STATUS "Found SQLite3 dev environment.")
+      INCLUDE_DIRECTORIES(${SQLITE3_INCLUDE_DIR})
 
-    file(STRINGS "${SQLITE3_INCLUDE_DIR}/sqlite3.h" SQLITE3_VERSION_LINE REGEX "^[ \t]*#define[ \t]+SQLITE_VERSION_NUMBER[ \t]+[0-9]+.*$")
-    string(REGEX REPLACE "[ \t]*#define[ \t]+SQLITE_VERSION_NUMBER[ \t]+([0-9]+).*$" "\\1" SQLITE3_VERSION ${SQLITE3_VERSION_LINE})
-    MESSAGE(STATUS "SQLite3 version is ${SQLITE3_VERSION}")
-    IF( ${SQLITE3_VERSION} LESS "3019000" )
-      add_definitions(-DSQLITE_USE_LEGACY_STRUCT)
-    ENDIF( ${SQLITE3_VERSION} LESS "3019000" )
+      file(STRINGS "${SQLITE3_INCLUDE_DIR}/sqlite3.h" SQLITE3_VERSION_LINE REGEX "^[ \t]*#define[ \t]+SQLITE_VERSION_NUMBER[ \t]+[0-9]+.*$")
+      string(REGEX REPLACE "[ \t]*#define[ \t]+SQLITE_VERSION_NUMBER[ \t]+([0-9]+).*$" "\\1" SQLITE3_VERSION ${SQLITE3_VERSION_LINE})
+      MESSAGE(STATUS "SQLite3 version is ${SQLITE3_VERSION}")
+      IF( ${SQLITE3_VERSION} LESS "3019000" )
+        add_definitions(-DSQLITE_USE_LEGACY_STRUCT)
+      ENDIF( ${SQLITE3_VERSION} LESS "3019000" )
 
-  ELSE(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
-    MESSAGE(STATUS "Could not find SQLite3 dev environment.")
-  ENDIF(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
-ENDIF(UNIX AND NOT APPLE)
+    ELSE(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
+      MESSAGE(STATUS "Could not find SQLite3 dev environment.")
+    ENDIF(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
+  ENDIF(UNIX AND NOT APPLE)
 
-IF(WIN32 OR APPLE)
-  ADD_LIBRARY(sqlite3 STATIC ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.c ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.h)
-  include_directories( src/SQLiteCpp/sqlite3 )
-  SET(EXTRA_LIBS ${EXTRA_LIBS} sqlite3)
-ENDIF(WIN32 OR APPLE)
+  IF(WIN32 OR APPLE)
+    ADD_LIBRARY(sqlite3 STATIC ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.c ${CMAKE_CURRENT_SOURCE_DIR}/src/SQLiteCpp/sqlite3/sqlite3.h)
+    include_directories( src/SQLiteCpp/sqlite3 )
+    SET(EXTRA_LIBS ${EXTRA_LIBS} sqlite3)
+  ENDIF(WIN32 OR APPLE)
+ENDIF()
 
 FIND_PACKAGE(Gettext REQUIRED)
 
@@ -1377,8 +1383,13 @@ SET(SRCS
         src/OCPNPlatform.cpp
         src/FlexHash.cpp
         src/iENCToolbar.cpp
-        src/mbtiles.cpp
 )
+IF(USE_MBTILES)
+  SET(SRCS ${SRCS}
+        src/mbtiles.cpp
+  )
+ENDIF()
+
 IF(APPLE)
   SET(SRCS ${SRCS}
     src/DarkMode.mm
@@ -2098,8 +2109,7 @@ IF(UNIX)
         ${GETTEXT_LIBRARY}
         ${BZIP2_LIBRARIES}
         ${ZLIB_LIBRARY}
-        SQLiteCpp
-        sqlite3
+        ${SQL_LIBRARY}
   )
 
   IF(X11_FOUND AND NOT APPLE)
