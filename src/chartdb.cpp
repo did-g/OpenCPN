@@ -40,9 +40,11 @@
 #include "chartimg.h"
 #include "chart1.h"
 #include "thumbwin.h"
-#include "mbtiles.h"
 
 #ifdef ocpnUSE_GL
+#ifdef USE_MBTILES
+#include "mbtiles.h"
+#endif
 #include "glChartCanvas.h"
 #endif
 
@@ -420,9 +422,11 @@ ChartBase *ChartDB::GetChart(const wxChar *theFilePath, ChartClassDescriptor &ch
       else if (chartExt == wxT("GEO")) {
             pch = new ChartGEO;
       }
+#ifdef USE_MBTILES
       else if (chartExt == wxT("MBTILES")) {
             pch = new ChartMBTiles;
       }
+#endif
 #ifdef USE_S57
       else if (chartExt == wxT("000") || chartExt == wxT("S57")) {
             LoadS57();
@@ -1226,9 +1230,10 @@ ChartBase *ChartDB::OpenChartUsingCache(int dbindex, ChartInitFlag init_flag)
             else if(chart_type == CHART_TYPE_GEO)
                   Ch = new ChartGEO();
 
+#ifdef USE_MBTILES
             else if(chart_type == CHART_TYPE_MBTILES)
                 Ch = new ChartMBTiles();
-            
+#endif
 #ifdef USE_S57
             else if(chart_type == CHART_TYPE_S57)
             {

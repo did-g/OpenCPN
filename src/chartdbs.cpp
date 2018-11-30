@@ -39,7 +39,9 @@
 #include "chartdbs.h"
 #include "chartbase.h"
 #include "pluginmanager.h"
+#ifdef USE_MBTILES
 #include "mbtiles.h"
+#endif
 #include "mygeom.h"                     // For DouglasPeucker();
 #include "FlexHash.h"
 #ifndef UINT32
@@ -1086,8 +1088,10 @@ void ChartDatabase::UpdateChartClassDescriptorArray(void)
       m_ChartClassDescriptorArray.Add(pcd);
       pcd = new ChartClassDescriptor(_T("cm93compchart"), _T("00300000.a"), BUILTIN_DESCRIPTOR);
       m_ChartClassDescriptorArray.Add(pcd);
+#ifdef USE_MBTILES
       pcd = new ChartClassDescriptor(_T("ChartMBTiles"), _T("*.mbtiles"), BUILTIN_DESCRIPTOR);
       m_ChartClassDescriptorArray.Add(pcd);
+#endif
       
       //    If the PlugIn Manager exists, get the array of dynamically loadable chart class names
       if(g_pi_manager)
