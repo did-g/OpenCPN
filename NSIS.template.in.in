@@ -191,7 +191,7 @@ CMake variables
   OutFile "@CPACK_TOPLEVEL_DIRECTORY@/${OUTPUT_FILE_NAME}"
 
   ;# Default installation folder
-  InstallDir "$PROGRAMFILES\OpenCPN"
+  InstallDir "$PROGRAMFILES64\OpenCPN"
 
   BrandingText /TRIMLEFT "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
 ;--------------------------------
@@ -2147,7 +2147,7 @@ FunctionEnd
                 ${Endif}
 
 		${If} $INSTALL_TYPE == 4
-			StrCpy $INSTDIR "$PROGRAMFILES\OpenCPN @CPACK_PACKAGE_VERSION@"
+			StrCpy $INSTDIR "$PROGRAMFILES64\OpenCPN @CPACK_PACKAGE_VERSION@"
 		${EndIf}
 	FunctionEnd
 
@@ -3064,7 +3064,7 @@ Function Quick_Scan_Old_Versions
 	${EndIf}
 
 	end:
-	${Locate} "$PROGRAMFILES" "/L=F /M=opencpn.exe" "Found_OpenCPN_Installation"
+	${Locate} "$PROGRAMFILES64" "/L=F /M=opencpn.exe" "Found_OpenCPN_Installation"
 FunctionEnd
 
 
