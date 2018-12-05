@@ -733,7 +733,9 @@ IF(OCPN_USE_CURL)
       ADD_DEFINITIONS(-D__OCPN_USE_CURL__)
 
   IF(WIN32)
-    INSTALL(FILES "${CMAKE_SOURCE_DIR}/buildwin/curl-ca-bundle.crt" "${CMAKE_SOURCE_DIR}/buildwin/libeay32.dll" "${CMAKE_SOURCE_DIR}/buildwin/ssleay32.dll" DESTINATION ".")
+    IF(MSVC)
+        INSTALL(FILES "${CMAKE_SOURCE_DIR}/buildwin/curl-ca-bundle.crt" "${CMAKE_SOURCE_DIR}/buildwin/libeay32.dll" "${CMAKE_SOURCE_DIR}/buildwin/ssleay32.dll" DESTINATION ".")
+    ENDIF()
     INSTALL(FILES "${CMAKE_SOURCE_DIR}/buildwin/curl-ca-bundle.crt" DESTINATION ".")
     IF(MSVC)
         SET(CURL_LIBRARIES "${CMAKE_SOURCE_DIR}/buildwin/libcurl.lib")
@@ -816,7 +818,7 @@ IF(OCPN_USE_SVG)
   MESSAGE(STATUS "SVG support enabled...")
   IF(NOT QT_ANDROID)
 
-    IF(NOT WIN32)
+    IF(NOT MSVC)
       #Find Cairo
       IF( CAIRO_INCLUDE_DIR )
         # Already in cache, be silent
@@ -895,13 +897,13 @@ IF(OCPN_USE_SVG)
 
       FIND_PACKAGE(EXPAT REQUIRED)
       INCLUDE(${CMAKE_SOURCE_DIR}/cmake/FindEXIF.cmake)
-    ELSE(NOT WIN32)
+    ELSE(NOT MSVC)
       #On Windows, we have our own expat
       SET(EXPAT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/buildwin/expat-2.2.5/include)
       INCLUDE_DIRECTORIES(${EXPAT_INCLUDE_DIR})
       #And cairo
       SET(CAIRO_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/buildwin/gtk/include)
-    ENDIF(NOT WIN32)
+    ENDIF(NOT MSVC)
 
     INCLUDE_DIRECTORIES(${CAIRO_INCLUDE_DIR})
     IF(APPLE)
@@ -912,7 +914,7 @@ IF(OCPN_USE_SVG)
     ADD_DEFINITIONS(-DUSE_RENDER_CAIRO)
 
     ADD_DEFINITIONS(-DocpnUSE_SVG)
-    IF(WIN32)
+    IF(MSVC)
       SET(SVG_LIBS
         ${CMAKE_SOURCE_DIR}/buildwin/gtk/cairo.lib
         ${CMAKE_SOURCE_DIR}/buildwin/expat-2.2.5/expat.lib
@@ -923,7 +925,7 @@ IF(OCPN_USE_SVG)
       FILE(GLOB expatdll_files "${CMAKE_CURRENT_SOURCE_DIR}/buildwin/expat-2.2.5/*.dll")
       INSTALL(FILES ${expatdll_files} DESTINATION ".")
       MESSAGE(STATUS "GTK and Expat DLLs bundled into the installer package...")
-    ELSE(WIN32)
+    ELSE()
       SET(SVG_LIBS
         ${CAIRO_LIBRARY}
         ${CAIRO_EXTRA_LIBRARIES}
@@ -932,7 +934,7 @@ IF(OCPN_USE_SVG)
         ${EXIF_LIBRARIES}
         ${GTK_LIBRARIES}
       )
-    ENDIF(WIN32)
+    ENDIF()
 
     SET(SRC_WXSVG
       src/wxsvg/src/CSSStyleDeclaration.cpp

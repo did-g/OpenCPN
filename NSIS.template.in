@@ -32,10 +32,12 @@ CMake variables
 
 ----------------------------------------------------------------------------------------------------------*/
 ;# Set compression
-	SetCompressor /FINAL lzma
+	SetCompressor @CPACK_NSIS_COMPRESSOR@
+
 !ifdef NSIS_PACKEDVERSION
     Unicode true
 !endif
+    Unicode true
 
 
 ;--------------------------------
@@ -190,7 +192,8 @@ CMake variables
   ;# Default installation folder
   InstallDir "$PROGRAMFILES\OpenCPN"
 
-  BrandingText /TRIMLEFT "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
+  #BrandingText /TRIMLEFT "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
+  BrandingText  "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
 ;--------------------------------
 ;# Interface Settings
   !define MUI_CUSTOMFUNCTION_GUIINIT myGuiInit
@@ -356,6 +359,7 @@ CMake variables
 
 			# enumerate logged off users
 			System::Call "kernel32::GetVersion() i .R0"
+
 			IntOp $R0 $R0 & 0x80000000
 			${If} $R0 == 0
 				# nt
@@ -707,9 +711,9 @@ CMake variables
 Section "-Topmost Section" SecTopmost ;# this needs to be always the first section to be executed!
 	SetShellVarContext all
 	SetOutPath $INSTDIR
-;!ifndef NSIS_PACKEDVERSION
-;    LogSet on
-;!endif
+!ifndef NSIS_PACKEDVERSION
+    ; LogSet on
+!endif
 	${If} $INSTALL_TYPE == 1
 	${OrIf} $INSTALL_TYPE == 2
 	${OrIf} $INSTALL_TYPE == 3
