@@ -2398,22 +2398,23 @@ void WeatherRouting::Export(RouteMapOverlay &routemapoverlay)
         return;
     }
 
-    PlugIn_Track* newTrack = new PlugIn_Track;
+    PlugIn_Route* newPath = new PlugIn_Route;
     wxDateTime display_time = routemapoverlay.StartTime();
     if(m_SettingsDialog.m_cbUseLocalTime->GetValue())
         display_time = display_time.FromUTC();
 
-    newTrack->m_NameString = _("Weather Route ") + " ("  +display_time.Format(_T("%x %H:%M")) + ")";
+    newPath->m_NameString = _("Weather Route ") + " ("  +display_time.Format(_T("%x %H:%M")) + ")";
 
     // XXX double check time is really end time, not start time off by one.
     RouteMapConfiguration c = routemapoverlay.GetConfiguration();
 
-    for(std::list<PlotData>::iterator it = plotdata.begin(); it != plotdata.end(); it++) {
+    for(auto const &it : plotdata) {
         PlugIn_Waypoint*  newPoint = new PlugIn_Waypoint
-            ((*it).lat, heading_resolve((*it).lon), _T("circle"), _("Weather Route Point"));
+            (it.lat, heading_resolve(it.lon), _T("xmblue"), _("Weather Route Point"));
 
-        newPoint->m_CreateTime = (*it).time;
-        newTrack->pWaypointList->Append(newPoint);
+        newPoint->m_CreateTime = it.time;
+        newPoint->m_MarkDescription.Printf("VMG=%.2f", it.VBG);
+        newPath->pWaypointList->Append(newPoint);
     }
 
     // last point, missing if config didn't succeed
@@ -2422,15 +2423,17 @@ void WeatherRouting::Export(RouteMapOverlay &routemapoverlay)
         PlugIn_Waypoint*  newPoint = new PlugIn_Waypoint
             (p->lat, p->lon, _T("circle"), _("Weather Route Destination"));
         newPoint->m_CreateTime =  routemapoverlay.EndTime();
-        newTrack->pWaypointList->Append(newPoint);
+        // shared endpoint ?
+        // newPoint->m_GUID = c.EndGUID;
+        newPath->pWaypointList->Append(newPoint);
     }
 
-    AddPlugInTrack(newTrack);
+    AddPlugInRoute(newPath);
     // not done PlugIn_Track DTOR
-    newTrack->pWaypointList->DeleteContents( true );
-    newTrack->pWaypointList->Clear();
+    newPath->pWaypointList->DeleteContents( true );
+    newPath->pWaypointList->Clear();
 
-    delete newTrack;
+    delete newPath;
 
     GetParent()->Refresh();
 }
