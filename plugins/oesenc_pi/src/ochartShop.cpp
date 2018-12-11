@@ -535,7 +535,7 @@ static void loadShopConfig()
     }
 }
 
-static void saveShopConfig()
+void saveShopConfig()
 {
     wxFileConfig *pConf = GetOCPNConfigObject();
         
