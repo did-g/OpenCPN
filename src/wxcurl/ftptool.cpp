@@ -27,7 +27,7 @@
     #include <wx/msw/msvcrt.h>      // useful to catch memory leaks when compiling under MSVC 
 #endif
 
-#include <wx/curl/ftptool.h>
+#include "wx/curl/ftptool.h"
 
 #include <wx/txtstrm.h>
 #include <wx/mstream.h>
