@@ -418,8 +418,11 @@ s52plib::s52plib( const wxString& PLib, bool b_forceLegacy )
     m_bShowLdisText = true;
     m_bExtendLightSectors = true;
 
+    // Set a few initial states
+    AddObjNoshow( "M_QUAL" );
     m_lightsOff = false;
     m_anchorOn = true;
+    m_qualityOfDataOn = false;
 
     m_qualityOfDataOn = false;
 
@@ -2467,13 +2470,25 @@ bool s52plib::TextRenderCheck( ObjRazRules *rzRules )
 {
     if( !m_bShowS57Text ) return false;
 
-    //    This logic:  if Aton text is off, but "light description" is on, then show light description anyway
-    if( ( rzRules->obj->bIsAton ) && ( !m_bShowAtonText ) ) {
-        if( !strncmp( rzRules->obj->FeatureName, "LIGHTS", 6 ) ) {
-            if( !m_bShowLdisText ) return false;
-        } else
-            return false;
+    if(rzRules->obj->bIsAton ){
+
+       if( !strncmp( rzRules->obj->FeatureName, "LIGHTS", 6 ) ) {
+           if( !m_bShowLdisText )
+               return false;
+       }
+       else{
+           if( !m_bShowAtonText )
+               return false;
+       }
     }
+
+    //    This logic:  if Aton text is off, but "light description" is on, then show light description anyway
+//    if( ( rzRules->obj->bIsAton ) && ( !m_bShowAtonText ) ) {
+//        if( !strncmp( rzRules->obj->FeatureName, "LIGHTS", 6 ) ) {
+//            if( !m_bShowLdisText ) return false;
+//        } else
+//            return false;
+//    }
 
     // Declutter LIGHTS descriptions
     if( ( rzRules->obj->bIsAton ) && ( !strncmp( rzRules->obj->FeatureName, "LIGHTS", 6 ) ) ){
@@ -6695,7 +6710,7 @@ int s52plib::DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp )
 //      if(rzRules->obj->Index != 1103)
 //          return 0; //int yyp = 0;
 
-//        if(!strncmp(rzRules->obj->FeatureName, "ACHARE", 6))
+//        if(!strncmp(rzRules->obj->FeatureName, "BUAARE", 6))
 //            int yyp = 0;
 
     if( !ObjectRenderCheckRules( rzRules, vp, true ) )
@@ -10278,7 +10293,8 @@ bool s52plib::ObjectRenderCheckCat( ObjRazRules *rzRules, ViewPort *vp )
     if( m_nDisplayCategory == OTHER ){
         if(OTHER == obj_cat){
             if( !strncmp( rzRules->LUP->OBCL, "M_", 2 ) )
-                if( !m_bShowMeta &&  strncmp( rzRules->LUP->OBCL, "M_QUAL", 6 )) return false;
+                if( !m_bShowMeta &&  strncmp( rzRules->LUP->OBCL, "M_QUAL", 6 ))
+                    return false;
         }
     }
 
@@ -10548,6 +10564,17 @@ void s52plib::PLIB_LoadS57Config()
     read_int = wxMin(read_int, 2);
     m_nDepthUnitDisplay = read_int;
 
+}
+
+
+void s52plib::PLIB_LoadS57ObjectConfig()
+{
+    //    Get a pointer to the opencpn configuration object
+    wxFileConfig *pconfig = GetOCPNConfigObject();
+
+    int read_int;
+    double dval;
+
     //    S57 Object Class Visibility
 
     OBJLElement *pOLE;
@@ -10595,7 +10622,6 @@ void s52plib::PLIB_LoadS57Config()
 
 
 
-
 //    Do all those things necessary to prepare for a new rendering
 void s52plib::PrepareForRender( void )
 {
@@ -10624,15 +10650,20 @@ void PrepareS52ShaderUniforms(ViewPort *vp);
 
         //  If a modern (> OCPN 4.4) version of the core is active,
         //  we may rely upon having been updated on S52PLIB state by means of PlugIn messaging scheme.
-        if( (m_coreVersionMajor >= 4) && (m_coreVersionMinor >= 5) ){
+        if( ((m_coreVersionMajor == 4) && (m_coreVersionMinor >= 5)) || m_coreVersionMajor > 4 ){
 
             // First, we capture some temporary values that were set by messaging, but would be overwritten by config read
             bool bTextOn = m_bShowS57Text;
             bool bSoundingsOn = m_bShowSoundg;
             enum _DisCat old = m_nDisplayCategory;
 
-            PLIB_LoadS57Config();
+            // Retain compatibility with O4.8.x
+            if( (m_coreVersionMajor == 4) && (m_coreVersionMinor < 9))
+                PLIB_LoadS57Config();
 
+            // Pick up any changes in Mariner's Standard object list
+            PLIB_LoadS57ObjectConfig();
+            
             //  And then reset the temp values that were overwritten by config load
             m_bShowS57Text = bTextOn;
             m_bShowSoundg = bSoundingsOn;
@@ -10712,6 +10743,55 @@ void PrepareS52ShaderUniforms(ViewPort *vp);
     lastLightLat = 0;
     lastLightLon = 0;
 
+}
+
+void s52plib::SetQualityOfData(bool val)
+{
+    int old_vis = GetQualityOfData();
+    if(old_vis == val)
+        return;
+    
+    if(old_vis && !val){                            // On, going off
+        AddObjNoshow("M_QUAL");
+    }
+    else if(!old_vis && val){                                   // Off, going on
+        RemoveObjNoshow("M_QUAL");
+
+        for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
+            OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
+            if( !strncmp( pOLE->OBJLName, "M_QUAL", 6 ) ) {
+                pOLE->nViz = 1;         // force on
+                break;
+            }
+        }
+    }
+
+    m_qualityOfDataOn = val;
+    
+}
+
+bool s52plib::GetQualityOfData()
+{
+    //  Investigate and report the logical condition that "Quality of Data Condition" is shown
+    
+    int old_vis =  0;
+    OBJLElement *pOLE = NULL;
+        
+    if(  MARINERS_STANDARD == GetDisplayCategory()){
+            for( unsigned int iPtr = 0; iPtr < pOBJLArray->GetCount(); iPtr++ ) {
+                OBJLElement *pOLE = (OBJLElement *) ( pOBJLArray->Item( iPtr ) );
+                if( !strncmp( pOLE->OBJLName, "M_QUAL", 6 ) ) {
+                    old_vis = pOLE->nViz;
+                    break;
+                }
+            }
+    }
+    else if(OTHER == GetDisplayCategory())
+        old_vis = true;
+
+    old_vis &= !IsObjNoshow("M_QUAL");
+
+    return (old_vis != 0);
 }
 
 void s52plib::ClearTextList( void )

@@ -195,6 +195,9 @@ public:
     void SetQualityOfDataOn(bool val){ m_qualityOfDataOn = val; }
     bool GetQualityOfDataOn();
     
+    void SetQualityOfData(bool val);
+    bool GetQualityOfData();
+    
     int GetMajorVersion( void ) { return m_VersionMajor; }
     int GetMinorVersion( void ) { return m_VersionMinor; }
 
@@ -286,7 +289,8 @@ private:
     bool S52_flush_Plib();
     
     void PLIB_LoadS57Config();
-    
+    void PLIB_LoadS57ObjectConfig();
+
     bool PreloadOBJLFromCSV(const wxString &csv_file);
 
     int DoRenderObject( wxDC *pdcin, ObjRazRules *rzRules, ViewPort *vp );
