@@ -156,9 +156,9 @@ public:
 
     void SetLocaleSearchPrefixes( void );
     wxString GetDefaultSystemLocale();
-    wxString GetAdjustedAppLocale();
     
 #if wxUSE_XLOCALE    
+    wxString GetAdjustedAppLocale();
     wxString ChangeLocale(wxString &newLocaleID, wxLocale *presentLocale, wxLocale** newLocale);
 #endif
     
