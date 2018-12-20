@@ -140,6 +140,12 @@ extern bool             g_bopengl;
 
 extern ChartGroupArray  *g_pGroupArray;
 
+#ifdef __WXMSW__
+static const char PATH_SEP = ';';
+#else
+static const char PATH_SEP = ':';
+#endif
+
 static const char* const DEFAULT_DATA_DIRS =
     "~/.local/share:/usr/local/share:/usr/share";
 
