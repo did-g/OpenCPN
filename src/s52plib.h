@@ -178,18 +178,18 @@ public:
 
     // Accessors
     bool GetShowSoundings() { return m_bShowSoundg; }
-    void SetShowSoundings( bool f ) { m_bShowSoundg = f; GenerateStateHash(); }
+    void SetShowSoundings( bool f ) { m_bShowSoundg = f; /*GenerateStateHash();*/ }
 
     bool GetShowS57Text() { return m_bShowS57Text;  }
-    void SetShowS57Text( bool f ) { m_bShowS57Text = f;  GenerateStateHash(); }
+    void SetShowS57Text( bool f ) { m_bShowS57Text = f;  /*GenerateStateHash();*/ }
 
     bool GetShowS57ImportantTextOnly() { return m_bShowS57ImportantTextOnly; }
-    void SetShowS57ImportantTextOnly( bool f ) { m_bShowS57ImportantTextOnly = f; GenerateStateHash(); }
+    void SetShowS57ImportantTextOnly( bool f ) { m_bShowS57ImportantTextOnly = f; /*GenerateStateHash();*/ }
 
     void SetLightsOff(bool val){ m_lightsOff = val; }
     bool GetLightsOff(){ return m_lightsOff; }
     
-    void SetAnchorOn(bool val){ m_anchorOn = val; }
+    void SetAnchorOn(bool val);
     bool GetAnchorOn();
 
     void SetQualityOfDataOn(bool val){ m_qualityOfDataOn = val; }
@@ -210,6 +210,11 @@ public:
     void SetDisplayCategory( enum _DisCat cat );
     DisCat GetDisplayCategory(){ return m_nDisplayCategory; }
     
+        void SetGLPolygonSmoothing( bool bset ){ m_GLPolygonSmoothing = bset;}
+    bool GetGLPolygonSmoothing( ){ return m_GLPolygonSmoothing; }
+    void SetGLLineSmoothing( bool bset ){ m_GLLineSmoothing = bset;}
+    bool GetGLLineSmoothing( ){ return m_GLLineSmoothing; }
+
     wxArrayOfLUPrec* SelectLUPARRAY( LUPname TNAM );
     LUPArrayContainer *SelectLUPArrayContainer( LUPname TNAM );
         
@@ -290,6 +295,7 @@ private:
     
     void PLIB_LoadS57Config();
     void PLIB_LoadS57ObjectConfig();
+    void PLIB_LoadS57GlobalConfig();
 
     bool PreloadOBJLFromCSV(const wxString &csv_file);
 
@@ -449,7 +455,9 @@ private:
     bool m_useFBO;
     bool m_useVBO;
     int  m_TextureFormat;
-    
+    bool m_GLLineSmoothing;
+    bool m_GLPolygonSmoothing;
+
     float *workBuf;
     size_t workBufSize;
     

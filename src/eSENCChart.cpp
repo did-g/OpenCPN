@@ -666,6 +666,20 @@ eSENCChart::~eSENCChart()
       free(m_line_vertex_buffer);
 }
 
+static void free_mps(mps_container *mps)
+{
+    if ( mps == 0)
+        return;
+    if( ps52plib && mps->cs_rules ){
+        for(unsigned int i=0 ; i < mps->cs_rules->GetCount() ; i++){
+            Rules *rule_chain_top = mps->cs_rules->Item(i);
+            ps52plib->DestroyRulesChain( rule_chain_top );
+        }
+        delete mps->cs_rules;
+    }
+    free( mps );
+}
+
 void eSENCChart::FreeObjectsAndRules()
 {
     //      Delete the created ObjRazRules, including the S57Objs
@@ -1912,7 +1926,7 @@ bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoin
     
     //    Render the lines and points
     for( i = 0; i < PRIO_NUM; ++i ) {
-        if( PI_GetPLIBBoundaryStyle() == SYMBOLIZED_BOUNDARIES )
+        if( ps52plib->m_nBoundaryStyle == SYMBOLIZED_BOUNDARIES )
             top = razRules[i][4]; // Area Symbolized Boundaries
         else
             top = razRules[i][3];           // Area Plain Boundaries
@@ -1937,10 +1951,8 @@ bool eSENCChart::DoRenderRectOnGL( const wxGLContext &glc, const ViewPort& VPoin
         }
     }
     
-    //qDebug() << "PI RenderTimeD3" << sw.GetTime();
-        
     for( i = 0; i < PRIO_NUM; ++i ) {
-        if( PI_GetPLIBSymbolStyle() == SIMPLIFIED )
+        if( ps52plib->m_nSymbolStyle == SIMPLIFIED )
             top = razRules[i][0];       //SIMPLIFIED Points
         else
             top = razRules[i][1];           //Paper Chart Points Points
@@ -2247,6 +2259,8 @@ void eSENCChart::UpdateLUPs( eSENCChart *pOwner )
             top = razRules[i][j];
             while( top != NULL ) {
                 top->obj->bCS_Added = 0;
+                free_mps( top->mps );                           // Clear any cached MPS rules, etc.
+                top->mps = 0;
                 if (top->LUP)
                     top->obj->m_DisplayCat = top->LUP->DISC;
                 
@@ -2254,7 +2268,8 @@ void eSENCChart::UpdateLUPs( eSENCChart *pOwner )
                 top = nxx;
             }
         }
-        
+
+
         //  Traverse this priority level again,
         //  clearing any object CS rules and flags of any child list,
         //  so that the next render operation will re-evaluate the CS
@@ -2266,7 +2281,9 @@ void eSENCChart::UpdateLUPs( eSENCChart *pOwner )
                     ObjRazRules *ctop = top->child;
                     while( NULL != ctop ) {
                         ctop->obj->bCS_Added = 0;
-                        if (ctop->LUP)
+                        free_mps( top->mps );                   // Clear any cached MPS rules, etc.
+                        top->mps = 0;
+                       if (ctop->LUP)
                             ctop->obj->m_DisplayCat = ctop->LUP->DISC;
                         ctop = ctop->next;
                     }
@@ -3864,10 +3881,31 @@ int eSENCChart::BuildRAZFromSENCFile( const wxString& FullPath, wxString& userKe
             if(g_debugLevel) wxLogMessage(_T("BuildRAZFromSENCFile:  Validate Hashmaps OK"));
         }
         
-        //  Set up the chart context
+//         //  Set up the chart context
+//         m_this_chart_context = (chart_context *)calloc( sizeof(chart_context), 1);
+//         m_this_chart_context->chart = this;
+//         
+//         //  Loop and populate all the objects
+//         for( int i = 0; i < PRIO_NUM; ++i ) {
+//             for( int j = 0; j < LUPNAME_NUM; j++ ) {
+//                 ObjRazRules *top = razRules[i][j];
+//                 while( top != NULL ) {
+//                     S57Obj *obj = top->obj;
+//                     obj->m_chart_context = m_this_chart_context;
+//                     top = top->next;
+//                 }
+//             }
+//         }
+
+        if(g_debugLevel) wxLogMessage(_T("BuildRAZFromSENCFile:  Start AssembleLineGeometry"));
+                                         
+        AssembleLineGeometry();
+        
+            //  Set up the chart context
         m_this_chart_context = (chart_context *)calloc( sizeof(chart_context), 1);
         m_this_chart_context->chart = this;
-        
+        m_this_chart_context->vertex_buffer = GetLineVertexBuffer();
+
         //  Loop and populate all the objects
         for( int i = 0; i < PRIO_NUM; ++i ) {
             for( int j = 0; j < LUPNAME_NUM; j++ ) {
@@ -3880,9 +3918,6 @@ int eSENCChart::BuildRAZFromSENCFile( const wxString& FullPath, wxString& userKe
             }
         }
 
-        if(g_debugLevel) wxLogMessage(_T("BuildRAZFromSENCFile:  Start AssembleLineGeometry"));
-                                         
-        AssembleLineGeometry();
  
         if(g_debugLevel) wxLogMessage(_T("BuildRAZFromSENCFile:  AssembleLineGeometry OK"));
                                          
@@ -6112,29 +6147,25 @@ const char *MyCSVGetField( const char * pszFilename, const char * pszKeyFieldNam
     return ( papszRecord[iTargetField] );
 }
 
-int CompareLights( PI_S57Light** l1ptr, PI_S57Light** l2ptr )
+static bool CompareLights( const PI_S57Light* l1, const PI_S57Light* l2 )
 {
-    PI_S57Light l1 = *(PI_S57Light*) *l1ptr;
-    PI_S57Light l2 = *(PI_S57Light*) *l2ptr;
-    
-    int positionDiff = l1.position.Cmp( l2.position );
-    if( positionDiff != 0 ) return positionDiff;
-    
-    double angle1, angle2;
-    int attrIndex1 = l1.attributeNames.Index( _T("SECTR1") );
-    int attrIndex2 = l2.attributeNames.Index( _T("SECTR1") );
-    
+    int positionDiff = l1->position.Cmp( l2->position );
+    if( positionDiff != 0 ) return true;
+
+
+    int attrIndex1 = l1->attributeNames.Index( _T("SECTR1") );
+    int attrIndex2 = l2->attributeNames.Index( _T("SECTR1") );
+
     // This should put Lights without sectors last in the list.
-    if( attrIndex1 == wxNOT_FOUND && attrIndex2 == wxNOT_FOUND ) return 0;
-    if( attrIndex1 != wxNOT_FOUND && attrIndex2 == wxNOT_FOUND ) return -1;
-    if( attrIndex1 == wxNOT_FOUND && attrIndex2 != wxNOT_FOUND ) return 1;
-    
-    l1.attributeValues.Item( attrIndex1 ).ToDouble( &angle1 );
-    l2.attributeValues.Item( attrIndex2 ).ToDouble( &angle2 );
-    
-    if( angle1 == angle2 ) return 0;
-    if( angle1 > angle2 ) return 1;
-    return -1;
+    if( attrIndex1 == wxNOT_FOUND && attrIndex2 == wxNOT_FOUND ) return false;
+    if( attrIndex1 != wxNOT_FOUND && attrIndex2 == wxNOT_FOUND ) return true;
+    if( attrIndex1 == wxNOT_FOUND && attrIndex2 != wxNOT_FOUND ) return false;
+
+    double angle1, angle2;
+    l1->attributeValues.Item( attrIndex1 ).ToDouble( &angle1 );
+    l2->attributeValues.Item( attrIndex2 ).ToDouble( &angle2 );
+
+    return angle1 < angle2;
 }
 
 static const char *type2str( int type)
@@ -6174,7 +6205,7 @@ wxString eSENCChart::CreateObjDescriptions( ListOfPI_S57Obj* obj_list )
     wxString objText;
     wxString lightsHtml;
     wxString positionString;
-    ArrayOfLights lights;
+    std::vector<PI_S57Light*> lights;
     PI_S57Light* curLight = NULL;
     
     for( ListOfPI_S57Obj::Node *node = obj_list->GetLast(); node; node = node->GetPrevious() ) {
@@ -6256,7 +6287,7 @@ wxString eSENCChart::CreateObjDescriptions( ListOfPI_S57Obj* obj_list )
                     curLight = new PI_S57Light;
                     curLight->position = positionString;
                     curLight->hasSectors = false;
-                    lights.Add( curLight );
+                    lights.push_back( curLight );
                 }
                 
             }
@@ -6367,24 +6398,26 @@ wxString eSENCChart::CreateObjDescriptions( ListOfPI_S57Obj* obj_list )
     } // Object for loop
 
 #if 1    
-    if( lights.Count() > 0 ) {
+    if( !lights.empty()  ) {
         
         // For lights we now have all the info gathered but no HTML output yet, now
         // run through the data and build a merged table for all lights.
         
-        lights.Sort( ( CMPFUNC_wxObjArrayArrayOfLights )( &CompareLights ) );
+        std::sort(lights.begin(), lights.end(), CompareLights);
         
         wxString lastPos;
         
-        for( unsigned int curLightNo = 0; curLightNo < lights.Count(); curLightNo++ ) {
-            PI_S57Light thisLight = /*(S57Light*)*/ lights.Item( curLightNo );
+        for(auto const& it: lights) {
+            PI_S57Light thisLight = *it;
             int attrIndex;
             
             if( thisLight.position != lastPos ) {
                 
                 lastPos = thisLight.position;
                 
-                if( curLightNo > 0 ) lightsHtml << _T("</table>\n<hr noshade>\n");
+                if( it != *lights.begin() )
+                    lightsHtml << _T("</table>\n<hr noshade>\n");
+                curLight++;
                 
                 lightsHtml << _T("<b>Light</b> <font size=-2>(LIGHTS)</font><br>");
                 lightsHtml << _T("<font size=-2>") << thisLight.position << _T("</font><br>\n");
@@ -6497,7 +6530,7 @@ wxString eSENCChart::CreateObjDescriptions( ListOfPI_S57Obj* obj_list )
         lightsHtml << _T("</table><hr noshade>\n");
         ret_val = lightsHtml << ret_val;
         
-        lights.Clear();
+        lights.clear();
     }
 #endif    
     return ret_val;
