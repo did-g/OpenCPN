@@ -33,6 +33,7 @@
 #ifdef __BORLANDC__
     #pragma hdrstop
 #endif
+#include <cmath>
 
 // for all others, include the necessary headers (this file is usually all you
 // need because it includes almost all "standard" wxWidgets headers)
@@ -188,7 +189,7 @@ void DashboardInstrument_AppTrueWindAngle::DrawForeground(wxGCDC* dc)
 	brush2.SetColour(cl);
 	dc->SetBrush(brush2);
 
-	/* this is fix for a +/-180° round instrument, when m_MainValue is supplied as <0..180><L | R>
+	/* this is fix for a +/-180ï¿½ round instrument, when m_MainValue is supplied as <0..180><L | R>
 	* for example TWA & AWA */
 	if (m_MainValueTrueUnit == _T("\u00B0L"))
 		data = 360 - m_MainValueTrue;
@@ -221,7 +222,7 @@ void DashboardInstrument_AppTrueWindAngle::DrawForeground(wxGCDC* dc)
 	brush.SetColour(cl);
 	dc->SetBrush(brush);
 
-	/* this is fix for a +/-180° round instrument, when m_MainValue is supplied as <0..180><L | R>
+	/* this is fix for a +/-180ï¿½ round instrument, when m_MainValue is supplied as <0..180><L | R>
 	* for example TWA & AWA */
 	if (m_MainValueAppUnit == _T("\u00B0L"))
 		data = 360 - m_MainValueApp;
@@ -263,9 +264,9 @@ void DashboardInstrument_AppTrueWindAngle::DrawData(wxGCDC* dc, double value,
 	{
 		if (unit == _T("\u00B0"))
 			text = wxString::Format(format, value) + DEGREE_SIGN;
-		else if (unit == _T("\u00B0L")) // No special display for now, might be XX°< (as in text-only instrument)
+		else if (unit == _T("\u00B0L")) // No special display for now, might be XXï¿½< (as in text-only instrument)
 			text = wxString::Format(format, value) + DEGREE_SIGN;
-		else if (unit == _T("\u00B0R")) // No special display for now, might be >XX°
+		else if (unit == _T("\u00B0R")) // No special display for now, might be >XXï¿½
 			text = wxString::Format(format, value) + DEGREE_SIGN;
 		else if (unit == _T("\u00B0T"))
 			text = wxString::Format(format, value) + DEGREE_SIGN + _T("T");

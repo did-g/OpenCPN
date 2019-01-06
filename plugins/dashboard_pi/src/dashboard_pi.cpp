@@ -1,4 +1,4 @@
-﻿/***************************************************************************
+/***************************************************************************
  * $Id: dashboard_pi.cpp, v1.0 2010/08/05 SethDart Exp $
  *
  * Project:  OpenCPN
@@ -32,6 +32,7 @@
 #include "wx/wx.h"
 #endif //precompiled headers
 
+#include <cmath>
 // xw 2.8
 #include <wx/filename.h>
 
@@ -305,6 +306,11 @@ wxString GetUUID(void)
       uuid.node_low);
 
       return str;
+}
+
+wxString MakeName()
+{
+    return _T("DASH_") + GetUUID();
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -664,9 +670,15 @@ void dashboard_pi::SetNMEASentence( wxString &sentence )
         }
 
         else if( m_NMEA0183.LastSentenceIDReceived == _T("HDG") ) {
-            if( m_NMEA0183.Parse() ) {
-                if( mPriVar >= 2 ) {
-                    if( !std::isnan( m_NMEA0183.Hdg.MagneticVariationDegrees ) ){
+            if( m_NMEA0183.Parse() )
+            {
+                if( mPriVar >= 2 ) 
+                {
+                    // Any device sending VAR=0.0 can be assumed to not really know
+                    // what the actual variation is, so in this case we use WMM if available
+                    if( (!std::isnan( m_NMEA0183.Hdg.MagneticVariationDegrees )) &&
+                               0.0 != m_NMEA0183.Hdg.MagneticVariationDegrees)
+                    {
                         mPriVar = 2;
                         if( m_NMEA0183.Hdg.MagneticVariationDirection == East )
                             mVar =  m_NMEA0183.Hdg.MagneticVariationDegrees;
@@ -926,16 +938,21 @@ void dashboard_pi::SetNMEASentence( wxString &sentence )
                         }
                     }
 
-                    if( mPriVar >= 3 ) {
-                        if( !std::isnan( m_NMEA0183.Rmc.MagneticVariation ) ){
+                    if( mPriVar >= 3 )
+                    {
+                        // Any device sending VAR=0.0 can be assumed to not really know
+                        // what the actual variation is, so in this case we use WMM if available
+                        if( (!std::isnan( m_NMEA0183.Rmc.MagneticVariation)) &&
+                                   0.0 != m_NMEA0183.Rmc.MagneticVariation )
+                        {
                             mPriVar = 3;
-                            if( m_NMEA0183.Rmc.MagneticVariationDirection == East )
+                            if (m_NMEA0183.Rmc.MagneticVariationDirection == East)
                                 mVar = m_NMEA0183.Rmc.MagneticVariation;
-                            else if( m_NMEA0183.Rmc.MagneticVariationDirection == West )
+                            else if (m_NMEA0183.Rmc.MagneticVariationDirection == West)
                                 mVar = -m_NMEA0183.Rmc.MagneticVariation;
                             mVar_Watchdog = gps_watchdog_timeout_ticks;
 
-                            SendSentenceToAllInstruments( OCPN_DBP_STC_HMV, mVar, _T("\u00B0") );
+                            SendSentenceToAllInstruments(OCPN_DBP_STC_HMV, mVar, _T("\u00B0"));
                         }
                     }
 
@@ -1410,6 +1427,7 @@ void dashboard_pi::UpdateAuiStatus( void )
         // Initialize visible state as perspective is loaded now
         cont->m_bIsVisible = ( pane.IsOk() && pane.IsShown() );
     }
+    m_pauimgr->Update();
 
     //    We use this callback here to keep the context menu selection in sync with the window state
 
@@ -1472,7 +1490,7 @@ bool dashboard_pi::LoadConfig( void )
                 ar.Add( ID_DBP_D_GPS );
             }
 
-            DashboardWindowContainer *cont = new DashboardWindowContainer( NULL, GetUUID(), _("Dashboard"), _T("V"), ar );
+            DashboardWindowContainer *cont = new DashboardWindowContainer( NULL, MakeName(), _("Dashboard"), _T("V"), ar );
             cont->m_bPersVisible = true;
             m_ArrayOfDashboardWindow.Add(cont);
             
@@ -1483,7 +1501,7 @@ bool dashboard_pi::LoadConfig( void )
             for( int i = 0; i < d_cnt; i++ ) {
                 pConf->SetPath( wxString::Format( _T("/PlugIns/Dashboard/Dashboard%d"), i + 1 ) );
                 wxString name;
-                pConf->Read( _T("Name"), &name, GetUUID() );
+                pConf->Read( _T("Name"), &name, MakeName() );
                 wxString caption;
                 pConf->Read( _T("Caption"), &caption, _("Dashboard") );
                 wxString orient;
@@ -1598,7 +1616,7 @@ void dashboard_pi::ApplyConfig( void )
                 wxAuiPaneInfo p = wxAuiPaneInfo().Name( cont->m_sName ).Caption( cont->m_sCaption ).CaptionVisible( false ).TopDockable(
                     !vertical ).BottomDockable( !vertical ).LeftDockable( vertical ).RightDockable( vertical ).MinSize(
                         sz ).BestSize( sz ).FloatingSize( sz ).FloatingPosition( 100, 100 ).Float().Show( cont->m_bIsVisible ).Gripper(false) ;
-                        
+
             m_pauimgr->AddPane( cont->m_pDashboardWindow, p);
                 //wxAuiPaneInfo().Name( cont->m_sName ).Caption( cont->m_sCaption ).CaptionVisible( false ).TopDockable(
                // !vertical ).BottomDockable( !vertical ).LeftDockable( vertical ).RightDockable( vertical ).MinSize(
@@ -2049,7 +2067,7 @@ void DashboardPreferencesDialog::OnDashboardAdd( wxCommandEvent& event )
     // Data is index in m_Config
     m_pListCtrlDashboards->SetItemData( idx, m_Config.GetCount() );
     wxArrayInt ar;
-    DashboardWindowContainer *dwc = new DashboardWindowContainer( NULL, GetUUID(), _("Dashboard"), _T("V"), ar );
+    DashboardWindowContainer *dwc = new DashboardWindowContainer( NULL, MakeName(), _("Dashboard"), _T("V"), ar );
     dwc->m_bIsVisible = true;
     m_Config.Add( dwc );
 }
@@ -2310,7 +2328,7 @@ void DashboardWindow::ChangePaneOrientation( int orient, bool updateAUImgr )
     //wxSize sz = GetSize( orient, wxDefaultSize );
     wxSize sz = GetMinSize();
     // We must change Name to reset AUI perpective
-    m_Container->m_sName = GetUUID();
+    m_Container->m_sName = MakeName();
     m_pauimgr->AddPane( this, wxAuiPaneInfo().Name( m_Container->m_sName ).Caption(
         m_Container->m_sCaption ).CaptionVisible( true ).TopDockable( !vertical ).BottomDockable(
         !vertical ).LeftDockable( vertical ).RightDockable( vertical ).MinSize( sz ).BestSize(

@@ -1,4 +1,12 @@
+
+#include "wx/wxprec.h"
+
+#ifndef  WX_PRECOMP
+#include "wx/wx.h"
+#endif //precompiled headers
+
 #include "iirfilter.h"
+#include <cmath>
 
 #include <wx/math.h>
 
