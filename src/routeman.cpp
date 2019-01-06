@@ -609,8 +609,8 @@ bool Routeman::UpdateAutopilot()
 
    //Avoid a possible not initiated SOG/COG. APs can be confused if in NAV mode wo valid GPS
    double r_Sog(0.0), r_Cog(0.0);
-   if (!wxIsNaN(gSog)) r_Sog = gSog;
-   if (!wxIsNaN(gCog)) r_Cog = gCog;
+   if (!std::isnan(gSog)) r_Sog = gSog;
+   if (!std::isnan(gCog)) r_Cog = gCog;
     //RMB
         {
 
@@ -670,7 +670,7 @@ bool Routeman::UpdateAutopilot()
             m_NMEA0183.Rmc.SpeedOverGroundKnots = r_Sog;
             m_NMEA0183.Rmc.TrackMadeGoodDegreesTrue = r_Cog;
 
-            if( !wxIsNaN(gVar) ) {
+            if( !std::isnan(gVar) ) {
                 if( gVar < 0. ) {
                     m_NMEA0183.Rmc.MagneticVariation = -gVar;
                     m_NMEA0183.Rmc.MagneticVariationDirection = West;
@@ -727,7 +727,7 @@ bool Routeman::UpdateAutopilot()
                                      &brg1,
                                      &dist1 );
             
-            if( g_bMagneticAPB && !wxIsNaN(gVar) ) {
+            if( g_bMagneticAPB && !std::isnan(gVar) ) {
                 
                 double brg1m = ((brg1 - gVar) >= 0.) ? (brg1 - gVar) : (brg1 - gVar + 360.);
                 double bapm = ((CurrentBrgToActivePoint - gVar) >= 0.) ? (CurrentBrgToActivePoint - gVar) : (CurrentBrgToActivePoint - gVar + 360.);
