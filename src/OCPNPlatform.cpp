@@ -679,6 +679,7 @@ wxString OCPNPlatform::GetDefaultSystemLocale()
 }
 
 
+#if wxUSE_XLOCALE || !wxCHECK_VERSION(3,0,0)
 wxString OCPNPlatform::GetAdjustedAppLocale()
 {
     wxString adjLocale = g_locale;
@@ -707,7 +708,6 @@ wxString OCPNPlatform::GetAdjustedAppLocale()
 }
 
 
-#if wxUSE_XLOCALE || !wxCHECK_VERSION(3,0,0)
 
 wxString OCPNPlatform::ChangeLocale(wxString &newLocaleID, wxLocale *presentLocale, wxLocale** newLocale)
 {
