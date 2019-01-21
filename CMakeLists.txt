@@ -741,7 +741,7 @@ IF(OCPN_USE_CURL)
         INSTALL(FILES "buildwin/zlib1.dll" DESTINATION ".")
     ELSE(MSVC) ## mingw
         SET(CURL_LIBRARIES "curl.dll")
-        INSTALL(FILES "buildwin/libcurl.dll" DESTINATION ".")
+        #INSTALL(FILES "buildwin/libcurl.dll" DESTINATION ".")
     ENDIF(MSVC)
     OPTION(OCPN_USE_EXTERN_CURL "Use external libcurl" OFF)
   ELSE(WIN32)
