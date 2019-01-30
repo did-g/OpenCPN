@@ -18,7 +18,7 @@ IF(WIN32)
 
   ELSE(MSVC) ## mingw
     SET(CURL_LIBRARIES "curl.dll")
-    INSTALL(FILES "buildwin/libcurl.dll" DESTINATION ".")
+    #INSTALL(FILES "buildwin/libcurl.dll" DESTINATION ".")
   ENDIF(MSVC)
     
   #TARGET_LINK_LIBRARIES(${PACKAGE_NAME} ${CURL_LIBRARIES})

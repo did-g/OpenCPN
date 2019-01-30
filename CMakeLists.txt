@@ -2310,6 +2310,7 @@ IF(WIN32)
     TARGET_LINK_LIBRARIES(${PACKAGE_NAME}
       ${OPENGL_LIBRARIES}
       wsock32.lib
+      winmm
     )
   ENDIF(MINGW)
 
