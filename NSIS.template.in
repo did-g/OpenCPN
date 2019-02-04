@@ -64,6 +64,7 @@ CMake variables
 
 ;--------------------------------
 ;# Variables
+    Var INST_PRG
 	Var INST_USER_SID
 	Var CONFIG_EXISTS
 	Var CONFIG_EMPTY
@@ -178,6 +179,7 @@ CMake variables
 	!include TextFunc.nsh
 	!include FileFunc.nsh
 	!include WinVer.nsh
+    !include "x64.nsh"
 
 	!include UAC.nsh
 
@@ -190,7 +192,7 @@ CMake variables
   OutFile "@CPACK_TOPLEVEL_DIRECTORY@/${OUTPUT_FILE_NAME}"
 
   ;# Default installation folder
-  InstallDir "$PROGRAMFILES64\OpenCPN"
+  InstallDir "$PROGRAMFILES\OpenCPN"
 
   #BrandingText /TRIMLEFT "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
   BrandingText  "OpenCPN $(Installer) v${OCPN_INSTALLER_VERSION}"
@@ -971,6 +973,21 @@ Function .onInit
 		MessageBox MB_OK|MB_ICONEXCLAMATION "$(Installer_Running)"
 		Abort
 	${EndIf}
+    ;# Default installation folder
+    ; check if we are running under WOW64
+    ; since NSIS is always 32 bit it would mean that we are on 64 bit windows
+    ${If} ${RunningX64}
+
+      !ifdef WIN64
+        SetRegView 64
+		StrCpy $INST_PRG "$PROGRAMFILES64"
+      !else
+		StrCpy $INST_PRG "$PROGRAMFILES"
+      !endif
+    ${Else}
+	  StrCpy $INST_PRG "$PROGRAMFILES"
+    ${EndIf}
+    StrCpy $InstDir  "$INST_PRG\OpenCPN"
 
 	Call GetUserInfo
 	StrCpy $USERS_NAME $USERNAME
@@ -2148,7 +2165,7 @@ FunctionEnd
                 ${Endif}
 
 		${If} $INSTALL_TYPE == 4
-			StrCpy $INSTDIR "$PROGRAMFILES64\OpenCPN @CPACK_PACKAGE_VERSION@"
+			StrCpy $INSTDIR "$INST_PRG\OpenCPN @CPACK_PACKAGE_VERSION@"
 		${EndIf}
 	FunctionEnd
 
@@ -3065,7 +3082,7 @@ Function Quick_Scan_Old_Versions
 	${EndIf}
 
 	end:
-	${Locate} "$PROGRAMFILES64" "/L=F /M=opencpn.exe" "Found_OpenCPN_Installation"
+	${Locate} "$INST_PRG" "/L=F /M=opencpn.exe" "Found_OpenCPN_Installation"
 FunctionEnd
 
 
