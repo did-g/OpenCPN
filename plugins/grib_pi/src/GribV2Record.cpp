@@ -1914,9 +1914,9 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	         gridType = grib_msg->md.gds_templ_num;
 	         if (grib_msg->md.gds_templ_num == 10) {
 	             ok = mercator2ll();
-                 }
+	         }
                  else if (grib_msg->md.gds_templ_num == 30) {
-	             ok = lambert2ll();
+                     ok = lambert2ll();
 	             // XXX
 	             La1 = 10000.;
 	             La2 = -10000.;
@@ -2027,8 +2027,39 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	     if (skip == false) {
     	         ok = unpackDS(grib_msg);
     	         if (ok) {
-	             data = grib_msg->grids.gridpoints;
-	             grib_msg->grids.gridpoints = 0;
+    	             if (scanFlags == 64) {
+	                 data = grib_msg->grids.gridpoints;
+	                 grib_msg->grids.gridpoints = 0;
+                    }
+                    else {
+                        data = new double[Ni * Nj];
+                        for (unsigned int j=0; j<Nj; j++) {
+                            for (unsigned int i=0; i<Ni; i++) {
+                                int indgfld;
+                                switch(scanFlags){
+                                    case 0:   /* 0000 0000 */ indgfld = (Nj -j -1)*Ni +i;          break;
+                                    case 128: /* 1000 0000 */ indgfld = (Nj -j -1)*Ni +(Ni -i -1); break;
+                                    case 64:  /* 0100 0000 */ indgfld =          j*Ni +i;          break;
+                                    case 192: /* 1100 0000 */ indgfld =          j*Ni +(Ni -i -1); break;
+                                    case 32:  /* 0010 0000 */ indgfld =          i*Nj +(Nj -j -1); break;
+                                    case 160: /* 1010 0000 */ indgfld = (Ni -i -1)*Nj +(Ni -i -1); break;
+                                    case 96:  /* 0110 0000 */ indgfld =          i*Nj +j;          break;
+                                    case 224: /* 1110 0000 */ indgfld = (Ni -i -1)*Nj +j;          break;
+                                    case 80:  /* 0101 0000 */ indgfld = ( j % 2 == 0 ?
+                                                j*Ni +i :
+                                                j*Ni +(Ni -i -1) );
+                                                break;
+                                    default:
+                                        ok = false;
+					break;
+                                }
+                                if (ok) {
+                                    int ind = j*Ni +i;
+                                    data[ind] = grib_msg->grids.gridpoints[indgfld];
+                                }
+                            }
+                        }
+                    }
                  }
 	     }
 	     if (grib_msg->num_grids != 1)
@@ -2042,14 +2073,25 @@ void GribV2Record::readDataSet(ZUFILE* file)
     
     //ok = false;
 if (false) {
-//if (true) {
-printf("==== GV2 %d\n", ok);
-printf("Lo1=%f Lo2=%f    La1=%f La2=%f\n", Lo1,Lo2,La1,La2);
-printf("Lo1=%f Lo2=%f    La1=%f La2=%f\n", grib_msg->md.slon, grib_msg->md.lons.elon, grib_msg->md.slat, grib_msg->md.lats.elat);
-printf("Ni=%d Nj=%d\n", Ni,Nj);
-printf("hasDiDj=%d Di,Dj=(%f %f)\n", hasDiDj, Di,Dj);
-printf("isScanIpositive=%d isScanJpositive=%d isAdjacentI=%d\n",isScanIpositive,isScanJpositive,isAdjacentI );
-printf("hasBMS=%d\n", hasBMS);
+    printf("==== GV2 %d\n", ok);
+    printf("Lo1=%f Lo2=%f    La1=%f La2=%f\n", Lo1,Lo2,La1,La2);
+    printf("Lo1=%f Lo2=%f    La1=%f La2=%f\n", grib_msg->md.slon, grib_msg->md.lons.elon, grib_msg->md.slat, grib_msg->md.lats.elat);
+    printf("Ni=%d Nj=%d\n", Ni,Nj);
+    printf("hasDiDj=%d Di,Dj=(%f %f)\n", hasDiDj, Di,Dj);
+    printf("ScanFlags=%x\n", scanFlags);
+    printf("isScanIpositive=%d isScanJpositive=%d isAdjacentI=%d\n",isScanIpositive,isScanJpositive,isAdjacentI );
+    printf("hasBMS=%d\n", hasBMS);
+
+    printf("   X,    Y,    Latitude,   Longitude, \n");
+    if (0) for ( int j = 0; j < getNj(); j++ ) {
+        for( int i = 0; i < getNi(); i++ ) {
+            double lon, lat;
+            double v = getValue(i, j);
+            getXY(i, j, &lon, &lat);
+            printf("%4d,%4d,%12.6f,%12.6f,%13.3f\n", i +1, j+1, lat, (lon > 180.)?lon -360.:lon, v);
+        }
+    }
+
 }
     if (ok) {
         if (!skip) 

@@ -554,7 +554,7 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     double delta;
 
     int type = pGR->getGridType();
-    if (type == 30 || pGR->getNi() > 1024 || pGR->getNj() > 1024 ) {
+    if (type == 10 || type == 30 || pGR->getNi() > 1024 || pGR->getNj() > 1024 ) {
         // downsample
         samples = 0;
         tw = pGR->getNi();
@@ -581,8 +581,13 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
     if( tw > 1024 || th > 1024 )
         return false;
 
+#if 1
+    double dx = (tw -1)/(pGR->getLonMax() -pGR->getLonMin());
+    double dy = (th -1)/(pGR->getLatMax() -pGR->getLatMin());
+#else
     double dx = pGR->getNi()/(pGR->getLonMax() -pGR->getLonMin());
     double dy = pGR->getNj()/(pGR->getLatMax() -pGR->getLatMin());
+#endif
 
     unsigned char *data = new unsigned char[tw*th*4]();
     if (samples == 0) {
@@ -591,7 +596,7 @@ bool GRIBOverlayFactory::CreateGribGLTexture( GribOverlay *pGO, int settings, Gr
                 double v = pGR->getValue(i, j);
                 int y = (j + 1)*delta;
                 int x = (i + !repeat)*delta;
-                if (type == 30) {
+                if (type == 30 || type == 10 ) {
                     // not a regular grid
                     // convert Lat/Lon  
                     double lon, lat;
