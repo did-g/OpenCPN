@@ -29,11 +29,8 @@ public:
     enum fieldsService {PRIORITY,TEXT,IF,WARN,URGENT,START,ACTIVE};
 public:
     Maintenance( LogbookDialog* d, wxString data, wxString lay, wxString layoutODT );
-#ifdef __WXOSX__
-    virtual ~Maintenance( void );
-#else
-    ~Maintenance( void );
-#endif
+    virtual ~Maintenance( );
+
     void addLine();
     void addLineRepairs();
     void addLineBuyParts();
@@ -154,7 +151,7 @@ class myGridCellChoiceEditor : public wxGridCellChoiceEditor
 {
 public:
     myGridCellChoiceEditor( int i, wxString s[], bool mode ):wxGridCellChoiceEditor( i,s,mode ) {}
-    ~myGridCellChoiceEditor( void ) {}
+    ~myGridCellChoiceEditor( ) {}
 
     void StartingClick()
     {

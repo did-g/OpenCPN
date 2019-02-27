@@ -2162,18 +2162,10 @@ void Logbook::checkCourseChanged()
     if ( ( cog == dCOG ) || ( oldLogbook || temp.IsEmpty() ) ) return;
 
 
-#ifdef __WXOSX__
-    wxDouble result = labs( cog-dCOG );
-#else
-    wxDouble result = abs( cog-dCOG );
-#endif
+    wxDouble result = std::abs( cog-dCOG );
     if ( result > 180 ) result -= 360;
 
-#ifdef __WXOSX__
-    if ( labs( result ) >= opt->dCourseChangeDegrees && !dialog->logbookPlugIn->eventsEnabled )
-#else
-    if ( abs( result ) >= opt->dCourseChangeDegrees && !dialog->logbookPlugIn->eventsEnabled )
-#endif
+    if ( std::abs( result ) >= opt->dCourseChangeDegrees && !dialog->logbookPlugIn->eventsEnabled )
     {
         if ( timer )
         {

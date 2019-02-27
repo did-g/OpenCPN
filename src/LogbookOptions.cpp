@@ -313,7 +313,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText54 = new wxStaticText( m_panel15, wxID_ANY, _( "Events" ), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
     m_staticText54->Wrap( -1 );
-    m_staticText54->SetFont( wxFont( 10, 74, 90, 92, false, wxT( "Tahoma" ) ) );
+    m_staticText54->SetFont( wxFont( 10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxT( "Tahoma" ) ) );
 
     fgSizer10->Add( m_staticText54, 1, wxALIGN_CENTER_VERTICAL|wxEXPAND, 0 );
 
@@ -451,7 +451,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText1041 = new wxStaticText( m_panel20, wxID_ANY, _( "Only used when you enter 1/2, 1/4 ... in a total-field, or to calculate the watermaker\n" ), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
     m_staticText1041->Wrap( -1 );
-    m_staticText1041->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText1041->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
     bSizer31->Add( m_staticText1041, 0, wxALL|wxEXPAND, 5 );
 
@@ -466,7 +466,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText99 = new wxStaticText( m_panel20, wxID_ANY, _( "Water" ), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText99->Wrap( -1 );
-    m_staticText99->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText99->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
     m_staticText99->SetMinSize( wxSize( 150,-1 ) );
     fgSizer44->Add( m_staticText99, 0, wxALL, 0 );
     fgSizer44->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -510,7 +510,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText96 = new wxStaticText( m_panel20, wxID_ANY, _( "Fuel" ), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText96->Wrap( -1 );
-    m_staticText96->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText96->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
     m_staticText96->SetMinSize( wxSize( 150,-1 ) );
     fgSizer43->Add( m_staticText96, 0, wxALL, 0 );
     fgSizer43->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -540,7 +540,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText104 = new wxStaticText( m_panel20, wxID_ANY, _( "Battery" ), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText104->Wrap( -1 );
-    m_staticText104->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText104->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
     m_staticText104->SetMinSize( wxSize( 150,-1 ) );
     fgSizer45->Add( m_staticText104, 0, wxALL, 0 );
     fgSizer45->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -598,7 +598,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText34 = new wxStaticText( m_panel16, wxID_ANY, _( "Navigation" ), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText34->Wrap( -1 );
-    m_staticText34->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText34->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
     fgSizer91->Add( m_staticText34, 0, wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -708,7 +708,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText42 = new wxStaticText( m_panel16, wxID_ANY, _( "Weather" ), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText42->Wrap( -1 );
-    m_staticText42->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText42->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
     fgSizer91->Add( m_staticText42, 0, wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -752,7 +752,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
 
     m_staticText46 = new wxStaticText( m_panel16, wxID_ANY, _( "Fuel/Water" ), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText46->Wrap( -1 );
-    m_staticText46->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText46->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
     fgSizer91->Add( m_staticText46, 0, wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -800,7 +800,7 @@ LogbookOptions::LogbookOptions( wxWindow* parent, Options* opt, logbookkonni_pi*
     fgSizer91->Add( m_textCtrRPM, 0, 0, 5 );
     m_staticText70 = new wxStaticText( m_panel16, wxID_ANY, _( "Maintenance" ), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText70->Wrap( -1 );
-    m_staticText70->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 70, 90, 92, false, wxEmptyString ) );
+    m_staticText70->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
     fgSizer91->Add( m_staticText70, 0, wxALL, 5 );
 
