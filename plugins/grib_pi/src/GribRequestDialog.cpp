@@ -43,9 +43,9 @@
 */
 enum Provider { SAILDOCS, ZYGRIB, NOAA, METEO_F, OPENGRIBS};  //grib providers
 
-enum Model : int { GFS=0, GFS_ENS, HRRR, NAM, COAMPS, RTOFS, OSCAR, ICON, ARxxx };      //forecast models
+enum Model : int { GFS=0, GFS_ENS, HRRR, NAM, COAMPS, RTOFS, OSCAR, ICON, ICON_EU, ARxxx };      //forecast models
 const static wxString s1[] = {_T("GFS"), _T("GFS Ensemble"), _T("HRRR"), _T("NAM Car/CA"), _T("COAMPS"), _T("RTOFS"), 
-        _T("OSCAR"), _T("Icon DWD"), _T("Meteo France")};
+        _T("OSCAR"), _T("Icon DWD"), _T("Icon EU"), _T("Meteo France")};
 
 enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
               WIND   = (1 <<  1), // (10 meters above surface)
@@ -80,7 +80,7 @@ enum Field   {PRMSL  = (1 <<  0), // (presssure at sea level)
 
 #include <set>
 
-enum Resolution {r0_01, r0_025, r0_08, r0_10, r0_15, r0_25, r0_33, r0_5, r1_0, r2_0};
+enum Resolution {r0_01, r0_025, r0_06, r0_08, r0_10, r0_15, r0_25, r0_33, r0_5, r1_0, r2_0};
 
 static const std::set<int> T16 = { 2, 3 , 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 static const std::set<int> T8  = { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -198,6 +198,13 @@ static const Providers P = {
                    /* .TimeRanges = */ T8
                   },
             },
+            {ICON_EU, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|CLOUDS,
+                   /* .Default = */  WIND,
+                   /* .Intervals = */ { {r0_06, I1,},
+                                },
+                   /* .TimeRanges = */ T5
+                  },
+            },
             {ARxxx, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|
                             HGT300|TMP300|WIND300|HGT700|TMP700|WIND700|HGT850|TMP850|WIND850|CLOUDS,
                        /* .Default = */  PRMSL | WIND ,
@@ -223,6 +230,7 @@ static const Providers P = {
 static const std::map<Resolution, const wxString> ResString = {
         {r0_01,  _T("0.01")},
         {r0_025, _T("0.025")},
+        {r0_06,  _T("0.06")},
         {r0_08,  _T("0.08")},
         {r0_10,  _T("0.10")},
         {r0_15,  _T("0.15")},
@@ -1164,7 +1172,7 @@ wxString GribRequestSetting::WriteMail()
     m_MailError_Nb = 0;
     //some useful strings
     // {_T("0.25"), _T("0.5"), _T("1.0"), _T("2.0")},
-    static const wxString m_o[] = { _T("icon_p25_"), _T("arpege_p50_") };
+    static const wxString m_o[] = { _T("icon_p25_"), _T("icon_eu_p06_"), _T("arpege_p50_") };
     static const wxString m[] = { _T("gfs"), _T("gens"), _T("hrrr"), _T("nam")};
     static const wxString M[] = {  _T("arome01?"), _T("arome?"), _T("arpege?")};
 
@@ -1204,7 +1212,7 @@ wxString GribRequestSetting::WriteMail()
         // OpenGribs
         {_T("R"), _T("C"), _T("T"),
         wxEmptyString, wxEmptyString,_T("G"),
-        _T("a"), _T("8"), _T("7"), 
+        _T("c"), _T("8"), _T("7"), 
         /* 9 */ _T("5"), _T("3"),
         _T("W"), _T("P"), wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString,
         }
@@ -1216,7 +1224,7 @@ wxString GribRequestSetting::WriteMail()
     case OPENGRIBS:
         r_zone.Printf ( _T ("&la1=%d&la2=%d&lo1=%d&lo2=%d"),
            m_spMinLat->GetValue(), m_spMaxLat->GetValue(), m_spMinLon->GetValue(), m_spMaxLon->GetValue());
-        r_topmess = _T("http://grbsrv.opengribs.org/getmygribs.php?model=") +m_o[m_pModel->GetCurrentSelection()];
+        r_topmess = _T("http://grbsrv.opengribs.org/getmygribs2.php?model=") +m_o[m_pModel->GetCurrentSelection()];
         r_topmess.Append( r_zone );
         r_topmess.Append(_T("&intv=") +m_pInterval->GetStringSelection());
         r_topmess.append(_T("&days=") +m_pTimeRange->GetStringSelection());
