@@ -1,0 +1,32 @@
+#!/bin/sh
+#cp ../$OCPNDIR/include/
+# ./ocpninclude/.
+OCPNDIR="OpenCPN"
+#OCPNDIR="OpenCPN-4.4.0"
+
+cp ../$OCPNDIR/src/bbox.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/cutil.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/geodesic.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/georef.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/Hyperlink.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/ocpndc.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/pugixml.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/SelectItem.cpp ./ocpnsrc/.
+cp ../$OCPNDIR/src/TexFont.cpp ./ocpnsrc/.
+cp -R ../$OCPNDIR/src/glu ./ocpnsrc/.
+cp -R ../$OCPNDIR/src/wxJSON ./ocpnsrc/.
+
+cp ../$OCPNDIR/include/bbox.h ./ocpninclude/.
+cp ../$OCPNDIR/include/cutil.h ./ocpninclude/.
+cp ../$OCPNDIR/include/geodesic.h ./ocpninclude/.
+cp ../$OCPNDIR/include/georef.h ./ocpninclude/.
+cp ../$OCPNDIR/include/Hyperlink.h ./ocpninclude/.
+#cp ../$OCPNDIR/include/ocpn_plugin.h ./ocpninclude/.
+cp ../$OCPNDIR/include/SelectItem.h ./ocpninclude/.
+cp ../$OCPNDIR/include/TexFont.h ./ocpninclude/.
+cp ../$OCPNDIR/include/timers.h ./ocpninclude/.
+cp ../$OCPNDIR/include/wx28compat.h ./ocpninclude/.
+cp -R ../$OCPNDIR/include/GL ./ocpninclude/.
+cp -R ../$OCPNDIR/include/wx ./ocpninclude/.
+
+
