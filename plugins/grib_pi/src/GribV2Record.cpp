@@ -2027,10 +2027,12 @@ void GribV2Record::readDataSet(ZUFILE* file)
 	     if (skip == false) {
     	         ok = unpackDS(grib_msg);
     	         if (ok) {
-    	             if (scanFlags == 64) {
+    	             if (1 || scanFlags == 64) {
 	                 data = grib_msg->grids.gridpoints;
 	                 grib_msg->grids.gridpoints = 0;
                     }
+#if 0
+// XXX double ordering
                     else {
                         data = new double[Ni * Nj];
                         for (unsigned int j=0; j<Nj; j++) {
@@ -2060,6 +2062,7 @@ void GribV2Record::readDataSet(ZUFILE* file)
                             }
                         }
                     }
+#endif
                  }
 	     }
 	     if (grib_msg->num_grids != 1)
