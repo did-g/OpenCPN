@@ -1212,7 +1212,7 @@ double RoutePoint::GetPlannedSpeed() {
         // In case there was speed encoded in the name of the waypoint, do the conversion here.
         wxString s_vmg = ( m_MarkDescription.Mid(m_MarkDescription.Find( _T("VMG=") ) + 4 ) ).BeforeFirst( ';' );
         double vmg;
-        if( !s_vmg.ToDouble( &vmg ) ) {
+        if( s_vmg.ToDouble( &vmg ) ) {
             m_MarkDescription.Replace( _T("VMG=") + s_vmg + ";", wxEmptyString);
             SetPlannedSpeed(vmg);
         }
