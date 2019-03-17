@@ -127,7 +127,7 @@ static double FNrange( double x )
     return ( a );
 }
 
-double getDaylightEvent( double glat, double glong, int riset, double altitude, int y, int m,
+static double getDaylightEvent( double glat, double glong, int riset, double altitude, int y, int m,
                         int d )
 {
     double day = FNday( y, m, d, 0 );
@@ -176,7 +176,7 @@ static double getLMT( double ut, double lon )
         return ( t + 24. );
 }
 
-int getDaylightStatus( double lat, double lon, wxDateTime utcDateTime )
+static int getDaylightStatus( double lat, double lon, wxDateTime utcDateTime )
 {
     if( fabs( lat ) > 60. ) return ( 0 );
     int y = utcDateTime.GetYear();
@@ -270,7 +270,6 @@ void RoutePropDlgImpl::UpdatePoints()
 {
     if( !m_pRoute )
         return;
-    wxDataViewItem selection = m_dvlcWaypoints->GetSelection();
     int selected_row = m_dvlcWaypoints->GetSelectedRow();
     m_dvlcWaypoints->DeleteAllItems();
     
@@ -361,6 +360,7 @@ void RoutePropDlgImpl::UpdatePoints()
     }
     if( selected_row > 0) {
         m_dvlcWaypoints->SelectRow(selected_row);
+        wxDataViewItem selection = m_dvlcWaypoints->GetSelection();
         m_dvlcWaypoints->EnsureVisible(selection);
     }
 }
