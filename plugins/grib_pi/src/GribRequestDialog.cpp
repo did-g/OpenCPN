@@ -1780,6 +1780,9 @@ void GribRequestSetting::OnSendMaiL( wxCommandEvent& event  )
         m_AllowSend = true;
 
         ::wxEndBusyCursor();
+        if (m_bTransferSuccess  && !m_cancelled) {
+            Close();
+        }
         return;
     }
 
