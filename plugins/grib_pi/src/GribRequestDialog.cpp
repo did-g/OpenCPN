@@ -109,7 +109,7 @@ typedef std::map<Provider, ModelDefs> Providers;
 
 static const Providers P = { 
     // 2018-05-25 GFS=0, HRRR, COAMPS, RTOFS, OSCAR, ARxxx
-    {SAILDOCS,{ {GFS, {/* .Parameters = */ PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS|WAVES,
+    {SAILDOCS,{ {GFS, {/* .Parameters = */ SEATMP|PRMSL|WIND|GUST|AIRTMP|CAPE|RAIN|APCP|HGT500|TMP500|WIND500|CLOUDS|WAVES,
                        /* .Default = */  PRMSL | WIND ,
                        /* .Intervals  = */ {{r0_25, I3_12 },
                                        {r0_5, I3_12 },
