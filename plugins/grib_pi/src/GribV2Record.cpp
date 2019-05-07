@@ -45,6 +45,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <jasper/jasper.h>
 #endif
 
+#ifdef USE_AEC
+extern "C" {
+#include <libaec.h>
+}
+#endif
+
+//#include <unordered_map>
+#include <map>
+
 const double GRIB_MISSING_VALUE = GRIB_NOTDEF;
 
 class GRIBStatproc {
@@ -136,6 +145,9 @@ public:
   int precision;
   float R;
   int E,D,num_packed,pack_width,orig_val_type;
+  struct {
+      int flags, block_size,rsi;
+  } aec;
   int bms_ind;
   unsigned char *bitmap;
   ///
@@ -273,7 +285,6 @@ static int dec_jpeg2000(char *injpc,int bufsize,int *outfld)
     jas_image_destroy(image);
 
     return 0;
-
 }
 #endif
 
@@ -338,6 +349,53 @@ static inline void getBits(unsigned const char *buf, int *loc, size_t first, siz
     val = val >> (32-nbBits);
     *loc = val;
 }
+
+#ifdef USE_AEC
+static int dec_aec(GRIBMessage *grib_msg, const unsigned char *inaec, int bufsize, int *outfld, int ndpts)
+{
+    struct aec_stream strm;
+    int status;
+    int numBitsNeeded;
+    size_t size;
+    int iret;
+
+    strm.bits_per_sample = grib_msg->md.pack_width;
+    strm.flags = grib_msg->md.aec.flags;
+    strm.block_size = grib_msg->md.aec.block_size;
+    strm.rsi = grib_msg->md.aec.rsi;
+
+    strm.next_in = inaec;
+    strm.avail_in = bufsize;
+
+    numBitsNeeded = strm.bits_per_sample;
+    size = ((numBitsNeeded + 7)/8) * (size_t) ndpts;
+    unsigned char *ctemp=(unsigned char *)calloc(size, 1);
+    if ( ctemp == nullptr) {
+      fprintf(stderr,"Could not allocate space in dec_aec.\n  Data field NOT unpacked.\n");
+      free(ctemp);
+      return 1;
+    }
+
+    strm.next_out = ctemp;
+    strm.avail_out = size;
+    iret = 0;
+    status = aec_buffer_decode(&strm);
+    size_t off = 0;
+    int nbits = ((grib_msg->md.pack_width +7)/8)*8;
+    if (status == AEC_OK) {
+        for (auto j=0; j<ndpts; j++) {
+            getBits(ctemp, &outfld[j], off, nbits);
+            off += nbits;
+        }
+    }
+    else {
+        fprintf(stderr, "unpk: aec decode error %d",status);
+        iret = 2;
+    }
+    free(ctemp);
+    return iret;
+}
+#endif
 
 //-------------------------------------------------------------------------------
 // Lecture depuis un fichier
@@ -615,6 +673,19 @@ static bool unpackDRS(GRIBMessage *grib_msg)
     case 4:        // Grid Point Data - Simple Packing 
         grib_msg->md.precision = b[11];
         break;
+#ifdef USE_AEC
+    case 42:
+	grib_msg->md.R = ieee2flt(b+ 11);
+	grib_msg->md.E = int2(b +15);
+	grib_msg->md.D = int2(b +17);
+	grib_msg->md.R /= pow(10.,grib_msg->md.D);
+	grib_msg->md.pack_width = b[19];
+	grib_msg->md.orig_val_type = b[20];
+	grib_msg->md.aec.flags = b[21];
+	grib_msg->md.aec.block_size = b[22];
+	grib_msg->md.aec.rsi = int2(b +23);
+	break;
+#endif
     case 0:        // Grid Point Data - Simple Packing 
     case 2:        // Grid Point Data - Complex Packing
     case 3:        // Grid Point Data - Complex Packing and Spatial Differencing
@@ -903,9 +974,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
 	delete [] groups.lengths;
  	break;
     case 4:
-        {
-
- 	    // Grid point data - IEEE Floating Point Data
+        { // Grid point data - IEEE Floating Point Data
  	    if (grib_msg->md.precision == 1) { // IEEE754 single precision
      	        grib_msg->grids.gridpoints = new double[npoints];
      	        for (int l=0; l < npoints; l++) {
@@ -947,6 +1016,33 @@ static bool unpackDS(GRIBMessage *grib_msg)
             }
         }
  	break;
+#ifdef USE_AEC
+    case 42:
+        {
+            int len, *jvals, cnt;
+            getBits(grib_msg->buffer,&len,grib_msg->offset,32);
+            if (len < 5)
+	        return false;
+            len=len-5;
+            jvals= new int[npoints];
+            grib_msg->grids.gridpoints= new double[npoints];
+            if (len > 0) {
+	        dec_aec(grib_msg, &grib_msg->buffer[grib_msg->offset/8+5], len, jvals, grib_msg->md.num_packed);
+            }
+            cnt=0;
+            for (l=0; l < npoints; l++) {
+                if (grib_msg->md.bitmap == nullptr || grib_msg->md.bitmap[l] == 1) {
+                    if (len == 0)
+                        jvals[cnt]=0;
+                    grib_msg->grids.gridpoints[l]=grib_msg->md.R+jvals[cnt++]*E/D;
+                }
+                else
+                    grib_msg->grids.gridpoints[l]=GRIB_MISSING_VALUE;
+            }
+            delete [] jvals;
+        }
+        break;
+#endif
 #ifdef JASPER
     case 40:
     case 40000:
@@ -961,7 +1057,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
 	  dec_jpeg2000((char *)&grib_msg->buffer[grib_msg->offset/8+5],len,jvals);
 	cnt=0;
 	for (l=0; l < npoints; l++) {
-	  if (grib_msg->md.bitmap == NULL || grib_msg->md.bitmap[l] == 1) {
+	  if (grib_msg->md.bitmap == nullptr || grib_msg->md.bitmap[l] == 1) {
 	    if (len == 0)
 		jvals[cnt]=0;
 	    grib_msg->grids.gridpoints[l]=grib_msg->md.R+jvals[cnt++]*E/D;

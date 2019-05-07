@@ -45,10 +45,19 @@ else
     brew install --cask packages
 fi
 
+wget https://github.com/MathisRosenhauer/libaec/releases/download/v1.0.4/libaec-1.0.4.tar.gz
+tar xzf libaec-1.0.4.tar.gz
+mkdir libaec-1.0.4/build
+cd libaec-1.0.4/build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+make install
+cd ../..
 
 wget -q https://download.opencpn.org/s/rwoCNGzx6G34tbC/download \
     -O /tmp/wx312B_opencpn50_macos109.tar.xz
 tar -C /tmp -xJf /tmp/wx312B_opencpn50_macos109.tar.xz 
+
 export PATH="/usr/local/opt/gettext/bin:$PATH"
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> ~/.bash_profile
 
