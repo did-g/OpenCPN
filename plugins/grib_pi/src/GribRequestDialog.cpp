@@ -1127,6 +1127,17 @@ GFS
    lev_mean_sea_level=on&var_PRMSL=on&
    subregion=&leftlon=1&rightlon=-5&toplat=52&bottomlat=44&dir=%2Fgfs.2018052018
 
+After 2019-09
+https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?
+    file=gfs.t06z.pgrb2.0p25.f001&
+    dir=%2Fgfs.2019112106&
+    subregion=&leftlon=-79&rightlon=7&toplat=57&bottomlat=1&
+    lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&lev_surface=on&
+    lev_mean_sea_level=on&var_MSLET=on&var_PRATE=on
+    &lev_entire_atmosphere=on&var_TCDC=on&lev_2_m_above_ground=on&
+    var_TMP=on&var_GUST=on&var_CAPE=on&lev_500_mb=on&var_HGT=on&
+
+
 https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p50.pl?
    file=gfs.t00z.pgrb2full.0p50.f003&
    lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2018052300
@@ -1249,7 +1260,7 @@ wxString GribRequestSetting::WriteMail()
 
             r_topmess.Append( _T("_") + f[resolution] );
             r_topmess.Append(_T("?file=")  + m[model] + _T(".t%02dz.pgrb2") + r[resolution] + _T(".f%03d"));
-            r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%02d&"));
+            r_topmess.Append(_T("&dir=%%2F") + m[model] + _T(".%d%02d%02d%%2F%02d&"));
         }
         else if (model == GFS_ENS) {
             static const wxString f[] = { _T("_0p50.pl"), _T(".pl") };
