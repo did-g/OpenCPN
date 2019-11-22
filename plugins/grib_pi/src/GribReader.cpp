@@ -571,7 +571,7 @@ std::vector<GribRecord *> * GribReader::getListOfGribRecords(int dataType,int le
 		return NULL;
 }
 //---------------------------------------------------------------------------
-double  GribReader::getTimeInterpolatedValue(int dataType,int levelType,int levelValue, double px, double py, time_t date)
+data_t GribReader::getTimeInterpolatedValue(int dataType,int levelType,int levelValue, double px, double py, time_t date)
 {
 	GribRecord *before, *after;
 	findGribsAroundDate (dataType,levelType,levelValue, date, &before, &after);
@@ -604,11 +604,11 @@ void GribReader::findGribsAroundDate (int dataType,int levelType,int levelValue,
 }
 
 //------------------------------------------------------------------
-double 	GribReader::get2GribsInterpolatedValueByDate (
+data_t GribReader::get2GribsInterpolatedValueByDate (
 				double px, double py, time_t date,
 				GribRecord *before, GribRecord *after)
 {
-	double val = GRIB_NOTDEF;
+	data_t val = GRIB_NOTDEF;
 	if (before!=NULL && after!=NULL) {
 		if (before == after) {
 			val = before->getInterpolatedValue(px, py);
@@ -620,8 +620,8 @@ double 	GribReader::get2GribsInterpolatedValueByDate (
 				val = before->getInterpolatedValue(px, py);
 			}
 			else {
-				double v1 = before->getInterpolatedValue(px, py);
-				double v2 = after->getInterpolatedValue(px, py);
+				data_t v1 = before->getInterpolatedValue(px, py);
+				data_t v2 = after->getInterpolatedValue(px, py);
 				if (v1!=GRIB_NOTDEF && v2!=GRIB_NOTDEF) {
 					double k  = fabs( (double)(date-t1)/(t2-t1) );
 					val = (1.0-k)*v1 + k*v2;
@@ -709,9 +709,9 @@ void GribReader::createListDates()
 }
 
 //-------------------------------------------------------
-double GribReader::computeDewPoint(double lon, double lat, time_t now)
+data_t GribReader::computeDewPoint(double lon, double lat, time_t now)
 {
-	double diewpoint = GRIB_NOTDEF;
+	data_t diewpoint = GRIB_NOTDEF;
 
 	GribRecord *recTempDiew =  getGribRecord(GRB_DEWPOINT,LV_ABOV_GND,2,now);
 	if (recTempDiew != NULL)
@@ -726,8 +726,8 @@ double GribReader::computeDewPoint(double lon, double lat, time_t now)
 		GribRecord *recHumid = getGribRecord(GRB_HUMID_REL,LV_ABOV_GND,2,now);
 		if (recTemp && recHumid)
 		{
-			double temp = recTemp->getInterpolatedValue(lon, lat);
-			double humid = recHumid->getInterpolatedValue(lon, lat);
+			data_t temp = recTemp->getInterpolatedValue(lon, lat);
+			data_t humid = recHumid->getInterpolatedValue(lon, lat);
 			if (temp != GRIB_NOTDEF && humid != GRIB_NOTDEF)
 			{
 				double a = 17.27;

@@ -303,7 +303,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update the Wind gusts control
     if( RecordArray[Idx_WIND_GUST] ) {
-        double vkn = RecordArray[Idx_WIND_GUST]->
+        data_t vkn = RecordArray[Idx_WIND_GUST]->
             getInterpolatedValue(m_cursor_lon, m_cursor_lat, true );
 
         if( vkn != GRIB_NOTDEF ) {
@@ -315,7 +315,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update the Pressure control
     if( RecordArray[Idx_PRESSURE] ) {
-        double press = RecordArray[Idx_PRESSURE]->
+        data_t press = RecordArray[Idx_PRESSURE]->
             getInterpolatedValue(m_cursor_lon, m_cursor_lat, true );
 
         if( press != GRIB_NOTDEF ) {
@@ -328,7 +328,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update the Sig Wave Height
     if( RecordArray[Idx_HTSIGW] ) {
-        double height = RecordArray[Idx_HTSIGW]->
+        data_t height = RecordArray[Idx_HTSIGW]->
             getInterpolatedValue(m_cursor_lon, m_cursor_lat, true );
 
         if( height != GRIB_NOTDEF ) {
@@ -354,7 +354,7 @@ void CursorData::UpdateTrackingControls( void )
 
     // Update the Wave direction
     if( RecordArray[Idx_WVDIR] ) {
-        double direction = RecordArray[Idx_WVDIR]->
+        data_t direction = RecordArray[Idx_WVDIR]->
             getInterpolatedValue(m_cursor_lon, m_cursor_lat, true, true );
         if( direction != GRIB_NOTDEF )
             m_tcWaveDirection->SetValue( wxString::Format( _T("%03d\u00B0"), (int)direction ));
@@ -387,7 +387,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update total rainfall control
     if( RecordArray[Idx_PRECIP_TOT] ) {
-        double precip = RecordArray[Idx_PRECIP_TOT]->
+        data_t precip = RecordArray[Idx_PRECIP_TOT]->
             getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( precip != GRIB_NOTDEF ) {
@@ -401,7 +401,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update total cloud control
     if( RecordArray[Idx_CLOUD_TOT] ) {
-        double cloud = RecordArray[Idx_CLOUD_TOT]->
+        data_t cloud = RecordArray[Idx_CLOUD_TOT]->
             getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( cloud != GRIB_NOTDEF ) {
@@ -414,7 +414,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update the Air Temperature
     if( RecordArray[Idx_AIR_TEMP] ) {
-        double temp = RecordArray[Idx_AIR_TEMP]->
+        data_t temp = RecordArray[Idx_AIR_TEMP]->
             getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( temp != GRIB_NOTDEF ) {
@@ -426,7 +426,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update the Sea Surface Temperature
     if( RecordArray[Idx_SEA_TEMP] ) {
-        double temp = RecordArray[Idx_SEA_TEMP]->
+        data_t temp = RecordArray[Idx_SEA_TEMP]->
             getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( temp != GRIB_NOTDEF ) {
@@ -438,7 +438,7 @@ void CursorData::UpdateTrackingControls( void )
 
     //    Update the Convective Available Potential Energy (CAPE)
     if( RecordArray[Idx_CAPE] ) {
-        double cape = RecordArray[Idx_CAPE]->getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
+        data_t cape = RecordArray[Idx_CAPE]->getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( cape != GRIB_NOTDEF ) {
             cape = m_gparent.m_OverlaySettings.CalibrateValue(GribOverlaySettings::CAPE, cape);
@@ -448,7 +448,7 @@ void CursorData::UpdateTrackingControls( void )
             m_tcCAPE->SetValue( _("N/A") );
     }
     if( RecordArray[Idx_COMP_REFL] ) {
-        double c_refl = RecordArray[Idx_COMP_REFL]->getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
+        data_t c_refl = RecordArray[Idx_COMP_REFL]->getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( c_refl != GRIB_NOTDEF ) {
             c_refl = m_gparent.m_OverlaySettings.CalibrateValue(GribOverlaySettings::COMP_REFL, c_refl);
@@ -459,7 +459,7 @@ void CursorData::UpdateTrackingControls( void )
     // Update extra data for altitude
     // geopotential altitude
     if( RecordArray[Idx_GEOP_HGT + m_Altitude] ) {
-        double geop = RecordArray[Idx_GEOP_HGT + m_Altitude]->
+        data_t geop = RecordArray[Idx_GEOP_HGT + m_Altitude]->
             getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( geop != GRIB_NOTDEF ) {
@@ -471,7 +471,7 @@ void CursorData::UpdateTrackingControls( void )
 
     // temperature
     if( RecordArray[Idx_AIR_TEMP + m_Altitude] ) {
-        double temp = RecordArray[Idx_AIR_TEMP + m_Altitude]->
+        data_t temp = RecordArray[Idx_AIR_TEMP + m_Altitude]->
             getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( temp != GRIB_NOTDEF ) {
@@ -482,7 +482,7 @@ void CursorData::UpdateTrackingControls( void )
     }
     // relative humidity
     if( RecordArray[Idx_HUMID_RE + m_Altitude] ) {
-        double humi = RecordArray[Idx_HUMID_RE + m_Altitude]->
+        data_t humi = RecordArray[Idx_HUMID_RE + m_Altitude]->
             getInterpolatedValue( m_cursor_lon, m_cursor_lat, true );
 
         if( humi != GRIB_NOTDEF ) {

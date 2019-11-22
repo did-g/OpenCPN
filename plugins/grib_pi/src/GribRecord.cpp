@@ -57,11 +57,11 @@ GribRecord::GribRecord(const GribRecord &rec)
     *this = rec;
     IsDuplicated = true;
     // recopie les champs de bits
-    if (rec.data != NULL) {
+    if (rec.grib_data != NULL) {
         int size = rec.Ni*rec.Nj;
-        this->data = new double[size];
+        this->grib_data = new data_t[size];
         for (int i=0; i<size; i++)
-            this->data[i] = rec.data[i];
+            this->grib_data[i] = rec.grib_data[i];
     }
     if (rec.BMSbits != NULL) {
         int size = rec.BMSsize;
@@ -156,7 +156,7 @@ bool GribRecord::GetInterpolatedParameters
     rec1offi = rec1offdi, rec2offi = rec2offdi;
     rec1offj = rec1offdj, rec2offj = rec2offdj;
 
-    if (!rec1.data || !rec2.data)
+    if (!rec1.grib_data || !rec2.grib_data)
         return false;
 
     return true;
@@ -165,7 +165,7 @@ bool GribRecord::GetInterpolatedParameters
 //-------------------------------------------------------------------------------
 // Constructeur de interpolate
 //-------------------------------------------------------------------------------
-GribRecord * GribRecord::InterpolatedRecord(const GribRecord &rec1, const GribRecord &rec2, double d, bool dir)
+GribRecord * GribRecord::InterpolatedRecord(const GribRecord &rec1, const GribRecord &rec2, data_t d, bool dir)
 {
     double La1, Lo1, La2, Lo2, Di, Dj;
     int im1, jm1, im2, jm2;
@@ -177,7 +177,7 @@ GribRecord * GribRecord::InterpolatedRecord(const GribRecord &rec1, const GribRe
 
     // recopie les champs de bits
     int size = Ni*Nj;
-    double *data = new double[size];
+    data_t *data = new data_t[size];
 
     zuchar *BMSbits = NULL;
     if (rec1.BMSbits != NULL && rec2.BMSbits != NULL)
@@ -188,7 +188,7 @@ GribRecord * GribRecord::InterpolatedRecord(const GribRecord &rec1, const GribRe
             int in=j*Ni+i;
             int i1 = (j*jm1+rec1offj)*rec1.Ni + i*im1+rec1offi;
             int i2 = (j*jm2+rec2offj)*rec2.Ni + i*im2+rec2offi;
-            double data1 = rec1.data[i1], data2 = rec2.data[i2];
+            data_t data1 = rec1.grib_data[i1], data2 = rec2.grib_data[i2];
             if(data1 == GRIB_NOTDEF || data2 == GRIB_NOTDEF)
                 data[in] = GRIB_NOTDEF;
             else {
@@ -219,7 +219,7 @@ GribRecord * GribRecord::InterpolatedRecord(const GribRecord &rec1, const GribRe
     ret->La1 = La1, ret->La2 = La2;
     ret->Lo1 = Lo1, ret->Lo2 = Lo2;
 
-    ret->data = data;
+    ret->grib_data = data;
     ret->BMSbits = BMSbits;
 
     ret->latMin = wxMin(La1, La2), ret->latMax = wxMax(La1, La2);
@@ -235,7 +235,7 @@ GribRecord * GribRecord::InterpolatedRecord(const GribRecord &rec1, const GribRe
    to interpolate from the polar magnitude, and angles */
 GribRecord *GribRecord::Interpolated2DRecord(GribRecord *&rety,
                                              const GribRecord &rec1x, const GribRecord &rec1y,
-                                             const GribRecord &rec2x, const GribRecord &rec2y, double d)
+                                             const GribRecord &rec2x, const GribRecord &rec2y, data_t d)
 {
     double La1, Lo1, La2, Lo2, Di, Dj;
     int im1, jm1, im2, jm2;
@@ -248,7 +248,7 @@ GribRecord *GribRecord::Interpolated2DRecord(GribRecord *&rety,
         return NULL;
 
 
-    if(!rec1y.data || !rec2y.data || !rec1y.isOk() || !rec2y.isOk() ||
+    if(!rec1y.grib_data || !rec2y.grib_data || !rec1y.isOk() || !rec2y.isOk() ||
        rec1x.Di != rec1y.Di ||rec1x.Dj != rec1y.Dj ||
        rec2x.Di != rec2y.Di ||rec2x.Dj != rec2y.Dj ||
        rec1x.Ni != rec1y.Ni ||rec1x.Nj != rec1y.Nj ||
@@ -262,14 +262,14 @@ GribRecord *GribRecord::Interpolated2DRecord(GribRecord *&rety,
     }
     // recopie les champs de bits
     int size = Ni*Nj;
-    double *datax = new double[size], *datay = new double[size];
+    data_t *datax = new data_t[size], *datay = new data_t[size];
     for (int i=0; i<Ni; i++) {
         for (int j=0; j<Nj; j++) {
             int in=j*Ni+i;
             int i1 = (j*jm1+rec1offj)*rec1x.Ni + i*im1+rec1offi;
             int i2 = (j*jm2+rec2offj)*rec2x.Ni + i*im2+rec2offi;
-            double data1x = rec1x.data[i1], data1y = rec1y.data[i1];
-            double data2x = rec2x.data[i2], data2y = rec2y.data[i2];
+            double data1x = rec1x.grib_data[i1], data1y = rec1y.grib_data[i1];
+            double data2x = rec2x.grib_data[i2], data2y = rec2y.grib_data[i2];
             if(data1x == GRIB_NOTDEF || data1y == GRIB_NOTDEF ||
                data2x == GRIB_NOTDEF || data2y == GRIB_NOTDEF) {
                 datax[in] = GRIB_NOTDEF;
@@ -303,7 +303,7 @@ GribRecord *GribRecord::Interpolated2DRecord(GribRecord *&rety,
     ret->La1 = La1, ret->La2 = La2;
     ret->Lo1 = Lo1, ret->Lo2 = Lo2;
 
-    ret->data = datax;
+    ret->grib_data = datax;
     ret->BMSbits = NULL;
     ret->hasBMS = false; // I don't think wind or current ever use BMS correct?
 
@@ -313,7 +313,7 @@ GribRecord *GribRecord::Interpolated2DRecord(GribRecord *&rety,
     rety = new GribRecord;
     *rety = *ret;
     rety->dataType = rec1y.dataType;
-    rety->data = datay;
+    rety->grib_data = datay;
     rety->BMSbits = NULL;
     rety->hasBMS = false;
 
@@ -325,13 +325,13 @@ GribRecord *GribRecord::MagnitudeRecord(const GribRecord &rec1, const GribRecord
     GribRecord *rec = new GribRecord(rec1);
 
     /* generate a record which is the combined magnitude of two records */
-    if (rec1.data && rec2.data && rec1.Ni == rec2.Ni && rec1.Nj == rec2.Nj) {
+    if (rec1.grib_data && rec2.grib_data && rec1.Ni == rec2.Ni && rec1.Nj == rec2.Nj) {
         int size = rec1.Ni*rec1.Nj;
         for (int i=0; i<size; i++)
-            if(rec1.data[i] == GRIB_NOTDEF || rec2.data[i] == GRIB_NOTDEF)
-                rec->data[i] = GRIB_NOTDEF;
+            if(rec1.grib_data[i] == GRIB_NOTDEF || rec2.grib_data[i] == GRIB_NOTDEF)
+                rec->grib_data[i] = GRIB_NOTDEF;
             else
-                rec->data[i] = sqrt(pow(rec1.data[i], 2) + pow(rec2.data[i], 2));
+                rec->grib_data[i] = sqrt(pow(rec1.grib_data[i], 2) + pow(rec2.grib_data[i], 2));
     } else
         rec->ok=false;
 
@@ -349,14 +349,14 @@ GribRecord *GribRecord::MagnitudeRecord(const GribRecord &rec1, const GribRecord
 
 void GribRecord::Polar2UV(GribRecord *pDIR, GribRecord *pSPEED)
 {
-    if (pDIR->data && pSPEED->data && pDIR->Ni == pSPEED->Ni && pDIR->Nj == pSPEED->Nj) {
+    if (pDIR->grib_data && pSPEED->grib_data && pDIR->Ni == pSPEED->Ni && pDIR->Nj == pSPEED->Nj) {
         int size = pDIR->Ni*pDIR->Nj;
         for (int i=0; i<size; i++) {
-            if(pDIR->data[i] != GRIB_NOTDEF && pSPEED->data[i] != GRIB_NOTDEF) {
-                double dir = pDIR->data[i];
-                double speed = pSPEED->data[i];
-                pDIR->data[i] = -speed * sin ( dir *M_PI/180.);
-                pSPEED->data[i] = -speed * cos ( dir *M_PI/180.);
+            if(pDIR->grib_data[i] != GRIB_NOTDEF && pSPEED->grib_data[i] != GRIB_NOTDEF) {
+                double dir = pDIR->grib_data[i];
+                double speed = pSPEED->grib_data[i];
+                pDIR->grib_data[i] = -speed * sin ( dir *M_PI/180.);
+                pSPEED->grib_data[i] = -speed * cos ( dir *M_PI/180.);
             }
         }
         if (pDIR->dataType == GRB_WIND_DIR) {
@@ -373,10 +373,10 @@ void GribRecord::Polar2UV(GribRecord *pDIR, GribRecord *pSPEED)
 void GribRecord::Substract(const GribRecord &rec, bool pos)
 {
     // for now only substract records of same size
-    if (rec.data == 0 || !rec.isOk())
+    if (rec.grib_data == 0 || !rec.isOk())
         return;
 
-    if (data == 0 || !isOk())
+    if (grib_data == 0 || !isOk())
         return;
         
     if (Ni != rec.Ni || Nj != rec.Nj) 
@@ -384,10 +384,10 @@ void GribRecord::Substract(const GribRecord &rec, bool pos)
         
     zuint size = Ni *Nj;
     for (zuint i=0; i<size; i++) {
-        if (rec.data[i] == GRIB_NOTDEF)
+        if (rec.grib_data[i] == GRIB_NOTDEF)
            continue; 
-        if (data[i] == GRIB_NOTDEF) {
-            data[i] = -rec.data[i];
+        if (grib_data[i] == GRIB_NOTDEF) {
+            grib_data[i] = -rec.grib_data[i];
             if (BMSbits != 0) {
                 if (BMSsize > i) {
                     BMSbits[i >>3] |= 1 << (i&7);
@@ -395,10 +395,10 @@ void GribRecord::Substract(const GribRecord &rec, bool pos)
             }
         }
         else
-            data[i] -= rec.data[i];
-        if (data[i] < 0. && pos) {
+            grib_data[i] -= rec.grib_data[i];
+        if (grib_data[i] < 0. && pos) {
             // data type should be positive...
-            data[i] = 0.;
+            grib_data[i] = 0.;
         }
     } 
 }
@@ -416,10 +416,10 @@ void GribRecord::Average(const GribRecord &rec)
     // rec  : 0-11
     // compute average 11-12
 
-    if (rec.data == 0 || !rec.isOk())
+    if (rec.grib_data == 0 || !rec.isOk())
         return;
 
-    if (data == 0 || !isOk())
+    if (grib_data == 0 || !isOk())
         return;
 
     if (Ni != rec.Ni || Nj != rec.Nj)
@@ -437,12 +437,12 @@ void GribRecord::Average(const GribRecord &rec)
     zuint size = Ni *Nj;
     double diff = d2 -d1;
     for (zuint i=0; i<size; i++) {
-        if (rec.data[i] == GRIB_NOTDEF)
+        if (rec.grib_data[i] == GRIB_NOTDEF)
            continue;
-        if (data[i] == GRIB_NOTDEF)
+        if (grib_data[i] == GRIB_NOTDEF)
            continue;
 
-        data[i] = (data[i]*d2 -rec.data[i]*d1)/diff;
+        grib_data[i] = (grib_data[i]*d2 -rec.grib_data[i]*d1)/diff;
     }
 }
 
@@ -467,9 +467,7 @@ std::string GribRecord::makeKey(int dataType,int levelType,int levelValue)
 //-----------------------------------------
 GribRecord::~GribRecord()
 {
-    if (data) {
-        delete [] data;
-    }
+    delete [] grib_data;
     delete [] BMSbits;
 //if (dataType==GRB_TEMP) printf("record destroyed %s   %d\n", dataKey.mb_str(), (int)curDate/3600);
 }
@@ -477,14 +475,14 @@ GribRecord::~GribRecord()
 //-------------------------------------------------------------------------------
 void  GribRecord::multiplyAllData(double k)
 {
-    if (data == 0 || !isOk())
+    if (grib_data == 0 || !isOk())
         return;
 
     for (zuint j=0; j<Nj; j++) {
         for (zuint i=0; i<Ni; i++)
         {
             if (isDefined(i,j)) {
-                data[j*Ni+i] *= k;
+                grib_data[j*Ni+i] *= k;
             }
         }
     }
@@ -543,7 +541,7 @@ time_t GribRecord::makeDate(
 
 //===============================================================================================
 
-double GribRecord::getInterpolatedValue(double px, double py, bool numericalInterpolation, bool dir) const
+data_t GribRecord::getInterpolatedValue(double px, double py, bool numericalInterpolation, bool dir) const
 {
     if (!ok || Di==0 || Dj==0)
         return GRIB_NOTDEF;

@@ -71,12 +71,12 @@ class GribReader
                                                        *setAllDates.begin() : 0;}
 
         // Valeur pour un point et une date quelconques
-      double  getTimeInterpolatedValue   (int dataType,int levelType,int levelValue, double px, double py, time_t date);
+      data_t  getTimeInterpolatedValue   (int dataType,int levelType,int levelValue, double px, double py, time_t date);
 
         // Crée un GribRecord interpolé
         GribRecord * getTimeInterpolatedGribRecord (int dataType,int levelType,int levelValue, time_t date);
 
-      double computeDewPoint(double lon, double lat, time_t date);
+      data_t computeDewPoint(double lon, double lat, time_t date);
 
       int	   getDewpointDataStatus(int levelType,int levelValue);
 
@@ -116,7 +116,7 @@ class GribReader
         std::vector<GribRecord *> * getFirstNonEmptyList();
 
       // Interpolation between 2 GribRecord
-        double      get2GribsInterpolatedValueByDate (
+        data_t get2GribsInterpolatedValueByDate (
                                     double px, double py, time_t date,
                                     GribRecord *before, GribRecord *after);
 

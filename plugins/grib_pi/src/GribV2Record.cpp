@@ -57,7 +57,7 @@ extern "C" {
 //#include <unordered_map>
 #include <map>
 
-const double GRIB_MISSING_VALUE = GRIB_NOTDEF;
+const data_t GRIB_MISSING_VALUE = GRIB_NOTDEF;
 
 class GRIBStatproc {
 public:
@@ -230,7 +230,7 @@ public:
   GRIB2Grid() : gridpoints(0) { };
   ~GRIB2Grid() { delete [] gridpoints; };
   
-  double *gridpoints;
+  data_t *gridpoints;
 };
 
 class  GRIBMessage {
@@ -1302,7 +1302,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
   int npoints = grib_msg->md.ny *grib_msg->md.nx;
   switch (grib_msg->md.drs_templ_num) {
     case 0:
-	grib_msg->grids.gridpoints = new double[npoints];
+	grib_msg->grids.gridpoints = new data_t[npoints];
 	for (l=0; l < npoints; l++) {
 	  if (grib_msg->md.bitmap == NULL || grib_msg->md.bitmap[l] == 1) {
 	    getBits(grib_msg->buffer,&pval,off,grib_msg->md.pack_width);
@@ -1331,7 +1331,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
 	}
 	// fall through
     case 2:
-	grib_msg->grids.gridpoints=new double[npoints];
+	grib_msg->grids.gridpoints=new data_t[npoints];
 	if (grib_msg->md.complex_pack.num_groups == 0) {
 	  for (l = 0; l < npoints; ++l) {
  	    grib_msg->grids.gridpoints[l] = GRIB_MISSING_VALUE;
@@ -1471,7 +1471,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
     case 4:
         { // Grid point data - IEEE Floating Point Data
  	    if (grib_msg->md.precision == 1) { // IEEE754 single precision
-     	        grib_msg->grids.gridpoints = new double[npoints];
+     	        grib_msg->grids.gridpoints = new data_t[npoints];
      	        for (int l=0; l < npoints; l++) {
  	            if (grib_msg->md.bitmap == nullptr || grib_msg->md.bitmap[l] == 1) {
  	                grib_msg->grids.gridpoints[l]= ieee2flt(grib_msg->buffer +off/8);
@@ -1484,7 +1484,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
  	    else if (grib_msg->md.precision == 2) { // IEEE754 single precision
                 static const int one = 1;
                 bool const is_lsb = *((char*)&one) == 1;
-     	        grib_msg->grids.gridpoints = new double[npoints];
+     	        grib_msg->grids.gridpoints = new data_t[npoints];
      	        for (l=0; l < npoints; l++) {
  	            if (grib_msg->md.bitmap == nullptr || grib_msg->md.bitmap[l] == 1) {
  	                double d;
@@ -1520,7 +1520,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
 	        return false;
             len=len-5;
             jvals= new int[npoints];
-            grib_msg->grids.gridpoints= new double[npoints];
+            grib_msg->grids.gridpoints= new data_t[npoints];
             if (len > 0) {
 	        dec_aec(grib_msg, &grib_msg->buffer[grib_msg->offset/8+5], len, jvals, grib_msg->md.num_packed);
             }
@@ -1547,7 +1547,7 @@ static bool unpackDS(GRIBMessage *grib_msg)
 	    return false;
 	len=len-5;
 	jvals= new int[npoints];
-	grib_msg->grids.gridpoints= new double[npoints];
+	grib_msg->grids.gridpoints= new data_t[npoints];
 	if (len > 0)
 	  dec_jpeg2000((char *)&grib_msg->buffer[grib_msg->offset/8+5],len,jvals);
 	cnt=0;
@@ -2031,7 +2031,7 @@ void GribV2Record::readDataSet(ZUFILE* file)
     bool DS = false;
     int len, sec_num;
 
-    data    = NULL;
+    grib_data = NULL;
     BMSbits = NULL;
     hasBMS = false;
     knownData = false;
@@ -2175,13 +2175,13 @@ void GribV2Record::readDataSet(ZUFILE* file)
     	         ok = unpackDS(grib_msg);
     	         if (ok) {
     	             if (1 || scanFlags == 64) {
-	                 data = grib_msg->grids.gridpoints;
+	                 grib_data = grib_msg->grids.gridpoints;
 	                 grib_msg->grids.gridpoints = 0;
                     }
 #if 0
 // XXX double ordering
                     else {
-                        data = new double[Ni * Nj];
+                        grib_data = new data_t[Ni * Nj];
                         for (unsigned int j=0; j<Nj; j++) {
                             for (unsigned int i=0; i<Ni; i++) {
                                 int indgfld;
@@ -2204,7 +2204,7 @@ void GribV2Record::readDataSet(ZUFILE* file)
                                 }
                                 if (ok) {
                                     int ind = j*Ni +i;
-                                    data[ind] = grib_msg->grids.gridpoints[indgfld];
+                                    grib_data[ind] = grib_msg->grids.gridpoints[indgfld];
                                 }
                             }
                         }
@@ -2261,7 +2261,7 @@ GribV2Record::GribV2Record(ZUFILE* file, int id_)
 {
     id = id_;
     seekStart = zu_tell(file);           // moved to section 0 read
-    data    = NULL;
+    grib_data = NULL;
     BMSsize = 0;
     BMSbits = NULL;
     hasBMS = false;
@@ -2346,7 +2346,7 @@ GribV2Record *GribV2Record::GribV2NextDataSet(ZUFILE* file, int id_)
 {
     GribV2Record *rec1 = new GribV2Record(*this);
     // XXX should have a shallow copy constructor 
-    rec1->data = 0;
+    rec1->grib_data = 0;
     rec1->BMSbits = 0;
     // new records take ownership
     this->grib_msg = 0;

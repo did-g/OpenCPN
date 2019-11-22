@@ -351,7 +351,7 @@ GribV1Record::GribV1Record(ZUFILE* file, int id_)
 {
     id = id_;
 //   seekStart = zu_tell(file);           // moved to section 0 read
-    data    = NULL;
+    grib_data = NULL;
     BMSbits = NULL;
     eof     = false;
     knownData = true;
@@ -747,7 +747,7 @@ bool GribV1Record::readGribSection4_BDS(ZUFILE* file) {
     }
 
     // Allocate memory for the data
-    data = new double[Ni*Nj];
+    grib_data = new data_t[Ni*Nj];
 
     // Read data in the order given by isAdjacentI
     zuint i, j, x;
@@ -770,12 +770,12 @@ bool GribV1Record::readGribSection4_BDS(ZUFILE* file) {
 
                 if (hasValue(i,j)) {
                     x = readPackedBits(buf, startbit, nbBitsInPack);
-                    data[ind] = (refValue + x*scaleFactorEpow2)/decimalFactorD;
+                    grib_data[ind] = (refValue + x*scaleFactorEpow2)/decimalFactorD;
                     startbit += nbBitsInPack;
                     //printf(" %d %d %f ", i,j, data[ind]);
                 }
                 else {
-                    data[ind] = GRIB_NOTDEF;
+                    grib_data[ind] = GRIB_NOTDEF;
                 }
             }
         }
@@ -797,11 +797,11 @@ bool GribV1Record::readGribSection4_BDS(ZUFILE* file) {
                 if (hasValue(i,j)) {
                     x = readPackedBits(buf, startbit, nbBitsInPack);
                     startbit += nbBitsInPack;
-                    data[ind] = (refValue + x*scaleFactorEpow2)/decimalFactorD;
+                    grib_data[ind] = (refValue + x*scaleFactorEpow2)/decimalFactorD;
                     //printf(" %d %d %f ", i,j, data[ind]);
                 }
                 else {
-                    data[ind] = GRIB_NOTDEF;
+                    grib_data[ind] = GRIB_NOTDEF;
                 }
             }
         }
@@ -849,8 +849,7 @@ double GribV1Record::readFloat4(ZUFILE* file) {
     val = pow(2.,-24)*B*pow(16.,A-64);
     if (t[0]&0x80)
         return -val;
-    else
-        return val;
+    return val;
 }
 //----------------------------------------------
 zuchar GribV1Record::readChar(ZUFILE* file) {
@@ -873,8 +872,7 @@ int GribV1Record::readSignedInt3(ZUFILE* file) {
     int val = (((zuint)t[0]&0x7F)<<16)+((zuint)t[1]<<8)+(zuint)t[2];
     if (t[0]&0x80)
         return -val;
-    else
-        return val;
+    return val;
 }
 //----------------------------------------------
 int GribV1Record::readSignedInt2(ZUFILE* file) {
@@ -887,8 +885,7 @@ int GribV1Record::readSignedInt2(ZUFILE* file) {
     int val = (((zuint)t[0]&0x7F)<<8)+(zuint)t[1];
     if (t[0]&0x80)
         return -val;
-    else
-        return val;
+    return val;
 }
 //----------------------------------------------
 zuint GribV1Record::readInt3(ZUFILE* file) {

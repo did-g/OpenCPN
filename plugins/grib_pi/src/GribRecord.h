@@ -133,6 +133,8 @@ enum DataCenterModel {
     OTHER_DATA_CENTER
 };
 
+using data_t = double;
+
 //----------------------------------------------
 class GribRecord
 {
@@ -142,10 +144,10 @@ class GribRecord
         
         virtual ~GribRecord();
   
-        static GribRecord *InterpolatedRecord(const GribRecord &rec1, const GribRecord &rec2, double d, bool dir=false);
+        static GribRecord *InterpolatedRecord(const GribRecord &rec1, const GribRecord &rec2, data_t d, bool dir=false);
         static GribRecord *Interpolated2DRecord(GribRecord *&rety,
                                                 const GribRecord &rec1x, const GribRecord &rec1y,
-                                                const GribRecord &rec2x, const GribRecord &rec2y, double d);
+                                                const GribRecord &rec2x, const GribRecord &rec2y, data_t d);
 
         static GribRecord *MagnitudeRecord(const GribRecord &rec1, const GribRecord &rec2);
 
@@ -190,13 +192,13 @@ class GribRecord
         zuchar getGridType() const { return gridType; }
 
         // Value at one point of the grid
-        double getValue(int i, int j) const  { return data[j*Ni+i];}
+        data_t getValue(int i, int j) const  { return grib_data[j*Ni+i];}
 
-        void setValue(zuint i, zuint j, double v)
-                        { if (i<Ni && j<Nj) data[j*Ni+i] = v; }
+        void setValue(zuint i, zuint j, data_t v)
+                        { if (i<Ni && j<Nj) grib_data[j*Ni+i] = v; }
 
         // Value for one point interpolated
-        double  getInterpolatedValue(double px, double py, bool numericalInterpolation=true, bool dir=false) const;
+        data_t  getInterpolatedValue(double px, double py, bool numericalInterpolation=true, bool dir=false) const;
 
         // Value for polar interpolation of vectors
         static bool getInterpolatedValues(double &M, double &A,
@@ -302,7 +304,7 @@ class GribRecord
         zuint  BMSsize;
         zuchar *BMSbits;
         // SECTION 4: BINARY DATA SECTION (BDS)
-        double  *data;
+        data_t  *grib_data;
         // SECTION 5: END SECTION (ES)
 
         time_t makeDate(zuint year,zuint month,zuint day,zuint hour,zuint min,zuint sec);
@@ -377,6 +379,3 @@ inline bool GribRecord::isYInMap(double y) const
 }
 
 #endif
-
-
-
